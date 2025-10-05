@@ -12,9 +12,9 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: 'AdSparkr - AI-Powered Meta Ads Platform',
+  title: 'Proptz',
   description:
-    'Launch and optimize Meta Ads to boost sales and maximize ROI with AI-powered automation.',
+    'Proptz is a platform that helps you manage your leads and get more sales.',
   generator: 'v0.dev',
 };
 

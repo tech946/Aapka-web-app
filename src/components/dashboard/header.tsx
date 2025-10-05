@@ -23,7 +23,7 @@ export function Header() {
         sessionStorage.clear();
 
         // Redirect to login page
-        router.push('/login');
+        router.push('/auth/login');
       } else {
         console.error('Logout failed');
       }

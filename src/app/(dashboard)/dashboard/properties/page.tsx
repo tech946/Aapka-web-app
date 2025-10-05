@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table,
   Button,
@@ -23,6 +23,7 @@ import {
   Tag,
   Tooltip,
 } from 'antd';
+import './properties.css';
 import {
   PlusOutlined,
   EditOutlined,
@@ -35,6 +36,10 @@ import {
   HomeOutlined,
   FlagOutlined,
   SettingOutlined,
+  DownOutlined,
+  CalendarOutlined,
+  CloseOutlined,
+  CheckOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -134,6 +139,22 @@ const PropertiesPage: React.FC = () => {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+
+  // Custom dropdown states
+  const [propertyTypeDropdownOpen, setPropertyTypeDropdownOpen] =
+    useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const [selectedPropertyType, setSelectedPropertyType] =
+    useState<string>('All Property Types');
+  const [selectedStatus, setSelectedStatus] = useState<string>('All Status');
+  const [selectedDateRange, setSelectedDateRange] =
+    useState<string>('Last 2 days');
+
+  // Refs for dropdown click outside detection
+  const propertyTypeRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const dateRef = useRef<HTMLDivElement>(null);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -196,6 +217,32 @@ const PropertiesPage: React.FC = () => {
   useEffect(() => {
     fetchMasterData();
     fetchProperties();
+  }, []);
+
+  // Click outside handler for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        propertyTypeRef.current &&
+        !propertyTypeRef.current.contains(event.target as Node)
+      ) {
+        setPropertyTypeDropdownOpen(false);
+      }
+      if (
+        statusRef.current &&
+        !statusRef.current.contains(event.target as Node)
+      ) {
+        setStatusDropdownOpen(false);
+      }
+      if (dateRef.current && !dateRef.current.contains(event.target as Node)) {
+        setDateDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleAdd = () => {
@@ -308,126 +355,121 @@ const PropertiesPage: React.FC = () => {
     fetchProperties(page, pageSize || pagination.limit, searchText);
   };
 
+  // Custom dropdown handlers
+  const handlePropertyTypeSelect = (type: string) => {
+    setSelectedPropertyType(type);
+    setPropertyTypeDropdownOpen(false);
+    // Add filtering logic here
+  };
+
+  const handleStatusSelect = (status: string) => {
+    setSelectedStatus(status);
+    setStatusDropdownOpen(false);
+    // Add filtering logic here
+  };
+
+  const handleDateRangeSelect = (range: string) => {
+    setSelectedDateRange(range);
+    setDateDropdownOpen(false);
+    // Add filtering logic here
+  };
+
   const columns = [
     {
-      title: 'Project Name',
+      title: 'PROJECT NAME',
       dataIndex: 'project_name',
       key: 'project_name',
       sorter: (a: Property, b: Property) =>
         a.project_name.localeCompare(b.project_name),
       render: (name: string, record: Property) => (
-        <Space direction='vertical' size={0}>
-          <div style={{ fontWeight: 500 }}>{name}</div>
+        <div>
+          <div className='table-column-title'>{name}</div>
           {record.property_types && (
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              <HomeOutlined /> {record.property_types.name}
+            <div className='table-column-subtitle'>
+              {record.property_types.name}
             </div>
           )}
-        </Space>
+        </div>
       ),
     },
     {
-      title: 'Location',
+      title: 'LOCATION',
       key: 'location',
       render: (record: Property) => (
-        <Space direction='vertical' size={0}>
+        <div className='table-location'>
           {record.countries && (
-            <div style={{ fontSize: '12px' }}>
-              <EnvironmentOutlined /> {record.countries.name}
+            <div>
+              {record.countries.name}
               {record.states && `, ${record.states.name}`}
               {record.cities && `, ${record.cities.name}`}
               {record.areas && `, ${record.areas.name}`}
             </div>
           )}
-        </Space>
+        </div>
       ),
     },
     {
-      title: 'Price',
-      dataIndex: 'starting_price',
-      key: 'starting_price',
-      render: (price: number) =>
-        price ? (
-          <Space>
-            <DollarOutlined />
-            {price.toLocaleString()}
-          </Space>
-        ) : (
-          <span style={{ color: '#999' }}>Not set</span>
-        ),
-    },
-    {
-      title: 'Status',
+      title: 'STATUS',
       dataIndex: 'property_status',
       key: 'status',
       render: (status: PropertyStatus) =>
         status ? (
-          <Tag color={status.color || 'blue'} style={{ margin: 0 }}>
+          <Tag
+            color={
+              status.color === '#10b981' ? 'green' : status.color || 'blue'
+            }
+            className='table-status-tag'
+          >
             {status.name}
           </Tag>
         ) : (
-          <span style={{ color: '#999' }}>No status</span>
+          <span className='table-no-data'>No status</span>
         ),
     },
     {
-      title: 'Amenities',
-      dataIndex: 'property_amenities',
-      key: 'amenities',
-      render: (
-        amenities: Array<{ amenity_id: string; amenities: Amenity }>
-      ) => (
-        <Space wrap>
-          {amenities?.slice(0, 2).map((pa, index) => (
-            <Tag key={index}>{pa.amenities.name}</Tag>
-          ))}
-          {amenities && amenities.length > 2 && (
-            <Tooltip
-              title={amenities
-                .slice(2)
-                .map(pa => pa.amenities.name)
-                .join(', ')}
-            >
-              <Tag>+{amenities.length - 2}</Tag>
-            </Tooltip>
-          )}
-        </Space>
-      ),
-    },
-    {
-      title: 'Brochure',
-      dataIndex: 'brochure_url',
-      key: 'brochure',
-      render: (url: string) =>
-        url ? (
-          <Button
-            type='link'
-            icon={<FileTextOutlined />}
-            href={url}
-            target='_blank'
-            size='small'
-          >
-            View
-          </Button>
+      title: 'PRICE',
+      dataIndex: 'starting_price',
+      key: 'starting_price',
+      render: (price: number) =>
+        price ? (
+          <div className='table-price'>${price.toLocaleString()}</div>
         ) : (
-          <span style={{ color: '#999' }}>No brochure</span>
+          <span className='table-no-data'>Not set</span>
         ),
     },
     {
-      title: 'Created At',
+      title: 'CREATED',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => {
+        const dateObj = new Date(date);
+        return (
+          <div className='table-date'>
+            {dateObj.toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+              year: '2-digit',
+            })}{' '}
+            {dateObj.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            })}
+          </div>
+        );
+      },
     },
     {
-      title: 'Actions',
+      title: 'ACTIONS',
       key: 'actions',
       render: (_: any, record: Property) => (
         <Space>
           <Button
-            type='primary'
+            type='link'
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
             size='small'
+            className='action-edit-btn'
           >
             Edit
           </Button>
@@ -438,69 +480,224 @@ const PropertiesPage: React.FC = () => {
             cancelText='No'
           >
             <Button
-              type='primary'
+              type='link'
               danger
               icon={<DeleteOutlined />}
               size='small'
+              className='action-delete-btn'
             >
               Delete
             </Button>
           </Popconfirm>
+          {record.brochure_url && (
+            <Button
+              type='link'
+              icon={<FileTextOutlined />}
+              href={record.brochure_url}
+              target='_blank'
+              size='small'
+              className='action-download-btn'
+            >
+              Download
+            </Button>
+          )}
         </Space>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Row justify='space-between' align='middle' style={{ marginBottom: 16 }}>
-        <Col>
-          <Title level={2} style={{ margin: 0 }}>
-            Properties Management
-          </Title>
-        </Col>
-        <Col>
-          <Space>
+    <div className='properties-container'>
+      {/* Header */}
+      <div className='properties-header'>
+        <Title level={1} className='properties-title'>
+          Properties
+        </Title>
+        <p className='properties-subtitle'>
+          Manage your property listings and details
+        </p>
+      </div>
+
+      {/* Search and Filters */}
+      <div className='search-filters-card'>
+        <Row gutter={[16, 16]} align='middle'>
+          <Col flex='auto'>
             <Input.Search
               placeholder='Search properties...'
               allowClear
               onSearch={handleSearch}
-              style={{ width: 300 }}
-              prefix={<SearchOutlined />}
+              className='search-input'
+              prefix={<SearchOutlined className='search-icon' />}
+              size='large'
             />
+          </Col>
+
+          {/* Property Types Dropdown */}
+          <Col>
+            <div style={{ position: 'relative' }} ref={propertyTypeRef}>
+              <div
+                className={`custom-dropdown-trigger ${propertyTypeDropdownOpen ? 'active' : ''}`}
+                onClick={() =>
+                  setPropertyTypeDropdownOpen(!propertyTypeDropdownOpen)
+                }
+              >
+                <div className='dropdown-trigger-content'>
+                  <span className='dropdown-trigger-text'>
+                    {selectedPropertyType}
+                  </span>
+                </div>
+                <DownOutlined
+                  className={`dropdown-chevron ${propertyTypeDropdownOpen ? 'open' : ''}`}
+                />
+              </div>
+
+              {propertyTypeDropdownOpen && (
+                <div className='custom-dropdown-menu'>
+                  <div className='dropdown-menu-list'>
+                    <div
+                      className={`dropdown-menu-item ${selectedPropertyType === 'All Property Types' ? 'selected' : ''}`}
+                      onClick={() =>
+                        handlePropertyTypeSelect('All Property Types')
+                      }
+                    >
+                      <span>All Property Types</span>
+                      {selectedPropertyType === 'All Property Types' && (
+                        <CheckOutlined className='dropdown-menu-check' />
+                      )}
+                    </div>
+                    {propertyTypes.map(type => (
+                      <div
+                        key={type.id}
+                        className={`dropdown-menu-item ${selectedPropertyType === type.name ? 'selected' : ''}`}
+                        onClick={() => handlePropertyTypeSelect(type.name)}
+                      >
+                        <span>{type.name}</span>
+                        {selectedPropertyType === type.name && (
+                          <CheckOutlined className='dropdown-menu-check' />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Col>
+
+          {/* Status Dropdown */}
+          <Col>
+            <div style={{ position: 'relative' }} ref={statusRef}>
+              <div
+                className={`custom-dropdown-trigger ${statusDropdownOpen ? 'active' : ''}`}
+                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+              >
+                <div className='dropdown-trigger-content'>
+                  <span className='dropdown-trigger-text'>
+                    {selectedStatus}
+                  </span>
+                </div>
+                <DownOutlined
+                  className={`dropdown-chevron ${statusDropdownOpen ? 'open' : ''}`}
+                />
+              </div>
+
+              {statusDropdownOpen && (
+                <div className='custom-dropdown-menu'>
+                  <div className='dropdown-menu-list'>
+                    <div
+                      className={`dropdown-menu-item ${selectedStatus === 'All Status' ? 'selected' : ''}`}
+                      onClick={() => handleStatusSelect('All Status')}
+                    >
+                      <span>All Status</span>
+                      {selectedStatus === 'All Status' && (
+                        <CheckOutlined className='dropdown-menu-check' />
+                      )}
+                    </div>
+                    {propertyStatuses.map(status => (
+                      <div
+                        key={status.id}
+                        className={`dropdown-menu-item ${selectedStatus === status.name ? 'selected' : ''}`}
+                        onClick={() => handleStatusSelect(status.name)}
+                      >
+                        <span>{status.name}</span>
+                        {selectedStatus === status.name && (
+                          <CheckOutlined className='dropdown-menu-check' />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Col>
+
+          {/* Date Range Dropdown */}
+          <Col>
+            <div style={{ position: 'relative' }} ref={dateRef}>
+              <div
+                className={`custom-dropdown-trigger date-dropdown-trigger ${dateDropdownOpen ? 'active' : ''}`}
+                onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+              >
+                <div className='dropdown-trigger-content'>
+                  <CalendarOutlined className='dropdown-calendar-icon' />
+                  <span className='dropdown-trigger-text'>
+                    {selectedDateRange}
+                  </span>
+                </div>
+                <DownOutlined
+                  className={`dropdown-chevron ${dateDropdownOpen ? 'open' : ''}`}
+                />
+              </div>
+
+              {dateDropdownOpen && (
+                <div className='custom-dropdown-menu'>
+                  <div className='dropdown-menu-header'>
+                    <span className='dropdown-menu-title'>Date Range</span>
+                    <CloseOutlined
+                      className='dropdown-menu-close'
+                      onClick={() => setDateDropdownOpen(false)}
+                    />
+                  </div>
+                  <div className='dropdown-menu-list'>
+                    {[
+                      'Last 2 days',
+                      'Last 7 days',
+                      'Last 30 days',
+                      'Last 90 days',
+                      'Custom range',
+                    ].map(range => (
+                      <div
+                        key={range}
+                        className={`dropdown-menu-item ${selectedDateRange === range ? 'selected' : ''}`}
+                        onClick={() => handleDateRangeSelect(range)}
+                      >
+                        <span>{range}</span>
+                        {selectedDateRange === range && (
+                          <CheckOutlined className='dropdown-menu-check' />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Col>
+
+          <Col>
             <Button
               type='primary'
               icon={<PlusOutlined />}
               onClick={handleAdd}
               size='large'
+              className='add-property-btn'
             >
               Add Property
             </Button>
-          </Space>
-        </Col>
-      </Row>
-
-      <Card>
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col span={8}>
-            <Statistic
-              title='Total Properties'
-              value={pagination.total}
-              valueStyle={{ color: '#3f8600' }}
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic
-              title='Current Page'
-              value={pagination.page}
-              suffix={`/ ${pagination.totalPages}`}
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic title='Items Per Page' value={pagination.limit} />
           </Col>
         </Row>
+      </div>
 
+      {/* Properties Table */}
+      <div className='properties-table-card'>
         <Table
           columns={columns}
           dataSource={properties}
@@ -508,9 +705,10 @@ const PropertiesPage: React.FC = () => {
           loading={loading}
           pagination={false}
           scroll={{ x: 1200 }}
+          className='properties-table'
         />
 
-        <div style={{ marginTop: 16, textAlign: 'right' }}>
+        <div className='pagination-container'>
           <Pagination
             current={pagination.page}
             total={pagination.total}
@@ -524,7 +722,7 @@ const PropertiesPage: React.FC = () => {
             onShowSizeChange={handlePageChange}
           />
         </div>
-      </Card>
+      </div>
 
       <Modal
         title={editingProperty ? 'Edit Property' : 'Add Property'}
@@ -534,10 +732,29 @@ const PropertiesPage: React.FC = () => {
         width={1000}
         okText={editingProperty ? 'Update' : 'Create'}
         cancelText='Cancel'
+        className='custom-modal'
+        okButtonProps={{
+          className: 'custom-modal-ok-btn',
+        }}
+        cancelButtonProps={{
+          className: 'custom-modal-cancel-btn',
+        }}
+        styles={{
+          header: {
+            borderRadius: '12px 12px 0 0',
+          },
+          body: {
+            borderRadius: '0 0 12px 12px',
+          },
+          footer: {
+            borderRadius: '0 0 12px 12px',
+          },
+        }}
       >
         <Form
           form={form}
           layout='vertical'
+          className='custom-form'
           initialValues={{
             project_name: '',
             property_status_id: '',
@@ -559,6 +776,7 @@ const PropertiesPage: React.FC = () => {
               <Form.Item
                 name='project_name'
                 label='Project Name'
+                className='custom-form-item-label'
                 rules={[
                   { required: true, message: 'Please enter project name' },
                   {
@@ -567,12 +785,22 @@ const PropertiesPage: React.FC = () => {
                   },
                 ]}
               >
-                <Input placeholder='Enter project name' />
+                <Input
+                  placeholder='Enter project name'
+                  className='custom-form-input'
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name='property_status_id' label='Property Status'>
-                <Select placeholder='Select property status'>
+              <Form.Item
+                name='property_status_id'
+                label='Property Status'
+                className='custom-form-item-label'
+              >
+                <Select
+                  placeholder='Select property status'
+                  className='custom-form-input'
+                >
                   {propertyStatuses.map(status => (
                     <Option key={status.id} value={status.id}>
                       <Space>
@@ -598,9 +826,14 @@ const PropertiesPage: React.FC = () => {
 
           <Row gutter={16}>
             <Col span={6}>
-              <Form.Item name='country_id' label='Country'>
+              <Form.Item
+                name='country_id'
+                label='Country'
+                className='custom-form-item-label'
+              >
                 <Select
                   placeholder='Select country'
+                  className='custom-form-input'
                   showSearch
                   optionFilterProp='children'
                   filterOption={(input, option) =>
@@ -618,9 +851,14 @@ const PropertiesPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item name='state_id' label='State'>
+              <Form.Item
+                name='state_id'
+                label='State'
+                className='custom-form-item-label'
+              >
                 <Select
                   placeholder='Select state'
+                  className='custom-form-input'
                   showSearch
                   optionFilterProp='children'
                   filterOption={(input, option) =>
@@ -638,9 +876,14 @@ const PropertiesPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item name='city_id' label='City'>
+              <Form.Item
+                name='city_id'
+                label='City'
+                className='custom-form-item-label'
+              >
                 <Select
                   placeholder='Select city'
+                  className='custom-form-input'
                   showSearch
                   optionFilterProp='children'
                   filterOption={(input, option) =>
@@ -658,9 +901,14 @@ const PropertiesPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item name='area_id' label='Area'>
+              <Form.Item
+                name='area_id'
+                label='Area'
+                className='custom-form-item-label'
+              >
                 <Select
                   placeholder='Select area'
+                  className='custom-form-input'
                   showSearch
                   optionFilterProp='children'
                   filterOption={(input, option) =>
@@ -681,9 +929,14 @@ const PropertiesPage: React.FC = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name='starting_price' label='Starting Price'>
+              <Form.Item
+                name='starting_price'
+                label='Starting Price'
+                className='custom-form-item-label'
+              >
                 <InputNumber
                   placeholder='Enter starting price'
+                  className='custom-form-input'
                   style={{ width: '100%' }}
                   formatter={value =>
                     `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -693,8 +946,15 @@ const PropertiesPage: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name='property_type_id' label='Property Type'>
-                <Select placeholder='Select property type'>
+              <Form.Item
+                name='property_type_id'
+                label='Property Type'
+                className='custom-form-item-label'
+              >
+                <Select
+                  placeholder='Select property type'
+                  className='custom-form-input'
+                >
                   {propertyTypes.map(type => (
                     <Option key={type.id} value={type.id}>
                       <Space>
@@ -719,33 +979,56 @@ const PropertiesPage: React.FC = () => {
             </Col>
           </Row>
 
-          <Form.Item name='payment_plan' label='Payment Plan'>
-            <TextArea placeholder='Enter payment plan details' rows={3} />
+          <Form.Item
+            name='payment_plan'
+            label='Payment Plan'
+            className='custom-form-item-label'
+          >
+            <TextArea
+              placeholder='Enter payment plan details'
+              rows={3}
+              className='custom-form-input custom-form-textarea'
+            />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name='handover' label='Handover'>
-                <TextArea placeholder='Enter handover details' rows={2} />
+              <Form.Item
+                name='handover'
+                label='Handover'
+                className='custom-form-item-label'
+              >
+                <TextArea
+                  placeholder='Enter handover details'
+                  rows={2}
+                  className='custom-form-input custom-form-textarea'
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name='expected_appreciation'
                 label='Expected Appreciation'
+                className='custom-form-item-label'
               >
                 <TextArea
                   placeholder='Enter expected appreciation details'
                   rows={2}
+                  className='custom-form-input custom-form-textarea'
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item name='amenities' label='Amenities'>
+          <Form.Item
+            name='amenities'
+            label='Amenities'
+            className='custom-form-item-label'
+          >
             <Select
               mode='multiple'
               placeholder='Select amenities'
+              className='custom-form-input'
               showSearch
               optionFilterProp='children'
               filterOption={(input, option) =>
@@ -780,7 +1063,11 @@ const PropertiesPage: React.FC = () => {
             <Input type='hidden' />
           </Form.Item>
 
-          <Form.Item name='brochure_file' label='Upload Brochure'>
+          <Form.Item
+            name='brochure_file'
+            label='Upload Brochure'
+            className='custom-form-item-label'
+          >
             <Upload
               beforeUpload={file => {
                 const isDoc =
@@ -803,7 +1090,7 @@ const PropertiesPage: React.FC = () => {
               showUploadList={false}
               accept='.pdf,.doc,.docx'
             >
-              <Button icon={<UploadOutlined />}>
+              <Button icon={<UploadOutlined />} className='custom-upload-btn'>
                 Upload Brochure (PDF/Word)
               </Button>
             </Upload>
