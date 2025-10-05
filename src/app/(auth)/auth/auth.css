@@ -81,9 +81,6 @@
 .auth-tab-button:hover {
   color: #333333;
 }
-button {
-  border-radius: 90px;
-}
 /* Form Styles */
 .auth-form {
   /* Form container styles */
@@ -249,7 +246,7 @@ button {
 }
 
 .auth-social-text {
-  /* Social button text styles */
+  flex: 1;
 }
 
 .auth-social-subtext {
