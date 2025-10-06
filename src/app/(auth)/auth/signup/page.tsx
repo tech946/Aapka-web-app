@@ -136,135 +136,136 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className='auth-container'>
-      <div className='auth-card'>
-        {/* Logo */}
-        <div className='auth-logo'>
-          <div className='auth-logo-image'>
-            <Image
-              src='/proptz logo.png'
-              alt='Proptz'
-              width={120}
-              height={120}
-            />
-          </div>
-        </div>
+    // <div className='auth-container'>
+    //   <div className='auth-card'>
+    //     {/* Logo */}
+    //     <div className='auth-logo'>
+    //       <div className='auth-logo-image'>
+    //         <Image
+    //           src='/proptz logo.png'
+    //           alt='Proptz'
+    //           width={120}
+    //           height={120}
+    //         />
+    //       </div>
+    //     </div>
 
-        <div className='auth-tabs'>
-          <div className='auth-tab-container'>
-            <button className='auth-tab-button '>
-              <Link href='/auth/login'>Login</Link>
-            </button>
-            <button className='auth-tab-button active'>
-              <Link href='/auth/signup'>Signup</Link>
-            </button>
-          </div>
-        </div>
+    //     <div className='auth-tabs'>
+    //       <div className='auth-tab-container'>
+    //         <button className='auth-tab-button '>
+    //           <Link href='/auth/login'>Login</Link>
+    //         </button>
+    //         <button className='auth-tab-button active'>
+    //           <Link href='/auth/signup'>Signup</Link>
+    //         </button>
+    //       </div>
+    //     </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className='auth-form'>
-          {errors.general && <div className='auth-error'>{errors.general}</div>}
+    //     {/* Form */}
+    //     <form onSubmit={handleSubmit} className='auth-form'>
+    //       {errors.general && <div className='auth-error'>{errors.general}</div>}
 
-          <div className='auth-field'>
-            <label className='auth-label'>Email</label>
-            <input
-              type='email'
-              value={formData.email}
-              onChange={e => handleInputChange('email', e.target.value)}
-              placeholder='name@example.com'
-              className='auth-input'
-              disabled={isLoading}
-            />
-            {errors.email && (
-              <p className='auth-error-message'>{errors.email}</p>
-            )}
-          </div>
+    //       <div className='auth-field'>
+    //         <label className='auth-label'>Email</label>
+    //         <input
+    //           type='email'
+    //           value={formData.email}
+    //           onChange={e => handleInputChange('email', e.target.value)}
+    //           placeholder='name@example.com'
+    //           className='auth-input'
+    //           disabled={isLoading}
+    //         />
+    //         {errors.email && (
+    //           <p className='auth-error-message'>{errors.email}</p>
+    //         )}
+    //       </div>
 
-          <div className='auth-field'>
-            <label className='auth-label'>Password</label>
-            <div className='auth-input-container'>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={e => handleInputChange('password', e.target.value)}
-                placeholder='••••••••'
-                className='auth-input password'
-                disabled={isLoading}
-              />
-              <button
-                type='button'
-                onClick={() => setShowPassword(!showPassword)}
-                className='auth-password-toggle'
-                disabled={isLoading}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className='auth-error-message'>{errors.password}</p>
-            )}
-          </div>
+    //       <div className='auth-field'>
+    //         <label className='auth-label'>Password</label>
+    //         <div className='auth-input-container'>
+    //           <input
+    //             type={showPassword ? 'text' : 'password'}
+    //             value={formData.password}
+    //             onChange={e => handleInputChange('password', e.target.value)}
+    //             placeholder='••••••••'
+    //             className='auth-input password'
+    //             disabled={isLoading}
+    //           />
+    //           <button
+    //             type='button'
+    //             onClick={() => setShowPassword(!showPassword)}
+    //             className='auth-password-toggle'
+    //             disabled={isLoading}
+    //           >
+    //             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    //           </button>
+    //         </div>
+    //         {errors.password && (
+    //           <p className='auth-error-message'>{errors.password}</p>
+    //         )}
+    //       </div>
 
-          <div className='auth-field confirm-password'>
-            <label className='auth-label'>Confirm Password</label>
-            <div className='auth-input-container'>
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                onChange={e =>
-                  handleInputChange('confirmPassword', e.target.value)
-                }
-                placeholder='••••••••'
-                className='auth-input password'
-                disabled={isLoading}
-              />
-              <button
-                type='button'
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className='auth-password-toggle'
-                disabled={isLoading}
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <p className='auth-error-message'>{errors.confirmPassword}</p>
-            )}
-          </div>
+    //       <div className='auth-field confirm-password'>
+    //         <label className='auth-label'>Confirm Password</label>
+    //         <div className='auth-input-container'>
+    //           <input
+    //             type={showConfirmPassword ? 'text' : 'password'}
+    //             value={formData.confirmPassword}
+    //             onChange={e =>
+    //               handleInputChange('confirmPassword', e.target.value)
+    //             }
+    //             placeholder='••••••••'
+    //             className='auth-input password'
+    //             disabled={isLoading}
+    //           />
+    //           <button
+    //             type='button'
+    //             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+    //             className='auth-password-toggle'
+    //             disabled={isLoading}
+    //           >
+    //             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    //           </button>
+    //         </div>
+    //         {errors.confirmPassword && (
+    //           <p className='auth-error-message'>{errors.confirmPassword}</p>
+    //         )}
+    //       </div>
 
-          <button
-            type='submit'
-            disabled={isLoading}
-            className='auth-submit-button'
-          >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </button>
+    //       <button
+    //         type='submit'
+    //         disabled={isLoading}
+    //         className='auth-submit-button'
+    //       >
+    //         {isLoading ? 'Creating Account...' : 'Create Account'}
+    //       </button>
 
-          {/* Social Signup Button */}
-          <button
-            type='button'
-            className='auth-social-button'
-            onClick={handleGoogleSignUp}
-            disabled={isLoading}
-          >
-            <div className='auth-social-icon'>G</div>
-            <span className='auth-social-text'>Continue with Google</span>
-          </button>
+    //       {/* Social Signup Button */}
+    //       <button
+    //         type='button'
+    //         className='auth-social-button'
+    //         onClick={handleGoogleSignUp}
+    //         disabled={isLoading}
+    //       >
+    //         <div className='auth-social-icon'>G</div>
+    //         <span className='auth-social-text'>Continue with Google</span>
+    //       </button>
 
-          {/* Footer */}
-          <p className='auth-footer'>
-            Already have an account?{' '}
-            <Link href='/auth/login' className='auth-footer-link'>
-              Log in
-            </Link>
-          </p>
-          <p className='auth-footer'>
-            By signing up, you agree to our{' '}
-            <span className='auth-footer-link'>Terms of Service</span> and{' '}
-            <span className='auth-footer-link'>Privacy Policy</span>
-          </p>
-        </form>
-      </div>
-    </div>
+    //       {/* Footer */}
+    //       <p className='auth-footer'>
+    //         Already have an account?{' '}
+    //         <Link href='/auth/login' className='auth-footer-link'>
+    //           Log in
+    //         </Link>
+    //       </p>
+    //       <p className='auth-footer'>
+    //         By signing up, you agree to our{' '}
+    //         <span className='auth-footer-link'>Terms of Service</span> and{' '}
+    //         <span className='auth-footer-link'>Privacy Policy</span>
+    //       </p>
+    //     </form>
+    //   </div>
+    // </div>
+    'signup'
   );
 }

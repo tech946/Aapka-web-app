@@ -96,9 +96,9 @@ export default function LoginPage() {
             <button className='auth-tab-button active'>
               <Link href='/auth/login'>Login</Link>
             </button>
-            <button className='auth-tab-button'>
+            {/* <button className='auth-tab-button'>
               <Link href='/auth/signup'>Signup</Link>
-            </button>
+            </button> */}
           </div>
         </div>
         {/* Form */}
