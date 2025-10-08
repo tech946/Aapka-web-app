@@ -842,29 +842,37 @@ const PropertiesPage: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name='property_status_id'
-                label='Property Status'
+                name='developer_id'
+                label='Developer'
                 className='custom-form-item-label'
               >
                 <Select
-                  placeholder='Select property status'
+                  placeholder='Select developer'
                   className='custom-form-input'
+                  showSearch
+                  optionFilterProp='children'
+                  filterOption={(input, option) =>
+                    String(option?.children)
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
                 >
-                  {propertyStatuses.map(status => (
-                    <Option key={status.id} value={status.id}>
+                  {developers.map(developer => (
+                    <Option key={developer.id} value={developer.id}>
                       <Space>
-                        {status.color && (
-                          <div
+                        {developer.image_url && (
+                          <img
+                            src={developer.image_url}
+                            alt={developer.name}
                             style={{
-                              width: 12,
-                              height: 12,
-                              borderRadius: '50%',
-                              backgroundColor: status.color,
-                              display: 'inline-block',
+                              width: 20,
+                              height: 20,
+                              objectFit: 'cover',
+                              borderRadius: 2,
                             }}
                           />
                         )}
-                        {status.name}
+                        {developer.name}
                       </Space>
                     </Option>
                   ))}
@@ -1028,37 +1036,29 @@ const PropertiesPage: React.FC = () => {
             </Col>
             <Col span={8}>
               <Form.Item
-                name='developer_id'
-                label='Developer'
+                name='property_status_id'
+                label='Property Status'
                 className='custom-form-item-label'
               >
                 <Select
-                  placeholder='Select developer'
+                  placeholder='Select property status'
                   className='custom-form-input'
-                  showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
                 >
-                  {developers.map(developer => (
-                    <Option key={developer.id} value={developer.id}>
+                  {propertyStatuses.map(status => (
+                    <Option key={status.id} value={status.id}>
                       <Space>
-                        {developer.image_url && (
-                          <img
-                            src={developer.image_url}
-                            alt={developer.name}
+                        {status.color && (
+                          <div
                             style={{
-                              width: 20,
-                              height: 20,
-                              objectFit: 'cover',
-                              borderRadius: 2,
+                              width: 12,
+                              height: 12,
+                              borderRadius: '50%',
+                              backgroundColor: status.color,
+                              display: 'inline-block',
                             }}
                           />
                         )}
-                        {developer.name}
+                        {status.name}
                       </Space>
                     </Option>
                   ))}
