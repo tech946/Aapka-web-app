@@ -19,7 +19,6 @@ import {
   Upload,
   Image,
   Divider,
-  Select,
   Switch,
   Tag,
 } from 'antd';
@@ -29,36 +28,20 @@ import {
   DeleteOutlined,
   UploadOutlined,
   DeleteOutlined as RemoveOutlined,
-  GlobalOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  LinkOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title } = Typography;
 const { TextArea } = Input;
-const { Option } = Select;
-
-interface Country {
-  id: string;
-  name: string;
-}
 
 interface Developer {
   id: string;
   name: string;
   description?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  address?: string;
-  country_id?: string;
   image_url?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  countries?: Country;
 }
 
 interface PaginationInfo {
@@ -72,7 +55,6 @@ interface PaginationInfo {
 
 const DevelopersPage: React.FC = () => {
   const [developers, setDevelopers] = useState<Developer[]>([]);
-  const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(
@@ -89,15 +71,6 @@ const DevelopersPage: React.FC = () => {
     hasNext: false,
     hasPrev: false,
   });
-
-  const fetchCountries = async () => {
-    try {
-      const response = await axios.get('/api/countries?limit=1000');
-      setCountries(response.data.data);
-    } catch (error: any) {
-      message.error('Failed to fetch countries');
-    }
-  };
 
   const fetchDevelopers = async (page = 1, limit = 10) => {
     setLoading(true);
@@ -117,7 +90,6 @@ const DevelopersPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCountries();
     fetchDevelopers();
   }, []);
 
@@ -133,11 +105,6 @@ const DevelopersPage: React.FC = () => {
     form.setFieldsValue({
       name: developer.name,
       description: developer.description,
-      email: developer.email,
-      phone: developer.phone,
-      website: developer.website,
-      address: developer.address,
-      country_id: developer.country_id,
       image_url: developer.image_url,
       is_active: developer.is_active,
     });
@@ -192,11 +159,6 @@ const DevelopersPage: React.FC = () => {
 
       formData.append('name', values.name);
       formData.append('description', values.description || '');
-      formData.append('email', values.email || '');
-      formData.append('phone', values.phone || '');
-      formData.append('website', values.website || '');
-      formData.append('address', values.address || '');
-      formData.append('country_id', values.country_id || '');
       formData.append('is_active', values.is_active);
 
       if (editingDeveloper) {
@@ -267,45 +229,18 @@ const DevelopersPage: React.FC = () => {
       ),
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-      render: (email: string) =>
-        email ? (
-          <Space>
-            <MailOutlined />
-            {email}
-          </Space>
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (description: string) =>
+        description ? (
+          <span>
+            {description.length > 50
+              ? `${description.substring(0, 50)}...`
+              : description}
+          </span>
         ) : (
-          <span style={{ color: '#999' }}>No email</span>
-        ),
-    },
-    {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-      render: (phone: string) =>
-        phone ? (
-          <Space>
-            <PhoneOutlined />
-            {phone}
-          </Space>
-        ) : (
-          <span style={{ color: '#999' }}>No phone</span>
-        ),
-    },
-    {
-      title: 'Country',
-      dataIndex: 'countries',
-      key: 'country',
-      render: (country: Country) =>
-        country ? (
-          <Space>
-            <GlobalOutlined />
-            {country.name}
-          </Space>
-        ) : (
-          <span style={{ color: '#999' }}>No country</span>
+          <span style={{ color: '#999' }}>No description</span>
         ),
     },
     {
@@ -438,11 +373,6 @@ const DevelopersPage: React.FC = () => {
           initialValues={{
             name: '',
             description: '',
-            email: '',
-            phone: '',
-            website: '',
-            address: '',
-            country_id: '',
             image_url: '',
             is_active: true,
           }}
@@ -462,61 +392,6 @@ const DevelopersPage: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name='email'
-                label='Email'
-                rules={[
-                  { type: 'email', message: 'Please enter a valid email' },
-                ]}
-              >
-                <Input placeholder='Enter email address' />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name='phone' label='Phone'>
-                <Input placeholder='Enter phone number' />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name='website' label='Website'>
-                <Input placeholder='Enter website URL' />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item name='description' label='Description'>
-            <TextArea placeholder='Enter developer description' rows={3} />
-          </Form.Item>
-
-          <Form.Item name='address' label='Address'>
-            <TextArea placeholder='Enter address' rows={2} />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name='country_id' label='Country'>
-                <Select
-                  placeholder='Select a country'
-                  showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
-                >
-                  {countries.map(country => (
-                    <Option key={country.id} value={country.id}>
-                      {country.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
                 name='is_active'
                 label='Status'
                 valuePropName='checked'
@@ -526,7 +401,11 @@ const DevelopersPage: React.FC = () => {
             </Col>
           </Row>
 
-          <Form.Item name='image_url' label='Image'>
+          <Form.Item name='description' label='Description'>
+            <TextArea placeholder='Enter developer description' rows={3} />
+          </Form.Item>
+
+          <Form.Item name='image_url' style={{ display: 'none' }}>
             <Input type='hidden' />
           </Form.Item>
 

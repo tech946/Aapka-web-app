@@ -30,18 +30,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: countError.message }, { status: 500 });
     }
 
-    // Get paginated data with country information
+    // Get paginated data
     const { data, error } = await supabaseAdmin
       .from('developers')
-      .select(
-        `
-        *,
-        countries (
-          id,
-          name
-        )
-      `
-      )
+      .select('*')
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
 
@@ -80,11 +72,6 @@ export async function POST(request: NextRequest) {
       const formData = await request.formData();
       const name = formData.get('name') as string;
       const description = formData.get('description') as string;
-      const email = formData.get('email') as string;
-      const phone = formData.get('phone') as string;
-      const website = formData.get('website') as string;
-      const address = formData.get('address') as string;
-      const country_id = formData.get('country_id') as string;
       const is_active = formData.get('is_active') === 'true';
       const imageFile = formData.get('image_file') as File;
 
@@ -155,24 +142,11 @@ export async function POST(request: NextRequest) {
           {
             name,
             description: description || null,
-            email: email || null,
-            phone: phone || null,
-            website: website || null,
-            address: address || null,
-            country_id: country_id || null,
             image_url: imageUrl,
             is_active: is_active !== undefined ? is_active : true,
           },
         ])
-        .select(
-          `
-          *,
-          countries (
-            id,
-            name
-          )
-        `
-        )
+        .select('*')
         .single();
 
       if (error) {
@@ -183,16 +157,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Handle JSON data without image
       const body = await request.json();
-      const {
-        name,
-        description,
-        email,
-        phone,
-        website,
-        address,
-        country_id,
-        is_active,
-      } = body;
+      const { name, description, is_active } = body;
 
       if (!name) {
         return NextResponse.json(
@@ -207,24 +172,11 @@ export async function POST(request: NextRequest) {
           {
             name,
             description: description || null,
-            email: email || null,
-            phone: phone || null,
-            website: website || null,
-            address: address || null,
-            country_id: country_id || null,
             image_url: null,
             is_active: is_active !== undefined ? is_active : true,
           },
         ])
-        .select(
-          `
-          *,
-          countries (
-            id,
-            name
-          )
-        `
-        )
+        .select('*')
         .single();
 
       if (error) {
@@ -252,11 +204,6 @@ export async function PUT(request: NextRequest) {
       const id = formData.get('id') as string;
       const name = formData.get('name') as string;
       const description = formData.get('description') as string;
-      const email = formData.get('email') as string;
-      const phone = formData.get('phone') as string;
-      const website = formData.get('website') as string;
-      const address = formData.get('address') as string;
-      const country_id = formData.get('country_id') as string;
       const is_active = formData.get('is_active') === 'true';
       const imageFile = formData.get('image_file') as File;
       const existingImageUrl = formData.get('existing_image_url') as string;
@@ -349,24 +296,11 @@ export async function PUT(request: NextRequest) {
         .update({
           name,
           description: description || null,
-          email: email || null,
-          phone: phone || null,
-          website: website || null,
-          address: address || null,
-          country_id: country_id || null,
           image_url: imageUrl,
           is_active: is_active !== undefined ? is_active : true,
         })
         .eq('id', id)
-        .select(
-          `
-          *,
-          countries (
-            id,
-            name
-          )
-        `
-        )
+        .select('*')
         .single();
 
       if (error) {
@@ -377,17 +311,7 @@ export async function PUT(request: NextRequest) {
     } else {
       // Handle JSON data without image
       const body = await request.json();
-      const {
-        id,
-        name,
-        description,
-        email,
-        phone,
-        website,
-        address,
-        country_id,
-        is_active,
-      } = body;
+      const { id, name, description, is_active } = body;
 
       if (!id || !name) {
         return NextResponse.json(
@@ -401,23 +325,10 @@ export async function PUT(request: NextRequest) {
         .update({
           name,
           description: description || null,
-          email: email || null,
-          phone: phone || null,
-          website: website || null,
-          address: address || null,
-          country_id: country_id || null,
           is_active: is_active !== undefined ? is_active : true,
         })
         .eq('id', id)
-        .select(
-          `
-          *,
-          countries (
-            id,
-            name
-          )
-        `
-        )
+        .select('*')
         .single();
 
       if (error) {
