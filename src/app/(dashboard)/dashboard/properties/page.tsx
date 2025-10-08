@@ -85,6 +85,13 @@ interface Amenity {
   image_url?: string;
 }
 
+interface Developer {
+  id: string;
+  name: string;
+  description?: string;
+  image_url?: string;
+}
+
 interface Property {
   id: string;
   project_name: string;
@@ -95,6 +102,7 @@ interface Property {
   area_id?: string;
   starting_price?: number;
   property_type_id?: number;
+  developer_id?: string;
   payment_plan?: string;
   handover?: string;
   expected_appreciation?: string;
@@ -108,6 +116,7 @@ interface Property {
   cities?: City;
   areas?: Area;
   property_types?: PropertyType;
+  developers?: Developer;
   property_amenities?: Array<{
     amenity_id: string;
     amenities: Amenity;
@@ -134,11 +143,13 @@ const PropertiesPage: React.FC = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const [brochureFileName, setBrochureFileName] = useState<string>('');
 
   // Custom dropdown states
   const [propertyTypeDropdownOpen, setPropertyTypeDropdownOpen] =
@@ -175,6 +186,7 @@ const PropertiesPage: React.FC = () => {
         areasRes,
         propertyTypesRes,
         amenitiesRes,
+        developersRes,
       ] = await Promise.all([
         axios.get('/api/property-status?limit=1000'),
         axios.get('/api/countries?limit=1000'),
@@ -183,6 +195,7 @@ const PropertiesPage: React.FC = () => {
         axios.get('/api/areas?limit=1000'),
         axios.get('/api/property-types?limit=1000'),
         axios.get('/api/amenities?limit=1000'),
+        axios.get('/api/developers?limit=1000'),
       ]);
 
       setPropertyStatuses(propertyStatusesRes.data.data);
@@ -192,6 +205,7 @@ const PropertiesPage: React.FC = () => {
       setAreas(areasRes.data.data);
       setPropertyTypes(propertyTypesRes.data.data);
       setAmenities(amenitiesRes.data.data);
+      setDevelopers(developersRes.data.data);
     } catch (error: any) {
       message.error('Failed to fetch master data');
     }
@@ -302,6 +316,7 @@ const PropertiesPage: React.FC = () => {
         values.starting_price?.toString() || ''
       );
       formData.append('property_type_id', values.property_type_id || '');
+      formData.append('developer_id', values.developer_id || '');
       formData.append('payment_plan', values.payment_plan || '');
       formData.append('handover', values.handover || '');
       formData.append(
@@ -317,9 +332,41 @@ const PropertiesPage: React.FC = () => {
       }
 
       // Check if there's a new brochure file
-      const brochureFile = form.getFieldValue('brochure_file');
-      if (brochureFile) {
+      const brochureFileValue = form.getFieldValue('brochure_file');
+      console.log('Brochure file from form:', brochureFileValue);
+
+      // Extract the actual File object from Ant Design Upload structure
+      let brochureFile = null;
+      if (brochureFileValue) {
+        // If it's an object with 'file' property (Ant Design structure)
+        if (brochureFileValue.file) {
+          brochureFile = brochureFileValue.file;
+        }
+        // If it's already a File object
+        else if (brochureFileValue instanceof File) {
+          brochureFile = brochureFileValue;
+        }
+      }
+
+      console.log('Extracted brochure file:', brochureFile);
+      console.log(
+        'Brochure file instanceof File:',
+        brochureFile instanceof File
+      );
+
+      if (
+        brochureFile &&
+        brochureFile instanceof File &&
+        brochureFile.size > 0
+      ) {
         formData.append('brochure_file', brochureFile);
+        console.log(
+          'Brochure file appended to formData:',
+          brochureFile.name,
+          brochureFile.size
+        );
+      } else {
+        console.log('No valid brochure file selected');
       }
 
       if (editingProperty) {
@@ -340,6 +387,7 @@ const PropertiesPage: React.FC = () => {
 
       setModalVisible(false);
       form.resetFields();
+      setBrochureFileName('');
       fetchProperties(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save property');
@@ -349,6 +397,7 @@ const PropertiesPage: React.FC = () => {
   const handleModalCancel = () => {
     setModalVisible(false);
     form.resetFields();
+    setBrochureFileName('');
   };
 
   const handlePageChange = (page: number, pageSize?: number) => {
@@ -928,7 +977,7 @@ const PropertiesPage: React.FC = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 name='starting_price'
                 label='Starting Price'
@@ -945,7 +994,7 @@ const PropertiesPage: React.FC = () => {
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 name='property_type_id'
                 label='Property Type'
@@ -971,6 +1020,45 @@ const PropertiesPage: React.FC = () => {
                           />
                         )}
                         {type.name}
+                      </Space>
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name='developer_id'
+                label='Developer'
+                className='custom-form-item-label'
+              >
+                <Select
+                  placeholder='Select developer'
+                  className='custom-form-input'
+                  showSearch
+                  optionFilterProp='children'
+                  filterOption={(input, option) =>
+                    String(option?.children)
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                >
+                  {developers.map(developer => (
+                    <Option key={developer.id} value={developer.id}>
+                      <Space>
+                        {developer.image_url && (
+                          <img
+                            src={developer.image_url}
+                            alt={developer.name}
+                            style={{
+                              width: 20,
+                              height: 20,
+                              objectFit: 'cover',
+                              borderRadius: 2,
+                            }}
+                          />
+                        )}
+                        {developer.name}
                       </Space>
                     </Option>
                   ))}
@@ -1059,7 +1147,11 @@ const PropertiesPage: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name='brochure_url' label='Brochure'>
+          <Form.Item
+            name='brochure_url'
+            label='Brochure'
+            style={{ display: 'none' }}
+          >
             <Input type='hidden' />
           </Form.Item>
 
@@ -1085,13 +1177,33 @@ const PropertiesPage: React.FC = () => {
                   return false;
                 }
                 form.setFieldsValue({ brochure_file: file });
+                setBrochureFileName(file.name);
+                message.success(`File "${file.name}" selected successfully!`);
                 return false;
               }}
-              showUploadList={false}
+              onRemove={() => {
+                form.setFieldsValue({ brochure_file: null });
+                setBrochureFileName('');
+                return true;
+              }}
+              fileList={
+                brochureFileName
+                  ? [
+                      {
+                        uid: '-1',
+                        name: brochureFileName,
+                        status: 'done',
+                        url: '',
+                      },
+                    ]
+                  : []
+              }
               accept='.pdf,.doc,.docx'
             >
               <Button icon={<UploadOutlined />} className='custom-upload-btn'>
-                Upload Brochure (PDF/Word)
+                {brochureFileName
+                  ? 'Change Brochure'
+                  : 'Upload Brochure (PDF/Word)'}
               </Button>
             </Upload>
           </Form.Item>

@@ -52,6 +52,12 @@ export async function GET(request: NextRequest) {
           name,
           image_url
         ),
+        developers (
+          id,
+          name,
+          description,
+          image_url
+        ),
         property_amenities (
           amenity_id,
           amenities (
@@ -117,6 +123,7 @@ export async function POST(request: NextRequest) {
       const area_id = formData.get('area_id') as string;
       const starting_price = formData.get('starting_price') as string;
       const property_type_id = formData.get('property_type_id') as string;
+      const developer_id = formData.get('developer_id') as string;
       const payment_plan = formData.get('payment_plan') as string;
       const handover = formData.get('handover') as string;
       const expected_appreciation = formData.get(
@@ -124,6 +131,11 @@ export async function POST(request: NextRequest) {
       ) as string;
       const amenities = formData.get('amenities') as string; // JSON string
       const brochureFile = formData.get('brochure_file') as File;
+
+      console.log('Brochure file from formData:', brochureFile);
+      console.log('Brochure file type:', typeof brochureFile);
+      console.log('Brochure file size:', brochureFile?.size);
+      console.log('Brochure file name:', brochureFile?.name);
 
       if (!project_name) {
         return NextResponse.json(
@@ -200,6 +212,7 @@ export async function POST(request: NextRequest) {
             property_type_id: property_type_id
               ? parseInt(property_type_id)
               : null,
+            developer_id: developer_id || null,
             payment_plan: payment_plan || null,
             handover: handover || null,
             expected_appreciation: expected_appreciation || null,
@@ -392,6 +405,7 @@ export async function PUT(request: NextRequest) {
       const area_id = formData.get('area_id') as string;
       const starting_price = formData.get('starting_price') as string;
       const property_type_id = formData.get('property_type_id') as string;
+      const developer_id = formData.get('developer_id') as string;
       const payment_plan = formData.get('payment_plan') as string;
       const handover = formData.get('handover') as string;
       const expected_appreciation = formData.get(
@@ -499,6 +513,7 @@ export async function PUT(request: NextRequest) {
           area_id: area_id || null,
           starting_price: starting_price ? parseFloat(starting_price) : null,
           property_type_id: property_type_id || null,
+          developer_id: developer_id || null,
           payment_plan: payment_plan || null,
           handover: handover || null,
           expected_appreciation: expected_appreciation || null,
