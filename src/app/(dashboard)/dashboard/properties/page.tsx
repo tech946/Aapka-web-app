@@ -107,6 +107,7 @@ interface Property {
   handover?: string;
   expected_appreciation?: string;
   brochure_url?: string;
+  property_images?: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -150,6 +151,9 @@ const PropertiesPage: React.FC = () => {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [brochureFileName, setBrochureFileName] = useState<string>('');
+  const [propertyImages, setPropertyImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
   // Custom dropdown states
   const [propertyTypeDropdownOpen, setPropertyTypeDropdownOpen] =
@@ -262,6 +266,9 @@ const PropertiesPage: React.FC = () => {
   const handleAdd = () => {
     setEditingProperty(null);
     form.resetFields();
+    setPropertyImages([]);
+    setExistingImages([]);
+    setImagesToDelete([]);
     setModalVisible(true);
   };
 
@@ -276,12 +283,16 @@ const PropertiesPage: React.FC = () => {
       area_id: property.area_id,
       starting_price: property.starting_price,
       property_type_id: property.property_type_id,
+      developer_id: property.developer_id,
       payment_plan: property.payment_plan,
       handover: property.handover,
       expected_appreciation: property.expected_appreciation,
       brochure_url: property.brochure_url,
       amenities: property.property_amenities?.map(pa => pa.amenity_id) || [],
     });
+    setPropertyImages([]);
+    setExistingImages(property.property_images || []);
+    setImagesToDelete([]);
     setModalVisible(true);
   };
 
@@ -329,6 +340,10 @@ const PropertiesPage: React.FC = () => {
       if (editingProperty) {
         formData.append('id', editingProperty.id);
         formData.append('existing_brochure_url', values.brochure_url || '');
+        // Send existing images that weren't deleted
+        formData.append('existing_images', JSON.stringify(existingImages));
+        // Send images marked for deletion
+        formData.append('images_to_delete', JSON.stringify(imagesToDelete));
       }
 
       // Check if there's a new brochure file
@@ -369,6 +384,11 @@ const PropertiesPage: React.FC = () => {
         console.log('No valid brochure file selected');
       }
 
+      // Append property images (new images to upload)
+      propertyImages.forEach((file, index) => {
+        formData.append('property_images', file);
+      });
+
       if (editingProperty) {
         await axios.put('/api/properties', formData, {
           headers: {
@@ -388,6 +408,9 @@ const PropertiesPage: React.FC = () => {
       setModalVisible(false);
       form.resetFields();
       setBrochureFileName('');
+      setPropertyImages([]);
+      setExistingImages([]);
+      setImagesToDelete([]);
       fetchProperties(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save property');
@@ -398,6 +421,9 @@ const PropertiesPage: React.FC = () => {
     setModalVisible(false);
     form.resetFields();
     setBrochureFileName('');
+    setPropertyImages([]);
+    setExistingImages([]);
+    setImagesToDelete([]);
   };
 
   const handlePageChange = (page: number, pageSize?: number) => {
@@ -421,6 +447,40 @@ const PropertiesPage: React.FC = () => {
     setSelectedDateRange(range);
     setDateDropdownOpen(false);
     // Add filtering logic here
+  };
+
+  // Image handling functions
+  const handleImageSelect = (file: File) => {
+    const totalImages = existingImages.length + propertyImages.length;
+    if (totalImages >= 5) {
+      message.error('Maximum 5 images allowed per property');
+      return false;
+    }
+
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('You can only upload image files!');
+      return false;
+    }
+
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('Image must be smaller than 5MB!');
+      return false;
+    }
+
+    setPropertyImages(prev => [...prev, file]);
+    message.success(`Image "${file.name}" selected successfully!`);
+    return false;
+  };
+
+  const handleRemoveNewImage = (file: File) => {
+    setPropertyImages(prev => prev.filter(img => img !== file));
+  };
+
+  const handleRemoveExistingImage = (imageUrl: string) => {
+    setExistingImages(prev => prev.filter(img => img !== imageUrl));
+    setImagesToDelete(prev => [...prev, imageUrl]);
   };
 
   const columns = [
@@ -1204,6 +1264,142 @@ const PropertiesPage: React.FC = () => {
                 {brochureFileName
                   ? 'Change Brochure'
                   : 'Upload Brochure (PDF/Word)'}
+              </Button>
+            </Upload>
+          </Form.Item>
+
+          <Divider />
+
+          <Form.Item
+            label='Property Images'
+            className='custom-form-item-label'
+            extra={`You can upload up to 5 images. ${existingImages.length + propertyImages.length}/5 images selected.`}
+          >
+            <div style={{ marginBottom: '16px' }}>
+              {/* Existing Images */}
+              {existingImages.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    Existing Images:
+                  </div>
+                  <div
+                    style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}
+                  >
+                    {existingImages.map((imageUrl, index) => (
+                      <div
+                        key={`existing-${index}`}
+                        style={{
+                          position: 'relative',
+                          width: '120px',
+                          height: '120px',
+                          border: '1px solid #d9d9d9',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Property ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                        <Button
+                          type='primary'
+                          danger
+                          size='small'
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleRemoveExistingImage(imageUrl)}
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New Images */}
+              {propertyImages.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    New Images to Upload:
+                  </div>
+                  <div
+                    style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}
+                  >
+                    {propertyImages.map((file, index) => (
+                      <div
+                        key={`new-${index}`}
+                        style={{
+                          position: 'relative',
+                          width: '120px',
+                          height: '120px',
+                          border: '1px solid #d9d9d9',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`New ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                        <Button
+                          type='primary'
+                          danger
+                          size='small'
+                          icon={<CloseOutlined />}
+                          onClick={() => handleRemoveNewImage(file)}
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Upload
+              beforeUpload={handleImageSelect}
+              showUploadList={false}
+              accept='image/*'
+              multiple
+              disabled={existingImages.length + propertyImages.length >= 5}
+            >
+              <Button
+                icon={<UploadOutlined />}
+                className='custom-upload-btn'
+                disabled={existingImages.length + propertyImages.length >= 5}
+              >
+                {existingImages.length + propertyImages.length >= 5
+                  ? 'Maximum Images Reached'
+                  : 'Select Images'}
               </Button>
             </Upload>
           </Form.Item>

@@ -131,8 +131,10 @@ export async function POST(request: NextRequest) {
       ) as string;
       const amenities = formData.get('amenities') as string; // JSON string
       const brochureFile = formData.get('brochure_file') as File;
+      const propertyImagesFiles = formData.getAll('property_images') as File[];
 
       console.log('Brochure file from formData:', brochureFile);
+      console.log('Property images files:', propertyImagesFiles.length);
       console.log('Brochure file type:', typeof brochureFile);
       console.log('Brochure file size:', brochureFile?.size);
       console.log('Brochure file name:', brochureFile?.name);
@@ -197,6 +199,40 @@ export async function POST(request: NextRequest) {
         brochureUrl = publicUrl;
       }
 
+      // Upload property images if provided (max 5)
+      const propertyImageUrls: string[] = [];
+      if (propertyImagesFiles && propertyImagesFiles.length > 0) {
+        const imagesToUpload = propertyImagesFiles.slice(0, 5); // Limit to 5 images
+
+        for (const imageFile of imagesToUpload) {
+          if (imageFile && imageFile.size > 0) {
+            // Validate file is an image
+            if (!imageFile.type.startsWith('image/')) {
+              continue;
+            }
+
+            const fileExt = imageFile.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `properties/${fileName}`;
+
+            const { error: uploadError } = await supabaseAdmin.storage
+              .from('properties')
+              .upload(filePath, imageFile);
+
+            if (uploadError) {
+              console.error('Failed to upload property image:', uploadError);
+              continue; // Skip this image but continue with others
+            }
+
+            const {
+              data: { publicUrl },
+            } = supabaseAdmin.storage.from('properties').getPublicUrl(filePath);
+
+            propertyImageUrls.push(publicUrl);
+          }
+        }
+      }
+
       // Create property
       const { data: property, error: propertyError } = await supabaseAdmin
         .from('properties')
@@ -217,6 +253,7 @@ export async function POST(request: NextRequest) {
             handover: handover || null,
             expected_appreciation: expected_appreciation || null,
             brochure_url: brochureUrl,
+            property_images: propertyImageUrls,
             is_active: true,
           },
         ])
@@ -416,6 +453,9 @@ export async function PUT(request: NextRequest) {
       const existingBrochureUrl = formData.get(
         'existing_brochure_url'
       ) as string;
+      const propertyImagesFiles = formData.getAll('property_images') as File[];
+      const existingImagesStr = formData.get('existing_images') as string;
+      const imagesToDeleteStr = formData.get('images_to_delete') as string;
 
       if (!id || !project_name) {
         return NextResponse.json(
@@ -501,6 +541,80 @@ export async function PUT(request: NextRequest) {
         brochureUrl = publicUrl;
       }
 
+      // Handle property images
+      let finalPropertyImages: string[] = [];
+
+      // Parse existing images (images that weren't deleted)
+      try {
+        if (existingImagesStr) {
+          const existingImages = JSON.parse(existingImagesStr);
+          if (Array.isArray(existingImages)) {
+            finalPropertyImages = existingImages;
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing existing images:', e);
+      }
+
+      // Delete images marked for deletion
+      try {
+        if (imagesToDeleteStr) {
+          const imagesToDelete = JSON.parse(imagesToDeleteStr);
+          if (Array.isArray(imagesToDelete) && imagesToDelete.length > 0) {
+            for (const imageUrl of imagesToDelete) {
+              try {
+                // Extract file path from URL
+                const urlParts = imageUrl.split('/properties/');
+                if (urlParts.length > 1) {
+                  const filePath = `properties/${urlParts[1]}`;
+                  await supabaseAdmin.storage
+                    .from('properties')
+                    .remove([filePath]);
+                }
+              } catch (deleteError) {
+                console.error('Error deleting image:', deleteError);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing images to delete:', e);
+      }
+
+      // Upload new property images if provided
+      if (propertyImagesFiles && propertyImagesFiles.length > 0) {
+        const remainingSlots = 5 - finalPropertyImages.length;
+        const imagesToUpload = propertyImagesFiles.slice(0, remainingSlots);
+
+        for (const imageFile of imagesToUpload) {
+          if (imageFile && imageFile.size > 0) {
+            // Validate file is an image
+            if (!imageFile.type.startsWith('image/')) {
+              continue;
+            }
+
+            const fileExt = imageFile.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `properties/${fileName}`;
+
+            const { error: uploadError } = await supabaseAdmin.storage
+              .from('properties')
+              .upload(filePath, imageFile);
+
+            if (uploadError) {
+              console.error('Failed to upload property image:', uploadError);
+              continue;
+            }
+
+            const {
+              data: { publicUrl },
+            } = supabaseAdmin.storage.from('properties').getPublicUrl(filePath);
+
+            finalPropertyImages.push(publicUrl);
+          }
+        }
+      }
+
       // Update property
       const { data: property, error: propertyError } = await supabaseAdmin
         .from('properties')
@@ -518,6 +632,7 @@ export async function PUT(request: NextRequest) {
           handover: handover || null,
           expected_appreciation: expected_appreciation || null,
           brochure_url: brochureUrl,
+          property_images: finalPropertyImages,
         })
         .eq('id', id)
         .select()
@@ -711,10 +826,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    // Get property to check for brochure
+    // Get property to check for brochure and images
     const { data: property, error: fetchError } = await supabaseAdmin
       .from('properties')
-      .select('brochure_url')
+      .select('brochure_url, property_images')
       .eq('id', id)
       .single();
 
@@ -729,6 +844,21 @@ export async function DELETE(request: NextRequest) {
         await supabaseAdmin.storage
           .from('property-brochures')
           .remove([`property-brochures/${brochurePath}`]);
+      }
+    }
+
+    // Delete property images if exist
+    if (property.property_images && Array.isArray(property.property_images)) {
+      for (const imageUrl of property.property_images) {
+        try {
+          const urlParts = imageUrl.split('/properties/');
+          if (urlParts.length > 1) {
+            const filePath = `properties/${urlParts[1]}`;
+            await supabaseAdmin.storage.from('properties').remove([filePath]);
+          }
+        } catch (deleteError) {
+          console.error('Error deleting property image:', deleteError);
+        }
       }
     }
 
