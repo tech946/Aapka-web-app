@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
     const videoFile = formData.get('video_file') as File;
     const storyImageFiles = formData.getAll('story_images') as File[];
     const existingVideoUrl = formData.get('existing_video_url') as string;
+    const deleteVideo = formData.get('delete_video') as string;
     const existingStoryImagesStr = formData.get(
       'existing_story_images'
     ) as string;
@@ -153,8 +154,21 @@ export async function POST(request: NextRequest) {
       'story_images_to_delete'
     ) as string;
 
+    // Handle video deletion if requested
+    if (deleteVideo === 'true' && existingVideoUrl) {
+      try {
+        const urlParts = existingVideoUrl.split('/videos/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1];
+          await supabaseAdmin.storage.from('videos').remove([filePath]);
+        }
+      } catch (deleteError) {
+        console.error('Error deleting video:', deleteError);
+      }
+    }
+
     // Handle video upload if provided
-    let videoUrl = existingVideoUrl || null;
+    let videoUrl = deleteVideo === 'true' ? null : existingVideoUrl || null;
 
     if (videoFile && videoFile.size > 0) {
       // Validate video file
@@ -186,7 +200,7 @@ export async function POST(request: NextRequest) {
         try {
           const urlParts = existingVideoUrl.split('/videos/');
           if (urlParts.length > 1) {
-            const filePath = `videos/${urlParts[1]}`;
+            const filePath = urlParts[1];
             await supabaseAdmin.storage.from('videos').remove([filePath]);
           }
         } catch (deleteError) {

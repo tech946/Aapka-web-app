@@ -81,6 +81,8 @@ const MobileHomePage: React.FC = () => {
   // File states
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFileName, setVideoFileName] = useState<string>('');
+  const [deleteExistingVideo, setDeleteExistingVideo] =
+    useState<boolean>(false);
   const [storyImages, setStoryImages] = useState<File[]>([]);
   const [existingStoryImages, setExistingStoryImages] = useState<string[]>([]);
   const [storyImagesToDelete, setStoryImagesToDelete] = useState<string[]>([]);
@@ -144,6 +146,10 @@ const MobileHomePage: React.FC = () => {
       // Set existing media
       if (data.featured_video_url) {
         setVideoFileName('Current Video');
+        setDeleteExistingVideo(false); // Reset deletion flag when loading data
+      } else {
+        setVideoFileName('');
+        setDeleteExistingVideo(false);
       }
 
       setExistingStoryImages(data.story_images || []);
@@ -175,6 +181,7 @@ const MobileHomePage: React.FC = () => {
 
     setVideoFile(file);
     setVideoFileName(file.name);
+    setDeleteExistingVideo(false); // Reset deletion flag when new video selected
     message.success(`Video "${file.name}" selected successfully!`);
     return false;
   };
@@ -182,7 +189,7 @@ const MobileHomePage: React.FC = () => {
   const handleRemoveVideo = () => {
     setVideoFile(null);
     setVideoFileName('');
-    // Note: We don't delete from server until save
+    setDeleteExistingVideo(true); // Mark for deletion
   };
 
   const handleStoryImageSelect = (file: File) => {
@@ -270,8 +277,14 @@ const MobileHomePage: React.FC = () => {
       // Add video file if new one selected
       if (videoFile) {
         formData.append('video_file', videoFile);
-      } else if (homeData?.featured_video_url) {
+      } else if (homeData?.featured_video_url && !deleteExistingVideo) {
+        // Only keep existing video if not marked for deletion
         formData.append('existing_video_url', homeData.featured_video_url);
+      }
+
+      // Send deletion flag if video was removed
+      if (deleteExistingVideo) {
+        formData.append('delete_video', 'true');
       }
 
       // Add story images
@@ -298,6 +311,7 @@ const MobileHomePage: React.FC = () => {
 
       // Reset file states
       setVideoFile(null);
+      setDeleteExistingVideo(false); // Reset deletion flag after save
       setStoryImages([]);
       setStoryImagesToDelete([]);
 
@@ -356,16 +370,47 @@ const MobileHomePage: React.FC = () => {
               formats: MP4, MOV, AVI, WebM)
             </Text>
 
-            {homeData?.featured_video_url && !videoFile && (
+            {/* Show existing video preview */}
+            {homeData?.featured_video_url &&
+              !videoFile &&
+              !deleteExistingVideo && (
+                <div style={{ marginBottom: 16 }}>
+                  <Text
+                    type='secondary'
+                    style={{ display: 'block', marginBottom: 8 }}
+                  >
+                    Current Video Preview:
+                  </Text>
+                  <video
+                    src={homeData.featured_video_url}
+                    controls
+                    style={{
+                      width: '100%',
+                      maxWidth: '600px',
+                      borderRadius: '8px',
+                      border: '1px solid #d9d9d9',
+                    }}
+                  />
+                </div>
+              )}
+
+            {/* Show new video preview if selected */}
+            {videoFile && (
               <div style={{ marginBottom: 16 }}>
+                <Text
+                  type='success'
+                  style={{ display: 'block', marginBottom: 8 }}
+                >
+                  New Video Preview: {videoFile.name}
+                </Text>
                 <video
-                  src={homeData.featured_video_url}
+                  src={URL.createObjectURL(videoFile)}
                   controls
                   style={{
                     width: '100%',
                     maxWidth: '600px',
                     borderRadius: '8px',
-                    border: '1px solid #d9d9d9',
+                    border: '1px solid #52c41a',
                   }}
                 />
               </div>
@@ -377,11 +422,13 @@ const MobileHomePage: React.FC = () => {
               accept='video/mp4,video/quicktime,video/x-msvideo,video/webm'
             >
               <Button icon={<UploadOutlined />} size='large'>
-                {videoFileName ? 'Change Video' : 'Upload Video'}
+                {videoFileName && !deleteExistingVideo
+                  ? 'Change Video'
+                  : 'Upload Video'}
               </Button>
             </Upload>
 
-            {videoFileName && (
+            {videoFileName && !deleteExistingVideo && (
               <div style={{ marginTop: 12 }}>
                 <Tag
                   color='blue'

@@ -107,6 +107,7 @@ interface Property {
   handover?: string;
   expected_appreciation?: string;
   brochure_url?: string;
+  thumbnail_image?: string;
   property_images?: string[];
   is_active: boolean;
   created_at: string;
@@ -151,6 +152,8 @@ const PropertiesPage: React.FC = () => {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [brochureFileName, setBrochureFileName] = useState<string>('');
+  const [thumbnailImage, setThumbnailImage] = useState<File | null>(null);
+  const [existingThumbnail, setExistingThumbnail] = useState<string>('');
   const [propertyImages, setPropertyImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
@@ -266,6 +269,8 @@ const PropertiesPage: React.FC = () => {
   const handleAdd = () => {
     setEditingProperty(null);
     form.resetFields();
+    setThumbnailImage(null);
+    setExistingThumbnail('');
     setPropertyImages([]);
     setExistingImages([]);
     setImagesToDelete([]);
@@ -290,6 +295,8 @@ const PropertiesPage: React.FC = () => {
       brochure_url: property.brochure_url,
       amenities: property.property_amenities?.map(pa => pa.amenity_id) || [],
     });
+    setThumbnailImage(null);
+    setExistingThumbnail(property.thumbnail_image || '');
     setPropertyImages([]);
     setExistingImages(property.property_images || []);
     setImagesToDelete([]);
@@ -314,6 +321,13 @@ const PropertiesPage: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
+
+      // Validate thumbnail is present (required field)
+      if (!thumbnailImage && !existingThumbnail) {
+        message.error('Thumbnail image is required!');
+        return;
+      }
+
       const formData = new FormData();
 
       formData.append('project_name', values.project_name);
@@ -337,9 +351,17 @@ const PropertiesPage: React.FC = () => {
       formData.append('amenities', JSON.stringify(values.amenities || []));
       formData.append('brochure_url', values.brochure_url || '');
 
+      // Handle thumbnail image
+      if (thumbnailImage) {
+        formData.append('thumbnail_image', thumbnailImage);
+      } else if (existingThumbnail) {
+        formData.append('existing_thumbnail', existingThumbnail);
+      }
+
       if (editingProperty) {
         formData.append('id', editingProperty.id);
         formData.append('existing_brochure_url', values.brochure_url || '');
+        formData.append('existing_thumbnail', existingThumbnail || '');
         // Send existing images that weren't deleted
         formData.append('existing_images', JSON.stringify(existingImages));
         // Send images marked for deletion
@@ -481,6 +503,61 @@ const PropertiesPage: React.FC = () => {
   const handleRemoveExistingImage = (imageUrl: string) => {
     setExistingImages(prev => prev.filter(img => img !== imageUrl));
     setImagesToDelete(prev => [...prev, imageUrl]);
+  };
+
+  // Thumbnail handling functions
+  const validateThumbnailDimensions = (file: File): Promise<boolean> => {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width > 800 || img.height > 800) {
+            message.error(
+              'Thumbnail dimensions must not exceed 800x800 pixels!'
+            );
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        };
+        img.onerror = () => {
+          message.error('Failed to load image for validation');
+          resolve(false);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleThumbnailSelect = async (file: File) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('You can only upload image files!');
+      return false;
+    }
+
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('Thumbnail must be smaller than 5MB!');
+      return false;
+    }
+
+    const isValidDimensions = await validateThumbnailDimensions(file);
+    if (!isValidDimensions) {
+      return false;
+    }
+
+    setThumbnailImage(file);
+    setExistingThumbnail(''); // Clear existing thumbnail when selecting new one
+    message.success(`Thumbnail "${file.name}" selected successfully!`);
+    return false;
+  };
+
+  const handleRemoveThumbnail = () => {
+    setThumbnailImage(null);
+    setExistingThumbnail('');
   };
 
   const columns = [
@@ -1269,6 +1346,158 @@ const PropertiesPage: React.FC = () => {
           </Form.Item>
 
           <Divider />
+
+          <Form.Item
+            label='Thumbnail Image'
+            className='custom-form-item-label'
+            required
+            extra='Required. Max dimensions: 800x800 pixels'
+          >
+            <div style={{ marginBottom: '16px' }}>
+              {/* Existing Thumbnail */}
+              {existingThumbnail && !thumbnailImage && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    Current Thumbnail:
+                  </div>
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '150px',
+                      height: '150px',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <img
+                      src={existingThumbnail}
+                      alt='Thumbnail'
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <Button
+                      type='text'
+                      danger
+                      icon={<CloseOutlined />}
+                      size='small'
+                      onClick={handleRemoveThumbnail}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* New Thumbnail Preview */}
+              {thumbnailImage && (
+                <div style={{ marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    New Thumbnail:
+                  </div>
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '150px',
+                      height: '150px',
+                      border: '1px solid #52c41a',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <img
+                      src={URL.createObjectURL(thumbnailImage)}
+                      alt='New Thumbnail'
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <Button
+                      type='text'
+                      danger
+                      icon={<CloseOutlined />}
+                      size='small'
+                      onClick={handleRemoveThumbnail}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '4px',
+                        left: '4px',
+                        right: '4px',
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        color: 'white',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        borderRadius: '2px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {thumbnailImage.name}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Button */}
+              {!thumbnailImage && !existingThumbnail && (
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#ff4d4f',
+                    marginBottom: '8px',
+                  }}
+                >
+                  * Thumbnail is required
+                </div>
+              )}
+              <Upload
+                beforeUpload={handleThumbnailSelect}
+                showUploadList={false}
+                accept='image/*'
+                disabled={!!thumbnailImage}
+              >
+                <Button
+                  icon={<UploadOutlined />}
+                  className='custom-upload-btn'
+                  disabled={!!thumbnailImage}
+                >
+                  {thumbnailImage || existingThumbnail
+                    ? 'Thumbnail Selected'
+                    : 'Select Thumbnail'}
+                </Button>
+              </Upload>
+            </div>
+          </Form.Item>
 
           <Form.Item
             label='Property Images'

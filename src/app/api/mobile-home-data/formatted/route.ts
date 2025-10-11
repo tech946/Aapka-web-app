@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * GET - Get mobile home data formatted for mobile app consumption (AUTHENTICATED USERS)
@@ -9,19 +8,37 @@ import { cookies } from 'next/headers';
  * organized exactly as needed for the mobile app
  *
  * This endpoint requires authentication but allows any role (user or admin)
- * Mobile apps need to authenticate users to access this content
+ * Mobile apps authenticate using Bearer token in Authorization header
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication (any role allowed)
-    const supabase = createRouteHandlerClient({ cookies });
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    // Extract Authorization header (for mobile apps)
+    const authHeader = request.headers.get('authorization');
 
-    if (!session) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login to access this content.' },
+        { error: 'Unauthorized. Please provide a valid access token.' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    // Create Supabase client to verify the token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // Verify the token and get the user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Invalid or expired access token. Please login again.' },
         { status: 401 }
       );
     }
@@ -30,7 +47,7 @@ export async function GET(request: NextRequest) {
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !profile) {
@@ -145,18 +162,28 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch full developer details for selected developers
+    // Handle selected_developers - check if they're already full objects or just IDs
     const selectedDevelopers = homeData.selected_developers || [];
     let developersArray: any[] = [];
 
     if (selectedDevelopers.length > 0) {
-      const { data: developers, error: devsError } = await supabaseAdmin
-        .from('developers')
-        .select('*')
-        .in('id', selectedDevelopers);
+      // Check if first item is an object (full developer data) or a string (just ID)
+      if (
+        typeof selectedDevelopers[0] === 'object' &&
+        selectedDevelopers[0] !== null
+      ) {
+        // Already have full developer objects, use them as is
+        developersArray = selectedDevelopers;
+      } else {
+        // Have IDs only, fetch full developer details (backward compatibility)
+        const { data: developers, error: devsError } = await supabaseAdmin
+          .from('developers')
+          .select('*')
+          .in('id', selectedDevelopers);
 
-      if (!devsError && developers) {
-        developersArray = developers;
+        if (!devsError && developers) {
+          developersArray = developers;
+        }
       }
     }
 

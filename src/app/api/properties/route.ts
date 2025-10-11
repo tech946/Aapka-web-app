@@ -131,9 +131,11 @@ export async function POST(request: NextRequest) {
       ) as string;
       const amenities = formData.get('amenities') as string; // JSON string
       const brochureFile = formData.get('brochure_file') as File;
+      const thumbnailFile = formData.get('thumbnail_image') as File;
       const propertyImagesFiles = formData.getAll('property_images') as File[];
 
       console.log('Brochure file from formData:', brochureFile);
+      console.log('Thumbnail file from formData:', thumbnailFile);
       console.log('Property images files:', propertyImagesFiles.length);
       console.log('Brochure file type:', typeof brochureFile);
       console.log('Brochure file size:', brochureFile?.size);
@@ -142,6 +144,14 @@ export async function POST(request: NextRequest) {
       if (!project_name) {
         return NextResponse.json(
           { error: 'Project name is required' },
+          { status: 400 }
+        );
+      }
+
+      // Validate thumbnail is required
+      if (!thumbnailFile || thumbnailFile.size === 0) {
+        return NextResponse.json(
+          { error: 'Thumbnail image is required' },
           { status: 400 }
         );
       }
@@ -199,6 +209,46 @@ export async function POST(request: NextRequest) {
         brochureUrl = publicUrl;
       }
 
+      // Upload thumbnail image (required)
+      let thumbnailUrl = null;
+      if (thumbnailFile && thumbnailFile.size > 0) {
+        // Validate thumbnail is an image
+        if (!thumbnailFile.type.startsWith('image/')) {
+          return NextResponse.json(
+            { error: 'Thumbnail must be an image file' },
+            { status: 400 }
+          );
+        }
+
+        if (thumbnailFile.size > 5 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: 'Thumbnail size must be smaller than 5MB' },
+            { status: 400 }
+          );
+        }
+
+        const fileExt = thumbnailFile.name.split('.').pop();
+        const fileName = `thumbnail-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `properties/${fileName}`;
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('properties')
+          .upload(filePath, thumbnailFile);
+
+        if (uploadError) {
+          return NextResponse.json(
+            { error: `Failed to upload thumbnail: ${uploadError.message}` },
+            { status: 500 }
+          );
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabaseAdmin.storage.from('properties').getPublicUrl(filePath);
+
+        thumbnailUrl = publicUrl;
+      }
+
       // Upload property images if provided (max 5)
       const propertyImageUrls: string[] = [];
       if (propertyImagesFiles && propertyImagesFiles.length > 0) {
@@ -253,6 +303,7 @@ export async function POST(request: NextRequest) {
             handover: handover || null,
             expected_appreciation: expected_appreciation || null,
             brochure_url: brochureUrl,
+            thumbnail_image: thumbnailUrl,
             property_images: propertyImageUrls,
             is_active: true,
           },
@@ -453,6 +504,8 @@ export async function PUT(request: NextRequest) {
       const existingBrochureUrl = formData.get(
         'existing_brochure_url'
       ) as string;
+      const thumbnailFile = formData.get('thumbnail_image') as File;
+      const existingThumbnail = formData.get('existing_thumbnail') as string;
       const propertyImagesFiles = formData.getAll('property_images') as File[];
       const existingImagesStr = formData.get('existing_images') as string;
       const imagesToDeleteStr = formData.get('images_to_delete') as string;
@@ -464,10 +517,10 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      // Get existing property to check current brochure
+      // Get existing property to check current brochure and thumbnail
       const { data: existingProperty, error: fetchError } = await supabaseAdmin
         .from('properties')
-        .select('id, brochure_url')
+        .select('id, brochure_url, thumbnail_image')
         .eq('id', id)
         .single();
 
@@ -539,6 +592,71 @@ export async function PUT(request: NextRequest) {
           .getPublicUrl(filePath);
 
         brochureUrl = publicUrl;
+      }
+
+      // Handle thumbnail image
+      let thumbnailUrl = existingThumbnail || existingProperty.thumbnail_image;
+
+      // If new thumbnail provided, upload it
+      if (thumbnailFile && thumbnailFile.size > 0) {
+        // Validate thumbnail is an image
+        if (!thumbnailFile.type.startsWith('image/')) {
+          return NextResponse.json(
+            { error: 'Thumbnail must be an image file' },
+            { status: 400 }
+          );
+        }
+
+        if (thumbnailFile.size > 5 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: 'Thumbnail size must be smaller than 5MB' },
+            { status: 400 }
+          );
+        }
+
+        // Delete old thumbnail if exists
+        if (existingProperty.thumbnail_image) {
+          try {
+            const urlParts =
+              existingProperty.thumbnail_image.split('/properties/');
+            if (urlParts.length > 1) {
+              const filePath = `properties/${urlParts[1]}`;
+              await supabaseAdmin.storage.from('properties').remove([filePath]);
+            }
+          } catch (deleteError) {
+            console.error('Error deleting old thumbnail:', deleteError);
+          }
+        }
+
+        // Upload new thumbnail
+        const fileExt = thumbnailFile.name.split('.').pop();
+        const fileName = `thumbnail-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `properties/${fileName}`;
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('properties')
+          .upload(filePath, thumbnailFile);
+
+        if (uploadError) {
+          return NextResponse.json(
+            { error: `Failed to upload thumbnail: ${uploadError.message}` },
+            { status: 500 }
+          );
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabaseAdmin.storage.from('properties').getPublicUrl(filePath);
+
+        thumbnailUrl = publicUrl;
+      }
+
+      // Validate thumbnail is present (required field)
+      if (!thumbnailUrl) {
+        return NextResponse.json(
+          { error: 'Thumbnail image is required' },
+          { status: 400 }
+        );
       }
 
       // Handle property images
@@ -632,6 +750,7 @@ export async function PUT(request: NextRequest) {
           handover: handover || null,
           expected_appreciation: expected_appreciation || null,
           brochure_url: brochureUrl,
+          thumbnail_image: thumbnailUrl,
           property_images: finalPropertyImages,
         })
         .eq('id', id)
