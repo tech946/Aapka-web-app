@@ -132,6 +132,29 @@ export function Sidebar() {
           <span>All Users</span>
         </Link>
 
+        <Link
+          href='/dashboard/mobile-home'
+          className={`sidebar_item ${pathname === '/dashboard/mobile-home' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            className='lucide lucide-smartphone w-16 h-16 transition-all text-black-alpha-56 group-hover:text-black-alpha-72'
+            aria-hidden='true'
+          >
+            <rect width='14' height='20' x='5' y='2' rx='2' ry='2'></rect>
+            <path d='M12 18h.01'></path>
+          </svg>
+          <span>Mobile Home</span>
+        </Link>
+
         {/* Master Data Section */}
         <div className='sidebar_section'>
           <span className='sidebar_section_title'>Master Data</span>

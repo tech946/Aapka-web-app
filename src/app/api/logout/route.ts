@@ -9,6 +9,6 @@ export async function POST() {
   await supabase.auth.signOut();
 
   return NextResponse.redirect(
-    new URL('/login', process.env.NEXT_PUBLIC_SITE_URL)
+    new URL('/auth/login', process.env.NEXT_PUBLIC_SITE_URL)
   );
 }
