@@ -83,81 +83,95 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch full property details for selected properties
-    const propertiesByType = homeData.properties_by_type || [];
+    // Handle properties_by_type - support both object and array formats
+    const propertiesByTypeData = homeData.properties_by_type || {};
     const propertiesObject: { [key: string]: any[] } = {};
 
-    for (const typeGroup of propertiesByType) {
-      if (typeGroup.property_ids && typeGroup.property_ids.length > 0) {
-        // Fetch properties for this type
-        const { data: properties, error: propsError } = await supabaseAdmin
-          .from('properties')
-          .select(
-            `
-            id,
-            project_name,
-            starting_price,
-            property_type_id,
-            property_images,
-            brochure_url,
-            payment_plan,
-            handover,
-            expected_appreciation,
-            property_status_id,
-            country_id,
-            state_id,
-            city_id,
-            area_id,
-            developer_id,
-            is_active,
-            created_at,
-            property_types (
+    // Check if already in object format
+    if (!Array.isArray(propertiesByTypeData)) {
+      // Already an object { "Apartment": [...], "Villa": [...] }
+      Object.assign(propertiesObject, propertiesByTypeData);
+    } else {
+      // Old array format, convert to object
+      for (const typeGroup of propertiesByTypeData) {
+        // Check if we have full property objects or just IDs
+        if (typeGroup.properties && Array.isArray(typeGroup.properties)) {
+          // Already have full property objects, use them directly
+          propertiesObject[typeGroup.property_type_name] = typeGroup.properties;
+        } else if (
+          typeGroup.property_ids &&
+          typeGroup.property_ids.length > 0
+        ) {
+          // Have IDs only, fetch full property details (backward compatibility)
+          const { data: properties, error: propsError } = await supabaseAdmin
+            .from('properties')
+            .select(
+              `
               id,
-              name,
-              image_url
-            ),
-            property_status (
-              id,
-              name,
-              color
-            ),
-            countries (
-              id,
-              name
-            ),
-            states (
-              id,
-              name
-            ),
-            cities (
-              id,
-              name
-            ),
-            areas (
-              id,
-              name
-            ),
-            developers (
-              id,
-              name,
-              description,
-              image_url
-            ),
-            property_amenities (
-              amenity_id,
-              amenities (
+              project_name,
+              starting_price,
+              property_type_id,
+              property_images,
+              brochure_url,
+              payment_plan,
+              handover,
+              expected_appreciation,
+              property_status_id,
+              country_id,
+              state_id,
+              city_id,
+              area_id,
+              developer_id,
+              is_active,
+              created_at,
+              property_types (
                 id,
                 name,
                 image_url
+              ),
+              property_status (
+                id,
+                name,
+                color
+              ),
+              countries (
+                id,
+                name
+              ),
+              states (
+                id,
+                name
+              ),
+              cities (
+                id,
+                name
+              ),
+              areas (
+                id,
+                name
+              ),
+              developers (
+                id,
+                name,
+                description,
+                image_url
+              ),
+              property_amenities (
+                amenity_id,
+                amenities (
+                  id,
+                  name,
+                  image_url
+                )
               )
+            `
             )
-          `
-          )
-          .in('id', typeGroup.property_ids)
-          .eq('is_active', true);
+            .in('id', typeGroup.property_ids)
+            .eq('is_active', true);
 
-        if (!propsError && properties) {
-          propertiesObject[typeGroup.property_type_name] = properties;
+          if (!propsError && properties) {
+            propertiesObject[typeGroup.property_type_name] = properties;
+          }
         }
       }
     }

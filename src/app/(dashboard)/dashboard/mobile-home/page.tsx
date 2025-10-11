@@ -93,8 +93,13 @@ const MobileHomePage: React.FC = () => {
   );
 
   useEffect(() => {
-    fetchMasterData();
-    fetchHomeData();
+    const loadData = async () => {
+      const masterData = await fetchMasterData(); // Load master data first
+      if (masterData) {
+        await fetchHomeData(masterData.propertyTypes); // Pass propertyTypes for conversion
+      }
+    };
+    loadData();
   }, []);
 
   const fetchMasterData = async () => {
@@ -106,15 +111,26 @@ const MobileHomePage: React.FC = () => {
           axios.get('/api/developers?limit=1000'),
         ]);
 
-      setPropertyTypes(propertyTypesRes.data.data);
-      setProperties(propertiesRes.data.data);
-      setDevelopers(developersRes.data.data);
+      const propertyTypesData = propertyTypesRes.data.data;
+      const propertiesData = propertiesRes.data.data;
+      const developersData = developersRes.data.data;
+
+      setPropertyTypes(propertyTypesData);
+      setProperties(propertiesData);
+      setDevelopers(developersData);
+
+      return {
+        propertyTypes: propertyTypesData,
+        properties: propertiesData,
+        developers: developersData,
+      };
     } catch (error: any) {
       message.error('Failed to fetch master data');
+      return null;
     }
   };
 
-  const fetchHomeData = async () => {
+  const fetchHomeData = async (propertyTypesData?: any[]) => {
     setLoading(true);
     try {
       const response = await axios.get('/api/mobile-home-data');
@@ -153,7 +169,39 @@ const MobileHomePage: React.FC = () => {
       }
 
       setExistingStoryImages(data.story_images || []);
-      setPropertiesByType(data.properties_by_type || []);
+
+      // Convert properties_by_type from object to array format for frontend
+      let propertiesArray: PropertyByType[] = [];
+      if (data.properties_by_type) {
+        if (Array.isArray(data.properties_by_type)) {
+          // Old array format - use as is
+          propertiesArray = data.properties_by_type;
+        } else {
+          // New object format - convert to array
+          // { "Apartment": [...], "Villa": [...] } => [{ property_type_name: "Apartment", property_ids: [...] }]
+          const typesData = propertyTypesData || propertyTypes; // Use passed data or fall back to state
+          propertiesArray = Object.entries(data.properties_by_type).map(
+            ([typeName, properties]: [string, any]) => {
+              // Find the property type ID from the type name
+              const propertyType = typesData.find(
+                (pt: any) => pt.name === typeName
+              );
+
+              // Extract property IDs from the full property objects
+              const propertyIds = Array.isArray(properties)
+                ? properties.map((p: any) => p.id)
+                : [];
+
+              return {
+                property_type_id: propertyType?.id || 0,
+                property_type_name: typeName,
+                property_ids: propertyIds,
+              };
+            }
+          );
+        }
+      }
+      setPropertiesByType(propertiesArray);
     } catch (error: any) {
       message.error('Failed to fetch home data');
     } finally {
@@ -523,9 +571,15 @@ const MobileHomePage: React.FC = () => {
                           handlePropertyTypeChange(propertyType.id, values)
                         }
                         size='large'
+                        showSearch
+                        optionFilterProp='label'
                       >
                         {typeProperties.map(property => (
-                          <Option key={property.id} value={property.id}>
+                          <Option
+                            key={property.id}
+                            value={property.id}
+                            label={property.project_name}
+                          >
                             <Space>
                               <span>{property.project_name}</span>
                               {property.starting_price && (
@@ -545,6 +599,158 @@ const MobileHomePage: React.FC = () => {
                         description={`No properties found for ${propertyType.name}`}
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
                       />
+                    )}
+
+                    {/* Selected Properties Preview */}
+                    {selectedPropertyIds.length > 0 && (
+                      <div style={{ marginTop: '16px' }}>
+                        <Text
+                          type='secondary'
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            display: 'block',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          Selected Properties ({selectedPropertyIds.length}):
+                        </Text>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '12px',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          {selectedPropertyIds.map(propertyId => {
+                            const property = properties.find(
+                              p => p.id === propertyId
+                            );
+                            if (!property) return null;
+
+                            return (
+                              <div
+                                key={propertyId}
+                                style={{
+                                  position: 'relative',
+                                  width: '180px',
+                                  border: '1px solid #d9d9d9',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  transition: 'all 0.3s',
+                                  cursor: 'pointer',
+                                }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.boxShadow =
+                                    '0 4px 12px rgba(0,0,0,0.15)';
+                                  e.currentTarget.style.transform =
+                                    'translateY(-2px)';
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.boxShadow = 'none';
+                                  e.currentTarget.style.transform =
+                                    'translateY(0)';
+                                }}
+                              >
+                                {/* Property Image */}
+                                <div
+                                  style={{
+                                    width: '100%',
+                                    height: '120px',
+                                    backgroundColor: '#f0f0f0',
+                                    position: 'relative',
+                                  }}
+                                >
+                                  {(property as any).property_images &&
+                                  (property as any).property_images.length >
+                                    0 ? (
+                                    <img
+                                      src={(property as any).property_images[0]}
+                                      alt={property.project_name}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                  ) : (
+                                    <div
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#999',
+                                      }}
+                                    >
+                                      <FileImageOutlined
+                                        style={{ fontSize: '32px' }}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Delete Button */}
+                                  <Button
+                                    type='primary'
+                                    danger
+                                    size='small'
+                                    icon={<DeleteOutlined />}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '8px',
+                                      right: '8px',
+                                    }}
+                                    onClick={() => {
+                                      const newValues =
+                                        selectedPropertyIds.filter(
+                                          id => id !== propertyId
+                                        );
+                                      handlePropertyTypeChange(
+                                        propertyType.id,
+                                        newValues
+                                      );
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Property Info */}
+                                <div
+                                  style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: '#fff',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: '13px',
+                                      fontWeight: 500,
+                                      marginBottom: '4px',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                    }}
+                                  >
+                                    {property.project_name}
+                                  </div>
+                                  {property.starting_price && (
+                                    <div
+                                      style={{
+                                        fontSize: '12px',
+                                        color: '#1890ff',
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      $
+                                      {property.starting_price.toLocaleString()}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
                   </Panel>
                 );

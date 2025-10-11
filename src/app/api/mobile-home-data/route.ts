@@ -64,6 +64,104 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Handle properties_by_type - convert to object format { "Apartment": [...], "Villa": [...] }
+    let propertiesObject: { [key: string]: any[] } = {};
+
+    if (data.properties_by_type) {
+      // Check if already in object format
+      if (!Array.isArray(data.properties_by_type)) {
+        // Already an object, use as is
+        propertiesObject = data.properties_by_type;
+      } else if (
+        Array.isArray(data.properties_by_type) &&
+        data.properties_by_type.length > 0
+      ) {
+        // Old array format, convert to object
+        for (const typeGroup of data.properties_by_type) {
+          // Check if we have full property objects or just IDs
+          if (typeGroup.properties && Array.isArray(typeGroup.properties)) {
+            // Already have full property objects (array format)
+            propertiesObject[typeGroup.property_type_name] =
+              typeGroup.properties;
+          } else if (
+            typeGroup.property_ids &&
+            typeGroup.property_ids.length > 0
+          ) {
+            // Have IDs only, fetch full property details (backward compatibility)
+            const { data: properties, error: propsError } = await supabaseAdmin
+              .from('properties')
+              .select(
+                `
+                id,
+                project_name,
+                starting_price,
+                property_type_id,
+                property_images,
+                brochure_url,
+                payment_plan,
+                handover,
+                expected_appreciation,
+                property_status_id,
+                country_id,
+                state_id,
+                city_id,
+                area_id,
+                developer_id,
+                is_active,
+                created_at,
+                property_types (
+                  id,
+                  name,
+                  image_url
+                ),
+                property_status (
+                  id,
+                  name,
+                  color
+                ),
+                countries (
+                  id,
+                  name
+                ),
+                states (
+                  id,
+                  name
+                ),
+                cities (
+                  id,
+                  name
+                ),
+                areas (
+                  id,
+                  name
+                ),
+                developers (
+                  id,
+                  name,
+                  description,
+                  image_url
+                ),
+                property_amenities (
+                  amenity_id,
+                  amenities (
+                    id,
+                    name,
+                    image_url
+                  )
+                )
+              `
+              )
+              .in('id', typeGroup.property_ids)
+              .eq('is_active', true);
+
+            if (!propsError && properties) {
+              propertiesObject[typeGroup.property_type_name] = properties;
+            }
+          }
+        }
+      }
+    }
+
     // Handle selected_developers - check if they're already full objects or just IDs
     let developersWithDetails = [];
     if (
@@ -91,10 +189,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Return data with full developer objects
+    // Return data with full objects in new format
     return NextResponse.json({
       data: {
         ...data,
+        properties_by_type: propertiesObject, // Object format: { "Apartment": [...], "Villa": [...] }
         selected_developers: developersWithDetails,
       },
     });
@@ -312,6 +411,7 @@ export async function POST(request: NextRequest) {
     let parsedPropertiesByType = [];
     let parsedSelectedDevelopers = [];
     let developersWithFullDetails = [];
+    let propertiesByTypeObject: { [key: string]: any[] } = {}; // Changed to object format
 
     try {
       if (propertiesByType) {
@@ -328,6 +428,127 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('Error parsing selected_developers:', e);
     }
+
+    // Fetch full property details to store in database
+    console.log('📦 Processing properties_by_type:', parsedPropertiesByType);
+    if (
+      parsedPropertiesByType &&
+      Array.isArray(parsedPropertiesByType) &&
+      parsedPropertiesByType.length > 0
+    ) {
+      for (const typeGroup of parsedPropertiesByType) {
+        if (typeGroup.property_ids && typeGroup.property_ids.length > 0) {
+          console.log(
+            `🔍 Fetching full details for ${typeGroup.property_type_name}:`,
+            typeGroup.property_ids
+          );
+
+          // Debug: Check if properties exist (without is_active filter)
+          const { data: debugProps } = await supabaseAdmin
+            .from('properties')
+            .select('id, project_name, is_active')
+            .in('id', typeGroup.property_ids);
+          console.log('🔍 Debug - Properties in DB:', debugProps);
+
+          // Fetch full property details for this type
+          const { data: properties, error: propsError } = await supabaseAdmin
+            .from('properties')
+            .select(
+              `
+              id,
+              project_name,
+              starting_price,
+              property_type_id,
+              property_images,
+              brochure_url,
+              payment_plan,
+              handover,
+              expected_appreciation,
+              property_status_id,
+              country_id,
+              state_id,
+              city_id,
+              area_id,
+              developer_id,
+              is_active,
+              created_at,
+              property_types (
+                id,
+                name,
+                image_url
+              ),
+              property_status (
+                id,
+                name,
+                color
+              ),
+              countries (
+                id,
+                name
+              ),
+              states (
+                id,
+                name
+              ),
+              cities (
+                id,
+                name
+              ),
+              areas (
+                id,
+                name
+              ),
+              developers (
+                id,
+                name,
+                description,
+                image_url
+              ),
+              property_amenities (
+                amenity_id,
+                amenities (
+                  id,
+                  name,
+                  image_url
+                )
+              )
+            `
+            )
+            .in('id', typeGroup.property_ids)
+            .eq('is_active', true);
+
+          if (propsError) {
+            console.error('❌ Error fetching properties:', propsError);
+            // Store empty array even on error
+            propertiesByTypeObject[typeGroup.property_type_name] = [];
+          } else if (!properties || properties.length === 0) {
+            console.warn(
+              `⚠️ No properties found for ${typeGroup.property_type_name} with IDs:`,
+              typeGroup.property_ids
+            );
+            console.warn(
+              'This may mean properties are inactive or do not exist'
+            );
+            // Store empty array
+            propertiesByTypeObject[typeGroup.property_type_name] = [];
+          } else {
+            console.log(
+              `✅ Fetched ${properties.length} properties for ${typeGroup.property_type_name}`
+            );
+            console.log('📋 First property sample:', properties[0]);
+            // Store full property objects as array under property type name key
+            propertiesByTypeObject[typeGroup.property_type_name] = properties;
+            console.log(
+              `💾 Stored ${properties.length} full property objects for ${typeGroup.property_type_name}`
+            );
+          }
+        }
+      }
+    }
+    console.log(
+      '📊 Final propertiesByTypeObject:',
+      JSON.stringify(propertiesByTypeObject, null, 2)
+    );
 
     // Fetch full developer details to store in database
     if (
@@ -349,7 +570,7 @@ export async function POST(request: NextRequest) {
     const homeData = {
       featured_video_url: videoUrl,
       tagline_text: taglineText || '',
-      properties_by_type: parsedPropertiesByType,
+      properties_by_type: propertiesByTypeObject, // Store as object: { "Apartment": [...], "Villa": [...] }
       selected_developers: developersWithFullDetails, // Store full developer objects
       story_images: finalStoryImages,
       is_active: true,
