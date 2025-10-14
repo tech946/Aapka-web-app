@@ -520,16 +520,16 @@ const PropertiesPage: React.FC = () => {
       return false;
     }
 
-    // Validate image dimensions (max 1920px width)
+    // Validate image dimensions (must be 1280x720)
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
 
     img.onload = () => {
       URL.revokeObjectURL(objectUrl); // Clean up
 
-      if (img.width > 1920) {
+      if (img.width !== 1280 || img.height !== 720) {
         message.error(
-          `Image "${file.name}" is too wide (${img.width}px). Maximum width allowed is 1920px.`
+          `Image "${file.name}" has invalid dimensions (${img.width}x${img.height}px). Required: 1280x720px.`
         );
         return;
       }
@@ -537,7 +537,7 @@ const PropertiesPage: React.FC = () => {
       // Image is valid, add it
       setPropertyImages(prev => [...prev, file]);
       message.success(
-        `Image "${file.name}" selected successfully! (${img.width}x${img.height}px)`
+        `Image "${file.name}" selected successfully! (1280x720px)`
       );
     };
 
@@ -567,12 +567,13 @@ const PropertiesPage: React.FC = () => {
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-          if (img.width > 800 || img.height > 800) {
+          if (img.width !== 1280 || img.height !== 720) {
             message.error(
-              'Thumbnail dimensions must not exceed 800x800 pixels!'
+              `Thumbnail dimensions must be exactly 1280x720 pixels! Your image: ${img.width}x${img.height}px`
             );
             resolve(false);
           } else {
+            message.success(`Thumbnail dimensions verified: 1280x720px ✓`);
             resolve(true);
           }
         };
@@ -1414,7 +1415,7 @@ const PropertiesPage: React.FC = () => {
             label='Thumbnail Image'
             className='custom-form-item-label'
             required
-            extra='Required. Max dimensions: 800x800 pixels'
+            extra='Required. Dimensions must be exactly 1280x720 pixels (16:9 ratio)'
           >
             <div style={{ marginBottom: '16px' }}>
               {/* Existing Thumbnail */}
@@ -1556,7 +1557,7 @@ const PropertiesPage: React.FC = () => {
                 >
                   {thumbnailImage || existingThumbnail
                     ? 'Thumbnail Selected'
-                    : 'Select Thumbnail'}
+                    : 'Select Thumbnail (1280x720)'}
                 </Button>
               </Upload>
             </div>
@@ -1573,8 +1574,9 @@ const PropertiesPage: React.FC = () => {
                   selected.
                 </div>
                 <div style={{ color: '#ff4d4f', fontSize: '12px' }}>
-                  <strong>Important:</strong> Maximum image width: 1920px.
-                  Images wider than 1920px will be rejected.
+                  <strong>Required Format:</strong> Images MUST be exactly
+                  1280x720 pixels (16:9 ratio). Other dimensions will be
+                  rejected.
                 </div>
               </div>
             }
@@ -1703,7 +1705,7 @@ const PropertiesPage: React.FC = () => {
               >
                 {existingImages.length + propertyImages.length >= 5
                   ? 'Maximum Images Reached'
-                  : 'Select Images'}
+                  : 'Select Images (1280x720 required)'}
               </Button>
             </Upload>
           </Form.Item>
