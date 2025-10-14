@@ -126,9 +126,9 @@ export async function POST(request: NextRequest) {
       const developer_id = formData.get('developer_id') as string;
       const payment_plan = formData.get('payment_plan') as string;
       const handover = formData.get('handover') as string;
-      const expected_appreciation = formData.get(
-        'expected_appreciation'
-      ) as string;
+      const earn_referral = formData.get('earn_referral') as string;
+      const property_type_ids = formData.get('property_type_ids') as string; // Comma-separated property type IDs (e.g., "1,3,5")
+      const property_types_text = formData.get('property_types_text') as string; // Comma-separated property type names (e.g., "Apartment, Villa")
       const amenities = formData.get('amenities') as string; // JSON string
       const brochureFile = formData.get('brochure_file') as File;
       const thumbnailFile = formData.get('thumbnail_image') as File;
@@ -298,10 +298,12 @@ export async function POST(request: NextRequest) {
             property_type_id: property_type_id
               ? parseInt(property_type_id)
               : null,
+            property_type_ids: property_type_ids || null,
+            property_types_text: property_types_text || null,
             developer_id: developer_id || null,
             payment_plan: payment_plan || null,
             handover: handover || null,
-            expected_appreciation: expected_appreciation || null,
+            earn_referral: earn_referral || null,
             brochure_url: brochureUrl,
             thumbnail_image: thumbnailUrl,
             property_images: propertyImageUrls,
@@ -408,7 +410,7 @@ export async function POST(request: NextRequest) {
         property_type_id,
         payment_plan,
         handover,
-        expected_appreciation,
+        earn_referral,
         amenities,
       } = body;
 
@@ -435,7 +437,7 @@ export async function POST(request: NextRequest) {
               : null,
             payment_plan: payment_plan || null,
             handover: handover || null,
-            expected_appreciation: expected_appreciation || null,
+            earn_referral: earn_referral || null,
             brochure_url: null,
             is_active: true,
           },
@@ -496,9 +498,9 @@ export async function PUT(request: NextRequest) {
       const developer_id = formData.get('developer_id') as string;
       const payment_plan = formData.get('payment_plan') as string;
       const handover = formData.get('handover') as string;
-      const expected_appreciation = formData.get(
-        'expected_appreciation'
-      ) as string;
+      const earn_referral = formData.get('earn_referral') as string;
+      const property_type_ids = formData.get('property_type_ids') as string; // Comma-separated IDs
+      const property_types_text = formData.get('property_types_text') as string; // Comma-separated names
       const amenities = formData.get('amenities') as string; // JSON string
       const brochureFile = formData.get('brochure_file') as File;
       const existingBrochureUrl = formData.get(
@@ -745,10 +747,12 @@ export async function PUT(request: NextRequest) {
           area_id: area_id || null,
           starting_price: starting_price ? parseFloat(starting_price) : null,
           property_type_id: property_type_id || null,
+          property_type_ids: property_type_ids || null,
+          property_types_text: property_types_text || null,
           developer_id: developer_id || null,
           payment_plan: payment_plan || null,
           handover: handover || null,
-          expected_appreciation: expected_appreciation || null,
+          earn_referral: earn_referral || null,
           brochure_url: brochureUrl,
           thumbnail_image: thumbnailUrl,
           property_images: finalPropertyImages,
@@ -861,9 +865,11 @@ export async function PUT(request: NextRequest) {
         area_id,
         starting_price,
         property_type_id,
+        property_type_ids,
+        property_types_text,
         payment_plan,
         handover,
-        expected_appreciation,
+        earn_referral,
         amenities,
       } = body;
 
@@ -885,9 +891,11 @@ export async function PUT(request: NextRequest) {
           area_id: area_id || null,
           starting_price: starting_price ? parseFloat(starting_price) : null,
           property_type_id: property_type_id || null,
+          property_type_ids: property_type_ids || null,
+          property_types_text: property_types_text || null,
           payment_plan: payment_plan || null,
           handover: handover || null,
-          expected_appreciation: expected_appreciation || null,
+          earn_referral: earn_referral || null,
         })
         .eq('id', id)
         .select()

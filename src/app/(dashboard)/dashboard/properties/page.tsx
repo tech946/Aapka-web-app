@@ -102,10 +102,12 @@ interface Property {
   area_id?: string;
   starting_price?: number;
   property_type_id?: number;
+  property_type_ids?: string; // Comma-separated property type IDs (e.g., "1,3,5")
+  property_types_text?: string; // Comma-separated property type names (e.g., "Apartment, Villa")
   developer_id?: string;
   payment_plan?: string;
   handover?: string;
-  expected_appreciation?: string;
+  earn_referral?: string;
   brochure_url?: string;
   thumbnail_image?: string;
   property_images?: string[];
@@ -279,6 +281,20 @@ const PropertiesPage: React.FC = () => {
 
   const handleEdit = (property: Property) => {
     setEditingProperty(property);
+
+    // Parse comma-separated property type IDs back to array of numbers
+    let propertyTypeIds: number[] = [];
+    if (property.property_type_ids) {
+      // Use stored IDs if available
+      propertyTypeIds = property.property_type_ids
+        .split(',')
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id));
+    } else if (property.property_type_id) {
+      // Fallback to single property type ID
+      propertyTypeIds = [property.property_type_id];
+    }
+
     form.setFieldsValue({
       project_name: property.project_name,
       property_status_id: property.property_status_id,
@@ -287,11 +303,11 @@ const PropertiesPage: React.FC = () => {
       city_id: property.city_id,
       area_id: property.area_id,
       starting_price: property.starting_price,
-      property_type_id: property.property_type_id,
+      property_types: propertyTypeIds, // Array of IDs
       developer_id: property.developer_id,
       payment_plan: property.payment_plan,
       handover: property.handover,
-      expected_appreciation: property.expected_appreciation,
+      earn_referral: property.earn_referral,
       brochure_url: property.brochure_url,
       amenities: property.property_amenities?.map(pa => pa.amenity_id) || [],
     });
@@ -340,14 +356,27 @@ const PropertiesPage: React.FC = () => {
         'starting_price',
         values.starting_price?.toString() || ''
       );
-      formData.append('property_type_id', values.property_type_id || '');
+
+      // Handle property types - send both IDs and names
+      if (values.property_types && Array.isArray(values.property_types)) {
+        // values.property_types contains IDs (e.g., [1, 3, 5])
+        const propertyTypeIds = values.property_types.join(',');
+        formData.append('property_type_ids', propertyTypeIds);
+
+        // Convert IDs to names
+        const selectedTypes = propertyTypes.filter(type =>
+          values.property_types.includes(type.id)
+        );
+        const propertyTypesText = selectedTypes
+          .map(type => type.name)
+          .join(', ');
+        formData.append('property_types_text', propertyTypesText);
+      }
+
       formData.append('developer_id', values.developer_id || '');
       formData.append('payment_plan', values.payment_plan || '');
       formData.append('handover', values.handover || '');
-      formData.append(
-        'expected_appreciation',
-        values.expected_appreciation || ''
-      );
+      formData.append('earn_referral', values.earn_referral || '');
       formData.append('amenities', JSON.stringify(values.amenities || []));
       formData.append('brochure_url', values.brochure_url || '');
 
@@ -491,9 +520,35 @@ const PropertiesPage: React.FC = () => {
       return false;
     }
 
-    setPropertyImages(prev => [...prev, file]);
-    message.success(`Image "${file.name}" selected successfully!`);
-    return false;
+    // Validate image dimensions (max 1920px width)
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl); // Clean up
+
+      if (img.width > 1920) {
+        message.error(
+          `Image "${file.name}" is too wide (${img.width}px). Maximum width allowed is 1920px.`
+        );
+        return;
+      }
+
+      // Image is valid, add it
+      setPropertyImages(prev => [...prev, file]);
+      message.success(
+        `Image "${file.name}" selected successfully! (${img.width}x${img.height}px)`
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      message.error(`Failed to load image "${file.name}"`);
+    };
+
+    img.src = objectUrl;
+
+    return false; // Prevent auto upload
   };
 
   const handleRemoveNewImage = (file: File) => {
@@ -949,10 +1004,10 @@ const PropertiesPage: React.FC = () => {
             city_id: '',
             area_id: '',
             starting_price: null,
-            property_type_id: '',
+            property_types: [], // Changed to array for multiselect
             payment_plan: '',
             handover: '',
-            expected_appreciation: '',
+            earn_referral: '',
             amenities: [],
             brochure_url: '',
           }}
@@ -1141,13 +1196,21 @@ const PropertiesPage: React.FC = () => {
             </Col>
             <Col span={8}>
               <Form.Item
-                name='property_type_id'
-                label='Property Type'
+                name='property_types'
+                label='Property Types'
+                rules={[
+                  {
+                    required: true,
+                    message: 'Please select at least one property type',
+                  },
+                ]}
                 className='custom-form-item-label'
               >
                 <Select
-                  placeholder='Select property type'
+                  mode='multiple'
+                  placeholder='Select property types (multiple allowed)'
                   className='custom-form-input'
+                  maxTagCount='responsive'
                 >
                   {propertyTypes.map(type => (
                     <Option key={type.id} value={type.id}>
@@ -1232,12 +1295,12 @@ const PropertiesPage: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name='expected_appreciation'
-                label='Expected Appreciation'
+                name='earn_referral'
+                label='Earn Referral'
                 className='custom-form-item-label'
               >
                 <TextArea
-                  placeholder='Enter expected appreciation details'
+                  placeholder='Enter earn referral details'
                   rows={2}
                   className='custom-form-input custom-form-textarea'
                 />
@@ -1502,7 +1565,19 @@ const PropertiesPage: React.FC = () => {
           <Form.Item
             label='Property Images'
             className='custom-form-item-label'
-            extra={`You can upload up to 5 images. ${existingImages.length + propertyImages.length}/5 images selected.`}
+            extra={
+              <div>
+                <div style={{ color: '#666', marginBottom: '4px' }}>
+                  You can upload up to 5 images.{' '}
+                  {existingImages.length + propertyImages.length}/5 images
+                  selected.
+                </div>
+                <div style={{ color: '#ff4d4f', fontSize: '12px' }}>
+                  <strong>Important:</strong> Maximum image width: 1920px.
+                  Images wider than 1920px will be rejected.
+                </div>
+              </div>
+            }
           >
             <div style={{ marginBottom: '16px' }}>
               {/* Existing Images */}
