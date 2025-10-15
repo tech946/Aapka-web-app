@@ -567,13 +567,13 @@ const PropertiesPage: React.FC = () => {
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-          if (img.width !== 1280 || img.height !== 720) {
+          if (img.width !== 800 || img.height !== 800) {
             message.error(
-              `Thumbnail dimensions must be exactly 1280x720 pixels! Your image: ${img.width}x${img.height}px`
+              `Thumbnail dimensions must be exactly 800x800 pixels! Your image: ${img.width}x${img.height}px`
             );
             resolve(false);
           } else {
-            message.success(`Thumbnail dimensions verified: 1280x720px ✓`);
+            message.success(`Thumbnail dimensions verified: 800x800px ✓`);
             resolve(true);
           }
         };
@@ -1415,7 +1415,7 @@ const PropertiesPage: React.FC = () => {
             label='Thumbnail Image'
             className='custom-form-item-label'
             required
-            extra='Required. Dimensions must be exactly 1280x720 pixels (16:9 ratio)'
+            extra='Required. Dimensions must be exactly 800x800 pixels (1:1 ratio)'
           >
             <div style={{ marginBottom: '16px' }}>
               {/* Existing Thumbnail */}
@@ -1557,7 +1557,7 @@ const PropertiesPage: React.FC = () => {
                 >
                   {thumbnailImage || existingThumbnail
                     ? 'Thumbnail Selected'
-                    : 'Select Thumbnail (1280x720)'}
+                    : 'Select Thumbnail (800x800)'}
                 </Button>
               </Upload>
             </div>
