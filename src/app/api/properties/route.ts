@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
             state_id: state_id || null,
             city_id: city_id || null,
             area_id: area_id || null,
-            starting_price: starting_price ? parseFloat(starting_price) : null,
+            starting_price: starting_price || null,
             property_type_id: property_type_id
               ? parseInt(property_type_id)
               : null,
@@ -431,7 +431,7 @@ export async function POST(request: NextRequest) {
             state_id: state_id || null,
             city_id: city_id || null,
             area_id: area_id || null,
-            starting_price: starting_price ? parseFloat(starting_price) : null,
+            starting_price: starting_price || null,
             property_type_id: property_type_id
               ? parseInt(property_type_id)
               : null,
@@ -745,7 +745,7 @@ export async function PUT(request: NextRequest) {
           state_id: state_id || null,
           city_id: city_id || null,
           area_id: area_id || null,
-          starting_price: starting_price ? parseFloat(starting_price) : null,
+          starting_price: starting_price || null,
           property_type_id: property_type_id || null,
           property_type_ids: property_type_ids || null,
           property_types_text: property_types_text || null,
@@ -889,7 +889,7 @@ export async function PUT(request: NextRequest) {
           state_id: state_id || null,
           city_id: city_id || null,
           area_id: area_id || null,
-          starting_price: starting_price ? parseFloat(starting_price) : null,
+          starting_price: starting_price || null,
           property_type_id: property_type_id || null,
           property_type_ids: property_type_ids || null,
           property_types_text: property_types_text || null,

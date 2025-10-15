@@ -321,6 +321,7 @@ const PropertiesPage: React.FC = () => {
     CURRENCIES[0]
   );
   const [priceValue, setPriceValue] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Custom dropdown states
   const [propertyTypeDropdownOpen, setPropertyTypeDropdownOpen] =
@@ -536,11 +537,13 @@ const PropertiesPage: React.FC = () => {
 
   const handleModalOk = async () => {
     try {
+      setSubmitting(true);
       const values = await form.validateFields();
 
       // Validate thumbnail is present (required field)
       if (!thumbnailImage && !existingThumbnail) {
         message.error('Thumbnail image is required!');
+        setSubmitting(false);
         return;
       }
 
@@ -666,13 +669,18 @@ const PropertiesPage: React.FC = () => {
       setPropertyImages([]);
       setExistingImages([]);
       setImagesToDelete([]);
+      setSelectedCurrency(CURRENCIES[0]);
+      setPriceValue('');
       fetchProperties(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save property');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleModalCancel = () => {
+    if (submitting) return; // Prevent closing during submission
     setModalVisible(false);
     form.resetFields();
     setBrochureFileName('');
@@ -681,6 +689,7 @@ const PropertiesPage: React.FC = () => {
     setImagesToDelete([]);
     setSelectedCurrency(CURRENCIES[0]);
     setPriceValue('');
+    setSubmitting(false);
   };
 
   const handlePageChange = (page: number, pageSize?: number) => {
@@ -881,25 +890,73 @@ const PropertiesPage: React.FC = () => {
       dataIndex: 'starting_price',
       key: 'starting_price',
       render: (price: number | string) => {
-        if (!price) {
+        if (!price || price === null || price === undefined) {
           return <span className='table-no-data'>Not set</span>;
         }
 
         try {
           // Try to parse as JSON (new format)
           if (typeof price === 'string') {
-            const priceData: PriceData = JSON.parse(price);
-            const currency = CURRENCIES.find(
-              c => c.code === priceData.currencyName
-            );
-            return (
-              <div
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                {currency && (
+            // Check if it's a valid JSON string
+            if (price.startsWith('{') && price.endsWith('}')) {
+              const priceData: PriceData = JSON.parse(price);
+              if (
+                !priceData.value ||
+                priceData.value === '0' ||
+                priceData.value === ''
+              ) {
+                return <span className='table-no-data'>Not set</span>;
+              }
+              const currency = CURRENCIES.find(
+                c => c.code === priceData.currencyName
+              );
+              return (
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {currency && (
+                    <img
+                      src={`https://flagcdn.com/w40/${currency.countryCode}.png`}
+                      alt={currency.country}
+                      style={{
+                        width: '20px',
+                        height: '15px',
+                        objectFit: 'cover',
+                        borderRadius: '2px',
+                        border: '1px solid #e5e7eb',
+                      }}
+                    />
+                  )}
+                  <div className='table-price'>
+                    <span>
+                      {priceData.currentSign}{' '}
+                      {parseInt(priceData.value).toLocaleString()}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: '#999',
+                        marginLeft: '4px',
+                      }}
+                    >
+                      {priceData.currencyName}
+                    </span>
+                  </div>
+                </div>
+              );
+            } else {
+              // It's a string but not JSON, treat as legacy
+              const numPrice = parseFloat(price);
+              if (isNaN(numPrice) || numPrice === 0) {
+                return <span className='table-no-data'>Not set</span>;
+              }
+              return (
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
                   <img
-                    src={`https://flagcdn.com/w40/${currency.countryCode}.png`}
-                    alt={currency.country}
+                    src='https://flagcdn.com/w40/us.png'
+                    alt='United States'
                     style={{
                       width: '20px',
                       height: '15px',
@@ -908,26 +965,17 @@ const PropertiesPage: React.FC = () => {
                       border: '1px solid #e5e7eb',
                     }}
                   />
-                )}
-                <div className='table-price'>
-                  <span>
-                    {priceData.currentSign}{' '}
-                    {parseInt(priceData.value).toLocaleString()}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: '#999',
-                      marginLeft: '4px',
-                    }}
-                  >
-                    {priceData.currencyName}
-                  </span>
+                  <div className='table-price'>
+                    ${numPrice.toLocaleString()}
+                  </div>
                 </div>
-              </div>
-            );
+              );
+            }
           } else {
             // Legacy number format
+            if (price === 0 || isNaN(price as number)) {
+              return <span className='table-no-data'>Not set</span>;
+            }
             return (
               <div
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -943,28 +991,15 @@ const PropertiesPage: React.FC = () => {
                     border: '1px solid #e5e7eb',
                   }}
                 />
-                <div className='table-price'>${price.toLocaleString()}</div>
+                <div className='table-price'>
+                  ${(price as number).toLocaleString()}
+                </div>
               </div>
             );
           }
         } catch (e) {
-          // If parsing fails, treat as legacy number
-          return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <img
-                src='https://flagcdn.com/w40/us.png'
-                alt='United States'
-                style={{
-                  width: '20px',
-                  height: '15px',
-                  objectFit: 'cover',
-                  borderRadius: '2px',
-                  border: '1px solid #e5e7eb',
-                }}
-              />
-              <div className='table-price'>${price.toLocaleString()}</div>
-            </div>
-          );
+          // If parsing fails, show not set
+          return <span className='table-no-data'>Not set</span>;
         }
       },
     },
@@ -1264,11 +1299,14 @@ const PropertiesPage: React.FC = () => {
         okText={editingProperty ? 'Update' : 'Create'}
         cancelText='Cancel'
         className='custom-modal'
+        confirmLoading={submitting}
         okButtonProps={{
           className: 'custom-modal-ok-btn',
+          loading: submitting,
         }}
         cancelButtonProps={{
           className: 'custom-modal-cancel-btn',
+          disabled: submitting,
         }}
         styles={{
           header: {
@@ -1282,6 +1320,54 @@ const PropertiesPage: React.FC = () => {
           },
         }}
       >
+        {submitting && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(255, 255, 255, 0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              borderRadius: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '16px',
+              }}
+            >
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '4px solid #f3f3f3',
+                  borderTop: '4px solid #ff4d00',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                }}
+              />
+              <div
+                style={{ fontSize: '16px', fontWeight: 500, color: '#374151' }}
+              >
+                {editingProperty
+                  ? 'Updating Property...'
+                  : 'Creating Property...'}
+              </div>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                Please wait while we process your request
+              </div>
+            </div>
+          </div>
+        )}
         <Form
           form={form}
           layout='vertical'
