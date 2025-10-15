@@ -92,6 +92,20 @@ interface Developer {
   image_url?: string;
 }
 
+interface Currency {
+  code: string;
+  name: string;
+  symbol: string;
+  country: string;
+  countryCode: string; // ISO 3166-1 alpha-2 country code for flag
+}
+
+interface PriceData {
+  currentSign: string;
+  value: string;
+  currencyName: string;
+}
+
 interface Property {
   id: string;
   project_name: string;
@@ -100,7 +114,7 @@ interface Property {
   state_id?: string;
   city_id?: string;
   area_id?: string;
-  starting_price?: number;
+  starting_price?: number | string; // Can be number or JSON string
   property_type_id?: number;
   property_type_ids?: string; // Comma-separated property type IDs (e.g., "1,3,5")
   property_types_text?: string; // Comma-separated property type names (e.g., "Apartment, Villa")
@@ -136,6 +150,150 @@ interface PaginationInfo {
   hasPrev: boolean;
 }
 
+// World currencies list with flag images
+const CURRENCIES: Currency[] = [
+  {
+    code: 'USD',
+    name: 'US Dollar',
+    symbol: '$',
+    country: 'United States',
+    countryCode: 'us',
+  },
+  {
+    code: 'AED',
+    name: 'UAE Dirham',
+    symbol: 'د.إ',
+    country: 'United Arab Emirates',
+    countryCode: 'ae',
+  },
+  {
+    code: 'EUR',
+    name: 'Euro',
+    symbol: '€',
+    country: 'European Union',
+    countryCode: 'eu',
+  },
+  {
+    code: 'GBP',
+    name: 'British Pound',
+    symbol: '£',
+    country: 'United Kingdom',
+    countryCode: 'gb',
+  },
+  {
+    code: 'INR',
+    name: 'Indian Rupee',
+    symbol: '₹',
+    country: 'India',
+    countryCode: 'in',
+  },
+  {
+    code: 'SAR',
+    name: 'Saudi Riyal',
+    symbol: '﷼',
+    country: 'Saudi Arabia',
+    countryCode: 'sa',
+  },
+  {
+    code: 'QAR',
+    name: 'Qatari Riyal',
+    symbol: 'ر.ق',
+    country: 'Qatar',
+    countryCode: 'qa',
+  },
+  {
+    code: 'OMR',
+    name: 'Omani Rial',
+    symbol: 'ر.ع.',
+    country: 'Oman',
+    countryCode: 'om',
+  },
+  {
+    code: 'KWD',
+    name: 'Kuwaiti Dinar',
+    symbol: 'د.ك',
+    country: 'Kuwait',
+    countryCode: 'kw',
+  },
+  {
+    code: 'BHD',
+    name: 'Bahraini Dinar',
+    symbol: 'د.ب',
+    country: 'Bahrain',
+    countryCode: 'bh',
+  },
+  {
+    code: 'JPY',
+    name: 'Japanese Yen',
+    symbol: '¥',
+    country: 'Japan',
+    countryCode: 'jp',
+  },
+  {
+    code: 'CNY',
+    name: 'Chinese Yuan',
+    symbol: '¥',
+    country: 'China',
+    countryCode: 'cn',
+  },
+  {
+    code: 'AUD',
+    name: 'Australian Dollar',
+    symbol: 'A$',
+    country: 'Australia',
+    countryCode: 'au',
+  },
+  {
+    code: 'CAD',
+    name: 'Canadian Dollar',
+    symbol: 'C$',
+    country: 'Canada',
+    countryCode: 'ca',
+  },
+  {
+    code: 'CHF',
+    name: 'Swiss Franc',
+    symbol: 'CHF',
+    country: 'Switzerland',
+    countryCode: 'ch',
+  },
+  {
+    code: 'SGD',
+    name: 'Singapore Dollar',
+    symbol: 'S$',
+    country: 'Singapore',
+    countryCode: 'sg',
+  },
+  {
+    code: 'MYR',
+    name: 'Malaysian Ringgit',
+    symbol: 'RM',
+    country: 'Malaysia',
+    countryCode: 'my',
+  },
+  {
+    code: 'THB',
+    name: 'Thai Baht',
+    symbol: '฿',
+    country: 'Thailand',
+    countryCode: 'th',
+  },
+  {
+    code: 'PKR',
+    name: 'Pakistani Rupee',
+    symbol: '₨',
+    country: 'Pakistan',
+    countryCode: 'pk',
+  },
+  {
+    code: 'BDT',
+    name: 'Bangladeshi Taka',
+    symbol: '৳',
+    country: 'Bangladesh',
+    countryCode: 'bd',
+  },
+];
+
 const PropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [propertyStatuses, setPropertyStatuses] = useState<PropertyStatus[]>(
@@ -159,6 +317,10 @@ const PropertiesPage: React.FC = () => {
   const [propertyImages, setPropertyImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(
+    CURRENCIES[0]
+  );
+  const [priceValue, setPriceValue] = useState<string>('');
 
   // Custom dropdown states
   const [propertyTypeDropdownOpen, setPropertyTypeDropdownOpen] =
@@ -276,6 +438,8 @@ const PropertiesPage: React.FC = () => {
     setPropertyImages([]);
     setExistingImages([]);
     setImagesToDelete([]);
+    setSelectedCurrency(CURRENCIES[0]); // Reset to USD
+    setPriceValue('');
     setModalVisible(true);
   };
 
@@ -295,6 +459,43 @@ const PropertiesPage: React.FC = () => {
       propertyTypeIds = [property.property_type_id];
     }
 
+    // Parse price data (could be JSON or legacy number)
+    let priceData: PriceData | null = null;
+    if (property.starting_price) {
+      try {
+        // Try to parse as JSON
+        if (typeof property.starting_price === 'string') {
+          priceData = JSON.parse(property.starting_price);
+        } else {
+          // Legacy number format
+          priceData = {
+            currentSign: '$',
+            value: property.starting_price.toString(),
+            currencyName: 'USD',
+          };
+        }
+      } catch (e) {
+        // If parsing fails, treat as legacy number
+        priceData = {
+          currentSign: '$',
+          value: property.starting_price.toString(),
+          currencyName: 'USD',
+        };
+      }
+    }
+
+    // Set currency and price
+    if (priceData) {
+      const currency =
+        CURRENCIES.find(c => c.code === priceData!.currencyName) ||
+        CURRENCIES[0];
+      setSelectedCurrency(currency);
+      setPriceValue(priceData.value);
+    } else {
+      setSelectedCurrency(CURRENCIES[0]);
+      setPriceValue('');
+    }
+
     form.setFieldsValue({
       project_name: property.project_name,
       property_status_id: property.property_status_id,
@@ -302,7 +503,6 @@ const PropertiesPage: React.FC = () => {
       state_id: property.state_id,
       city_id: property.city_id,
       area_id: property.area_id,
-      starting_price: property.starting_price,
       property_types: propertyTypeIds, // Array of IDs
       developer_id: property.developer_id,
       payment_plan: property.payment_plan,
@@ -352,10 +552,14 @@ const PropertiesPage: React.FC = () => {
       formData.append('state_id', values.state_id || '');
       formData.append('city_id', values.city_id || '');
       formData.append('area_id', values.area_id || '');
-      formData.append(
-        'starting_price',
-        values.starting_price?.toString() || ''
-      );
+
+      // Store price as JSON with currency data
+      const priceData: PriceData = {
+        currentSign: selectedCurrency.symbol,
+        value: priceValue,
+        currencyName: selectedCurrency.code,
+      };
+      formData.append('starting_price', JSON.stringify(priceData));
 
       // Handle property types - send both IDs and names
       if (values.property_types && Array.isArray(values.property_types)) {
@@ -475,6 +679,8 @@ const PropertiesPage: React.FC = () => {
     setPropertyImages([]);
     setExistingImages([]);
     setImagesToDelete([]);
+    setSelectedCurrency(CURRENCIES[0]);
+    setPriceValue('');
   };
 
   const handlePageChange = (page: number, pageSize?: number) => {
@@ -520,16 +726,16 @@ const PropertiesPage: React.FC = () => {
       return false;
     }
 
-    // Validate image dimensions (maximum 320x240)
+    // Validate image dimensions (maximum 1280x720)
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
 
     img.onload = () => {
       URL.revokeObjectURL(objectUrl); // Clean up
 
-      if (img.width > 320 || img.height > 240) {
+      if (img.width > 1280 || img.height > 720) {
         message.error(
-          `Image "${file.name}" is too large (${img.width}x${img.height}px). Maximum allowed: 320x240px.`
+          `Image "${file.name}" is too large (${img.width}x${img.height}px). Maximum allowed: 1280x720px.`
         );
         return;
       }
@@ -674,12 +880,93 @@ const PropertiesPage: React.FC = () => {
       title: 'PRICE',
       dataIndex: 'starting_price',
       key: 'starting_price',
-      render: (price: number) =>
-        price ? (
-          <div className='table-price'>${price.toLocaleString()}</div>
-        ) : (
-          <span className='table-no-data'>Not set</span>
-        ),
+      render: (price: number | string) => {
+        if (!price) {
+          return <span className='table-no-data'>Not set</span>;
+        }
+
+        try {
+          // Try to parse as JSON (new format)
+          if (typeof price === 'string') {
+            const priceData: PriceData = JSON.parse(price);
+            const currency = CURRENCIES.find(
+              c => c.code === priceData.currencyName
+            );
+            return (
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                {currency && (
+                  <img
+                    src={`https://flagcdn.com/w40/${currency.countryCode}.png`}
+                    alt={currency.country}
+                    style={{
+                      width: '20px',
+                      height: '15px',
+                      objectFit: 'cover',
+                      borderRadius: '2px',
+                      border: '1px solid #e5e7eb',
+                    }}
+                  />
+                )}
+                <div className='table-price'>
+                  <span>
+                    {priceData.currentSign}{' '}
+                    {parseInt(priceData.value).toLocaleString()}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      color: '#999',
+                      marginLeft: '4px',
+                    }}
+                  >
+                    {priceData.currencyName}
+                  </span>
+                </div>
+              </div>
+            );
+          } else {
+            // Legacy number format
+            return (
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <img
+                  src='https://flagcdn.com/w40/us.png'
+                  alt='United States'
+                  style={{
+                    width: '20px',
+                    height: '15px',
+                    objectFit: 'cover',
+                    borderRadius: '2px',
+                    border: '1px solid #e5e7eb',
+                  }}
+                />
+                <div className='table-price'>${price.toLocaleString()}</div>
+              </div>
+            );
+          }
+        } catch (e) {
+          // If parsing fails, treat as legacy number
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img
+                src='https://flagcdn.com/w40/us.png'
+                alt='United States'
+                style={{
+                  width: '20px',
+                  height: '15px',
+                  objectFit: 'cover',
+                  borderRadius: '2px',
+                  border: '1px solid #e5e7eb',
+                }}
+              />
+              <div className='table-price'>${price.toLocaleString()}</div>
+            </div>
+          );
+        }
+      },
     },
     {
       title: 'CREATED',
@@ -1006,7 +1293,6 @@ const PropertiesPage: React.FC = () => {
             state_id: '',
             city_id: '',
             area_id: '',
-            starting_price: null,
             property_types: [], // Changed to array for multiselect
             payment_plan: '',
             handover: '',
@@ -1182,19 +1468,204 @@ const PropertiesPage: React.FC = () => {
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
-                name='starting_price'
                 label='Starting Price'
                 className='custom-form-item-label'
               >
-                <InputNumber
-                  placeholder='Enter starting price'
-                  className='custom-form-input'
-                  style={{ width: '100%' }}
-                  formatter={value =>
-                    `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  }
-                  parser={value => value!.replace(/\$\s?|(,*)/g, '')}
-                />
+                <div
+                  style={{
+                    display: 'flex',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s',
+                    backgroundColor: '#fff',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = '#4096ff';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = '#d9d9d9';
+                  }}
+                >
+                  <Select
+                    value={selectedCurrency.code}
+                    onChange={value => {
+                      const currency = CURRENCIES.find(c => c.code === value);
+                      if (currency) {
+                        setSelectedCurrency(currency);
+                      }
+                    }}
+                    style={{
+                      width: '120px',
+                      border: 'none',
+                    }}
+                    className='currency-select-borderless'
+                    showSearch
+                    optionFilterProp='children'
+                    filterOption={(input, option) =>
+                      String(option?.label)
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                    bordered={false}
+                    dropdownStyle={{ minWidth: '300px' }}
+                    optionLabelProp='label'
+                    suffixIcon={
+                      <span style={{ color: '#999', fontSize: '12px' }}>▼</span>
+                    }
+                    tagRender={props => {
+                      const { label, value } = props;
+                      const currency = CURRENCIES.find(c => c.code === value);
+                      return (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          {currency && (
+                            <img
+                              src={`https://flagcdn.com/w40/${currency.countryCode}.png`}
+                              alt={currency.country}
+                              style={{
+                                width: '16px',
+                                height: '12px',
+                                objectFit: 'cover',
+                                borderRadius: '1px',
+                              }}
+                            />
+                          )}
+                          <span style={{ fontSize: '13px', fontWeight: 500 }}>
+                            {label}
+                          </span>
+                        </div>
+                      );
+                    }}
+                  >
+                    {CURRENCIES.map(currency => (
+                      <Option
+                        key={currency.code}
+                        value={currency.code}
+                        label={`${currency.code}`}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '4px 0',
+                          }}
+                        >
+                          <img
+                            src={`https://flagcdn.com/w40/${currency.countryCode}.png`}
+                            alt={currency.country}
+                            style={{
+                              width: '20px',
+                              height: '15px',
+                              objectFit: 'cover',
+                              borderRadius: '2px',
+                              border: '1px solid #e5e7eb',
+                            }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                gap: '6px',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <span
+                                style={{ fontWeight: 600, fontSize: '13px' }}
+                              >
+                                {currency.code}
+                              </span>
+                              <span style={{ color: '#666', fontSize: '12px' }}>
+                                {currency.symbol}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#999' }}>
+                              {currency.name}
+                            </div>
+                          </div>
+                        </div>
+                      </Option>
+                    ))}
+                  </Select>
+                  <div
+                    style={{
+                      width: '1px',
+                      backgroundColor: '#d9d9d9',
+                      margin: '6px 0',
+                    }}
+                  />
+                  <Input
+                    value={priceValue}
+                    onChange={e => {
+                      const value = e.target.value;
+                      // Only allow numbers and commas
+                      if (value === '' || /^[\d,]+$/.test(value)) {
+                        setPriceValue(value.replace(/,/g, ''));
+                      }
+                    }}
+                    placeholder='Enter price'
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      boxShadow: 'none',
+                    }}
+                    bordered={false}
+                    prefix={
+                      <span
+                        style={{
+                          color: '#000',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          marginRight: '4px',
+                        }}
+                      >
+                        {selectedCurrency.symbol}
+                      </span>
+                    }
+                    suffix={
+                      <span
+                        style={{
+                          color: '#999',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        {selectedCurrency.code}
+                      </span>
+                    }
+                  />
+                </div>
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#999',
+                    marginTop: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <img
+                    src={`https://flagcdn.com/w40/${selectedCurrency.countryCode}.png`}
+                    alt={selectedCurrency.country}
+                    style={{
+                      width: '18px',
+                      height: '13px',
+                      objectFit: 'cover',
+                      borderRadius: '2px',
+                    }}
+                  />
+                  <span>
+                    {selectedCurrency.name} • {selectedCurrency.country}
+                  </span>
+                </div>
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -1576,7 +2047,7 @@ const PropertiesPage: React.FC = () => {
                   selected.
                 </div>
                 <div style={{ color: '#ff4d4f', fontSize: '12px' }}>
-                  <strong>Size Limit:</strong> Maximum dimensions: 320x240
+                  <strong>Size Limit:</strong> Maximum dimensions: 1280x720
                   pixels. Smaller images are accepted.
                 </div>
               </div>
@@ -1706,7 +2177,7 @@ const PropertiesPage: React.FC = () => {
               >
                 {existingImages.length + propertyImages.length >= 5
                   ? 'Maximum Images Reached'
-                  : 'Select Images (max 320x240)'}
+                  : 'Select Images (max 1280x720)'}
               </Button>
             </Upload>
           </Form.Item>

@@ -573,3 +573,78 @@ input:focus,
 .ant-select-selector input:focus {
   outline: none !important;
 }
+
+/* Currency Selector Styles */
+.currency-select-borderless .ant-select-selector {
+  border: none !important;
+  box-shadow: none !important;
+  padding: 4px 8px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+:where(.css-dev-only-do-not-override-1odpy5d).ant-select-single {
+  height: 40px;
+}
+.ant-form-item-control-input-content .ant-input-affix-wrapper {
+  display: flex;
+  align-items: center;
+}
+.ant-form-item-control-input-content .ant-input-affix-wrapper input {
+  height: max-content;
+}
+.currency-select-borderless .ant-select-selector:hover,
+.currency-select-borderless .ant-select-selector:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.currency-select-borderless.ant-select-focused .ant-select-selector {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.currency-select-borderless .ant-select-arrow {
+  color: #999;
+  right: 8px !important;
+}
+
+.currency-select-borderless .ant-select-selection-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  height: 32px !important;
+  line-height: 32px !important;
+}
+
+/* Currency Input Container Focus State */
+.currency-input-container {
+  display: flex;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.3s;
+  background-color: #fff;
+}
+
+.currency-input-container:hover {
+  border-color: #4096ff;
+}
+
+.currency-input-container:focus-within {
+  border-color: #4096ff;
+  box-shadow: 0 0 0 2px rgba(64, 150, 255, 0.1);
+}
+
+/* Currency Dropdown Flag Images */
+.currency-flag-img {
+  width: 24px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid #e5e7eb;
+}
