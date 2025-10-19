@@ -562,6 +562,8 @@ const PropertiesPage: React.FC = () => {
         value: priceValue,
         currencyName: selectedCurrency.code,
       };
+      console.log('Price data being sent:', priceData);
+      console.log('Price JSON string:', JSON.stringify(priceData));
       formData.append('starting_price', JSON.stringify(priceData));
 
       // Handle property types - send both IDs and names
