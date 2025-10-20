@@ -236,6 +236,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check content length before parsing FormData
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
+      // 50MB limit
+      return NextResponse.json(
+        { error: 'Request too large. Maximum 50MB allowed.' },
+        { status: 413 }
+      );
+    }
+
     const formData = await request.formData();
 
     const id = formData.get('id') as string;
