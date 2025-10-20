@@ -50,8 +50,51 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Parse request body
-    const body = await request.json();
+    // Parse request body with error handling
+    let body;
+    let rawText: string | undefined;
+    try {
+      // Get raw text first for debugging
+      rawText = await request.text();
+      console.log('Raw request body:', rawText);
+      console.log('Raw body length:', rawText.length);
+      console.log('Raw body type:', typeof rawText);
+
+      // Clean the JSON string to handle Windows line endings and non-breaking spaces
+      const cleanedText = rawText
+        .replace(/\r\n/g, '\n') // Convert Windows line endings to Unix
+        .replace(/\u00A0/g, ' ') // Replace non-breaking spaces with regular spaces
+        .replace(/\u2000-\u200F/g, ' ') // Replace various Unicode spaces with regular spaces
+        .trim(); // Remove leading/trailing whitespace
+
+      console.log('Cleaned request body:', cleanedText);
+
+      // Try to parse as JSON
+      body = JSON.parse(cleanedText);
+      console.log('Parsed JSON body:', body);
+    } catch (jsonError) {
+      console.error('JSON parsing error:', jsonError);
+      console.error('Raw body that failed to parse:', rawText);
+      return NextResponse.json(
+        {
+          error: 'Invalid JSON in request body',
+          details: 'Please ensure your request contains valid JSON',
+          debug: {
+            rawBody: rawText || 'undefined',
+            cleanedBody: rawText
+              ? rawText
+                  .replace(/\r\n/g, '\n')
+                  .replace(/\u00A0/g, ' ')
+                  .trim()
+              : 'undefined',
+            error:
+              jsonError instanceof Error ? jsonError.message : 'Unknown error',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const { bank_name, account_number, confirm_account_number, ifsc_code } =
       body;
 
@@ -122,7 +165,7 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Update the profile with bank details using admin client
+    // Update the profile with bank details using admin client (same pattern as update-profile)
     const { data: updatedProfile, error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -173,8 +216,8 @@ export async function PUT(request: NextRequest) {
 }
 
 /**
- * GET - Get bank details (MOBILE APP - TOKEN AUTHENTICATED)
- * This endpoint returns the current user's bank details
+ * GET - Get user bank details (MOBILE APP - TOKEN AUTHENTICATED)
+ * This endpoint returns the current user's bank details from account_details
  *
  * Required headers:
  * - Authorization: Bearer <access_token>
@@ -216,7 +259,7 @@ export async function GET(request: NextRequest) {
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select(
-        'id, full_name, email_address, profile_image_url, role, account_details, created_at, updated_at'
+        'id, full_name, email_address, account_details, created_at, updated_at'
       )
       .eq('id', user.id)
       .single();
@@ -228,110 +271,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Return bank details
     return NextResponse.json({
       success: true,
-      profile: {
-        id: profile.id,
-        full_name: profile.full_name,
-        email_address: profile.email_address,
-        profile_image_url: profile.profile_image_url,
-        role: profile.role,
-        account_details: profile.account_details,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-      },
+      id: profile.id,
+      full_name: profile.full_name,
+      email_address: profile.email_address,
+      account_details: profile.account_details || {},
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
     });
   } catch (error) {
     console.error('Error in GET /api/mobile/update-bank-details:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE - Delete bank details (MOBILE APP - TOKEN AUTHENTICATED)
- * This endpoint allows users to delete their bank details
- *
- * Required headers:
- * - Authorization: Bearer <access_token>
- */
-export async function DELETE(request: NextRequest) {
-  try {
-    // Extract Authorization header
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please provide a valid access token.' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-
-    // Create Supabase client to verify the token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    // Verify the token and get the user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid or expired access token. Please login again.' },
-        { status: 401 }
-      );
-    }
-
-    // Update profile to remove account details
-    const { data: updatedProfile, error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        account_details: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('Error removing bank details:', updateError);
-      return NextResponse.json(
-        {
-          error: 'Failed to remove bank details',
-          details: updateError.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    if (!updatedProfile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Bank details deleted successfully',
-      profile: {
-        id: updatedProfile.id,
-        full_name: updatedProfile.full_name,
-        email_address: updatedProfile.email_address,
-        profile_image_url: updatedProfile.profile_image_url,
-        role: updatedProfile.role,
-        account_details: updatedProfile.account_details,
-        created_at: updatedProfile.created_at,
-        updated_at: updatedProfile.updated_at,
-      },
-    });
-  } catch (error) {
-    console.error('Error in DELETE /api/mobile/update-bank-details:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

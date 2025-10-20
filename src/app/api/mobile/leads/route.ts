@@ -72,13 +72,7 @@ export async function GET(request: NextRequest) {
     // Build query - only get leads created by this user
     let query = supabaseAdmin
       .from('leads')
-      .select(
-        `
-        *,
-        assigned_user:assigned_to(id, email, user_metadata)
-      `,
-        { count: 'exact' }
-      )
+      .select('*', { count: 'exact' })
       .eq('created_by', user.id) // IMPORTANT: Only get leads created by this user
       .order('created_at', { ascending: false });
 

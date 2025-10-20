@@ -72,6 +72,16 @@ export async function GET(
       );
     }
 
+    // Validate UUID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(propertyId)) {
+      return NextResponse.json(
+        { error: 'Invalid property ID format. Must be a valid UUID.' },
+        { status: 400 }
+      );
+    }
+
     // Fetch property with all related data
     const { data: property, error: propertyError } = await supabaseAdmin
       .from('properties')
@@ -82,7 +92,7 @@ export async function GET(
         starting_price,
         property_type_id,
         property_images,
-        thumbnail_url,
+        thumbnail_image,
         brochure_url,
         payment_plan,
         handover,
@@ -120,11 +130,7 @@ export async function GET(
         developers (
           name,
           description,
-          image_url,
-          website,
-          email,
-          phone,
-          address
+          image_url
         ),
         property_amenities (
           amenities (
@@ -172,7 +178,7 @@ export async function GET(
       projectName: property.project_name,
       startingPrice: property.starting_price,
       images: property.property_images || [],
-      thumbnail: property.thumbnail_url,
+      thumbnail: property.thumbnail_image,
       brochureUrl: property.brochure_url,
       paymentPlan: property.payment_plan,
       handover: property.handover,
@@ -212,10 +218,6 @@ export async function GET(
             name: developer.name,
             description: developer.description,
             imageUrl: developer.image_url,
-            website: developer.website,
-            email: developer.email,
-            phone: developer.phone,
-            address: developer.address,
           }
         : null,
 

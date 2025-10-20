@@ -57,38 +57,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Return comprehensive user details
+    // Return comprehensive user details in a flat structure
     return NextResponse.json({
       success: true,
-      user: {
-        // Auth user details
-        id: user.id,
-        email: user.email,
-        email_confirmed_at: user.email_confirmed_at,
-        phone: user.phone,
-        phone_confirmed_at: user.phone_confirmed_at,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        last_sign_in_at: user.last_sign_in_at,
-        app_metadata: user.app_metadata,
-        user_metadata: user.user_metadata,
-        aud: user.aud,
-        role: user.role,
+      // Auth user details
+      id: user.id,
+      email: user.email,
+      email_confirmed_at: user.email_confirmed_at,
+      phone: user.phone,
+      phone_confirmed_at: user.phone_confirmed_at,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      last_sign_in_at: user.last_sign_in_at,
+      app_metadata: user.app_metadata,
+      user_metadata: user.user_metadata,
+      aud: user.aud,
+      role: user.role,
 
-        // Profile details
-        profile: {
-          id: profile.id,
-          full_name: profile.full_name,
-          email_address: profile.email_address,
-          profile_image_url: profile.profile_image_url,
-          role: profile.role,
-          totalleads: profile.totalleads,
-          commissions: profile.commissions,
-          notes: profile.notes,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-        },
-      },
+      // Profile details (flattened)
+      full_name: profile.full_name,
+      email_address: profile.email_address,
+      profile_image_url: profile.profile_image_url,
+      profile_role: profile.role,
+      totalleads: profile.totalleads,
+      commissions: profile.commissions,
+      notes: profile.notes,
+      profile_created_at: profile.created_at,
+      profile_updated_at: profile.updated_at,
     });
   } catch (error) {
     console.error('Error in GET /api/mobile/user-details:', error);
@@ -199,35 +194,30 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'User metadata updated successfully',
-      user: {
-        // Updated auth user details
-        id: updatedUser.user.id,
-        email: updatedUser.user.email,
-        email_confirmed_at: updatedUser.user.email_confirmed_at,
-        phone: updatedUser.user.phone,
-        phone_confirmed_at: updatedUser.user.phone_confirmed_at,
-        created_at: updatedUser.user.created_at,
-        updated_at: updatedUser.user.updated_at,
-        last_sign_in_at: updatedUser.user.last_sign_in_at,
-        app_metadata: updatedUser.user.app_metadata,
-        user_metadata: updatedUser.user.user_metadata,
-        aud: updatedUser.user.aud,
-        role: updatedUser.user.role,
+      // Updated auth user details
+      id: updatedUser.user.id,
+      email: updatedUser.user.email,
+      email_confirmed_at: updatedUser.user.email_confirmed_at,
+      phone: updatedUser.user.phone,
+      phone_confirmed_at: updatedUser.user.phone_confirmed_at,
+      created_at: updatedUser.user.created_at,
+      updated_at: updatedUser.user.updated_at,
+      last_sign_in_at: updatedUser.user.last_sign_in_at,
+      app_metadata: updatedUser.user.app_metadata,
+      user_metadata: updatedUser.user.user_metadata,
+      aud: updatedUser.user.aud,
+      role: updatedUser.user.role,
 
-        // Profile details
-        profile: {
-          id: profile.id,
-          full_name: profile.full_name,
-          email_address: profile.email_address,
-          profile_image_url: profile.profile_image_url,
-          role: profile.role,
-          totalleads: profile.totalleads,
-          commissions: profile.commissions,
-          notes: profile.notes,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-        },
-      },
+      // Profile details (flattened)
+      full_name: profile.full_name,
+      email_address: profile.email_address,
+      profile_image_url: profile.profile_image_url,
+      profile_role: profile.role,
+      totalleads: profile.totalleads,
+      commissions: profile.commissions,
+      notes: profile.notes,
+      profile_created_at: profile.created_at,
+      profile_updated_at: profile.updated_at,
     });
   } catch (error) {
     console.error('Error in PUT /api/mobile/user-details:', error);

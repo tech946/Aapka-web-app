@@ -94,15 +94,13 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
-      profile: {
-        id: updatedProfile.id,
-        full_name: updatedProfile.full_name,
-        email_address: updatedProfile.email_address,
-        profile_image_url: updatedProfile.profile_image_url,
-        role: updatedProfile.role,
-        created_at: updatedProfile.created_at,
-        updated_at: updatedProfile.updated_at,
-      },
+      id: updatedProfile.id,
+      full_name: updatedProfile.full_name,
+      email_address: updatedProfile.email_address,
+      profile_image_url: updatedProfile.profile_image_url,
+      role: updatedProfile.role,
+      created_at: updatedProfile.created_at,
+      updated_at: updatedProfile.updated_at,
     });
   } catch (error) {
     console.error('Error in PUT /api/mobile/update-profile:', error);
@@ -167,17 +165,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Return comprehensive user details in a flat structure
     return NextResponse.json({
       success: true,
-      profile: {
-        id: profile.id,
-        full_name: profile.full_name,
-        email_address: profile.email_address,
-        profile_image_url: profile.profile_image_url,
-        role: profile.role,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-      },
+      // Auth user details
+      id: user.id,
+      email: user.email,
+      email_confirmed_at: user.email_confirmed_at,
+      phone: user.phone,
+      phone_confirmed_at: user.phone_confirmed_at,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      last_sign_in_at: user.last_sign_in_at,
+      app_metadata: user.app_metadata,
+      user_metadata: user.user_metadata,
+      aud: user.aud,
+      role: user.role,
+
+      // Profile details (flattened)
+      full_name: profile.full_name,
+      email_address: profile.email_address,
+      profile_image_url: profile.profile_image_url,
+      profile_role: profile.role,
+      totalleads: profile.totalleads,
+      commissions: profile.commissions,
+      notes: profile.notes,
+      account_details: profile.account_details,
+      profile_created_at: profile.created_at,
+      profile_updated_at: profile.updated_at,
     });
   } catch (error) {
     console.error('Error in GET /api/mobile/update-profile:', error);
