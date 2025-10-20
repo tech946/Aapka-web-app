@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
                 brochure_url,
                 payment_plan,
                 handover,
-                expected_appreciation,
+                earn_referral,
                 property_status_id,
                 country_id,
                 state_id,
@@ -430,26 +430,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch full property details to store in database
-    console.log('📦 Processing properties_by_type:', parsedPropertiesByType);
     if (
       parsedPropertiesByType &&
       Array.isArray(parsedPropertiesByType) &&
       parsedPropertiesByType.length > 0
     ) {
       for (const typeGroup of parsedPropertiesByType) {
+        // Process all property types, even those with empty property_ids
         if (typeGroup.property_ids && typeGroup.property_ids.length > 0) {
-          console.log(
-            `🔍 Fetching full details for ${typeGroup.property_type_name}:`,
-            typeGroup.property_ids
-          );
-
-          // Debug: Check if properties exist (without is_active filter)
-          const { data: debugProps } = await supabaseAdmin
-            .from('properties')
-            .select('id, project_name, is_active')
-            .in('id', typeGroup.property_ids);
-          console.log('🔍 Debug - Properties in DB:', debugProps);
-
           // Fetch full property details for this type
           const { data: properties, error: propsError } = await supabaseAdmin
             .from('properties')
@@ -463,7 +451,6 @@ export async function POST(request: NextRequest) {
               brochure_url,
               payment_plan,
               handover,
-              expected_appreciation,
               property_status_id,
               country_id,
               state_id,
@@ -518,37 +505,26 @@ export async function POST(request: NextRequest) {
             .eq('is_active', true);
 
           if (propsError) {
-            console.error('❌ Error fetching properties:', propsError);
+            console.error('Error fetching properties:', propsError);
             // Store empty array even on error
             propertiesByTypeObject[typeGroup.property_type_name] = [];
           } else if (!properties || properties.length === 0) {
             console.warn(
-              `⚠️ No properties found for ${typeGroup.property_type_name} with IDs:`,
+              `No properties found for ${typeGroup.property_type_name} with IDs:`,
               typeGroup.property_ids
-            );
-            console.warn(
-              'This may mean properties are inactive or do not exist'
             );
             // Store empty array
             propertiesByTypeObject[typeGroup.property_type_name] = [];
           } else {
-            console.log(
-              `✅ Fetched ${properties.length} properties for ${typeGroup.property_type_name}`
-            );
-            console.log('📋 First property sample:', properties[0]);
             // Store full property objects as array under property type name key
             propertiesByTypeObject[typeGroup.property_type_name] = properties;
-            console.log(
-              `💾 Stored ${properties.length} full property objects for ${typeGroup.property_type_name}`
-            );
           }
+        } else {
+          // Handle property types with no selected properties
+          propertiesByTypeObject[typeGroup.property_type_name] = [];
         }
       }
     }
-    console.log(
-      '📊 Final propertiesByTypeObject:',
-      JSON.stringify(propertiesByTypeObject, null, 2)
-    );
 
     // Fetch full developer details to store in database
     if (

@@ -15,6 +15,7 @@ import {
   Tag,
   Collapse,
   Empty,
+  Skeleton,
 } from 'antd';
 import {
   UploadOutlined,
@@ -43,9 +44,13 @@ interface PropertyType {
 interface Property {
   id: string;
   project_name: string;
-  property_type_id?: number;
+  property_type_id?: number | null;
+  property_type_ids?: string;
+  property_types_text?: string;
   property_types?: PropertyType;
-  starting_price?: number;
+  starting_price?: string | number;
+  property_images?: string[];
+  thumbnail_image?: string;
 }
 
 interface Developer {
@@ -72,7 +77,8 @@ interface MobileHomeData {
 
 const MobileHomePage: React.FC = () => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [developers, setDevelopers] = useState<Developer[]>([]);
@@ -92,6 +98,9 @@ const MobileHomePage: React.FC = () => {
     []
   );
 
+  // Global search state
+  const [globalSearchTerm, setGlobalSearchTerm] = useState<string>('');
+
   useEffect(() => {
     const loadData = async () => {
       const masterData = await fetchMasterData(); // Load master data first
@@ -101,6 +110,11 @@ const MobileHomePage: React.FC = () => {
     };
     loadData();
   }, []);
+
+  // Debug useEffect to track propertiesByType changes
+  useEffect(() => {
+    console.log('🔄🔄🔄 propertiesByType state changed:', propertiesByType);
+  }, [propertiesByType]);
 
   const fetchMasterData = async () => {
     try {
@@ -119,6 +133,27 @@ const MobileHomePage: React.FC = () => {
       setProperties(propertiesData);
       setDevelopers(developersData);
 
+      // Debug logging
+      console.log('Property Types:', propertyTypesData);
+      console.log(
+        'Properties:',
+        propertiesData.map((p: Property) => ({
+          id: p.id,
+          name: p.project_name,
+          type_ids: p.property_type_ids,
+          type_text: p.property_types_text,
+        }))
+      );
+
+      // Debug: Show property type ID mapping
+      console.log(
+        'Property Type ID Mapping:',
+        propertyTypesData.map((pt: PropertyType) => ({
+          id: pt.id,
+          name: pt.name,
+        }))
+      );
+
       return {
         propertyTypes: propertyTypesData,
         properties: propertiesData,
@@ -131,7 +166,10 @@ const MobileHomePage: React.FC = () => {
   };
 
   const fetchHomeData = async (propertyTypesData?: any[]) => {
-    setLoading(true);
+    console.log(
+      '🔄 fetchHomeData called - this will reset propertiesByType state'
+    );
+    setIsFetching(true);
     try {
       const response = await axios.get('/api/mobile-home-data');
       const data = response.data.data;
@@ -170,6 +208,14 @@ const MobileHomePage: React.FC = () => {
 
       setExistingStoryImages(data.story_images || []);
 
+      // Debug logging for properties_by_type data
+      console.log('Raw properties_by_type data:', data.properties_by_type);
+      console.log(
+        'Type of properties_by_type:',
+        typeof data.properties_by_type
+      );
+      console.log('Is array?', Array.isArray(data.properties_by_type));
+
       // Convert properties_by_type from object to array format for frontend
       let propertiesArray: PropertyByType[] = [];
       if (data.properties_by_type) {
@@ -180,32 +226,77 @@ const MobileHomePage: React.FC = () => {
           // New object format - convert to array
           // { "Apartment": [...], "Villa": [...] } => [{ property_type_name: "Apartment", property_ids: [...] }]
           const typesData = propertyTypesData || propertyTypes; // Use passed data or fall back to state
+          console.log('Converting object format, typesData:', typesData);
+          console.log(
+            'Object entries:',
+            Object.entries(data.properties_by_type)
+          );
+
           propertiesArray = Object.entries(data.properties_by_type).map(
             ([typeName, properties]: [string, any]) => {
-              // Find the property type ID from the type name
-              const propertyType = typesData.find(
-                (pt: any) => pt.name === typeName
+              console.log(
+                `Processing type: ${typeName}, properties:`,
+                properties
               );
+
+              // Resolve property type by case-insensitive match; fall back to deriving from first property's type
+              const typeNameLc = String(typeName).trim().toLowerCase();
+              let matchedType = typesData.find(
+                (pt: any) => String(pt.name).trim().toLowerCase() === typeNameLc
+              );
+
+              console.log(`Matched type for ${typeName}:`, matchedType);
 
               // Extract property IDs from the full property objects
               const propertyIds = Array.isArray(properties)
                 ? properties.map((p: any) => p.id)
                 : [];
 
-              return {
-                property_type_id: propertyType?.id || 0,
-                property_type_name: typeName,
+              if (
+                !matchedType &&
+                Array.isArray(properties) &&
+                properties.length > 0
+              ) {
+                const first = properties[0];
+                // Try to read embedded property type from object payload
+                const embeddedType = (first as any).property_types;
+                if (embeddedType && embeddedType.id) {
+                  matchedType = typesData.find(
+                    (pt: any) => pt.id === embeddedType.id
+                  ) || {
+                    id: embeddedType.id,
+                    name: embeddedType.name,
+                  };
+                }
+              }
+
+              const result = {
+                property_type_id: matchedType?.id || 0,
+                property_type_name: matchedType?.name || String(typeName),
                 property_ids: propertyIds,
               };
+
+              console.log(`Result for ${typeName}:`, result);
+              return result;
             }
           );
         }
+      } else {
+        console.log('No properties_by_type data found in response');
       }
+
+      // Debug logging for converted properties array
+      console.log('Converted propertiesArray:', propertiesArray);
+      console.log(
+        '🔄 About to set propertiesByType state with:',
+        propertiesArray
+      );
+
       setPropertiesByType(propertiesArray);
     } catch (error: any) {
       message.error('Failed to fetch home data');
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -277,23 +368,37 @@ const MobileHomePage: React.FC = () => {
     propertyTypeId: number,
     selectedPropertyIds: string[]
   ) => {
+    console.log('🚀🚀🚀 handlePropertyTypeChange called:', {
+      propertyTypeId,
+      selectedPropertyIds,
+      propertyTypes,
+    });
+    console.log('🚀 Current propertiesByType before update:', propertiesByType);
+
     const propertyType = propertyTypes.find(pt => pt.id === propertyTypeId);
-    if (!propertyType) return;
+    if (!propertyType) {
+      console.log('Property type not found for ID:', propertyTypeId);
+      return;
+    }
 
     setPropertiesByType(prev => {
+      console.log('Previous propertiesByType:', prev);
+
       const existing = prev.filter(p => p.property_type_id !== propertyTypeId);
 
       if (selectedPropertyIds.length > 0) {
-        return [
-          ...existing,
-          {
-            property_type_id: propertyTypeId,
-            property_type_name: propertyType.name,
-            property_ids: selectedPropertyIds,
-          },
-        ];
+        const newEntry = {
+          property_type_id: propertyTypeId,
+          property_type_name: propertyType.name,
+          property_ids: selectedPropertyIds,
+        };
+
+        const result = [...existing, newEntry];
+        console.log('🚀🚀🚀 New propertiesByType after adding:', result);
+        return result;
       }
 
+      console.log('Removing property type, new propertiesByType:', existing);
       return existing;
     });
   };
@@ -301,7 +406,7 @@ const MobileHomePage: React.FC = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      setLoading(true);
+      setIsSaving(true);
 
       const formData = new FormData();
 
@@ -349,7 +454,7 @@ const MobileHomePage: React.FC = () => {
         formData.append('story_images', file);
       });
 
-      await axios.post('/api/mobile-home-data', formData, {
+      const response = await axios.post('/api/mobile-home-data', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -363,23 +468,119 @@ const MobileHomePage: React.FC = () => {
       setStoryImages([]);
       setStoryImagesToDelete([]);
 
-      // Refresh data
-      fetchHomeData();
+      // Refresh data to reflect latest saved state
+      await fetchHomeData(propertyTypes);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save home data');
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
   const getPropertiesByTypeId = (typeId: number): Property[] => {
-    return properties.filter(p => p.property_type_id === typeId);
+    const filteredProperties = properties.filter(p => {
+      // Check if property has property_type_ids and if it contains the current typeId
+      if (p.property_type_ids) {
+        const typeIds = p.property_type_ids
+          .split(',')
+          .map(id => parseInt(id.trim()));
+        return typeIds.includes(typeId);
+      }
+      // Fallback to property_type_id if property_type_ids is not available
+      return p.property_type_id === typeId;
+    });
+
+    // Debug logging
+    if (filteredProperties.length > 0) {
+      console.log(
+        `Properties for type ${typeId}:`,
+        filteredProperties.map(p => ({
+          id: p.id,
+          name: p.project_name,
+          type_ids: p.property_type_ids,
+          type_text: p.property_types_text,
+        }))
+      );
+    }
+
+    return filteredProperties;
   };
 
   const getSelectedPropertiesForType = (typeId: number): string[] => {
+    console.log(`🔍 Looking for property type ${typeId} in:`, propertiesByType);
+    console.log(
+      `🔍 Property type IDs in state:`,
+      propertiesByType.map(p => p.property_type_id)
+    );
+
     const found = propertiesByType.find(p => p.property_type_id === typeId);
-    return found ? found.property_ids : [];
+    const result = found ? found.property_ids : [];
+
+    // Debug logging
+    console.log(`Selected properties for type ${typeId}:`, {
+      found: found,
+      property_ids: result,
+      allPropertiesByType: propertiesByType,
+    });
+
+    return result;
   };
+
+  if (isFetching) {
+    return (
+      <div className='properties-container'>
+        <div className='properties-header'>
+          <Title level={1} className='properties-title'>
+            Mobile Home Page Data
+          </Title>
+          <p className='properties-subtitle'>
+            Manage the content displayed on the mobile app home page
+          </p>
+        </div>
+        <Card className='properties-table-card' style={{ marginTop: 24 }}>
+          <Skeleton
+            active
+            paragraph={{ rows: 2 }}
+            title
+            style={{ marginBottom: 24 }}
+          />
+          <Skeleton.Input
+            active
+            style={{ width: '100%', height: 64, marginBottom: 24 }}
+          />
+          <Divider />
+          <Skeleton
+            active
+            paragraph={{ rows: 3 }}
+            title
+            style={{ marginBottom: 24 }}
+          />
+          <Skeleton.Input
+            active
+            style={{ width: '100%', height: 44, marginBottom: 12 }}
+          />
+          <Skeleton.Input
+            active
+            style={{ width: '100%', height: 44, marginBottom: 12 }}
+          />
+          <Skeleton.Input
+            active
+            style={{ width: '100%', height: 44, marginBottom: 12 }}
+          />
+          <Divider />
+          <Skeleton
+            active
+            paragraph={{ rows: 2 }}
+            title
+            style={{ marginBottom: 24 }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Skeleton.Button active style={{ width: 150, height: 40 }} />
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className='properties-container'>
@@ -523,15 +724,121 @@ const MobileHomePage: React.FC = () => {
               type='secondary'
               style={{ display: 'block', marginBottom: 16 }}
             >
-              Select which properties to display for each property type
+              Select which properties to display for each property type. Use the
+              search functionality within each property type to quickly find
+              specific properties.
             </Text>
+
+            {/* Global Search Bar */}
+            <div style={{ marginBottom: 24 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Input.Search
+                  placeholder='🔍 Search properties across all types...'
+                  value={globalSearchTerm}
+                  onChange={e => setGlobalSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    maxWidth: '500px',
+                  }}
+                  size='large'
+                  allowClear
+                  enterButton='Search'
+                  onSearch={value => {
+                    setGlobalSearchTerm(value);
+                    // Scroll to first matching property type
+                    const matchingType = propertyTypes.find(pt => {
+                      const typeProperties = getPropertiesByTypeId(pt.id);
+                      return typeProperties.some(p =>
+                        p.project_name
+                          .toLowerCase()
+                          .includes(value.toLowerCase())
+                      );
+                    });
+                    if (matchingType) {
+                      const element = document.querySelector(
+                        `[data-panel-key="${matchingType.id}"]`
+                      );
+                      if (element) {
+                        element.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        });
+                      }
+                    }
+                  }}
+                />
+                {globalSearchTerm && (
+                  <Button onClick={() => setGlobalSearchTerm('')} size='large'>
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+              {globalSearchTerm && (
+                <div style={{ marginTop: '8px' }}>
+                  <Text
+                    type='secondary'
+                    style={{ fontSize: '12px', display: 'block' }}
+                  >
+                    Showing results for: "{globalSearchTerm}"
+                  </Text>
+                  <Text
+                    type='secondary'
+                    style={{
+                      fontSize: '11px',
+                      display: 'block',
+                      marginTop: '4px',
+                    }}
+                  >
+                    💡 Tip: Click on property type panels below to see matching
+                    properties highlighted
+                  </Text>
+                </div>
+              )}
+            </div>
 
             <Collapse accordion>
               {propertyTypes.map(propertyType => {
+                console.log('🔄 Rendering property type:', {
+                  id: propertyType.id,
+                  name: propertyType.name,
+                });
+                console.log(
+                  '📊 Current propertiesByType state:',
+                  propertiesByType
+                );
+
                 const typeProperties = getPropertiesByTypeId(propertyType.id);
                 const selectedPropertyIds = getSelectedPropertiesForType(
                   propertyType.id
                 );
+
+                console.log('Property type details:', {
+                  id: propertyType.id,
+                  name: propertyType.name,
+                  availableProperties: typeProperties.length,
+                  selectedProperties: selectedPropertyIds.length,
+                });
+
+                // Check if this property type has matching properties for global search
+                const hasMatchingProperties = globalSearchTerm
+                  ? typeProperties.some(p =>
+                      p.project_name
+                        .toLowerCase()
+                        .includes(globalSearchTerm.toLowerCase())
+                    )
+                  : true;
+
+                // Don't show property type if global search is active and no matches
+                if (globalSearchTerm && !hasMatchingProperties) {
+                  return null;
+                }
 
                 return (
                   <Panel
@@ -551,6 +858,11 @@ const MobileHomePage: React.FC = () => {
                         )}
                         <span style={{ fontWeight: 500 }}>
                           {propertyType.name}
+                          {globalSearchTerm && hasMatchingProperties && (
+                            <Tag color='green' style={{ marginLeft: 8 }}>
+                              Found matches
+                            </Tag>
+                          )}
                         </span>
                         {selectedPropertyIds.length > 0 && (
                           <Tag color='blue'>
@@ -560,40 +872,149 @@ const MobileHomePage: React.FC = () => {
                       </Space>
                     }
                     key={propertyType.id}
+                    data-panel-key={propertyType.id}
                   >
                     {typeProperties.length > 0 ? (
-                      <Select
-                        mode='multiple'
-                        placeholder={`Select properties for ${propertyType.name}`}
-                        style={{ width: '100%' }}
-                        value={selectedPropertyIds}
-                        onChange={values =>
-                          handlePropertyTypeChange(propertyType.id, values)
-                        }
-                        size='large'
-                        showSearch
-                        optionFilterProp='label'
-                      >
-                        {typeProperties.map(property => (
-                          <Option
-                            key={property.id}
-                            value={property.id}
-                            label={property.project_name}
+                      <div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <Text
+                            type='secondary'
+                            style={{
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              display: 'block',
+                              marginBottom: '8px',
+                            }}
                           >
-                            <Space>
-                              <span>{property.project_name}</span>
-                              {property.starting_price && (
-                                <Text
-                                  type='secondary'
-                                  style={{ fontSize: '12px' }}
+                            🔍 Search and select properties (
+                            {typeProperties.length} available):
+                          </Text>
+                        </div>
+                        <Select
+                          mode='multiple'
+                          placeholder={`Type to search and select properties for ${propertyType.name}...`}
+                          style={{ width: '100%' }}
+                          value={selectedPropertyIds}
+                          onChange={values => {
+                            console.log('🚀🚀🚀 Select onChange triggered:', {
+                              propertyTypeId: propertyType.id,
+                              propertyTypeName: propertyType.name,
+                              selectedValues: values,
+                              currentSelectedPropertyIds: selectedPropertyIds,
+                            });
+                            console.log(
+                              '🚀🚀🚀 About to call handlePropertyTypeChange'
+                            );
+                            handlePropertyTypeChange(propertyType.id, values);
+                            console.log(
+                              '🚀🚀🚀 handlePropertyTypeChange called'
+                            );
+                          }}
+                          onSelect={value => {
+                            console.log('✅ Select onSelect triggered:', {
+                              propertyTypeId: propertyType.id,
+                              selectedValue: value,
+                            });
+                          }}
+                          onDeselect={value => {
+                            console.log('❌ Select onDeselect triggered:', {
+                              propertyTypeId: propertyType.id,
+                              deselectedValue: value,
+                            });
+                          }}
+                          size='large'
+                          showSearch
+                          allowClear
+                          optionFilterProp='label'
+                          notFoundContent='No properties found matching your search'
+                          filterOption={(input, option) => {
+                            const label = String(
+                              option?.label || ''
+                            ).toLowerCase();
+                            const searchTerm = input.toLowerCase();
+                            return label.includes(searchTerm);
+                          }}
+                          filterSort={(optionA, optionB) => {
+                            const labelA = String(
+                              optionA?.label || ''
+                            ).toLowerCase();
+                            const labelB = String(
+                              optionB?.label || ''
+                            ).toLowerCase();
+                            return labelA.localeCompare(labelB);
+                          }}
+                        >
+                          {typeProperties
+                            .filter(property => {
+                              // Filter properties based on global search term
+                              if (!globalSearchTerm) return true;
+                              return property.project_name
+                                .toLowerCase()
+                                .includes(globalSearchTerm.toLowerCase());
+                            })
+                            .map(property => {
+                              console.log('🎯 Rendering property option:', {
+                                propertyId: property.id,
+                                propertyName: property.project_name,
+                                propertyTypeId: propertyType.id,
+                              });
+                              const isHighlighted =
+                                globalSearchTerm &&
+                                property.project_name
+                                  .toLowerCase()
+                                  .includes(globalSearchTerm.toLowerCase());
+
+                              return (
+                                <Option
+                                  key={property.id}
+                                  value={property.id}
+                                  label={property.project_name}
                                 >
-                                  (${property.starting_price.toLocaleString()})
-                                </Text>
-                              )}
-                            </Space>
-                          </Option>
-                        ))}
-                      </Select>
+                                  <Space>
+                                    <span
+                                      style={{
+                                        backgroundColor: isHighlighted
+                                          ? '#fff7e6'
+                                          : 'transparent',
+                                        padding: isHighlighted
+                                          ? '2px 4px'
+                                          : '0',
+                                        borderRadius: isHighlighted
+                                          ? '4px'
+                                          : '0',
+                                      }}
+                                    >
+                                      {property.project_name}
+                                    </span>
+                                    {property.starting_price && (
+                                      <Text
+                                        type='secondary'
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        (
+                                        {typeof property.starting_price ===
+                                        'string'
+                                          ? JSON.parse(property.starting_price)
+                                              .currentSign +
+                                            ' ' +
+                                            parseInt(
+                                              JSON.parse(
+                                                property.starting_price
+                                              ).value
+                                            ).toLocaleString()
+                                          : property.starting_price.toLocaleString()}
+                                        )
+                                      </Text>
+                                    )}
+                                    {isHighlighted && (
+                                      <Tag color='orange'>Matched</Tag>
+                                    )}
+                                  </Space>
+                                </Option>
+                              );
+                            })}
+                        </Select>
+                      </div>
                     ) : (
                       <Empty
                         description={`No properties found for ${propertyType.name}`}
@@ -661,11 +1082,20 @@ const MobileHomePage: React.FC = () => {
                                     position: 'relative',
                                   }}
                                 >
-                                  {(property as any).property_images &&
-                                  (property as any).property_images.length >
-                                    0 ? (
+                                  {property.property_images &&
+                                  property.property_images.length > 0 ? (
                                     <img
-                                      src={(property as any).property_images[0]}
+                                      src={property.property_images[0]}
+                                      alt={property.project_name}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                  ) : property.thumbnail_image ? (
+                                    <img
+                                      src={property.thumbnail_image}
                                       alt={property.project_name}
                                       style={{
                                         width: '100%',
@@ -741,8 +1171,17 @@ const MobileHomePage: React.FC = () => {
                                         fontWeight: 500,
                                       }}
                                     >
-                                      $
-                                      {property.starting_price.toLocaleString()}
+                                      {typeof property.starting_price ===
+                                      'string'
+                                        ? JSON.parse(property.starting_price)
+                                            .currentSign +
+                                          ' ' +
+                                          parseInt(
+                                            JSON.parse(property.starting_price)
+                                              .value
+                                          ).toLocaleString()
+                                        : '$' +
+                                          property.starting_price.toLocaleString()}
                                     </div>
                                   )}
                                 </div>
@@ -977,7 +1416,7 @@ const MobileHomePage: React.FC = () => {
               size='large'
               icon={<SaveOutlined />}
               onClick={handleSave}
-              loading={loading}
+              loading={isSaving}
               style={{ minWidth: '150px' }}
             >
               Save Changes
