@@ -87,9 +87,17 @@ const MobileHomePage: React.FC = () => {
   // File states
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFileName, setVideoFileName] = useState<string>('');
+  const [videoUploadUrl, setVideoUploadUrl] = useState<string>('');
+  const [videoPublicUrl, setVideoPublicUrl] = useState<string>('');
   const [deleteExistingVideo, setDeleteExistingVideo] =
     useState<boolean>(false);
   const [storyImages, setStoryImages] = useState<File[]>([]);
+  const [storyImageUploadUrls, setStoryImageUploadUrls] = useState<string[]>(
+    []
+  );
+  const [storyImagePublicUrls, setStoryImagePublicUrls] = useState<string[]>(
+    []
+  );
   const [existingStoryImages, setExistingStoryImages] = useState<string[]>([]);
   const [storyImagesToDelete, setStoryImagesToDelete] = useState<string[]>([]);
 
@@ -297,7 +305,7 @@ const MobileHomePage: React.FC = () => {
     }
   };
 
-  const handleVideoSelect = (file: File) => {
+  const handleVideoSelect = async (file: File) => {
     const allowedTypes = [
       'video/mp4',
       'video/quicktime',
@@ -315,16 +323,50 @@ const MobileHomePage: React.FC = () => {
       return false;
     }
 
-    setVideoFile(file);
-    setVideoFileName(file.name);
-    setDeleteExistingVideo(false); // Reset deletion flag when new video selected
-    message.success(`Video "${file.name}" selected successfully!`);
-    return false;
+    try {
+      // Generate upload URL
+      const response = await axios.post(
+        '/api/mobile-home-data/generate-upload-url',
+        {
+          fileType: file.type,
+          fileName: file.name,
+          fileSize: file.size,
+        }
+      );
+
+      const { uploadUrl, publicUrl } = response.data;
+
+      // Upload file directly to Supabase
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload video');
+      }
+
+      setVideoFile(file);
+      setVideoFileName(file.name);
+      setVideoUploadUrl(uploadUrl);
+      setVideoPublicUrl(publicUrl);
+      setDeleteExistingVideo(false);
+      message.success(`Video "${file.name}" uploaded successfully!`);
+      return false;
+    } catch (error: any) {
+      message.error(`Failed to upload video: ${error.message}`);
+      return false;
+    }
   };
 
   const handleRemoveVideo = () => {
     setVideoFile(null);
     setVideoFileName('');
+    setVideoUploadUrl('');
+    setVideoPublicUrl('');
     setDeleteExistingVideo(true); // Mark for deletion
   };
 
@@ -424,9 +466,9 @@ const MobileHomePage: React.FC = () => {
         JSON.stringify(values.selected_developers || [])
       );
 
-      // Add video file if new one selected
-      if (videoFile) {
-        formData.append('video_file', videoFile);
+      // Add video URL if new one uploaded
+      if (videoPublicUrl) {
+        formData.append('video_url', videoPublicUrl);
       } else if (homeData?.featured_video_url && !deleteExistingVideo) {
         // Only keep existing video if not marked for deletion
         formData.append('existing_video_url', homeData.featured_video_url);
@@ -465,6 +507,9 @@ const MobileHomePage: React.FC = () => {
 
       // Reset file states
       setVideoFile(null);
+      setVideoFileName('');
+      setVideoUploadUrl('');
+      setVideoPublicUrl('');
       setDeleteExistingVideo(false); // Reset deletion flag after save
       setStoryImages([]);
       setStoryImagesToDelete([]);
@@ -644,17 +689,17 @@ const MobileHomePage: React.FC = () => {
                 </div>
               )}
 
-            {/* Show new video preview if selected */}
-            {videoFile && (
+            {/* Show new video preview if uploaded */}
+            {videoPublicUrl && (
               <div style={{ marginBottom: 16 }}>
                 <Text
                   type='success'
                   style={{ display: 'block', marginBottom: 8 }}
                 >
-                  New Video Preview: {videoFile.name}
+                  New Video Preview: {videoFileName}
                 </Text>
                 <video
-                  src={URL.createObjectURL(videoFile)}
+                  src={videoPublicUrl}
                   controls
                   style={{
                     width: '100%',
@@ -672,7 +717,7 @@ const MobileHomePage: React.FC = () => {
               accept='video/mp4,video/quicktime,video/x-msvideo,video/webm'
             >
               <Button icon={<UploadOutlined />} size='large'>
-                {videoFileName && !deleteExistingVideo
+                {videoPublicUrl && !deleteExistingVideo
                   ? 'Change Video'
                   : 'Upload Video'}
               </Button>

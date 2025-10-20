@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
 
     // Extract files and data
-    const videoFile = formData.get('video_file') as File;
+    const videoUrl = formData.get('video_url') as string;
     const storyImageFiles = formData.getAll('story_images') as File[];
     const id = formData.get('id') as string;
     const taglineText = formData.get('tagline_text') as string;
@@ -72,13 +72,6 @@ export async function POST(request: NextRequest) {
     ) as string;
 
     // Validate file sizes before processing
-    if (videoFile && videoFile.size > 20 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'Video file size too large. Maximum 20MB allowed.' },
-        { status: 400 }
-      );
-    }
-
     // Check total size of story images
     const totalStoryImagesSize = storyImageFiles.reduce(
       (total, file) => total + file.size,
@@ -92,62 +85,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process video upload if provided
-    let videoUrl = deleteVideo === 'true' ? null : existingVideoUrl || null;
+    // Process video URL if provided
+    let finalVideoUrl =
+      deleteVideo === 'true' ? null : existingVideoUrl || null;
 
-    if (videoFile && videoFile.size > 0) {
-      // Validate video file type
-      const allowedTypes = [
-        'video/mp4',
-        'video/quicktime',
-        'video/x-msvideo',
-        'video/webm',
-      ];
-
-      if (!allowedTypes.includes(videoFile.type)) {
-        return NextResponse.json(
-          {
-            error:
-              'Invalid video type. Only MP4, MOV, AVI, and WebM are allowed.',
-          },
-          { status: 400 }
-        );
-      }
-
-      // Delete old video if exists
-      if (existingVideoUrl) {
-        try {
-          const urlParts = existingVideoUrl.split('/videos/');
-          if (urlParts.length > 1) {
-            const filePath = urlParts[1];
-            await supabaseAdmin.storage.from('videos').remove([filePath]);
-          }
-        } catch (deleteError) {
-          console.error('Error deleting old video:', deleteError);
-        }
-      }
-
-      // Upload new video
-      const fileExt = videoFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = fileName;
-
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('videos')
-        .upload(filePath, videoFile);
-
-      if (uploadError) {
-        return NextResponse.json(
-          { error: `Failed to upload video: ${uploadError.message}` },
-          { status: 500 }
-        );
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabaseAdmin.storage.from('videos').getPublicUrl(filePath);
-
-      videoUrl = publicUrl;
+    if (videoUrl) {
+      // Use the provided video URL (already uploaded directly to Supabase)
+      finalVideoUrl = videoUrl;
     }
 
     // Process story images
@@ -329,7 +273,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare data for insert/update
     const homeData = {
-      featured_video_url: videoUrl,
+      featured_video_url: finalVideoUrl,
       tagline_text: taglineText || '',
       properties_by_type: propertiesByTypeObject,
       selected_developers: developersWithFullDetails,
