@@ -98,9 +98,6 @@ const MobileHomePage: React.FC = () => {
     []
   );
 
-  // Global search state
-  const [globalSearchTerm, setGlobalSearchTerm] = useState<string>('');
-
   useEffect(() => {
     const loadData = async () => {
       const masterData = await fetchMasterData(); // Load master data first
@@ -454,11 +451,15 @@ const MobileHomePage: React.FC = () => {
         formData.append('story_images', file);
       });
 
-      const response = await axios.post('/api/mobile-home-data', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post(
+        '/api/mobile-home-data/upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
       message.success('Mobile home data saved successfully!');
 
@@ -729,80 +730,6 @@ const MobileHomePage: React.FC = () => {
               specific properties.
             </Text>
 
-            {/* Global Search Bar */}
-            <div style={{ marginBottom: 24 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <Input.Search
-                  placeholder='🔍 Search properties across all types...'
-                  value={globalSearchTerm}
-                  onChange={e => setGlobalSearchTerm(e.target.value)}
-                  style={{
-                    width: '100%',
-                    maxWidth: '500px',
-                  }}
-                  size='large'
-                  allowClear
-                  enterButton='Search'
-                  onSearch={value => {
-                    setGlobalSearchTerm(value);
-                    // Scroll to first matching property type
-                    const matchingType = propertyTypes.find(pt => {
-                      const typeProperties = getPropertiesByTypeId(pt.id);
-                      return typeProperties.some(p =>
-                        p.project_name
-                          .toLowerCase()
-                          .includes(value.toLowerCase())
-                      );
-                    });
-                    if (matchingType) {
-                      const element = document.querySelector(
-                        `[data-panel-key="${matchingType.id}"]`
-                      );
-                      if (element) {
-                        element.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center',
-                        });
-                      }
-                    }
-                  }}
-                />
-                {globalSearchTerm && (
-                  <Button onClick={() => setGlobalSearchTerm('')} size='large'>
-                    Clear Search
-                  </Button>
-                )}
-              </div>
-              {globalSearchTerm && (
-                <div style={{ marginTop: '8px' }}>
-                  <Text
-                    type='secondary'
-                    style={{ fontSize: '12px', display: 'block' }}
-                  >
-                    Showing results for: "{globalSearchTerm}"
-                  </Text>
-                  <Text
-                    type='secondary'
-                    style={{
-                      fontSize: '11px',
-                      display: 'block',
-                      marginTop: '4px',
-                    }}
-                  >
-                    💡 Tip: Click on property type panels below to see matching
-                    properties highlighted
-                  </Text>
-                </div>
-              )}
-            </div>
-
             <Collapse accordion>
               {propertyTypes.map(propertyType => {
                 console.log('🔄 Rendering property type:', {
@@ -826,20 +753,6 @@ const MobileHomePage: React.FC = () => {
                   selectedProperties: selectedPropertyIds.length,
                 });
 
-                // Check if this property type has matching properties for global search
-                const hasMatchingProperties = globalSearchTerm
-                  ? typeProperties.some(p =>
-                      p.project_name
-                        .toLowerCase()
-                        .includes(globalSearchTerm.toLowerCase())
-                    )
-                  : true;
-
-                // Don't show property type if global search is active and no matches
-                if (globalSearchTerm && !hasMatchingProperties) {
-                  return null;
-                }
-
                 return (
                   <Panel
                     header={
@@ -858,11 +771,6 @@ const MobileHomePage: React.FC = () => {
                         )}
                         <span style={{ fontWeight: 500 }}>
                           {propertyType.name}
-                          {globalSearchTerm && hasMatchingProperties && (
-                            <Tag color='green' style={{ marginLeft: 8 }}>
-                              Found matches
-                            </Tag>
-                          )}
                         </span>
                         {selectedPropertyIds.length > 0 && (
                           <Tag color='blue'>
@@ -944,75 +852,44 @@ const MobileHomePage: React.FC = () => {
                             return labelA.localeCompare(labelB);
                           }}
                         >
-                          {typeProperties
-                            .filter(property => {
-                              // Filter properties based on global search term
-                              if (!globalSearchTerm) return true;
-                              return property.project_name
-                                .toLowerCase()
-                                .includes(globalSearchTerm.toLowerCase());
-                            })
-                            .map(property => {
-                              console.log('🎯 Rendering property option:', {
-                                propertyId: property.id,
-                                propertyName: property.project_name,
-                                propertyTypeId: propertyType.id,
-                              });
-                              const isHighlighted =
-                                globalSearchTerm &&
-                                property.project_name
-                                  .toLowerCase()
-                                  .includes(globalSearchTerm.toLowerCase());
+                          {typeProperties.map(property => {
+                            console.log('🎯 Rendering property option:', {
+                              propertyId: property.id,
+                              propertyName: property.project_name,
+                              propertyTypeId: propertyType.id,
+                            });
 
-                              return (
-                                <Option
-                                  key={property.id}
-                                  value={property.id}
-                                  label={property.project_name}
-                                >
-                                  <Space>
-                                    <span
-                                      style={{
-                                        backgroundColor: isHighlighted
-                                          ? '#fff7e6'
-                                          : 'transparent',
-                                        padding: isHighlighted
-                                          ? '2px 4px'
-                                          : '0',
-                                        borderRadius: isHighlighted
-                                          ? '4px'
-                                          : '0',
-                                      }}
+                            return (
+                              <Option
+                                key={property.id}
+                                value={property.id}
+                                label={property.project_name}
+                              >
+                                <Space>
+                                  <span>{property.project_name}</span>
+                                  {property.starting_price && (
+                                    <Text
+                                      type='secondary'
+                                      style={{ fontSize: '12px' }}
                                     >
-                                      {property.project_name}
-                                    </span>
-                                    {property.starting_price && (
-                                      <Text
-                                        type='secondary'
-                                        style={{ fontSize: '12px' }}
-                                      >
-                                        (
-                                        {typeof property.starting_price ===
-                                        'string'
-                                          ? JSON.parse(property.starting_price)
-                                              .currentSign +
-                                            ' ' +
-                                            parseInt(
-                                              JSON.parse(
-                                                property.starting_price
-                                              ).value
-                                            ).toLocaleString()
-                                          : property.starting_price.toLocaleString()}
-                                        )
-                                      </Text>
-                                    )}
-                                    {isHighlighted && (
-                                      <Tag color='orange'>Matched</Tag>
-                                    )}
-                                  </Space>
-                                </Option>
-                              );
-                            })}
+                                      (
+                                      {typeof property.starting_price ===
+                                      'string'
+                                        ? JSON.parse(property.starting_price)
+                                            .currentSign +
+                                          ' ' +
+                                          parseInt(
+                                            JSON.parse(property.starting_price)
+                                              .value
+                                          ).toLocaleString()
+                                        : property.starting_price.toLocaleString()}
+                                      )
+                                    </Text>
+                                  )}
+                                </Space>
+                              </Option>
+                            );
+                          })}
                         </Select>
                       </div>
                     ) : (

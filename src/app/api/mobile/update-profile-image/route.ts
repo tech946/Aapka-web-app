@@ -69,6 +69,19 @@ export async function POST(request: NextRequest) {
     // Check content type and parse accordingly
     const contentType = request.headers.get('content-type') || '';
     console.log('Content-Type received:', contentType);
+
+    // Check content length before parsing FormData
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+      // 10MB limit for profile images
+      return NextResponse.json(
+        {
+          error: 'Request too large. Maximum 10MB allowed for profile images.',
+        },
+        { status: 413 }
+      );
+    }
+
     let imageFile: File | null = null;
     let profileImageUrl: string | null = null;
 
@@ -247,6 +260,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in POST /api/mobile/update-profile-image:', error);
+
+    // Check if it's a size-related error
+    if (error instanceof Error && error.message.includes('too large')) {
+      return NextResponse.json(
+        { error: 'Request too large. Please reduce file size and try again.' },
+        { status: 413 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Internal server error',
