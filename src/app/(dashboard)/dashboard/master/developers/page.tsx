@@ -62,6 +62,7 @@ const DevelopersPage: React.FC = () => {
   );
   const [form] = Form.useForm();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -97,6 +98,7 @@ const DevelopersPage: React.FC = () => {
     setEditingDeveloper(null);
     form.resetFields();
     setImagePreview(null);
+    setSelectedImageFile(null);
     setModalVisible(true);
   };
 
@@ -109,6 +111,7 @@ const DevelopersPage: React.FC = () => {
       is_active: developer.is_active,
     });
     setImagePreview(developer.image_url || null);
+    setSelectedImageFile(null); // Clear any previously selected file
     setModalVisible(true);
   };
 
@@ -137,8 +140,8 @@ const DevelopersPage: React.FC = () => {
       return false;
     }
 
-    // Store the file in form state and create preview
-    form.setFieldsValue({ image_file: file });
+    // Store the file in state and create preview
+    setSelectedImageFile(file);
     const reader = new FileReader();
     reader.onload = e => {
       setImagePreview(e.target?.result as string);
@@ -149,7 +152,8 @@ const DevelopersPage: React.FC = () => {
 
   const handleImageRemove = () => {
     setImagePreview(null);
-    form.setFieldsValue({ image_file: null, image_url: null });
+    setSelectedImageFile(null);
+    form.setFieldsValue({ image_url: null });
   };
 
   const handleModalOk = async () => {
@@ -167,9 +171,8 @@ const DevelopersPage: React.FC = () => {
       }
 
       // Check if there's a new image file
-      const imageFile = form.getFieldValue('image_file');
-      if (imageFile) {
-        formData.append('image_file', imageFile);
+      if (selectedImageFile) {
+        formData.append('image_file', selectedImageFile);
       }
 
       if (editingDeveloper) {
@@ -191,6 +194,7 @@ const DevelopersPage: React.FC = () => {
       setModalVisible(false);
       form.resetFields();
       setImagePreview(null);
+      setSelectedImageFile(null);
       fetchDevelopers(pagination.page, pagination.limit);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save developer');
@@ -201,6 +205,7 @@ const DevelopersPage: React.FC = () => {
     setModalVisible(false);
     form.resetFields();
     setImagePreview(null);
+    setSelectedImageFile(null);
   };
 
   const handlePageChange = (page: number, pageSize?: number) => {
