@@ -194,6 +194,7 @@ export async function PUT(request: NextRequest) {
       name = formData.get('name') as string;
       old_image_url = formData.get('old_image_url') as string;
       const file = formData.get('file') as File;
+      const removeImage = formData.get('remove_image') === 'true';
 
       if (!id || !name) {
         return NextResponse.json(
@@ -202,8 +203,21 @@ export async function PUT(request: NextRequest) {
         );
       }
 
+      // Handle image removal
+      if (removeImage) {
+        // Delete old image from storage
+        if (old_image_url) {
+          const oldImagePath = old_image_url.split('/').pop();
+          if (oldImagePath) {
+            await supabaseAdmin.storage
+              .from('country-images')
+              .remove([oldImagePath]);
+          }
+        }
+        image_url = null;
+      }
       // Handle file upload if provided
-      if (file && file.size > 0) {
+      else if (file && file.size > 0) {
         // Validate file type
         const allowedTypes = [
           'image/jpeg',

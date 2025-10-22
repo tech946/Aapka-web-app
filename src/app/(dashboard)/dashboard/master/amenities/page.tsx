@@ -157,6 +157,15 @@ const AmenitiesPage: React.FC = () => {
       if (editingAmenity) {
         formData.append('id', editingAmenity.id);
         formData.append('existing_image_url', values.image_url || '');
+
+        // Check if image was removed during editing
+        const hadImage = editingAmenity.image_url;
+        const hasNewImage = selectedImageFile;
+        const shouldRemoveImage = hadImage && !hasNewImage && !values.image_url;
+
+        if (shouldRemoveImage) {
+          formData.append('remove_image', 'true');
+        }
       }
 
       // Check if there's a new image file

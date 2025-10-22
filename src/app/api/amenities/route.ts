@@ -201,6 +201,7 @@ export async function PUT(request: NextRequest) {
       const description = formData.get('description') as string;
       const imageFile = formData.get('image_file') as File;
       const existingImageUrl = formData.get('existing_image_url') as string;
+      const removeImage = formData.get('remove_image') === 'true';
 
       if (!id || !name) {
         return NextResponse.json(
@@ -225,8 +226,21 @@ export async function PUT(request: NextRequest) {
 
       let imageUrl = existingImageUrl || existingAmenity.image_url;
 
+      // Handle image removal
+      if (removeImage) {
+        // Delete old image from storage
+        if (existingAmenity.image_url) {
+          const oldImagePath = existingAmenity.image_url.split('/').pop();
+          if (oldImagePath) {
+            await supabaseAdmin.storage
+              .from('amenity-images')
+              .remove([`amenity-images/${oldImagePath}`]);
+          }
+        }
+        imageUrl = null;
+      }
       // Handle image upload if new file provided
-      if (imageFile && imageFile.size > 0) {
+      else if (imageFile && imageFile.size > 0) {
         const allowedTypes = [
           'image/jpeg',
           'image/jpg',

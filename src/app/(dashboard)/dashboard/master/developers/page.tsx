@@ -168,6 +168,15 @@ const DevelopersPage: React.FC = () => {
       if (editingDeveloper) {
         formData.append('id', editingDeveloper.id);
         formData.append('existing_image_url', values.image_url || '');
+        
+        // Check if image was removed during editing
+        const hadImage = editingDeveloper.image_url;
+        const hasNewImage = selectedImageFile;
+        const shouldRemoveImage = hadImage && !hasNewImage && !values.image_url;
+        
+        if (shouldRemoveImage) {
+          formData.append('remove_image', 'true');
+        }
       }
 
       // Check if there's a new image file

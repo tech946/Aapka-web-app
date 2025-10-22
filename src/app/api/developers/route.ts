@@ -207,6 +207,7 @@ export async function PUT(request: NextRequest) {
       const is_active = formData.get('is_active') === 'true';
       const imageFile = formData.get('image_file') as File;
       const existingImageUrl = formData.get('existing_image_url') as string;
+      const removeImage = formData.get('remove_image') === 'true';
 
       if (!id || !name) {
         return NextResponse.json(
@@ -231,8 +232,21 @@ export async function PUT(request: NextRequest) {
 
       let imageUrl = existingImageUrl || existingDeveloper.image_url;
 
+      // Handle image removal
+      if (removeImage) {
+        // Delete old image from storage
+        if (existingDeveloper.image_url) {
+          const oldImagePath = existingDeveloper.image_url.split('/').pop();
+          if (oldImagePath) {
+            await supabaseAdmin.storage
+              .from('developer-images')
+              .remove([`developer-images/${oldImagePath}`]);
+          }
+        }
+        imageUrl = null;
+      }
       // Handle image upload if new file provided
-      if (imageFile && imageFile.size > 0) {
+      else if (imageFile && imageFile.size > 0) {
         const allowedTypes = [
           'image/jpeg',
           'image/jpg',

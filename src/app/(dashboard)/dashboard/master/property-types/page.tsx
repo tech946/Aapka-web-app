@@ -151,14 +151,24 @@ const PropertyTypesPage = () => {
       const values = await form.validateFields();
 
       if (editingPropertyType) {
-        // Handle update with form data if file is present
-        if (selectedImageFile) {
+        // Check if image was removed during editing
+        const hadImage = editingPropertyType.image_url;
+        const hasNewImage = selectedImageFile;
+        const shouldRemoveImage = hadImage && !hasNewImage;
+
+        // Handle update with form data if file is present or should be removed
+        if (selectedImageFile || shouldRemoveImage) {
           const formData = new FormData();
           formData.append('id', editingPropertyType.id.toString());
           formData.append('name', values.name);
           formData.append('description', values.description || '');
           formData.append('old_image_url', editingPropertyType.image_url || '');
-          formData.append('file', selectedImageFile);
+
+          if (shouldRemoveImage) {
+            formData.append('remove_image', 'true');
+          } else if (selectedImageFile) {
+            formData.append('file', selectedImageFile);
+          }
 
           await axios.put('/api/property-types', formData, {
             headers: {
