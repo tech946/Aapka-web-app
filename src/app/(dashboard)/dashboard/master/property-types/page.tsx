@@ -59,6 +59,7 @@ const PropertyTypesPage = () => {
     useState<PropertyType | null>(null);
   const [form] = Form.useForm();
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -94,6 +95,7 @@ const PropertyTypesPage = () => {
     setEditingPropertyType(null);
     form.resetFields();
     setImagePreview('');
+    setSelectedImageFile(null);
     setModalVisible(true);
   };
 
@@ -101,6 +103,7 @@ const PropertyTypesPage = () => {
     setEditingPropertyType(record);
     form.setFieldsValue(record);
     setImagePreview(record.image_url || '');
+    setSelectedImageFile(null); // Clear any previously selected file
     setModalVisible(true);
   };
 
@@ -121,7 +124,7 @@ const PropertyTypesPage = () => {
     try {
       // Store the file for later use in form submission
       setImagePreview(URL.createObjectURL(file));
-      form.setFieldsValue({ image_file: file });
+      setSelectedImageFile(file);
       message.success('Image selected successfully');
       return false; // Prevent default upload behavior
     } catch (error: any) {
@@ -135,7 +138,8 @@ const PropertyTypesPage = () => {
   const handleImageRemove = async () => {
     try {
       setImagePreview('');
-      form.setFieldsValue({ image_file: null, image_url: '' });
+      setSelectedImageFile(null);
+      form.setFieldsValue({ image_url: '' });
       message.success('Image removed successfully');
     } catch (error: any) {
       message.error('Failed to remove image');
@@ -148,13 +152,13 @@ const PropertyTypesPage = () => {
 
       if (editingPropertyType) {
         // Handle update with form data if file is present
-        if (values.image_file) {
+        if (selectedImageFile) {
           const formData = new FormData();
           formData.append('id', editingPropertyType.id.toString());
           formData.append('name', values.name);
           formData.append('description', values.description || '');
           formData.append('old_image_url', editingPropertyType.image_url || '');
-          formData.append('file', values.image_file);
+          formData.append('file', selectedImageFile);
 
           await axios.put('/api/property-types', formData, {
             headers: {
@@ -174,11 +178,11 @@ const PropertyTypesPage = () => {
         message.success('Property type updated successfully');
       } else {
         // Handle create with form data if file is present
-        if (values.image_file) {
+        if (selectedImageFile) {
           const formData = new FormData();
           formData.append('name', values.name);
           formData.append('description', values.description || '');
-          formData.append('file', values.image_file);
+          formData.append('file', selectedImageFile);
 
           await axios.post('/api/property-types', formData, {
             headers: {
@@ -199,6 +203,7 @@ const PropertyTypesPage = () => {
       setModalVisible(false);
       form.resetFields();
       setImagePreview('');
+      setSelectedImageFile(null);
       fetchPropertyTypes(pagination.page, pagination.limit);
     } catch (error: any) {
       message.error(

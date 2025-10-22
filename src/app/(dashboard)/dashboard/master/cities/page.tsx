@@ -74,6 +74,7 @@ const CitiesPage = () => {
   const [editingCity, setEditingCity] = useState<City | null>(null);
   const [form] = Form.useForm();
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -127,6 +128,7 @@ const CitiesPage = () => {
     setEditingCity(null);
     form.resetFields();
     setImagePreview('');
+    setSelectedImageFile(null);
     setModalVisible(true);
   };
 
@@ -137,6 +139,7 @@ const CitiesPage = () => {
       state_id: record.state_id,
     });
     setImagePreview(record.image_url || '');
+    setSelectedImageFile(null); // Clear any previously selected file
     setModalVisible(true);
   };
 
@@ -155,7 +158,7 @@ const CitiesPage = () => {
     try {
       // Store the file for later use in form submission
       setImagePreview(URL.createObjectURL(file));
-      form.setFieldsValue({ image_file: file });
+      setSelectedImageFile(file);
       message.success('Image selected successfully');
       return false; // Prevent default upload behavior
     } catch (error: any) {
@@ -169,7 +172,8 @@ const CitiesPage = () => {
   const handleImageRemove = async () => {
     try {
       setImagePreview('');
-      form.setFieldsValue({ image_file: null, image_url: '' });
+      setSelectedImageFile(null);
+      form.setFieldsValue({ image_url: '' });
       message.success('Image removed successfully');
     } catch (error: any) {
       message.error('Failed to remove image');
@@ -182,13 +186,13 @@ const CitiesPage = () => {
 
       if (editingCity) {
         // Handle update with form data if file is present
-        if (values.image_file) {
+        if (selectedImageFile) {
           const formData = new FormData();
           formData.append('id', editingCity.id.toString());
           formData.append('name', values.name);
           formData.append('state_id', values.state_id.toString());
           formData.append('old_image_url', editingCity.image_url || '');
-          formData.append('file', values.image_file);
+          formData.append('file', selectedImageFile);
 
           await axios.put('/api/cities', formData, {
             headers: {
@@ -208,11 +212,11 @@ const CitiesPage = () => {
         message.success('City updated successfully');
       } else {
         // Handle create with form data if file is present
-        if (values.image_file) {
+        if (selectedImageFile) {
           const formData = new FormData();
           formData.append('name', values.name);
           formData.append('state_id', values.state_id.toString());
-          formData.append('file', values.image_file);
+          formData.append('file', selectedImageFile);
 
           await axios.post('/api/cities', formData, {
             headers: {
@@ -233,6 +237,7 @@ const CitiesPage = () => {
       setModalVisible(false);
       form.resetFields();
       setImagePreview('');
+      setSelectedImageFile(null);
       fetchCities(pagination.page, pagination.limit);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save city');

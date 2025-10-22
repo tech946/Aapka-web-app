@@ -56,6 +56,7 @@ const CountriesPage = () => {
   const [editingCountry, setEditingCountry] = useState<Country | null>(null);
   const [form] = Form.useForm();
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -89,6 +90,7 @@ const CountriesPage = () => {
     setEditingCountry(null);
     form.resetFields();
     setImagePreview('');
+    setSelectedImageFile(null);
     setModalVisible(true);
   };
 
@@ -96,6 +98,7 @@ const CountriesPage = () => {
     setEditingCountry(record);
     form.setFieldsValue(record);
     setImagePreview(record.image_url || '');
+    setSelectedImageFile(null); // Clear any previously selected file
     setModalVisible(true);
   };
 
@@ -114,7 +117,7 @@ const CountriesPage = () => {
     try {
       // Store the file for later use in form submission
       setImagePreview(URL.createObjectURL(file));
-      form.setFieldsValue({ image_file: file });
+      setSelectedImageFile(file);
       message.success('Image selected successfully');
       return false; // Prevent default upload behavior
     } catch (error: any) {
@@ -128,7 +131,8 @@ const CountriesPage = () => {
   const handleImageRemove = async () => {
     try {
       setImagePreview('');
-      form.setFieldsValue({ image_file: null, image_url: '' });
+      setSelectedImageFile(null);
+      form.setFieldsValue({ image_url: '' });
       message.success('Image removed successfully');
     } catch (error: any) {
       message.error('Failed to remove image');
@@ -141,12 +145,12 @@ const CountriesPage = () => {
 
       if (editingCountry) {
         // Handle update with form data if file is present
-        if (values.image_file) {
+        if (selectedImageFile) {
           const formData = new FormData();
           formData.append('id', editingCountry.id.toString());
           formData.append('name', values.name);
           formData.append('old_image_url', editingCountry.image_url || '');
-          formData.append('file', values.image_file);
+          formData.append('file', selectedImageFile);
 
           await axios.put('/api/countries', formData, {
             headers: {
@@ -165,10 +169,10 @@ const CountriesPage = () => {
         message.success('Country updated successfully');
       } else {
         // Handle create with form data if file is present
-        if (values.image_file) {
+        if (selectedImageFile) {
           const formData = new FormData();
           formData.append('name', values.name);
-          formData.append('file', values.image_file);
+          formData.append('file', selectedImageFile);
 
           await axios.post('/api/countries', formData, {
             headers: {
@@ -188,6 +192,7 @@ const CountriesPage = () => {
       setModalVisible(false);
       form.resetFields();
       setImagePreview('');
+      setSelectedImageFile(null);
       fetchCountries(pagination.page, pagination.limit);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save country');
