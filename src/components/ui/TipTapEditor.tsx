@@ -1,0 +1,211 @@
+'use client';
+
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import BulletList from '@tiptap/extension-bullet-list';
+import OrderedList from '@tiptap/extension-ordered-list';
+import ListItem from '@tiptap/extension-list-item';
+import Paragraph from '@tiptap/extension-paragraph';
+import { Button, Space, Tooltip } from 'antd';
+import {
+  BoldOutlined,
+  ItalicOutlined,
+  UnorderedListOutlined,
+  OrderedListOutlined,
+  UndoOutlined,
+  RedoOutlined,
+} from '@ant-design/icons';
+import { useEffect } from 'react';
+
+interface TipTapEditorProps {
+  content?: string;
+  onChange?: (content: string) => void;
+  placeholder?: string;
+  className?: string;
+  height?: number;
+}
+
+const TipTapEditor: React.FC<TipTapEditorProps> = ({
+  content = '',
+  onChange,
+  placeholder = 'Start typing...',
+  className = '',
+  height = 200,
+}) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        // Disable heading, code, blockquote, horizontal rule, etc.
+        heading: false,
+        code: false,
+        codeBlock: false,
+        blockquote: false,
+        horizontalRule: false,
+        hardBreak: false,
+        // Keep only paragraph, bold, italic, strike
+        paragraph: {},
+        bold: {},
+        italic: {},
+        strike: {},
+      }),
+      BulletList,
+      OrderedList,
+      ListItem,
+      Paragraph,
+    ],
+    content,
+    immediatelyRender: false, // Fix SSR hydration mismatch
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      onChange?.(html);
+    },
+    editorProps: {
+      attributes: {
+        class: `prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none ${className}`,
+        style: `min-height: ${height}px; padding: 12px; border: 1px solid #d9d9d9; border-radius: 6px;`,
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
+  if (!editor) {
+    return null;
+  }
+
+  const MenuButton = ({
+    onClick,
+    isActive = false,
+    icon,
+    tooltip,
+  }: {
+    onClick: () => void;
+    isActive?: boolean;
+    icon: React.ReactNode;
+    tooltip: string;
+  }) => (
+    <Tooltip title={tooltip}>
+      <Button
+        type={isActive ? 'primary' : 'default'}
+        size='small'
+        icon={icon}
+        onClick={onClick}
+        style={{
+          backgroundColor: isActive ? '#1890ff' : 'transparent',
+          borderColor: isActive ? '#1890ff' : '#d9d9d9',
+          color: isActive ? '#fff' : '#000',
+        }}
+      />
+    </Tooltip>
+  );
+
+  return (
+    <div className='tiptap-editor'>
+      {/* Toolbar */}
+      <div
+        style={{
+          border: '1px solid #d9d9d9',
+          borderBottom: 'none',
+          borderTopLeftRadius: '6px',
+          borderTopRightRadius: '6px',
+          padding: '8px 12px',
+          backgroundColor: '#fafafa',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Space size='small' wrap>
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            isActive={editor.isActive('bold')}
+            icon={<BoldOutlined />}
+            tooltip='Bold'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            isActive={editor.isActive('italic')}
+            icon={<ItalicOutlined />}
+            tooltip='Italic'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            isActive={editor.isActive('bulletList')}
+            icon={<UnorderedListOutlined />}
+            tooltip='Bullet List'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            isActive={editor.isActive('orderedList')}
+            icon={<OrderedListOutlined />}
+            tooltip='Numbered List'
+          />
+          <div
+            style={{
+              width: '1px',
+              height: '20px',
+              backgroundColor: '#d9d9d9',
+              margin: '0 4px',
+            }}
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().undo().run()}
+            icon={<UndoOutlined />}
+            tooltip='Undo'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().redo().run()}
+            icon={<RedoOutlined />}
+            tooltip='Redo'
+          />
+        </Space>
+      </div>
+
+      {/* Editor Content */}
+      <div style={{ position: 'relative' }}>
+        <EditorContent
+          editor={editor}
+          style={{
+            minHeight: `${height}px`,
+          }}
+        />
+
+        {/* Placeholder */}
+        {editor.isEmpty && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              color: '#bfbfbf',
+              pointerEvents: 'none',
+              fontSize: '14px',
+            }}
+          >
+            {placeholder}
+          </div>
+        )}
+      </div>
+
+      {/* Instructions */}
+      <div
+        style={{
+          fontSize: '12px',
+          color: '#8c8c8c',
+          marginTop: '8px',
+          padding: '0 4px',
+        }}
+      >
+        Use bullet points (•) or numbered lists (1.) to organize your content.
+        Press Enter for new paragraphs.
+      </div>
+    </div>
+  );
+};
+
+export default TipTapEditor;

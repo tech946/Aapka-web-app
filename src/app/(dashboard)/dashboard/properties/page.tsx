@@ -42,6 +42,7 @@ import {
   CheckOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
+import TipTapEditor from '@/components/ui/TipTapEditor';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -125,6 +126,8 @@ interface Property {
   brochure_url?: string;
   thumbnail_image?: string;
   property_images?: string[];
+  pros?: string; // Rich text content for property advantages
+  cons?: string; // Rich text content for property disadvantages
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -322,6 +325,8 @@ const PropertiesPage: React.FC = () => {
   );
   const [priceValue, setPriceValue] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [prosContent, setProsContent] = useState<string>('');
+  const [consContent, setConsContent] = useState<string>('');
 
   // Custom dropdown states
   const [propertyTypeDropdownOpen, setPropertyTypeDropdownOpen] =
@@ -441,6 +446,8 @@ const PropertiesPage: React.FC = () => {
     setImagesToDelete([]);
     setSelectedCurrency(CURRENCIES[0]); // Reset to USD
     setPriceValue('');
+    setProsContent('');
+    setConsContent('');
     setModalVisible(true);
   };
 
@@ -517,6 +524,8 @@ const PropertiesPage: React.FC = () => {
     setPropertyImages([]);
     setExistingImages(property.property_images || []);
     setImagesToDelete([]);
+    setProsContent(property.pros || '');
+    setConsContent(property.cons || '');
     setModalVisible(true);
   };
 
@@ -588,6 +597,8 @@ const PropertiesPage: React.FC = () => {
       formData.append('earn_referral', values.earn_referral || '');
       formData.append('amenities', JSON.stringify(values.amenities || []));
       formData.append('brochure_url', values.brochure_url || '');
+      formData.append('pros', prosContent);
+      formData.append('cons', consContent);
 
       // Handle thumbnail image
       if (thumbnailImage) {
@@ -691,6 +702,8 @@ const PropertiesPage: React.FC = () => {
     setImagesToDelete([]);
     setSelectedCurrency(CURRENCIES[0]);
     setPriceValue('');
+    setProsContent('');
+    setConsContent('');
     setSubmitting(false);
   };
 
@@ -1595,8 +1608,12 @@ const PropertiesPage: React.FC = () => {
                         .toLowerCase()
                         .includes(input.toLowerCase())
                     }
-                    bordered={false}
-                    dropdownStyle={{ minWidth: '300px' }}
+                    variant='borderless'
+                    styles={{
+                      popup: {
+                        root: { minWidth: '300px' },
+                      },
+                    }}
                     optionLabelProp='label'
                     suffixIcon={
                       <span style={{ color: '#999', fontSize: '12px' }}>▼</span>
@@ -1703,7 +1720,7 @@ const PropertiesPage: React.FC = () => {
                       border: 'none',
                       boxShadow: 'none',
                     }}
-                    bordered={false}
+                    variant='borderless'
                     prefix={
                       <span
                         style={{
@@ -1969,6 +1986,46 @@ const PropertiesPage: React.FC = () => {
               </Button>
             </Upload>
           </Form.Item>
+
+          <Divider />
+
+          {/* Pros and Cons Section */}
+          <div style={{ marginBottom: '24px' }}>
+            <Title level={4} style={{ marginBottom: '16px', color: '#1890ff' }}>
+              Property Details
+            </Title>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label='Pros (Advantages)'
+                  className='custom-form-item-label'
+                  extra='List the advantages and benefits of this property'
+                >
+                  <TipTapEditor
+                    content={prosContent}
+                    onChange={setProsContent}
+                    placeholder='Enter property advantages and benefits...'
+                    height={150}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label='Cons (Disadvantages)'
+                  className='custom-form-item-label'
+                  extra='List any limitations or disadvantages of this property'
+                >
+                  <TipTapEditor
+                    content={consContent}
+                    onChange={setConsContent}
+                    placeholder='Enter property limitations and disadvantages...'
+                    height={150}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
 
           <Divider />
 

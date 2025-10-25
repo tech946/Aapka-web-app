@@ -130,6 +130,8 @@ export async function POST(request: NextRequest) {
       const property_type_ids = formData.get('property_type_ids') as string; // Comma-separated property type IDs (e.g., "1,3,5")
       const property_types_text = formData.get('property_types_text') as string; // Comma-separated property type names (e.g., "Apartment, Villa")
       const amenities = formData.get('amenities') as string; // JSON string
+      const pros = formData.get('pros') as string; // Rich text content for pros
+      const cons = formData.get('cons') as string; // Rich text content for cons
       const brochureFile = formData.get('brochure_file') as File;
       const thumbnailFile = formData.get('thumbnail_image') as File;
       const propertyImagesFiles = formData.getAll('property_images') as File[];
@@ -307,6 +309,8 @@ export async function POST(request: NextRequest) {
             brochure_url: brochureUrl,
             thumbnail_image: thumbnailUrl,
             property_images: propertyImageUrls,
+            pros: pros || null,
+            cons: cons || null,
             is_active: true,
           },
         ])
@@ -411,6 +415,8 @@ export async function POST(request: NextRequest) {
         payment_plan,
         handover,
         earn_referral,
+        pros,
+        cons,
         amenities,
       } = body;
 
@@ -438,6 +444,8 @@ export async function POST(request: NextRequest) {
             payment_plan: payment_plan || null,
             handover: handover || null,
             earn_referral: earn_referral || null,
+            pros: pros || null,
+            cons: cons || null,
             brochure_url: null,
             is_active: true,
           },
@@ -502,6 +510,8 @@ export async function PUT(request: NextRequest) {
       const property_type_ids = formData.get('property_type_ids') as string; // Comma-separated IDs
       const property_types_text = formData.get('property_types_text') as string; // Comma-separated names
       const amenities = formData.get('amenities') as string; // JSON string
+      const pros = formData.get('pros') as string; // Rich text content for pros
+      const cons = formData.get('cons') as string; // Rich text content for cons
       const brochureFile = formData.get('brochure_file') as File;
       const existingBrochureUrl = formData.get(
         'existing_brochure_url'
@@ -756,6 +766,8 @@ export async function PUT(request: NextRequest) {
           brochure_url: brochureUrl,
           thumbnail_image: thumbnailUrl,
           property_images: finalPropertyImages,
+          pros: pros || null,
+          cons: cons || null,
         })
         .eq('id', id)
         .select()
@@ -870,6 +882,8 @@ export async function PUT(request: NextRequest) {
         payment_plan,
         handover,
         earn_referral,
+        pros,
+        cons,
         amenities,
       } = body;
 
@@ -896,6 +910,8 @@ export async function PUT(request: NextRequest) {
           payment_plan: payment_plan || null,
           handover: handover || null,
           earn_referral: earn_referral || null,
+          pros: pros || null,
+          cons: cons || null,
         })
         .eq('id', id)
         .select()
