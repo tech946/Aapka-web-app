@@ -29,9 +29,23 @@ This document explains how mobile applications should authenticate and access th
     "id": "user-uuid",
     "email": "user@example.com",
     ...
+  },
+  "profile": {
+    "full_name": "John Doe",
+    "email_address": "user@example.com",
+    "profile_image_url": "https://...",
+    "role": "user",
+    "totalleads": "25",
+    "commissions": {...},
+    "notes": "Important notes about the user",
+    "account_details": {...},
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-15T00:00:00Z"
   }
 }
 ```
+
+**Note:** The `profile` field contains user profile information from the profiles table, including full name, profile image URL, role, total leads, commissions, and other profile data.
 
 ### 2. Mobile Signup
 

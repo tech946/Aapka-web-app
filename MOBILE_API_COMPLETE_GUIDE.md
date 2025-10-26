@@ -60,9 +60,19 @@ Body:
 
 Response:
 {
-  "access_token": "eyJhbGc...",
-  "refresh_token": "...",
-  "expires_in": 3600
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "v1.MRjHF8c4...",
+  "expires_in": 3600,
+  "expires_at": 1234567890,
+  "user": {...},
+  "profile": {
+    "full_name": "John Doe",
+    "email_address": "user@example.com",
+    "profile_image_url": "https://...",
+    "role": "user",
+    "totalleads": "25",
+    ...
+  }
 }
 ```
 
@@ -95,15 +105,31 @@ curl -X POST http://localhost:3000/api/auth/mobile/login \
 
 ```json
 {
-  "access_token": "eyJhbGc...",
-  "refresh_token": "...",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "v1.MRjHF8c4...",
   "expires_in": 3600,
+  "expires_at": 1234567890,
   "user": {
     "id": "uuid",
-    "email": "user@example.com"
+    "email": "user@example.com",
+    ...
+  },
+  "profile": {
+    "full_name": "John Doe",
+    "email_address": "user@example.com",
+    "profile_image_url": "https://...",
+    "role": "user",
+    "totalleads": "25",
+    "commissions": {...},
+    "notes": "Important notes about the user",
+    "account_details": {...},
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-15T00:00:00Z"
   }
 }
 ```
+
+The `profile` field contains user profile information from the profiles table.
 
 ---
 

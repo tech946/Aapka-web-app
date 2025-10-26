@@ -1,62 +1,107 @@
-const fetch = require('node-fetch');
+/**
+ * Test script for Bank Details API
+ *
+ * This script tests the GET /api/mobile/bank-details endpoint
+ * which fetches bank details from the profiles table account_details column
+ *
+ * Usage:
+ * 1. Make sure you have a valid access token (obtained from /api/auth/mobile/login)
+ * 2. Update the ACCESS_TOKEN variable below with your token
+ * 3. Run: node test-bank-details-api.js
+ */
 
-// Test the bank details API
-async function testBankDetailsAPI() {
-  const baseUrl = 'https://www.proptz.com';
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN_HERE'; // Replace with actual token
 
-  // Test data
-  const testData = {
-    bank_name: 'State Bank of India',
-    account_number: '1234567890123456',
-    confirm_account_number: '1234567890123456',
-    ifsc_code: 'SBIN0001234',
-  };
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:3000';
 
-  // You'll need to replace this with a valid access token
-  const accessToken = 'YOUR_ACCESS_TOKEN_HERE';
-
-  console.log('Testing Bank Details API...');
-  console.log('Base URL:', baseUrl);
-  console.log('Test Data:', testData);
+async function testGetBankDetails() {
+  console.log('\n=== Testing GET /api/mobile/bank-details ===\n');
 
   try {
-    // Test PUT request (update bank details)
-    console.log('\n--- Testing PUT /api/mobile/update-bank-details ---');
-    const putResponse = await fetch(
-      `${baseUrl}/api/mobile/update-bank-details`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testData),
+    const response = await fetch(`${API_BASE_URL}/api/mobile/bank-details`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(data, null, 2));
+
+    if (response.ok) {
+      console.log('\n✅ Successfully fetched bank details!');
+
+      if (data.bank_details && Object.keys(data.bank_details).length > 0) {
+        console.log('\n📊 Bank Details:');
+        console.log(`  - Bank Name: ${data.bank_details.bank_name || 'N/A'}`);
+        console.log(
+          `  - Account Number: ${data.bank_details.account_number || 'N/A'}`
+        );
+        console.log(`  - IFSC Code: ${data.bank_details.ifsc_code || 'N/A'}`);
+        console.log(`  - Updated At: ${data.bank_details.updated_at || 'N/A'}`);
+      } else {
+        console.log(
+          '\n⚠️  No bank details found. Use PUT /api/mobile/update-bank-details to add them.'
+        );
       }
-    );
-
-    const putResult = await putResponse.text();
-    console.log('PUT Status:', putResponse.status);
-    console.log('PUT Response:', putResult);
-
-    // Test GET request (get bank details)
-    console.log('\n--- Testing GET /api/mobile/update-bank-details ---');
-    const getResponse = await fetch(
-      `${baseUrl}/api/mobile/update-bank-details`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    const getResult = await getResponse.text();
-    console.log('GET Status:', getResponse.status);
-    console.log('GET Response:', getResult);
+    } else {
+      console.log('\n❌ Failed to fetch bank details');
+      console.log('Error:', data.error);
+    }
   } catch (error) {
-    console.error('Error testing API:', error);
+    console.error('\n❌ Error:', error.message);
   }
 }
 
-// Run the test
-testBankDetailsAPI();
+async function testWithoutAuth() {
+  console.log('\n=== Testing without Authorization (should fail) ===\n');
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/mobile/bank-details`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(data, null, 2));
+
+    if (response.status === 401) {
+      console.log('\n✅ Correctly rejected unauthorized request');
+    } else {
+      console.log('\n⚠️  Unexpected response');
+    }
+  } catch (error) {
+    console.error('\n❌ Error:', error.message);
+  }
+}
+
+async function runTests() {
+  console.log('🏦 Bank Details API Test Script\n');
+  console.log('Testing endpoint: GET /api/mobile/bank-details\n');
+  console.log('='.repeat(50));
+
+  // Test with valid authentication
+  await testGetBankDetails();
+
+  // Test without authentication
+  await testWithoutAuth();
+
+  console.log('\n' + '='.repeat(50));
+  console.log('\n✅ Tests completed!\n');
+}
+
+// Run the tests
+if (ACCESS_TOKEN === 'YOUR_ACCESS_TOKEN_HERE') {
+  console.log('⚠️  Please update ACCESS_TOKEN with a valid token first!');
+  console.log('   Get a token by logging in: POST /api/auth/mobile/login');
+} else {
+  runTests();
+}
