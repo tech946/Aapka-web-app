@@ -74,23 +74,6 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      // Create a Supabase client authenticated with the user's token
-      const userSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        }
-      );
-
       // First, verify the old password by attempting to sign in with it
       const email = user.email;
       if (!email) {
@@ -127,12 +110,11 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      // Old password is correct, now update to new password
-      const { error: updatePasswordError } = await userSupabase.auth.updateUser(
-        {
+      // Old password is correct, now update to new password using admin client
+      const { error: updatePasswordError } =
+        await supabaseAdmin.auth.admin.updateUserById(user.id, {
           password: password,
-        }
-      );
+        });
 
       if (updatePasswordError) {
         return NextResponse.json(
