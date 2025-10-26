@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * POST - Add a new lead (MOBILE APP - TOKEN AUTHENTICATED)
  * This endpoint allows mobile users to add leads using Bearer token authentication
+ * New leads are automatically initialized with timeline_status: 'lead_submitted'
  *
  * Required headers:
  * - Authorization: Bearer <access_token>
@@ -18,6 +19,11 @@ import { createClient } from '@supabase/supabase-js';
  * - purpose_of_buying: string (required)
  * - buying_timeline: string (required)
  * - notes: string (optional)
+ *
+ * Returns:
+ * - Lead data including timeline_status, timeline_dates, and notification_sent
+ * - Timeline status automatically set to 'lead_submitted'
+ * - Timeline dates initialized with current timestamp for 'lead_submitted'
  */
 export async function POST(request: NextRequest) {
   try {
@@ -120,6 +126,21 @@ export async function POST(request: NextRequest) {
       buying_timeline,
       notes: notes || null,
       status: 'new', // Default status for new leads
+      timeline_status: 'lead_submitted', // Default timeline status
+      timeline_dates: {
+        lead_submitted: new Date().toISOString(),
+        call_scheduled: null,
+        site_visit_done: null,
+        booking_confirm: null,
+        commission_released: null,
+      },
+      notification_sent: {
+        lead_submitted: false,
+        call_scheduled: false,
+        site_visit_done: false,
+        booking_confirm: false,
+        commission_released: false,
+      },
       created_by: user.id, // Associate with authenticated user
     };
 

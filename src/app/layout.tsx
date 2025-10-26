@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { Metadata } from 'next';
-import { Lato } from 'next/font/google';
+import { Lato, Lexend } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
 import 'antd/dist/reset.css';
@@ -9,6 +9,12 @@ const lato = Lato({
   subsets: ['latin'],
   weight: ['300', '400', '700', '900'],
   variable: '--font-lato',
+});
+
+const lexend = Lexend({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-lexend',
 });
 
 export const metadata: Metadata = {
@@ -24,7 +30,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en' suppressHydrationWarning className={lato.variable}>
+    <html
+      lang='en'
+      suppressHydrationWarning
+      className={`${lato.variable} ${lexend.variable}`}
+    >
       <body className={lato.className}>
         <Toaster position='top-right' /> {/* Required */}
         {children}

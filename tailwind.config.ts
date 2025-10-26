@@ -13,6 +13,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-lato)', 'system-ui', 'sans-serif'],
         lato: ['var(--font-lato)', 'system-ui', 'sans-serif'],
+        lexend: ['var(--font-lexend)', 'system-ui', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

@@ -20,6 +20,7 @@ import {
   Tag,
   Tooltip,
   Badge,
+  Divider,
 } from 'antd';
 import {
   EditOutlined,
@@ -34,9 +35,11 @@ import {
   CalendarOutlined,
   EyeOutlined,
   TeamOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import LeadTimeline from '@/components/ui/LeadTimeline';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -52,6 +55,8 @@ interface Lead {
   buying_timeline?: string;
   notes?: string;
   status: string;
+  timeline_status?: string;
+  timeline_dates?: Record<string, string>;
   assigned_to?: string;
   created_at: string;
   updated_at: string;
@@ -63,7 +68,7 @@ interface Lead {
 }
 
 interface LeadFormData {
-  status: string;
+  timeline_status?: string;
   assigned_to?: string;
 }
 
@@ -85,6 +90,18 @@ const LeadsManagement: React.FC = () => {
     { value: 'qualified', label: 'Qualified', color: 'green' },
     { value: 'converted', label: 'Converted', color: 'purple' },
     { value: 'lost', label: 'Lost', color: 'red' },
+  ];
+
+  const timelineStatusOptions = [
+    { value: 'lead_submitted', label: 'Lead Submitted', color: '#8B5CF6' },
+    { value: 'call_scheduled', label: 'Call Scheduled', color: '#10B981' },
+    { value: 'site_visit_done', label: 'Site Visit Done', color: '#3B82F6' },
+    { value: 'booking_confirm', label: 'Booking Confirm', color: '#10B981' },
+    {
+      value: 'commission_released',
+      label: 'Commission Released',
+      color: '#EF4444',
+    },
   ];
 
   const getStatusColor = (status: string) => {
@@ -128,7 +145,7 @@ const LeadsManagement: React.FC = () => {
   const handleEdit = (lead: Lead) => {
     setEditingLead(lead);
     form.setFieldsValue({
-      status: lead.status,
+      timeline_status: lead.timeline_status || 'lead_submitted',
       assigned_to: lead.assigned_to,
     });
     setModalVisible(true);
@@ -151,7 +168,7 @@ const LeadsManagement: React.FC = () => {
     try {
       await axios.put('/api/leads', {
         id: editingLead.id,
-        status: values.status,
+        timeline_status: values.timeline_status,
         assigned_to: values.assigned_to,
       });
 
@@ -164,6 +181,12 @@ const LeadsManagement: React.FC = () => {
       console.error('Error updating lead:', error);
       message.error('Failed to update lead');
     }
+  };
+
+  const handleTimelineStatusChange = (newStatus: string) => {
+    form.setFieldsValue({
+      timeline_status: newStatus,
+    });
   };
 
   const handleSearch = (value: string) => {
@@ -439,7 +462,12 @@ const LeadsManagement: React.FC = () => {
 
       {/* Edit Modal */}
       <Modal
-        title='Update Lead Status'
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ClockCircleOutlined />
+            Update Lead Status & Timeline
+          </div>
+        }
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
@@ -447,7 +475,7 @@ const LeadsManagement: React.FC = () => {
           form.resetFields();
         }}
         footer={null}
-        width={600}
+        width={800}
       >
         {editingLead && (
           <div>
@@ -492,16 +520,48 @@ const LeadsManagement: React.FC = () => {
               </Row>
             </Card>
 
+            <Divider>Lead Timeline</Divider>
+
+            <Card style={{ marginBottom: '16px' }}>
+              <LeadTimeline
+                currentStatus={editingLead.timeline_status || 'lead_submitted'}
+                timelineDates={editingLead.timeline_dates || {}}
+                isEditable={true}
+                onStatusChange={handleTimelineStatusChange}
+              />
+            </Card>
+
             <Form form={form} layout='vertical' onFinish={handleSubmit}>
               <Form.Item
-                name='status'
-                label='Status'
-                rules={[{ required: true, message: 'Please select a status' }]}
+                name='timeline_status'
+                label='Timeline Status'
+                rules={[
+                  {
+                    required: true,
+                    message: 'Please select timeline status',
+                  },
+                ]}
               >
-                <Select placeholder='Select status'>
-                  {statusOptions.map(option => (
+                <Select placeholder='Select timeline status'>
+                  {timelineStatusOptions.map(option => (
                     <Option key={option.value} value={option.value}>
-                      <Tag color={option.color}>{option.label}</Tag>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: option.color,
+                          }}
+                        />
+                        {option.label}
+                      </div>
                     </Option>
                   ))}
                 </Select>

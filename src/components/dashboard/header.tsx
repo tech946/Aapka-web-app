@@ -4,6 +4,7 @@ import { TeamSelector } from './TeamSelector';
 import { LogoutOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { useRouter } from 'next/navigation';
+import NotificationBell from '@/components/ui/NotificationBell';
 
 export function Header() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export function Header() {
         <TeamSelector />
       </div>
       <div className='header_right'>
+        <NotificationBell />
         <button>
           <svg
             xmlns='http://www.w3.org/2000/svg'

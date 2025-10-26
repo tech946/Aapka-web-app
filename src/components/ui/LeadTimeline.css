@@ -1,0 +1,191 @@
+.lead-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 16px 0;
+  position: relative;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 12px 0;
+  transition: all 0.3s ease;
+}
+
+.timeline-item.editable {
+  cursor: pointer;
+}
+
+.timeline-item.editable:hover {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 12px 8px;
+  margin: 0 -8px;
+}
+
+.timeline-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.timeline-icon-container {
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.timeline-icon.purple {
+  background-color: #8b5cf6;
+}
+
+.timeline-icon.green {
+  background-color: #10b981;
+}
+
+.timeline-icon.blue {
+  background-color: #3b82f6;
+}
+
+.timeline-icon.red {
+  background-color: #ef4444;
+}
+
+.timeline-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.timeline-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.calendar-icon {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.timeline-connector {
+  position: absolute;
+  left: 20px;
+  top: 52px;
+  width: 2px;
+  height: 24px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #d1d5db 0px,
+    #d1d5db 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  z-index: 1;
+}
+
+/* Active state */
+.timeline-item.active .timeline-icon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.timeline-item.active .timeline-title {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+/* Completed state */
+.timeline-item.completed .timeline-icon {
+  opacity: 1;
+}
+
+.timeline-item.completed .timeline-title {
+  color: #1f2937;
+}
+
+.timeline-item.completed .timeline-date {
+  color: #6b7280;
+}
+
+/* Inactive state (future steps) */
+.timeline-item:not(.completed):not(.active) .timeline-icon {
+  opacity: 0.4;
+  transform: scale(0.9);
+}
+
+.timeline-item:not(.completed):not(.active) .timeline-title {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.timeline-item:not(.completed):not(.active) .timeline-date {
+  color: #d1d5db;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .timeline-content {
+    gap: 12px;
+  }
+
+  .timeline-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .timeline-title {
+    font-size: 14px;
+  }
+
+  .timeline-date {
+    font-size: 12px;
+  }
+
+  .timeline-connector {
+    left: 18px;
+  }
+}
+
+/* Animation for status changes */
+@keyframes statusUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.timeline-item.status-updated .timeline-icon {
+  animation: statusUpdate 0.6s ease-in-out;
+}

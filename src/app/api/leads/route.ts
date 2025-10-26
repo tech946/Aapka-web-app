@@ -176,7 +176,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, status, assigned_to } = body;
+    const { id, timeline_status, assigned_to } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -185,11 +185,24 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Only allow updating status and assignment (for web interface)
+    // Only allow updating timeline_status and assignment (for web interface)
     const updateData: any = {};
 
-    if (status) {
-      updateData.status = status;
+    if (timeline_status) {
+      updateData.timeline_status = timeline_status;
+
+      // Update timeline_dates to set the current date for the new status
+      const { data: currentLead } = await supabase
+        .from('leads')
+        .select('timeline_dates')
+        .eq('id', id)
+        .single();
+
+      if (currentLead) {
+        const timelineDates = currentLead.timeline_dates || {};
+        timelineDates[timeline_status] = new Date().toISOString();
+        updateData.timeline_dates = timelineDates;
+      }
     }
 
     if (assigned_to !== undefined) {
@@ -220,6 +233,51 @@ export async function PUT(request: NextRequest) {
 
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Send notification if timeline status changed
+    if (timeline_status) {
+      try {
+        // Get the lead creator to send them notification
+        const { data: leadCreator } = await supabase
+          .from('leads')
+          .select('created_by, fullname')
+          .eq('id', id)
+          .single();
+
+        if (leadCreator && leadCreator.created_by) {
+          const timelineLabels = {
+            lead_submitted: 'Lead Submitted',
+            call_scheduled: 'Call Scheduled',
+            site_visit_done: 'Site Visit Done',
+            booking_confirm: 'Booking Confirm',
+            commission_released: 'Commission Released',
+          };
+
+          const notificationTitle = `Lead Status Updated`;
+          const notificationMessage = `Your lead "${leadCreator.fullname}" has moved to "${timelineLabels[timeline_status as keyof typeof timelineLabels] || timeline_status}" stage.`;
+
+          const notificationData = {
+            lead_id: id,
+            old_timeline_status: lead.timeline_status,
+            new_timeline_status: timeline_status,
+            updated_by: user.id,
+          };
+
+          // Insert notification
+          await supabase.from('notifications').insert({
+            user_id: leadCreator.created_by,
+            lead_id: id,
+            type: 'timeline_update',
+            title: notificationTitle,
+            message: notificationMessage,
+            data: notificationData,
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error sending notification:', notificationError);
+        // Don't fail the main request if notification fails
+      }
     }
 
     return NextResponse.json({

@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 /**
  * GET - Get leads for authenticated mobile user (MOBILE APP - TOKEN AUTHENTICATED)
- * This endpoint returns all leads created by the authenticated user
+ * This endpoint returns all leads created by the authenticated user including timeline data
  *
  * Required headers:
  * - Authorization: Bearer <access_token>
@@ -14,6 +14,11 @@ import { createClient } from '@supabase/supabase-js';
  * - limit: number (default: 10)
  * - status: string (filter by status: 'new', 'contacted', 'qualified', 'converted', 'lost')
  * - search: string (search in fullname, email, or mobile_no)
+ *
+ * Returns:
+ * - All lead data including timeline_status, timeline_dates, and notification_sent
+ * - Timeline status: 'lead_submitted', 'call_scheduled', 'site_visit_done', 'booking_confirm', 'commission_released'
+ * - Timeline dates: JSON object with dates for each timeline stage
  */
 export async function GET(request: NextRequest) {
   try {
