@@ -42,14 +42,67 @@ export async function GET(request: NextRequest) {
     // Check if already in object format
     if (!Array.isArray(propertiesByTypeData)) {
       // Already an object { "Apartment": [...], "Villa": [...] }
-      Object.assign(propertiesObject, propertiesByTypeData);
+      // Process each property type to parse unit types if needed
+      for (const [propertyType, properties] of Object.entries(
+        propertiesByTypeData
+      )) {
+        if (Array.isArray(properties)) {
+          const processedProperties = properties.map((property: any) => {
+            // If unit_types already exists as an array, use it
+            if (property.unit_types && Array.isArray(property.unit_types)) {
+              return property;
+            }
+            // Otherwise parse from unit_types_text
+            const unitTypes: Array<{ name: string }> = [];
+            if (property.unit_types_text) {
+              const unitTypeNames = property.unit_types_text
+                .split(',')
+                .map((name: string) => name.trim());
+              unitTypeNames.forEach((name: string) => {
+                if (name) {
+                  unitTypes.push({ name });
+                }
+              });
+            }
+            return {
+              ...property,
+              unit_types: unitTypes,
+            };
+          });
+          propertiesObject[propertyType] = processedProperties;
+        }
+      }
     } else {
       // Old array format, convert to object
       for (const typeGroup of propertiesByTypeData) {
         // Check if we have full property objects or just IDs
         if (typeGroup.properties && Array.isArray(typeGroup.properties)) {
-          // Already have full property objects, use them directly
-          propertiesObject[typeGroup.property_type_name] = typeGroup.properties;
+          // Already have full property objects, process them to parse unit types
+          const processedProperties = typeGroup.properties.map(
+            (property: any) => {
+              // If unit_types already exists as an array, use it
+              if (property.unit_types && Array.isArray(property.unit_types)) {
+                return property;
+              }
+              // Otherwise parse from unit_types_text
+              const unitTypes: Array<{ name: string }> = [];
+              if (property.unit_types_text) {
+                const unitTypeNames = property.unit_types_text
+                  .split(',')
+                  .map((name: string) => name.trim());
+                unitTypeNames.forEach((name: string) => {
+                  if (name) {
+                    unitTypes.push({ name });
+                  }
+                });
+              }
+              return {
+                ...property,
+                unit_types: unitTypes,
+              };
+            }
+          );
+          propertiesObject[typeGroup.property_type_name] = processedProperties;
         } else if (
           typeGroup.property_ids &&
           typeGroup.property_ids.length > 0
@@ -63,6 +116,7 @@ export async function GET(request: NextRequest) {
               project_name,
               starting_price,
               property_type_id,
+              unit_types_text,
               property_images,
               brochure_url,
               payment_plan,
@@ -122,7 +176,26 @@ export async function GET(request: NextRequest) {
             .eq('is_active', true);
 
           if (!propsError && properties) {
-            propertiesObject[typeGroup.property_type_name] = properties;
+            // Parse unit types from comma-separated text for each property
+            const processedProperties = properties.map((property: any) => {
+              const unitTypes: Array<{ name: string }> = [];
+              if (property.unit_types_text) {
+                const unitTypeNames = property.unit_types_text
+                  .split(',')
+                  .map((name: string) => name.trim());
+                unitTypeNames.forEach((name: string) => {
+                  if (name) {
+                    unitTypes.push({ name });
+                  }
+                });
+              }
+              return {
+                ...property,
+                unit_types: unitTypes,
+              };
+            });
+            propertiesObject[typeGroup.property_type_name] =
+              processedProperties;
           }
         }
       }
