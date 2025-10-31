@@ -28,6 +28,7 @@ import {
   DeleteOutlined,
   UploadOutlined,
   DeleteOutlined as RemoveOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -64,6 +65,7 @@ const DevelopersPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -73,11 +75,11 @@ const DevelopersPage: React.FC = () => {
     hasPrev: false,
   });
 
-  const fetchDevelopers = async (page = 1, limit = 10) => {
+  const fetchDevelopers = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/developers?page=${page}&limit=${limit}`
+        `/api/developers?page=${page}&limit=${limit}&search=${search}`
       );
       setDevelopers(response.data.data);
       setPagination(response.data.pagination);
@@ -119,12 +121,17 @@ const DevelopersPage: React.FC = () => {
     try {
       await axios.delete(`/api/developers?id=${id}`);
       message.success('Developer deleted successfully');
-      fetchDevelopers(pagination.page, pagination.limit);
+      fetchDevelopers(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(
         error.response?.data?.error || 'Failed to delete developer'
       );
     }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    fetchDevelopers(1, pagination.limit, value);
   };
 
   const handleImageUpload = (file: File) => {
@@ -168,12 +175,12 @@ const DevelopersPage: React.FC = () => {
       if (editingDeveloper) {
         formData.append('id', editingDeveloper.id);
         formData.append('existing_image_url', values.image_url || '');
-        
+
         // Check if image was removed during editing
         const hadImage = editingDeveloper.image_url;
         const hasNewImage = selectedImageFile;
         const shouldRemoveImage = hadImage && !hasNewImage && !values.image_url;
-        
+
         if (shouldRemoveImage) {
           formData.append('remove_image', 'true');
         }
@@ -204,7 +211,7 @@ const DevelopersPage: React.FC = () => {
       form.resetFields();
       setImagePreview(null);
       setSelectedImageFile(null);
-      fetchDevelopers(pagination.page, pagination.limit);
+      fetchDevelopers(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save developer');
     }
@@ -218,7 +225,7 @@ const DevelopersPage: React.FC = () => {
   };
 
   const handlePageChange = (page: number, pageSize?: number) => {
-    fetchDevelopers(page, pageSize || pagination.limit);
+    fetchDevelopers(page, pageSize || pagination.limit, searchText);
   };
 
   const columns = [
@@ -327,6 +334,23 @@ const DevelopersPage: React.FC = () => {
       </Row>
 
       <Card>
+        <Row style={{ marginBottom: 16 }}>
+          <Col span={24}>
+            <Input.Search
+              placeholder='Search developers by name...'
+              allowClear
+              onSearch={handleSearch}
+              onChange={e => {
+                if (e.target.value === '') {
+                  handleSearch('');
+                }
+              }}
+              style={{ width: '100%' }}
+              size='large'
+              prefix={<SearchOutlined />}
+            />
+          </Col>
+        </Row>
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={8}>
             <Statistic

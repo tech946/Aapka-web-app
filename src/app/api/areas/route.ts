@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const cityId = searchParams.get('city_id');
+    const search = searchParams.get('search') || '';
 
     // Pagination parameters
     const pageParam = searchParams.get('page');
@@ -31,6 +32,11 @@ export async function GET(request: NextRequest) {
       countQuery = countQuery.eq('city_id', cityId);
     }
 
+    // Add search filter if search term is provided
+    if (search) {
+      countQuery = countQuery.ilike('name', `%${search}%`);
+    }
+
     // Get total count for pagination metadata
     const { count, error: countError } = await countQuery;
 
@@ -47,6 +53,11 @@ export async function GET(request: NextRequest) {
 
     if (cityId) {
       query = query.eq('city_id', cityId);
+    }
+
+    // Add search filter if search term is provided
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
     }
 
     const { data, error } = await query;

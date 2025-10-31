@@ -28,6 +28,7 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   UploadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -76,6 +77,7 @@ const CitiesPage = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -103,11 +105,11 @@ const CitiesPage = () => {
     }
   };
 
-  const fetchCities = async (page = 1, limit = 10) => {
+  const fetchCities = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/cities?page=${page}&limit=${limit}`
+        `/api/cities?page=${page}&limit=${limit}&search=${search}`
       );
       setCities(response.data.data);
       setPagination(response.data.pagination);
@@ -147,10 +149,15 @@ const CitiesPage = () => {
     try {
       await axios.delete(`/api/cities?id=${id}`);
       message.success('City deleted successfully');
-      fetchCities(pagination.page, pagination.limit);
+      fetchCities(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to delete city');
     }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    fetchCities(1, pagination.limit, value);
   };
 
   const handleImageUpload = async (file: File) => {
@@ -248,14 +255,14 @@ const CitiesPage = () => {
       form.resetFields();
       setImagePreview('');
       setSelectedImageFile(null);
-      fetchCities(pagination.page, pagination.limit);
+      fetchCities(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save city');
     }
   };
 
   const handleTableChange = (page: number, pageSize?: number) => {
-    fetchCities(page, pageSize || pagination.limit);
+    fetchCities(page, pageSize || pagination.limit, searchText);
   };
 
   const getStateName = (stateId: number) => {
@@ -383,7 +390,9 @@ const CitiesPage = () => {
             <Space>
               <Button
                 icon={<ReloadOutlined />}
-                onClick={() => fetchCities(pagination.page, pagination.limit)}
+                onClick={() =>
+                  fetchCities(pagination.page, pagination.limit, searchText)
+                }
                 loading={loading}
               >
                 Refresh
@@ -396,6 +405,24 @@ const CitiesPage = () => {
                 Add City
               </Button>
             </Space>
+          </Col>
+        </Row>
+
+        <Row style={{ marginBottom: 16 }}>
+          <Col span={24}>
+            <Input.Search
+              placeholder='Search cities by name...'
+              allowClear
+              onSearch={handleSearch}
+              onChange={e => {
+                if (e.target.value === '') {
+                  handleSearch('');
+                }
+              }}
+              style={{ width: '100%' }}
+              size='large'
+              prefix={<SearchOutlined />}
+            />
           </Col>
         </Row>
 

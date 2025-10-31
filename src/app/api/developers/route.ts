@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     // Pagination parameters
     const pageParam = searchParams.get('page');
     const limitParam = searchParams.get('limit') || '10';
+    const search = searchParams.get('search') || '';
     const page = pageParam ? parseInt(pageParam) : 1;
     const limit = parseInt(limitParam);
     const offset = (page - 1) * limit;
@@ -21,21 +22,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get total count for pagination metadata
-    const { count, error: countError } = await supabaseAdmin
+    // Build base query for count
+    let countQuery = supabaseAdmin
       .from('developers')
       .select('*', { count: 'exact', head: true });
+
+    // Add search filter if search term is provided
+    if (search) {
+      countQuery = countQuery.ilike('name', `%${search}%`);
+    }
+
+    // Get total count for pagination metadata
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       return NextResponse.json({ error: countError.message }, { status: 500 });
     }
 
-    // Get paginated data
-    const { data, error } = await supabaseAdmin
+    // Build query for data
+    let query = supabaseAdmin
       .from('developers')
       .select('*')
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
+
+    // Add search filter if search term is provided
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
+    }
+
+    // Get paginated data
+    const { data, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

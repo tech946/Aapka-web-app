@@ -7,7 +7,6 @@ import {
   Modal,
   Form,
   Input,
-  Select,
   message,
   Popconfirm,
   Space,
@@ -32,33 +31,13 @@ import {
 import axios from 'axios';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
+const { TextArea } = Input;
 
-interface Country {
+interface UnitType {
   id: number;
   name: string;
-}
-
-interface State {
-  id: number;
-  name: string;
-  country_id: number;
-  country?: Country;
-}
-
-interface City {
-  id: number;
-  name: string;
-  state_id: number;
-  state?: State;
-}
-
-interface Area {
-  id: number;
-  name: string;
-  city_id: number;
+  description?: string;
   image_url?: string;
-  city?: City;
   created_at?: string;
   updated_at?: string;
 }
@@ -72,14 +51,11 @@ interface PaginationInfo {
   hasPrev: boolean;
 }
 
-const AreasPage = () => {
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [states, setStates] = useState<State[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
+const UnitTypesPage = () => {
+  const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingArea, setEditingArea] = useState<Area | null>(null);
+  const [editingUnitType, setEditingUnitType] = useState<UnitType | null>(null);
   const [form] = Form.useForm();
   const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -94,97 +70,70 @@ const AreasPage = () => {
     hasPrev: false,
   });
 
-  const fetchCountries = async () => {
-    try {
-      const response = await axios.get('/api/countries?limit=1000');
-      setCountries(response.data.data);
-    } catch (error: any) {
-      message.error('Failed to fetch countries');
-    }
-  };
-
-  const fetchStates = async () => {
-    try {
-      const response = await axios.get('/api/states?limit=1000');
-      setStates(response.data.data);
-    } catch (error: any) {
-      message.error('Failed to fetch states');
-    }
-  };
-
-  const fetchCities = async () => {
-    try {
-      const response = await axios.get('/api/cities?limit=1000');
-      setCities(response.data.data);
-    } catch (error: any) {
-      message.error('Failed to fetch cities');
-    }
-  };
-
-  const fetchAreas = async (page = 1, limit = 10, search = '') => {
+  const fetchUnitTypes = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/areas?page=${page}&limit=${limit}&search=${search}`
+        `/api/unit-types?page=${page}&limit=${limit}&search=${search}`
       );
-      setAreas(response.data.data);
+      setUnitTypes(response.data.data);
       setPagination(response.data.pagination);
     } catch (error: any) {
-      message.error(error.response?.data?.error || 'Failed to fetch areas');
+      message.error(
+        error.response?.data?.error || 'Failed to fetch unit types'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCountries();
-    fetchStates();
-    fetchCities();
-    fetchAreas();
+    fetchUnitTypes();
   }, []);
 
   const handleAdd = () => {
-    setEditingArea(null);
+    setEditingUnitType(null);
     form.resetFields();
     setImagePreview('');
     setSelectedImageFile(null);
     setModalVisible(true);
   };
 
-  const handleEdit = (record: Area) => {
-    setEditingArea(record);
+  const handleEdit = (record: UnitType) => {
+    setEditingUnitType(record);
     form.setFieldsValue({
       name: record.name,
-      city_id: record.city_id,
+      description: record.description,
     });
     setImagePreview(record.image_url || '');
-    setSelectedImageFile(null); // Clear any previously selected file
+    setSelectedImageFile(null);
     setModalVisible(true);
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`/api/areas?id=${id}`);
-      message.success('Area deleted successfully');
-      fetchAreas(pagination.page, pagination.limit, searchText);
+      await axios.delete(`/api/unit-types?id=${id}`);
+      message.success('Unit type deleted successfully');
+      fetchUnitTypes(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
-      message.error(error.response?.data?.error || 'Failed to delete area');
+      message.error(
+        error.response?.data?.error || 'Failed to delete unit type'
+      );
     }
   };
 
   const handleSearch = (value: string) => {
     setSearchText(value);
-    fetchAreas(1, pagination.limit, value);
+    fetchUnitTypes(1, pagination.limit, value);
   };
 
   const handleImageUpload = async (file: File) => {
     setUploading(true);
     try {
-      // Store the file for later use in form submission
       setImagePreview(URL.createObjectURL(file));
       setSelectedImageFile(file);
       message.success('Image selected successfully');
-      return false; // Prevent default upload behavior
+      return false;
     } catch (error: any) {
       message.error('Failed to select image');
       return false;
@@ -208,19 +157,17 @@ const AreasPage = () => {
     try {
       const values = await form.validateFields();
 
-      if (editingArea) {
-        // Check if image was removed during editing
-        const hadImage = editingArea.image_url;
+      if (editingUnitType) {
+        const hadImage = editingUnitType.image_url;
         const hasNewImage = selectedImageFile;
         const shouldRemoveImage = hadImage && !hasNewImage;
 
-        // Handle update with form data if file is present or should be removed
         if (selectedImageFile || shouldRemoveImage) {
           const formData = new FormData();
-          formData.append('id', editingArea.id.toString());
+          formData.append('id', editingUnitType.id.toString());
           formData.append('name', values.name);
-          formData.append('city_id', values.city_id.toString());
-          formData.append('old_image_url', editingArea.image_url || '');
+          formData.append('description', values.description || '');
+          formData.append('old_image_url', editingUnitType.image_url || '');
 
           if (shouldRemoveImage) {
             formData.append('remove_image', 'true');
@@ -228,84 +175,55 @@ const AreasPage = () => {
             formData.append('file', selectedImageFile);
           }
 
-          await axios.put('/api/areas', formData, {
+          await axios.put('/api/unit-types', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
           });
         } else {
-          // Handle update with JSON if no file
-          await axios.put('/api/areas', {
-            id: editingArea.id,
+          await axios.put('/api/unit-types', {
+            id: editingUnitType.id,
             name: values.name,
-            city_id: values.city_id,
+            description: values.description,
             image_url: values.image_url,
-            old_image_url: editingArea.image_url,
+            old_image_url: editingUnitType.image_url,
           });
         }
-        message.success('Area updated successfully');
+        message.success('Unit type updated successfully');
       } else {
-        // Handle create with form data if file is present
         if (selectedImageFile) {
           const formData = new FormData();
           formData.append('name', values.name);
-          formData.append('city_id', values.city_id.toString());
+          formData.append('description', values.description || '');
           formData.append('file', selectedImageFile);
 
-          await axios.post('/api/areas', formData, {
+          await axios.post('/api/unit-types', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
           });
         } else {
-          // Handle create with JSON if no file
-          await axios.post('/api/areas', {
+          await axios.post('/api/unit-types', {
             name: values.name,
-            city_id: values.city_id,
+            description: values.description,
             image_url: values.image_url,
           });
         }
-        message.success('Area created successfully');
+        message.success('Unit type created successfully');
       }
 
       setModalVisible(false);
       form.resetFields();
       setImagePreview('');
       setSelectedImageFile(null);
-      fetchAreas(pagination.page, pagination.limit, searchText);
+      fetchUnitTypes(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
-      message.error(error.response?.data?.error || 'Failed to save area');
+      message.error(error.response?.data?.error || 'Failed to save unit type');
     }
   };
 
   const handleTableChange = (page: number, pageSize?: number) => {
-    fetchAreas(page, pageSize || pagination.limit, searchText);
-  };
-
-  const getCityName = (cityId: number) => {
-    const city = cities.find(c => c.id === cityId);
-    return city ? city.name : 'Unknown';
-  };
-
-  const getStateName = (cityId: number) => {
-    const city = cities.find(c => c.id === cityId);
-    if (city) {
-      const state = states.find(s => s.id === city.state_id);
-      return state ? state.name : 'Unknown';
-    }
-    return 'Unknown';
-  };
-
-  const getCountryName = (cityId: number) => {
-    const city = cities.find(c => c.id === cityId);
-    if (city) {
-      const state = states.find(s => s.id === city.state_id);
-      if (state) {
-        const country = countries.find(c => c.id === state.country_id);
-        return country ? country.name : 'Unknown';
-      }
-    }
-    return 'Unknown';
+    fetchUnitTypes(page, pageSize || pagination.limit, searchText);
   };
 
   const columns = [
@@ -326,7 +244,7 @@ const AreasPage = () => {
             width={50}
             height={50}
             src={imageUrl}
-            alt='Area'
+            alt='Unit Type'
             style={{ objectFit: 'cover', borderRadius: 4 }}
             fallback='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN'
           />
@@ -351,30 +269,22 @@ const AreasPage = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      sorter: (a: Area, b: Area) => a.name.localeCompare(b.name),
+      sorter: (a: UnitType, b: UnitType) => a.name.localeCompare(b.name),
     },
     {
-      title: 'City',
-      dataIndex: 'city_id',
-      key: 'city_id',
-      render: (cityId: number) => getCityName(cityId),
-      filters: cities.map(city => ({
-        text: city.name,
-        value: city.id,
-      })),
-      onFilter: (value: any, record: Area) => record.city_id === value,
-    },
-    {
-      title: 'State',
-      dataIndex: 'city_id',
-      key: 'state',
-      render: (cityId: number) => getStateName(cityId),
-    },
-    {
-      title: 'Country',
-      dataIndex: 'city_id',
-      key: 'country',
-      render: (cityId: number) => getCountryName(cityId),
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (description: string) =>
+        description ? (
+          <span>
+            {description.length > 50
+              ? `${description.substring(0, 50)}...`
+              : description}
+          </span>
+        ) : (
+          <span style={{ color: '#999' }}>No description</span>
+        ),
     },
     {
       title: 'Created At',
@@ -387,7 +297,7 @@ const AreasPage = () => {
       title: 'Actions',
       key: 'actions',
       width: 120,
-      render: (_: any, record: Area) => (
+      render: (_: any, record: UnitType) => (
         <Space>
           <Button
             type='link'
@@ -396,7 +306,7 @@ const AreasPage = () => {
             size='small'
           />
           <Popconfirm
-            title='Are you sure you want to delete this area?'
+            title='Are you sure you want to delete this unit type?'
             onConfirm={() => handleDelete(record.id)}
             okText='Yes'
             cancelText='No'
@@ -418,7 +328,7 @@ const AreasPage = () => {
         >
           <Col>
             <Title level={3} style={{ margin: 0 }}>
-              Areas Management
+              Unit Types Management
             </Title>
           </Col>
           <Col>
@@ -426,7 +336,7 @@ const AreasPage = () => {
               <Button
                 icon={<ReloadOutlined />}
                 onClick={() =>
-                  fetchAreas(pagination.page, pagination.limit, searchText)
+                  fetchUnitTypes(pagination.page, pagination.limit, searchText)
                 }
                 loading={loading}
               >
@@ -437,7 +347,7 @@ const AreasPage = () => {
                 icon={<PlusOutlined />}
                 onClick={handleAdd}
               >
-                Add Area
+                Add Unit Type
               </Button>
             </Space>
           </Col>
@@ -446,7 +356,7 @@ const AreasPage = () => {
         <Row style={{ marginBottom: 16 }}>
           <Col span={24}>
             <Input.Search
-              placeholder='Search areas by name...'
+              placeholder='Search unit types by name...'
               allowClear
               onSearch={handleSearch}
               onChange={e => {
@@ -464,9 +374,9 @@ const AreasPage = () => {
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={8}>
             <Statistic
-              title='Total Areas'
+              title='Total Unit Types'
               value={pagination.total}
-              valueStyle={{ color: '#eb2f96' }}
+              valueStyle={{ color: '#1890ff' }}
             />
           </Col>
           <Col span={8}>
@@ -482,7 +392,7 @@ const AreasPage = () => {
 
         <Table
           columns={columns}
-          dataSource={areas}
+          dataSource={unitTypes}
           rowKey='id'
           loading={loading}
           pagination={false}
@@ -506,7 +416,7 @@ const AreasPage = () => {
       </Card>
 
       <Modal
-        title={editingArea ? 'Edit Area' : 'Add Area'}
+        title={editingUnitType ? 'Edit Unit Type' : 'Add Unit Type'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => {
@@ -521,36 +431,23 @@ const AreasPage = () => {
         <Form form={form} layout='vertical'>
           <Form.Item
             name='name'
-            label='Area Name'
+            label='Unit Type Name'
             rules={[
-              { required: true, message: 'Please enter area name' },
-              { min: 2, message: 'Area name must be at least 2 characters' },
+              { required: true, message: 'Please enter unit type name' },
+              {
+                min: 2,
+                message: 'Unit type name must be at least 2 characters',
+              },
             ]}
           >
-            <Input placeholder='Enter area name' />
+            <Input placeholder='Enter unit type name' />
           </Form.Item>
-          <Form.Item
-            name='city_id'
-            label='City'
-            rules={[{ required: true, message: 'Please select a city' }]}
-          >
-            <Select
-              placeholder='Select a city'
-              showSearch
-              optionFilterProp='children'
-              filterOption={(input, option) =>
-                String(option?.children)
-                  .toLowerCase()
-                  .includes(input.toLowerCase())
-              }
-            >
-              {cities.map(city => (
-                <Option key={city.id} value={city.id}>
-                  {city.name} ({getStateName(city.id)},{' '}
-                  {getCountryName(city.id)})
-                </Option>
-              ))}
-            </Select>
+
+          <Form.Item name='description' label='Description'>
+            <TextArea
+              placeholder='Enter unit type description (optional)'
+              rows={3}
+            />
           </Form.Item>
 
           <Form.Item name='image_url' label='Image'>
@@ -608,4 +505,4 @@ const AreasPage = () => {
   );
 };
 
-export default AreasPage;
+export default UnitTypesPage;

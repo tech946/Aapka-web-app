@@ -91,6 +91,10 @@ export async function GET(
         project_name,
         starting_price,
         property_type_id,
+        property_type_ids,
+        property_types_text,
+        unit_type_ids,
+        unit_types_text,
         property_images,
         thumbnail_image,
         brochure_url,
@@ -173,6 +177,19 @@ export async function GET(
     const area = property.areas as any;
     const developer = property.developers as any;
 
+    // Parse unit types from comma-separated text
+    const unitTypes: Array<{ name: string }> = [];
+    if (property.unit_types_text) {
+      const unitTypeNames = property.unit_types_text
+        .split(',')
+        .map((name: string) => name.trim());
+      unitTypeNames.forEach((name: string) => {
+        if (name) {
+          unitTypes.push({ name });
+        }
+      });
+    }
+
     const formattedProperty = {
       id: property.id,
       projectName: property.project_name,
@@ -195,6 +212,9 @@ export async function GET(
             imageUrl: propertyType.image_url,
           }
         : null,
+
+      // Unit Types - array of unit type names
+      unitTypes: unitTypes,
 
       // Status (ID kept for tracking status changes)
       status: propertyStatus

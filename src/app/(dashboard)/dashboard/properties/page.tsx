@@ -80,6 +80,13 @@ interface PropertyType {
   image_url?: string;
 }
 
+interface UnitType {
+  id: number;
+  name: string;
+  description?: string;
+  image_url?: string;
+}
+
 interface Amenity {
   id: string;
   name: string;
@@ -119,6 +126,8 @@ interface Property {
   property_type_id?: number;
   property_type_ids?: string; // Comma-separated property type IDs (e.g., "1,3,5")
   property_types_text?: string; // Comma-separated property type names (e.g., "Apartment, Villa")
+  unit_type_ids?: string; // Comma-separated unit type IDs (e.g., "1,3,5")
+  unit_types_text?: string; // Comma-separated unit type names (e.g., "Studio, 1 BHK, 2 BHK")
   developer_id?: string;
   payment_plan?: string;
   handover?: string;
@@ -307,6 +316,7 @@ const PropertiesPage: React.FC = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -362,6 +372,7 @@ const PropertiesPage: React.FC = () => {
         citiesRes,
         areasRes,
         propertyTypesRes,
+        unitTypesRes,
         amenitiesRes,
         developersRes,
       ] = await Promise.all([
@@ -371,6 +382,7 @@ const PropertiesPage: React.FC = () => {
         axios.get('/api/cities?limit=1000'),
         axios.get('/api/areas?limit=1000'),
         axios.get('/api/property-types?limit=1000'),
+        axios.get('/api/unit-types?limit=1000'),
         axios.get('/api/amenities?limit=1000'),
         axios.get('/api/developers?limit=1000'),
       ]);
@@ -381,6 +393,7 @@ const PropertiesPage: React.FC = () => {
       setCities(citiesRes.data.data);
       setAreas(areasRes.data.data);
       setPropertyTypes(propertyTypesRes.data.data);
+      setUnitTypes(unitTypesRes.data.data);
       setAmenities(amenitiesRes.data.data);
       setDevelopers(developersRes.data.data);
     } catch (error: any) {
@@ -467,6 +480,15 @@ const PropertiesPage: React.FC = () => {
       propertyTypeIds = [property.property_type_id];
     }
 
+    // Parse comma-separated unit type IDs back to array of numbers
+    let unitTypeIds: number[] = [];
+    if (property.unit_type_ids) {
+      unitTypeIds = property.unit_type_ids
+        .split(',')
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id));
+    }
+
     // Parse price data (could be JSON or legacy number)
     let priceData: PriceData | null = null;
     if (property.starting_price) {
@@ -512,6 +534,7 @@ const PropertiesPage: React.FC = () => {
       city_id: property.city_id,
       area_id: property.area_id,
       property_types: propertyTypeIds, // Array of IDs
+      unit_types: unitTypeIds, // Array of IDs
       developer_id: property.developer_id,
       payment_plan: property.payment_plan,
       handover: property.handover,
@@ -589,6 +612,22 @@ const PropertiesPage: React.FC = () => {
           .map(type => type.name)
           .join(', ');
         formData.append('property_types_text', propertyTypesText);
+      }
+
+      // Handle unit types - send both IDs and names
+      if (values.unit_types && Array.isArray(values.unit_types)) {
+        // values.unit_types contains IDs (e.g., [1, 3, 5])
+        const unitTypeIds = values.unit_types.join(',');
+        formData.append('unit_type_ids', unitTypeIds);
+
+        // Convert IDs to names
+        const selectedUnitTypes = unitTypes.filter(type =>
+          values.unit_types.includes(type.id)
+        );
+        const unitTypesText = selectedUnitTypes
+          .map(type => type.name)
+          .join(', ');
+        formData.append('unit_types_text', unitTypesText);
       }
 
       formData.append('developer_id', values.developer_id || '');
@@ -1484,15 +1523,25 @@ const PropertiesPage: React.FC = () => {
                   placeholder='Select country'
                   className='custom-form-input'
                   showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
+                  allowClear
+                  optionFilterProp='label'
+                  filterOption={(input, option) => {
+                    const label = String(option?.label || '').toLowerCase();
+                    const searchTerm = input.toLowerCase();
+                    return label.includes(searchTerm);
+                  }}
+                  filterSort={(optionA, optionB) => {
+                    const labelA = String(optionA?.label || '').toLowerCase();
+                    const labelB = String(optionB?.label || '').toLowerCase();
+                    return labelA.localeCompare(labelB);
+                  }}
                 >
                   {countries.map(country => (
-                    <Option key={country.id} value={country.id}>
+                    <Option
+                      key={country.id}
+                      value={country.id}
+                      label={country.name}
+                    >
                       {country.name}
                     </Option>
                   ))}
@@ -1509,15 +1558,21 @@ const PropertiesPage: React.FC = () => {
                   placeholder='Select state'
                   className='custom-form-input'
                   showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
+                  allowClear
+                  optionFilterProp='label'
+                  filterOption={(input, option) => {
+                    const label = String(option?.label || '').toLowerCase();
+                    const searchTerm = input.toLowerCase();
+                    return label.includes(searchTerm);
+                  }}
+                  filterSort={(optionA, optionB) => {
+                    const labelA = String(optionA?.label || '').toLowerCase();
+                    const labelB = String(optionB?.label || '').toLowerCase();
+                    return labelA.localeCompare(labelB);
+                  }}
                 >
                   {states.map(state => (
-                    <Option key={state.id} value={state.id}>
+                    <Option key={state.id} value={state.id} label={state.name}>
                       {state.name}
                     </Option>
                   ))}
@@ -1534,15 +1589,21 @@ const PropertiesPage: React.FC = () => {
                   placeholder='Select city'
                   className='custom-form-input'
                   showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
+                  allowClear
+                  optionFilterProp='label'
+                  filterOption={(input, option) => {
+                    const label = String(option?.label || '').toLowerCase();
+                    const searchTerm = input.toLowerCase();
+                    return label.includes(searchTerm);
+                  }}
+                  filterSort={(optionA, optionB) => {
+                    const labelA = String(optionA?.label || '').toLowerCase();
+                    const labelB = String(optionB?.label || '').toLowerCase();
+                    return labelA.localeCompare(labelB);
+                  }}
                 >
                   {cities.map(city => (
-                    <Option key={city.id} value={city.id}>
+                    <Option key={city.id} value={city.id} label={city.name}>
                       {city.name}
                     </Option>
                   ))}
@@ -1559,15 +1620,21 @@ const PropertiesPage: React.FC = () => {
                   placeholder='Select area'
                   className='custom-form-input'
                   showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
+                  allowClear
+                  optionFilterProp='label'
+                  filterOption={(input, option) => {
+                    const label = String(option?.label || '').toLowerCase();
+                    const searchTerm = input.toLowerCase();
+                    return label.includes(searchTerm);
+                  }}
+                  filterSort={(optionA, optionB) => {
+                    const labelA = String(optionA?.label || '').toLowerCase();
+                    const labelB = String(optionB?.label || '').toLowerCase();
+                    return labelA.localeCompare(labelB);
+                  }}
                 >
                   {areas.map(area => (
-                    <Option key={area.id} value={area.id}>
+                    <Option key={area.id} value={area.id} label={area.name}>
                       {area.name}
                     </Option>
                   ))}
@@ -1802,6 +1869,47 @@ const PropertiesPage: React.FC = () => {
                   maxTagCount='responsive'
                 >
                   {propertyTypes.map(type => (
+                    <Option key={type.id} value={type.id}>
+                      <Space>
+                        {type.image_url && (
+                          <img
+                            src={type.image_url}
+                            alt={type.name}
+                            style={{
+                              width: 20,
+                              height: 20,
+                              objectFit: 'cover',
+                              borderRadius: 2,
+                            }}
+                          />
+                        )}
+                        {type.name}
+                      </Space>
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name='unit_types'
+                label='Unit Types'
+                className='custom-form-item-label'
+              >
+                <Select
+                  mode='multiple'
+                  placeholder='Select unit types (multiple allowed)'
+                  className='custom-form-input'
+                  maxTagCount='responsive'
+                  showSearch
+                  optionFilterProp='children'
+                  filterOption={(input, option) =>
+                    String(option?.children)
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                >
+                  {unitTypes.map(type => (
                     <Option key={type.id} value={type.id}>
                       <Space>
                         {type.image_url && (

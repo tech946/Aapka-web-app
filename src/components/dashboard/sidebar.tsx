@@ -300,6 +300,135 @@ export function Sidebar() {
           </svg>
           <span>Amenities</span>
         </Link>
+
+        <Link
+          href='/dashboard/master/unit-types'
+          className={`sidebar_item ${pathname === '/dashboard/master/unit-types' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            className='lucide lucide-package w-16 h-16 transition-all text-black-alpha-56 group-hover:text-black-alpha-72'
+            aria-hidden='true'
+          >
+            <path d='M16.5 9.4 7.55 4.24'></path>
+            <path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'></path>
+            <polyline points='3.29 7 12 12 20.71 7'></polyline>
+            <line x1='12' x2='12' y1='22' y2='12'></line>
+          </svg>
+          <span>Unit Types</span>
+        </Link>
+
+        <Link
+          href='/dashboard/master/countries'
+          className={`sidebar_item ${pathname === '/dashboard/master/countries' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            className='lucide lucide-globe w-16 h-16 transition-all text-black-alpha-56 group-hover:text-black-alpha-72'
+            aria-hidden='true'
+          >
+            <circle cx='12' cy='12' r='10'></circle>
+            <path d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'></path>
+            <path d='M2 12h20'></path>
+          </svg>
+          <span>Countries</span>
+        </Link>
+
+        <Link
+          href='/dashboard/master/states'
+          className={`sidebar_item ${pathname === '/dashboard/master/states' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            className='lucide lucide-map w-16 h-16 transition-all text-black-alpha-56 group-hover:text-black-alpha-72'
+            aria-hidden='true'
+          >
+            <path d='M3 6h3'></path>
+            <path d='M17 6h.01'></path>
+            <rect width='18' height='12' x='3' y='6' rx='2'></rect>
+            <circle cx='12' cy='13' r='2'></circle>
+          </svg>
+          <span>States</span>
+        </Link>
+
+        <Link
+          href='/dashboard/master/cities'
+          className={`sidebar_item ${pathname === '/dashboard/master/cities' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            className='lucide lucide-building w-16 h-16 transition-all text-black-alpha-56 group-hover:text-black-alpha-72'
+            aria-hidden='true'
+          >
+            <rect width='16' height='20' x='4' y='2' rx='2' ry='2'></rect>
+            <path d='M9 22v-4h6v4'></path>
+            <path d='M8 6h.01'></path>
+            <path d='M16 6h.01'></path>
+            <path d='M12 6h.01'></path>
+            <path d='M12 10h.01'></path>
+            <path d='M12 14h.01'></path>
+            <path d='M16 10h.01'></path>
+            <path d='M16 14h.01'></path>
+            <path d='M8 10h.01'></path>
+            <path d='M8 14h.01'></path>
+          </svg>
+          <span>Cities</span>
+        </Link>
+
+        <Link
+          href='/dashboard/master/areas'
+          className={`sidebar_item ${pathname === '/dashboard/master/areas' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            className='lucide lucide-map-pin w-16 h-16 transition-all text-black-alpha-56 group-hover:text-black-alpha-72'
+            aria-hidden='true'
+          >
+            <path d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z'></path>
+            <circle cx='12' cy='10' r='3'></circle>
+          </svg>
+          <span>Areas</span>
+        </Link>
       </div>
     </div>
   );

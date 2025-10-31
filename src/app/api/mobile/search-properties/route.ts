@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
         id,
         project_name,
         starting_price,
+        unit_types_text,
         thumbnail_image,
         brochure_url,
         is_active,

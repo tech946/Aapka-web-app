@@ -27,6 +27,7 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   UploadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -66,6 +67,7 @@ const StatesPage = () => {
   const [form] = Form.useForm();
   const [imagePreview, setImagePreview] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -84,11 +86,11 @@ const StatesPage = () => {
     }
   };
 
-  const fetchStates = async (page = 1, limit = 10) => {
+  const fetchStates = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/states?page=${page}&limit=${limit}`
+        `/api/states?page=${page}&limit=${limit}&search=${search}`
       );
       setStates(response.data.data);
       setPagination(response.data.pagination);
@@ -122,10 +124,15 @@ const StatesPage = () => {
     try {
       await axios.delete(`/api/states?id=${id}`);
       message.success('State deleted successfully');
-      fetchStates(pagination.page, pagination.limit);
+      fetchStates(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to delete state');
     }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    fetchStates(1, pagination.limit, value);
   };
 
   const handleImageUpload = async (file: File) => {
@@ -211,14 +218,14 @@ const StatesPage = () => {
       setModalVisible(false);
       form.resetFields();
       setImagePreview('');
-      fetchStates(pagination.page, pagination.limit);
+      fetchStates(pagination.page, pagination.limit, searchText);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'Failed to save state');
     }
   };
 
   const handleTableChange = (page: number, pageSize?: number) => {
-    fetchStates(page, pageSize || pagination.limit);
+    fetchStates(page, pageSize || pagination.limit, searchText);
   };
 
   const columns = [
@@ -329,7 +336,9 @@ const StatesPage = () => {
             <Space>
               <Button
                 icon={<ReloadOutlined />}
-                onClick={() => fetchStates(pagination.page, pagination.limit)}
+                onClick={() =>
+                  fetchStates(pagination.page, pagination.limit, searchText)
+                }
                 loading={loading}
               >
                 Refresh
@@ -342,6 +351,24 @@ const StatesPage = () => {
                 Add State
               </Button>
             </Space>
+          </Col>
+        </Row>
+
+        <Row style={{ marginBottom: 16 }}>
+          <Col span={24}>
+            <Input.Search
+              placeholder='Search states by name...'
+              allowClear
+              onSearch={handleSearch}
+              onChange={e => {
+                if (e.target.value === '') {
+                  handleSearch('');
+                }
+              }}
+              style={{ width: '100%' }}
+              size='large'
+              prefix={<SearchOutlined />}
+            />
           </Col>
         </Row>
 

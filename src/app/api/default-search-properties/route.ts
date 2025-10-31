@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
           project_name,
           starting_price,
           property_type_id,
+          unit_types_text,
           property_images,
           thumbnail_image,
           brochure_url,

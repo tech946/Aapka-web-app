@@ -129,6 +129,8 @@ export async function POST(request: NextRequest) {
       const earn_referral = formData.get('earn_referral') as string;
       const property_type_ids = formData.get('property_type_ids') as string; // Comma-separated property type IDs (e.g., "1,3,5")
       const property_types_text = formData.get('property_types_text') as string; // Comma-separated property type names (e.g., "Apartment, Villa")
+      const unit_type_ids = formData.get('unit_type_ids') as string; // Comma-separated unit type IDs (e.g., "1,3,5")
+      const unit_types_text = formData.get('unit_types_text') as string; // Comma-separated unit type names (e.g., "Studio, 1 BHK, 2 BHK")
       const amenities = formData.get('amenities') as string; // JSON string
       const pros = formData.get('pros') as string; // Rich text content for pros
       const cons = formData.get('cons') as string; // Rich text content for cons
@@ -302,6 +304,8 @@ export async function POST(request: NextRequest) {
               : null,
             property_type_ids: property_type_ids || null,
             property_types_text: property_types_text || null,
+            unit_type_ids: unit_type_ids || null,
+            unit_types_text: unit_types_text || null,
             developer_id: developer_id || null,
             payment_plan: payment_plan || null,
             handover: handover || null,
@@ -412,6 +416,10 @@ export async function POST(request: NextRequest) {
         area_id,
         starting_price,
         property_type_id,
+        property_type_ids,
+        property_types_text,
+        unit_type_ids,
+        unit_types_text,
         payment_plan,
         handover,
         earn_referral,
@@ -441,6 +449,10 @@ export async function POST(request: NextRequest) {
             property_type_id: property_type_id
               ? parseInt(property_type_id)
               : null,
+            property_type_ids: property_type_ids || null,
+            property_types_text: property_types_text || null,
+            unit_type_ids: unit_type_ids || null,
+            unit_types_text: unit_types_text || null,
             payment_plan: payment_plan || null,
             handover: handover || null,
             earn_referral: earn_referral || null,
@@ -509,6 +521,8 @@ export async function PUT(request: NextRequest) {
       const earn_referral = formData.get('earn_referral') as string;
       const property_type_ids = formData.get('property_type_ids') as string; // Comma-separated IDs
       const property_types_text = formData.get('property_types_text') as string; // Comma-separated names
+      const unit_type_ids = formData.get('unit_type_ids') as string; // Comma-separated unit type IDs
+      const unit_types_text = formData.get('unit_types_text') as string; // Comma-separated unit type names
       const amenities = formData.get('amenities') as string; // JSON string
       const pros = formData.get('pros') as string; // Rich text content for pros
       const cons = formData.get('cons') as string; // Rich text content for cons
@@ -759,6 +773,8 @@ export async function PUT(request: NextRequest) {
           property_type_id: property_type_id || null,
           property_type_ids: property_type_ids || null,
           property_types_text: property_types_text || null,
+          unit_type_ids: unit_type_ids || null,
+          unit_types_text: unit_types_text || null,
           developer_id: developer_id || null,
           payment_plan: payment_plan || null,
           handover: handover || null,
@@ -879,6 +895,8 @@ export async function PUT(request: NextRequest) {
         property_type_id,
         property_type_ids,
         property_types_text,
+        unit_type_ids,
+        unit_types_text,
         payment_plan,
         handover,
         earn_referral,
@@ -907,6 +925,8 @@ export async function PUT(request: NextRequest) {
           property_type_id: property_type_id || null,
           property_type_ids: property_type_ids || null,
           property_types_text: property_types_text || null,
+          unit_type_ids: unit_type_ids || null,
+          unit_types_text: unit_types_text || null,
           payment_plan: payment_plan || null,
           handover: handover || null,
           earn_referral: earn_referral || null,
