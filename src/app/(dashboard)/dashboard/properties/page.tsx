@@ -1432,15 +1432,25 @@ const PropertiesPage: React.FC = () => {
                   placeholder='Select developer'
                   className='custom-form-input'
                   showSearch
-                  optionFilterProp='children'
-                  filterOption={(input, option) =>
-                    String(option?.children)
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
+                  allowClear
+                  optionFilterProp='label'
+                  filterOption={(input, option) => {
+                    const label = String(option?.label || '').toLowerCase();
+                    const searchTerm = input.toLowerCase();
+                    return label.includes(searchTerm);
+                  }}
+                  filterSort={(optionA, optionB) => {
+                    const labelA = String(optionA?.label || '').toLowerCase();
+                    const labelB = String(optionB?.label || '').toLowerCase();
+                    return labelA.localeCompare(labelB);
+                  }}
                 >
                   {developers.map(developer => (
-                    <Option key={developer.id} value={developer.id}>
+                    <Option
+                      key={developer.id}
+                      value={developer.id}
+                      label={developer.name}
+                    >
                       <Space>
                         {developer.image_url && (
                           <img
