@@ -1,63 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { createClient } from '@supabase/supabase-js';
 
 /**
- * GET - Get mobile home data formatted for mobile app consumption (AUTHENTICATED USERS)
+ * GET - Get mobile home data formatted for mobile app consumption (PUBLIC - NO AUTHENTICATION REQUIRED)
  * This endpoint returns the home data with full property and developer details
  * organized exactly as needed for the mobile app
  *
- * This endpoint requires authentication but allows any role (user or admin)
- * Mobile apps authenticate using Bearer token in Authorization header
+ * No authentication required - allows mobile users to view homepage before logging in
  */
 export async function GET(request: NextRequest) {
   try {
-    // Extract Authorization header (for mobile apps)
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please provide a valid access token.' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-
-    // Create Supabase client to verify the token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    // Verify the token and get the user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid or expired access token. Please login again.' },
-        { status: 401 }
-      );
-    }
-
-    // Verify user exists in profiles table (any role is fine) - use admin client to bypass RLS
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { error: 'User profile not found. Please contact support.' },
-        { status: 404 }
-      );
-    }
-
-    // Any role (user or admin) can access formatted data
     // Get the most recent active mobile home data
     const { data: homeData, error: homeError } = await supabaseAdmin
       .from('mobile_home_data')
