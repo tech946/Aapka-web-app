@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         data: {
           featuredVideo: null,
+          propertyTypes: [],
           taglineText: '',
           properties: {},
           developers: [],
@@ -201,6 +202,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch all property types
+    const { data: propertyTypes, error: propertyTypesError } =
+      await supabaseAdmin
+        .from('property_types')
+        .select('id, name, description, image_url')
+        .order('name', { ascending: true });
+
+    const propertyTypesArray = propertyTypes || [];
+
     // Handle selected_developers - check if they're already full objects or just IDs
     const selectedDevelopers = homeData.selected_developers || [];
     let developersArray: any[] = [];
@@ -229,6 +239,7 @@ export async function GET(request: NextRequest) {
     // Format the response
     const formattedResponse = {
       featuredVideo: homeData.featured_video_url,
+      propertyTypes: propertyTypesArray,
       taglineText: homeData.tagline_text,
       properties: propertiesObject,
       developers: developersArray,

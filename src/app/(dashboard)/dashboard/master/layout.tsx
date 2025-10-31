@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   FlagOutlined,
   TeamOutlined,
+  InboxOutlined,
 } from '@ant-design/icons';
 import { ClipboardTypeIcon } from 'lucide-react';
 
@@ -45,6 +46,11 @@ const MasterLayout = ({ children }: { children: React.ReactNode }) => {
       key: '/dashboard/master/property-types',
       icon: <AppstoreOutlined />,
       label: 'Property Types',
+    },
+    {
+      key: '/dashboard/master/unit-types',
+      icon: <InboxOutlined />,
+      label: 'Unit Types',
     },
     {
       key: '/dashboard/master/amenities',
