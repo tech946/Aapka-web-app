@@ -653,7 +653,7 @@
 
 @media (max-width: 768px) {
   .insta_grid_section {
-    padding: 80px 0;
+    padding: 60px 16px;
   }
 
   .insta_grid {
@@ -667,17 +667,71 @@
       'K L'
       'M N';
     aspect-ratio: auto;
+    gap: 2px;
+    box-shadow: 0 12px 32px rgba(17, 15, 15, 0.06);
+  }
+
+  .insta_grid::after {
+    inset: 8px;
+    border-radius: 16px;
   }
 
   .insta_grid__headline {
     grid-area: unset;
-    margin: 0 auto;
+    margin: 20px auto 0;
     text-align: center;
     background: rgba(17, 15, 15, 0.92);
+    padding: 20px;
+    border-radius: 16px;
+    gap: 12px;
+  }
+
+  .insta_grid__title {
+    font-size: 24px;
+    letter-spacing: 1px;
   }
 
   .insta_grid__cta {
     width: 100%;
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 576px) {
+  .insta_grid_section {
+    padding: 40px 16px;
+  }
+
+  .insta_grid {
+    gap: 1px;
+    box-shadow: 0 8px 24px rgba(17, 15, 15, 0.05);
+  }
+
+  .insta_grid::after {
+    inset: 4px;
+    border-radius: 12px;
+  }
+
+  .insta_grid__headline {
+    padding: 16px;
+    gap: 10px;
+    margin: 16px auto 0;
+  }
+
+  .insta_grid__title {
+    font-size: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .insta_grid__cta {
+    padding: 8px 20px;
+    font-size: 13px;
+  }
+
+  .insta_grid__badge {
+    top: 8px;
+    left: 8px;
   }
 }
 
@@ -971,5 +1025,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .insta_grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr) 1.6fr repeat(2, 1fr);
+    grid-template-areas:
+      'A B B'
+      'C D E'
+      'H H H'
+      'F J G'
+      'I I K';
+    grid-gap: 1px;
+    gap: 1px;
+    width: calc(100% + 2px);
+    margin-bottom: -2px;
+    aspect-ratio: 3 / 5.6;
+  }
+  .insta_grid__headline {
+    position: relative;
+    z-index: 2;
+    grid-area: H;
+    place-self: center;
+    text-align: center;
+    background: transparent;
+    backdrop-filter: blur(0px);
   }
 }
