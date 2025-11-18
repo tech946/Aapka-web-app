@@ -247,6 +247,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   line-height: 1.6;
   color: #374151;
   margin: 0;
+  padding-bottom: 12px;
 }
 
 .package-html-content {
