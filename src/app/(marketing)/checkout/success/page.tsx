@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
 import './success.css';
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = searchParams.get('bookingId');
@@ -55,5 +55,19 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className='success-page'>
+          <div className='success-container'>Loading...</div>
+        </div>
+      }
+    >
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

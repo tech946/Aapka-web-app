@@ -476,15 +476,16 @@ export default function CheckoutPage() {
       }
 
       // Create form and submit to CCAvenue
+      // CCAvenue requires ONLY encRequest and access_code in the form
+      // merchant_id is already in the encrypted data, command is in the URL
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = orderData.redirectUrl;
 
+      // Only these two fields are required by CCAvenue
       const fields = {
-        merchant_id: orderData.merchantId,
-        access_code: orderData.accessCode,
         encRequest: orderData.encryptedData, // Official CCAvenue field name
-        command: 'initiateTransaction',
+        access_code: orderData.accessCode,
       };
 
       Object.entries(fields).forEach(([key, value]) => {
