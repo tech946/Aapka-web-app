@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { Instagram } from 'lucide-react'
-import './home.css'
+import { Instagram } from 'lucide-react';
+import './home.css';
 
 const socialItems = [
   {
@@ -74,34 +74,42 @@ const socialItems = [
     image: '/images/insta-reel-14.jpg',
     alt: 'Horseback adventure with cowboy vibes.',
   },
-]
+];
 
 export default function SocialGrid() {
   return (
-    <section className="insta_grid_section">
-        <div className="insta_grid">
-          {socialItems.map((item, index) => (
-            <button key={item.id} type="button" className="insta_grid__item" aria-label={item.alt}>
-              <img src={item.image} alt={item.alt} className="insta_grid__image" loading="lazy" />
-              <Instagram className="insta_grid__badge" size={20} />
-            </button>
-          ))}
+    <section className='insta_grid_section'>
+      <div className='insta_grid'>
+        {socialItems.map((item, index) => (
+          <button
+            key={item.id}
+            type='button'
+            className='insta_grid__item'
+            aria-label={item.alt}
+          >
+            <img
+              src={item.image}
+              alt={item.alt}
+              className='insta_grid__image'
+              loading='lazy'
+            />
+            <Instagram className='insta_grid__badge' size={20} />
+          </button>
+        ))}
 
-          <div className="insta_grid__headline">
-            <span className="insta_grid__title">#kamalpandeyvlogs</span>
-            <a
-              className="insta_grid__cta"
-              href="https://www.instagram.com/renotahoe/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Instagram size={20} />
-              Follow Us
-            </a>
-          </div>
+        <div className='insta_grid__headline'>
+          <span className='insta_grid__title'>#kamalpandeyvlogs</span>
+          <a
+            className='insta_grid__cta'
+            href='https://www.instagram.com/kamalpandeyvlogs/'
+            target='_blank'
+            rel='noreferrer'
+          >
+            <Instagram size={20} />
+            Follow Us
+          </a>
         </div>
-          
+      </div>
     </section>
-  )
+  );
 }
-

@@ -108,16 +108,31 @@ export default function Footer() {
             </address>
 
             <div className='footer_social'>
-              <a aria-label='GoFly on Facebook' href='#'>
+              <a
+                aria-label='Aapka Tourism on Facebook'
+                href='https://www.facebook.com/KamalPandeyVlog'
+                target='_blank'
+                rel='noreferrer'
+              >
                 <Facebook size={18} />
               </a>
-              <a aria-label='GoFly on Instagram' href='#'>
+              <a
+                aria-label='Aapka Tourism on Instagram'
+                href='https://www.instagram.com/kamalpandeyvlogs/'
+                target='_blank'
+                rel='noreferrer'
+              >
                 <Instagram size={18} />
               </a>
-              <a aria-label='GoFly on YouTube' href='#'>
+              <a
+                aria-label='Aapka Tourism on YouTube'
+                href='https://www.youtube.com/@KamalPandeyVlog'
+                target='_blank'
+                rel='noreferrer'
+              >
                 <Youtube size={18} />
               </a>
-              <a aria-label='GoFly on LinkedIn' href='#'>
+              <a aria-label='Aapka Tourism on LinkedIn' href='#'>
                 <Linkedin size={18} />
               </a>
             </div>
