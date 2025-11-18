@@ -31,6 +31,7 @@ interface Package {
   adult_price?: number | null;
   child_price?: number | null;
   overview?: string | null;
+  holiday_description_html?: string | null;
   thumbnail_image?: string | null;
   created_at?: string | null;
 }
@@ -499,11 +500,26 @@ function PackageCard({
       <div className='package-card-content'>
         <h3 className='package-name'>{pkg.package_name}</h3>
         <div className='package-details'>
-          {pkg.package_days && <span>{pkg.package_days} days</span>}
-          {pkg.package_nights && <span>{pkg.package_nights} nights</span>}
-          {pkg.overview && (
-            <span className='package-location'>{pkg.overview}</span>
-          )}
+          {(pkg.overview || pkg.holiday_description_html) &&
+            (() => {
+              let displayText = '';
+              if (pkg.overview) {
+                displayText = pkg.overview;
+              } else if (pkg.holiday_description_html) {
+                // Strip HTML tags and get plain text
+                const plainText = pkg.holiday_description_html
+                  .replace(/<[^>]*>/g, '')
+                  .trim();
+                // Limit to 100 characters
+                displayText =
+                  plainText.length > 100
+                    ? plainText.substring(0, 100) + '...'
+                    : plainText;
+              }
+              return displayText ? (
+                <span className='package-location'>{displayText}</span>
+              ) : null;
+            })()}
         </div>
         <div className='package-price'>
           from {formatPrice(pkg.package_price)}
