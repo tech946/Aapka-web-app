@@ -944,13 +944,6 @@ export default function PackageDetailsPage() {
                 >
                   Add to Cart
                 </button>
-                <Link
-                  href='/contact'
-                  className='mobile-booking-contact-button'
-                  onClick={() => setShowMobileDrawer(false)}
-                >
-                  Contact Now
-                </Link>
               </div>
             </div>
           </div>
@@ -1149,9 +1142,6 @@ export default function PackageDetailsPage() {
               >
                 Add to Cart
               </button>
-              <Link href='/contact' className='booking-contact-button'>
-                Contact Now
-              </Link>
             </div>
           </div>
         </div>

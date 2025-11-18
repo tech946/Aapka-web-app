@@ -721,7 +721,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .booking-add-to-cart-button {
   padding: 12px 32px;
   height: 48px;
-  background: #667eea;
+  background: #ff4d00;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -733,7 +733,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .booking-add-to-cart-button:hover {
-  background: #5568d3;
+  background: #e64500;
 }
 
 /* Contact Now Button */
@@ -1426,7 +1426,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     width: 100%;
     padding: 14px 32px;
     height: 40px;
-    background: #667eea;
+    background: #ff4d00;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -1440,7 +1440,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   }
 
   .mobile-booking-add-to-cart-button:hover {
-    background: #5568d3;
+    background: #e64500;
   }
 
   .mobile-booking-contact-button {
