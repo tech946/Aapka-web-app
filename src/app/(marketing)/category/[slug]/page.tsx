@@ -414,6 +414,24 @@ function PackageCard({
   onToggleFavorite: (e: React.MouseEvent) => void;
   userLocation: UserLocation | null;
 }) {
+  // Helper function to get location/description text
+  const getLocationText = (): string | null => {
+    if (pkg.overview) {
+      return pkg.overview;
+    }
+    if (pkg.holiday_description_html) {
+      // Strip HTML tags and get plain text
+      const plainText = pkg.holiday_description_html
+        .replace(/<[^>]*>/g, '')
+        .trim();
+      // Limit to 100 characters
+      return plainText.length > 100
+        ? plainText.substring(0, 100) + '...'
+        : plainText;
+    }
+    return null;
+  };
+
   // Helper function to format price based on region
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
@@ -500,26 +518,12 @@ function PackageCard({
       <div className='package-card-content'>
         <h3 className='package-name'>{pkg.package_name}</h3>
         <div className='package-details'>
-          {(pkg.overview || pkg.holiday_description_html) &&
-            (() => {
-              let displayText = '';
-              if (pkg.overview) {
-                displayText = pkg.overview;
-              } else if (pkg.holiday_description_html) {
-                // Strip HTML tags and get plain text
-                const plainText = pkg.holiday_description_html
-                  .replace(/<[^>]*>/g, '')
-                  .trim();
-                // Limit to 100 characters
-                displayText =
-                  plainText.length > 100
-                    ? plainText.substring(0, 100) + '...'
-                    : plainText;
-              }
-              return displayText ? (
-                <span className='package-location'>{displayText}</span>
-              ) : null;
-            })()}
+          {(() => {
+            const locationText = getLocationText();
+            return locationText ? (
+              <span className='package-location'>{locationText}</span>
+            ) : null;
+          })()}
         </div>
         <div className='package-price'>
           from {formatPrice(pkg.package_price)}
