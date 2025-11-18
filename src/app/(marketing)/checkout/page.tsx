@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import {
   detectUserLocation,
   convertAEDToINR,
+  convertAEDToINRAsync,
+  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -121,29 +123,35 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
-    const detectLocation = async () => {
+    const initialize = async () => {
       try {
         setIsLoadingLocation(true);
+        // Initialize exchange rate first (for accurate conversions)
+        await initializeExchangeRate();
+        // Then detect location
         const location = await detectUserLocation();
+        console.log('Checkout page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error detecting location:', error);
+        console.error('Error initializing:', error);
         // Default to non-India
-        setUserLocation({
+        const defaultLocation = {
           country: 'Unknown',
           countryCode: 'US',
           isIndia: false,
           currency: 'AED',
           currencySymbol: 'AED',
-        });
+        };
+        console.log('Checkout page - Using default location:', defaultLocation);
+        setUserLocation(defaultLocation);
       } finally {
         setIsLoadingLocation(false);
       }
     };
 
-    detectLocation();
+    initialize();
   }, []);
 
   // Helper function to format price based on region
@@ -327,7 +335,8 @@ export default function CheckoutPage() {
       );
 
       const totalAmountAED = getTotalPrice();
-      const totalAmountINR = convertAEDToINR(totalAmountAED);
+      // Use async conversion for accurate real-time exchange rate
+      const totalAmountINR = await convertAEDToINRAsync(totalAmountAED);
       const paymentAmount =
         paymentType === 'half' ? totalAmountINR / 2 : totalAmountINR;
 

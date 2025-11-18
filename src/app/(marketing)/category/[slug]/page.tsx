@@ -14,6 +14,7 @@ import {
 import {
   detectUserLocation,
   convertAEDToINR,
+  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -78,37 +79,57 @@ export default function CategoryPage() {
     }
   }, [category?.id, page, sortBy]);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
-    const detectLocation = async () => {
+    const initialize = async () => {
       try {
+        // Initialize exchange rate first (for accurate conversions)
+        await initializeExchangeRate();
+        // Then detect location
         const location = await detectUserLocation();
+        console.log('Category page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error detecting location:', error);
+        console.error('Error initializing:', error);
         // Default to non-India
-        setUserLocation({
+        const defaultLocation = {
           country: 'Unknown',
           countryCode: 'US',
           isIndia: false,
           currency: 'AED',
           currencySymbol: 'AED',
-        });
+        };
+        console.log('Category page - Using default location:', defaultLocation);
+        setUserLocation(defaultLocation);
       }
     };
 
-    detectLocation();
+    initialize();
   }, []);
 
   // Helper function to format price based on region
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
-    if (!userLocation) return `AED ${price.toLocaleString()}`;
+    if (!userLocation) {
+      console.log('formatPrice: No userLocation, showing AED');
+      return `AED ${price.toLocaleString()}`;
+    }
+
+    console.log(
+      'formatPrice: userLocation.isIndia =',
+      userLocation.isIndia,
+      'location:',
+      userLocation
+    );
 
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
+      const formatted = formatCurrency(inrPrice, userLocation);
+      console.log('formatPrice: Converted to INR:', formatted);
+      return formatted;
     }
+
+    console.log('formatPrice: Not India, showing AED');
     return `AED ${price.toLocaleString()}`;
   };
 
@@ -326,7 +347,10 @@ export default function CategoryPage() {
                     .replace(/[^a-z0-9-]/g, '');
 
                   return (
-                    <div key={pkg.package_id} className='package-card-wrapper'>
+                    <div
+                      key={`${pkg.package_id}-${userLocation?.isIndia ? 'inr' : 'aed'}`}
+                      className='package-card-wrapper'
+                    >
                       <PackageCard
                         pkg={pkg}
                         slug={slug}
@@ -392,12 +416,30 @@ function PackageCard({
   // Helper function to format price based on region
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
-    if (!userLocation) return `AED ${price.toLocaleString()}`;
 
+    // If location is not yet detected, show AED
+    if (!userLocation) {
+      console.log('PackageCard formatPrice: No userLocation, showing AED');
+      return `AED ${price.toLocaleString()}`;
+    }
+
+    console.log(
+      'PackageCard formatPrice: userLocation.isIndia =',
+      userLocation.isIndia,
+      'location:',
+      userLocation
+    );
+
+    // If user is in India, convert to INR
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
+      const formatted = formatCurrency(inrPrice, userLocation);
+      console.log('PackageCard formatPrice: Converted to INR:', formatted);
+      return formatted;
     }
+
+    // Otherwise show in AED
+    console.log('PackageCard formatPrice: Not India, showing AED');
     return `AED ${price.toLocaleString()}`;
   };
   const rating = 99; // Mock rating - replace with actual data
@@ -464,7 +506,7 @@ function PackageCard({
           )}
         </div>
         <div className='package-price'>
-          from {formatPrice(pkg.package_price)} / night
+          from {formatPrice(pkg.package_price)}
         </div>
         <Link
           href={`/category/${slug}/${packageSlug}`}

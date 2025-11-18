@@ -27,6 +27,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import {
   detectUserLocation,
   convertAEDToINR,
+  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -110,26 +111,35 @@ export default function PackageDetailsPage() {
     }
   }, [pkg?.package_category_id]);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
-    const detectLocation = async () => {
+    const initialize = async () => {
       try {
+        // Initialize exchange rate first (for accurate conversions)
+        await initializeExchangeRate();
+        // Then detect location
         const location = await detectUserLocation();
+        console.log('Package details page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error detecting location:', error);
+        console.error('Error initializing:', error);
         // Default to non-India
-        setUserLocation({
+        const defaultLocation = {
           country: 'Unknown',
           countryCode: 'US',
           isIndia: false,
           currency: 'AED',
           currencySymbol: 'AED',
-        });
+        };
+        console.log(
+          'Package details page - Using default location:',
+          defaultLocation
+        );
+        setUserLocation(defaultLocation);
       }
     };
 
-    detectLocation();
+    initialize();
   }, []);
 
   const getAvailableDates = useCallback((): string[] => {
@@ -740,9 +750,7 @@ export default function PackageDetailsPage() {
                   )}
                 </span>
                 <span className='mobile-booking-price-label'>
-                  {persons.adult > 0 || persons.child > 0
-                    ? 'total'
-                    : 'per night'}
+                  {persons.adult > 0 || persons.child > 0 ? 'total' : 'total'}
                 </span>
               </div>
 

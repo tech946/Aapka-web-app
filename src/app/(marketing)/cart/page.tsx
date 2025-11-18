@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import {
   detectUserLocation,
   convertAEDToINR,
+  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -33,26 +34,32 @@ export default function CartPage() {
   } = useCart();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
-    const detectLocation = async () => {
+    const initialize = async () => {
       try {
+        // Initialize exchange rate first (for accurate conversions)
+        await initializeExchangeRate();
+        // Then detect location
         const location = await detectUserLocation();
+        console.log('Cart page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error detecting location:', error);
+        console.error('Error initializing:', error);
         // Default to non-India
-        setUserLocation({
+        const defaultLocation = {
           country: 'Unknown',
           countryCode: 'US',
           isIndia: false,
           currency: 'AED',
           currencySymbol: 'AED',
-        });
+        };
+        console.log('Cart page - Using default location:', defaultLocation);
+        setUserLocation(defaultLocation);
       }
     };
 
-    detectLocation();
+    initialize();
   }, []);
 
   // Validate cart on mount and when items change
@@ -64,12 +71,26 @@ export default function CartPage() {
 
   // Helper function to format price based on region
   const formatPrice = (price: number): string => {
-    if (!userLocation) return `AED ${price.toLocaleString()}`;
+    if (!userLocation) {
+      console.log('Cart formatPrice: No userLocation, showing AED');
+      return `AED ${price.toLocaleString()}`;
+    }
+
+    console.log(
+      'Cart formatPrice: userLocation.isIndia =',
+      userLocation.isIndia,
+      'location:',
+      userLocation
+    );
 
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
+      const formatted = formatCurrency(inrPrice, userLocation);
+      console.log('Cart formatPrice: Converted to INR:', formatted);
+      return formatted;
     }
+
+    console.log('Cart formatPrice: Not India, showing AED');
     return `AED ${price.toLocaleString()}`;
   };
 
@@ -138,7 +159,7 @@ export default function CartPage() {
           <div className='cart-items'>
             {cartItems.map((item, index) => (
               <div
-                key={`${item.packageId}-${item.selectedDate}-${index}`}
+                key={`${item.packageId}-${item.selectedDate}-${index}-${userLocation?.isIndia ? 'inr' : 'aed'}`}
                 className='cart-item'
               >
                 <div className='cart-item-image'>
