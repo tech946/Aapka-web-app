@@ -3,8 +3,6 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -84,8 +82,8 @@ export default function LoginPage() {
         <div className='auth-logo'>
           <div className='auth-logo-image'>
             <Image
-              src='/proptz logo.png'
-              alt='Proptz'
+              src='/aapka-tourism-logo.png'
+              alt='Aapka Tourism'
               width={120}
               height={120}
             />

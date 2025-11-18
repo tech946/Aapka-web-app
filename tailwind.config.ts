@@ -11,9 +11,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-lato)', 'system-ui', 'sans-serif'],
-        lato: ['var(--font-lato)', 'system-ui', 'sans-serif'],
-        lexend: ['var(--font-lexend)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+        poppins: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

@@ -118,7 +118,8 @@
   color: #333333;
   margin-bottom: 8px;
   font-family:
-    'system-ui',
+    var(--font-poppins),
+    system-ui,
     -apple-system,
     sans-serif;
 }
@@ -188,7 +189,8 @@
   cursor: pointer;
   margin-bottom: 16px;
   font-family:
-    'system-ui',
+    var(--font-poppins),
+    system-ui,
     -apple-system,
     sans-serif;
   transition: opacity 0.2s ease;
@@ -218,7 +220,8 @@
   align-items: center;
   justify-content: center;
   font-family:
-    'system-ui',
+    var(--font-poppins),
+    system-ui,
     -apple-system,
     sans-serif;
   transition: background-color 0.2s ease;
@@ -270,7 +273,8 @@
   margin: 0;
   line-height: 1.4;
   font-family:
-    'system-ui',
+    var(--font-poppins),
+    system-ui,
     -apple-system,
     sans-serif;
 }

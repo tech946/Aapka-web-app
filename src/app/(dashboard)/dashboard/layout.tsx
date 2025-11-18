@@ -12,7 +12,7 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className='min-h-screen bg-gray-50'>
+    <div className='dashboard_root'>
       {/* Sidebar */}
       <Sidebar />
 

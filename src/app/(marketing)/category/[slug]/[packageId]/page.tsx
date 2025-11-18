@@ -1,0 +1,1164 @@
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useCart, CartItemStorage } from '@/context/CartContext';
+import { toast } from 'sonner';
+import {
+  ArrowLeft,
+  Heart,
+  MapPin,
+  Calendar,
+  Users,
+  Star,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Minus,
+  X,
+  ArrowUp,
+  ChevronLeft,
+} from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DayPicker } from 'react-day-picker';
+import { format } from 'date-fns';
+import useEmblaCarousel from 'embla-carousel-react';
+import {
+  detectUserLocation,
+  convertAEDToINR,
+  formatCurrency,
+  type UserLocation,
+} from '@/lib/location-utils';
+import 'react-day-picker/dist/style.css';
+import '../../packages.css';
+import './package-details.css';
+
+interface Package {
+  package_id: string;
+  package_name: string;
+  package_description: string | null;
+  package_price: number | null;
+  package_days?: number | null;
+  package_nights?: number | null;
+  package_category_id?: string;
+  adult_price?: number | null;
+  child_price?: number | null;
+  overview?: string | null;
+  terms_html?: string | null;
+  inclusion_html?: string | null;
+  exclusion_html?: string | null;
+  holiday_description_html?: string | null;
+  itinerary?: Array<{ heading: string; desc: string }> | null;
+  travel_dates?: Array<{ id: string; value: string }> | string[] | null;
+  thumbnail_image?: string | null;
+  created_at?: string | null;
+}
+
+export default function PackageDetailsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { addToCart } = useCart();
+  const slug = params?.slug as string;
+  const packageSlug = params?.packageId as string;
+
+  const [pkg, setPkg] = useState<Package | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [category, setCategory] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDateString, setSelectedDateString] = useState<string>('');
+  const [month, setMonth] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [persons, setPersons] = useState({
+    adult: 0,
+    child: 0,
+  });
+  const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
+  const [expandedItineraryItems, setExpandedItineraryItems] = useState<
+    Set<number>
+  >(new Set());
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const isMobile = useIsMobile();
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+    dragFree: false,
+    skipSnaps: false,
+    duration: 25,
+  });
+
+  const datePickerRef = useRef<HTMLDivElement>(null);
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
+  const personsDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (packageSlug) {
+      fetchPackage();
+    }
+  }, [packageSlug]);
+
+  useEffect(() => {
+    if (pkg?.package_category_id) {
+      fetchCategory();
+    }
+  }, [pkg?.package_category_id]);
+
+  // Detect user location on mount
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        const location = await detectUserLocation();
+        setUserLocation(location);
+      } catch (error) {
+        console.error('Error detecting location:', error);
+        // Default to non-India
+        setUserLocation({
+          country: 'Unknown',
+          countryCode: 'US',
+          isIndia: false,
+          currency: 'AED',
+          currencySymbol: 'AED',
+        });
+      }
+    };
+
+    detectLocation();
+  }, []);
+
+  const getAvailableDates = useCallback((): string[] => {
+    if (!pkg?.travel_dates) return [];
+    if (Array.isArray(pkg.travel_dates)) {
+      return pkg.travel_dates.map((d: any) =>
+        typeof d === 'string' ? d : d.value
+      );
+    }
+    return [];
+  }, [pkg?.travel_dates]);
+
+  const isPackageType = (): boolean => {
+    return category?.packagetypeid === 1;
+  };
+
+  // Read query parameters and initialize state
+  useEffect(() => {
+    if (!pkg) return; // Wait for package to load
+
+    const dateParam = searchParams.get('date');
+    const adultsParam = searchParams.get('adults');
+    const childrenParam = searchParams.get('children');
+
+    // Initialize date
+    if (dateParam) {
+      const isPackage = category?.packagetypeid === 1;
+
+      if (isPackage) {
+        // For packages, match with available dates
+        const availableDates = getAvailableDates();
+        const matchedDate = availableDates.find(d => d === dateParam);
+        if (matchedDate) {
+          setSelectedDateString(matchedDate);
+        } else {
+          // Try to parse as date string format
+          setSelectedDateString(dateParam);
+        }
+      } else {
+        // For tours, parse as Date object
+        try {
+          const date = new Date(dateParam);
+          if (!isNaN(date.getTime())) {
+            setSelectedDate(date);
+            setMonth(date);
+          }
+        } catch (e) {
+          // If parsing fails, try to create date from string
+          const date = new Date(dateParam);
+          if (!isNaN(date.getTime())) {
+            setSelectedDate(date);
+            setMonth(date);
+          }
+        }
+      }
+    }
+
+    // Initialize persons
+    if (adultsParam || childrenParam) {
+      setPersons({
+        adult: adultsParam ? parseInt(adultsParam, 10) : 0,
+        child: childrenParam ? parseInt(childrenParam, 10) : 0,
+      });
+    }
+  }, [searchParams, pkg, category, getAvailableDates]);
+
+  // Calculate price based on persons
+  useEffect(() => {
+    if (!pkg) {
+      setCalculatedPrice(null);
+      return;
+    }
+
+    const totalPrice =
+      (persons.adult > 0 && pkg.adult_price
+        ? persons.adult * pkg.adult_price
+        : 0) +
+      (persons.child > 0 && pkg.child_price
+        ? persons.child * pkg.child_price
+        : 0);
+
+    // If no persons selected or no adult/child prices, use base price
+    if (totalPrice === 0) {
+      setCalculatedPrice(pkg.package_price);
+    } else {
+      setCalculatedPrice(totalPrice);
+    }
+  }, [pkg, persons.adult, persons.child]);
+
+  // Helper function to format price based on region
+  const formatPrice = (price: number | null): string => {
+    if (!price) return 'N/A';
+    if (!userLocation) return `AED ${price.toLocaleString()}`;
+
+    if (userLocation.isIndia) {
+      const inrPrice = convertAEDToINR(price);
+      return formatCurrency(inrPrice, userLocation);
+    }
+    return `AED ${price.toLocaleString()}`;
+  };
+
+  const fetchPackage = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/packages/${packageSlug}`);
+      const result = await response.json();
+
+      if (result.data) {
+        setPkg(result.data);
+      } else {
+        console.error('Package not found');
+      }
+    } catch (error) {
+      console.error('Error fetching package:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategory = async () => {
+    if (!pkg?.package_category_id) return;
+    try {
+      const response = await fetch('/api/package-categories?limit=100');
+      const result = await response.json();
+      if (result.data) {
+        const foundCategory = result.data.find(
+          (cat: any) => cat.id === pkg.package_category_id
+        );
+        setCategory(foundCategory);
+      }
+    } catch (error) {
+      console.error('Error fetching category:', error);
+    }
+  };
+
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite);
+  };
+
+  const updatePersonCount = (type: 'adult' | 'child', delta: number) => {
+    setPersons(prev => {
+      const newValue = Math.max(0, prev[type] + delta);
+      return { ...prev, [type]: newValue };
+    });
+  };
+
+  const getTotalPersons = () => {
+    return persons.adult + persons.child;
+  };
+
+  const getPersonsDisplayText = () => {
+    const total = getTotalPersons();
+    if (total === 0) return 'Persons';
+    return `${total} ${total === 1 ? 'Person' : 'Persons'}`;
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      setShowDatePicker(false);
+    }
+  };
+
+  const handleDateStringSelect = (dateString: string) => {
+    setSelectedDateString(dateString);
+    setSelectedDate(new Date(dateString));
+    setShowDateDropdown(false);
+  };
+
+  const handleAddToCart = () => {
+    if (!pkg) return;
+
+    // Validate that date is selected
+    const dateToUse = isPackageType()
+      ? selectedDateString
+      : selectedDate
+        ? selectedDate.toISOString().split('T')[0]
+        : null;
+
+    if (!dateToUse) {
+      toast.error('Please select a date');
+      return;
+    }
+
+    // Validate that at least one person is selected
+    if (persons.adult === 0 && persons.child === 0) {
+      toast.error('Please select at least one person');
+      return;
+    }
+
+    // Create cart item (only identifiers, prices will be validated server-side)
+    const cartItem: CartItemStorage = {
+      packageId: pkg.package_id,
+      packageSlug: packageSlug,
+      categorySlug: slug,
+      adults: persons.adult,
+      children: persons.child,
+      selectedDate: dateToUse,
+    };
+
+    addToCart(cartItem);
+    toast.success('Package added to cart!');
+
+    // Close drawer on mobile after adding to cart
+    if (isMobile) {
+      setShowMobileDrawer(false);
+    }
+  };
+
+  const handleMobileAddToCartClick = () => {
+    setShowMobileDrawer(true);
+  };
+
+  // Get tabs based on available content
+  const getTabs = () => {
+    const tabs: Array<{ id: string; label: string }> = [];
+    if (pkg?.overview) tabs.push({ id: 'overview', label: 'Overview' });
+    if (pkg?.package_description)
+      tabs.push({ id: 'description', label: 'Description' });
+    if (pkg?.holiday_description_html)
+      tabs.push({ id: 'holiday', label: 'Holiday Description' });
+    if (pkg?.itinerary && pkg.itinerary.length > 0)
+      tabs.push({ id: 'itinerary', label: 'Itinerary' });
+    if (pkg?.inclusion_html)
+      tabs.push({ id: 'inclusions', label: 'Inclusions' });
+    if (pkg?.exclusion_html)
+      tabs.push({ id: 'exclusions', label: 'Exclusions' });
+    if (pkg?.terms_html)
+      tabs.push({ id: 'terms', label: 'Terms & Conditions' });
+    return tabs;
+  };
+
+  const tabs = getTabs();
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [pkg, tabs, activeTab]);
+
+  // Scroll to top button visibility and scrollbar visibility
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 300);
+
+      // Add class to body when scrolling to show scrollbar
+      document.body.classList.add('is-scrolling');
+
+      // Clear existing timeout
+      clearTimeout(scrollTimeout);
+
+      // Remove class after scrolling stops (500ms delay)
+      scrollTimeout = setTimeout(() => {
+        document.body.classList.remove('is-scrolling');
+      }, 500);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
+
+  const toggleItineraryItem = (index: number) => {
+    setExpandedItineraryItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Embla carousel navigation
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  useEffect(() => {
+    if (!emblaApi || !isMobile) return;
+
+    const updateScrollButtons = () => {
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+
+    updateScrollButtons();
+    emblaApi.on('select', updateScrollButtons);
+    emblaApi.on('reInit', updateScrollButtons);
+    emblaApi.on('settle', updateScrollButtons);
+
+    // Reinitialize on resize
+    const handleResize = () => {
+      emblaApi.reInit();
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      emblaApi.off('select', updateScrollButtons);
+      emblaApi.off('reInit', updateScrollButtons);
+      emblaApi.off('settle', updateScrollButtons);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [emblaApi, isMobile]);
+
+  // Click outside handlers for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        datePickerRef.current &&
+        !datePickerRef.current.contains(event.target as Node)
+      ) {
+        setShowDatePicker(false);
+      }
+      if (
+        dateDropdownRef.current &&
+        !dateDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowDateDropdown(false);
+      }
+      if (
+        personsDropdownRef.current &&
+        !personsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowPersonsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className='package-details-page'>
+        <div className='package-details-loading'>
+          Loading package details...
+        </div>
+      </div>
+    );
+  }
+
+  if (!pkg) {
+    return (
+      <div className='package-details-page'>
+        <div className='package-details-error'>
+          <h2>Package not found</h2>
+          <Link href={`/category/${slug}`} className='back-button'>
+            <ArrowLeft /> Back to packages
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className='package-details-page'>
+      {/* Hero Image */}
+      <div className='package-details-hero'>
+        {pkg.thumbnail_image && pkg.thumbnail_image.trim() ? (
+          <img
+            src={pkg.thumbnail_image}
+            alt={pkg.package_name}
+            className='package-hero-image'
+            onError={e => {
+              e.currentTarget.style.display = 'none';
+              const placeholder = e.currentTarget
+                .nextElementSibling as HTMLElement;
+              if (placeholder) {
+                placeholder.style.display = 'flex';
+              }
+            }}
+          />
+        ) : null}
+        <div
+          className='package-hero-placeholder'
+          style={{
+            display:
+              pkg.thumbnail_image && pkg.thumbnail_image.trim()
+                ? 'none'
+                : 'flex',
+          }}
+        >
+          <MapPin className='package-hero-icon' />
+        </div>
+      </div>
+
+      {/* Title and Rating */}
+      <div className='package-details-title-section'>
+        <h1>{pkg.package_name}</h1>
+      </div>
+
+      {/* Mobile Add to Cart Button - Center */}
+      {isMobile && (
+        <div className='mobile-add-to-cart-button-container'>
+          <button
+            onClick={handleMobileAddToCartClick}
+            className='mobile-add-to-cart-button'
+          >
+            Add to Cart
+          </button>
+        </div>
+      )}
+
+      {/* Main Content with Tabs */}
+      <div className='package-details-container'>
+        {/* Vertical Tabs Panel - Left */}
+        {isMobile ? (
+          <div className='package-details-tabs-panel-mobile'>
+            <button
+              className='tabs-slider-nav-button tabs-slider-prev'
+              onClick={scrollPrev}
+              disabled={!canScrollPrev}
+              aria-label='Previous tabs'
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className='tabs-slider-container' ref={emblaRef}>
+              <div className='tabs-slider-wrapper'>
+                {tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    className={`package-tab-button ${
+                      activeTab === tab.id ? 'active' : ''
+                    }`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              className='tabs-slider-nav-button tabs-slider-next'
+              onClick={scrollNext}
+              disabled={!canScrollNext}
+              aria-label='Next tabs'
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        ) : (
+          <div className='package-details-tabs-panel'>
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                className={`package-tab-button ${
+                  activeTab === tab.id ? 'active' : ''
+                }`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <span>{tab.label}</span>
+                <ChevronRight className='package-tab-chevron' />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Content Panel - Right */}
+        <div className='package-details-content-panel'>
+          {activeTab === 'overview' && pkg.overview && (
+            <div className='package-section'>
+              <h2>Overview</h2>
+              <p>{pkg.overview}</p>
+            </div>
+          )}
+
+          {activeTab === 'description' && pkg.package_description && (
+            <div className='package-section'>
+              <h2>Description</h2>
+              <p>{pkg.package_description}</p>
+            </div>
+          )}
+
+          {activeTab === 'holiday' && pkg.holiday_description_html && (
+            <div className='package-section'>
+              <h2>Holiday Description</h2>
+              <div
+                className='package-html-content'
+                dangerouslySetInnerHTML={{
+                  __html: pkg.holiday_description_html,
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'itinerary' &&
+            pkg.itinerary &&
+            pkg.itinerary.length > 0 && (
+              <div className='package-section'>
+                <h2>Itinerary</h2>
+                <div className='itinerary-list'>
+                  {pkg.itinerary.map((item, idx) => {
+                    const isExpanded = expandedItineraryItems.has(idx);
+                    return (
+                      <div key={idx} className='itinerary-item'>
+                        {item.heading && (
+                          <button
+                            className='itinerary-item-header'
+                            onClick={() => toggleItineraryItem(idx)}
+                          >
+                            <h3
+                              className='itinerary-heading'
+                              dangerouslySetInnerHTML={{ __html: item.heading }}
+                            />
+                            <ChevronDown
+                              className={`itinerary-chevron ${
+                                isExpanded ? 'expanded' : ''
+                              }`}
+                            />
+                          </button>
+                        )}
+                        {item.desc && (
+                          <div
+                            className={`itinerary-description ${
+                              isExpanded ? 'expanded' : ''
+                            }`}
+                            dangerouslySetInnerHTML={{ __html: item.desc }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+          {activeTab === 'inclusions' && pkg.inclusion_html && (
+            <div className='package-section'>
+              <h2>Inclusions</h2>
+              <div
+                className='package-html-content'
+                dangerouslySetInnerHTML={{ __html: pkg.inclusion_html }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'exclusions' && pkg.exclusion_html && (
+            <div className='package-section'>
+              <h2>Exclusions</h2>
+              <div
+                className='package-html-content'
+                dangerouslySetInnerHTML={{ __html: pkg.exclusion_html }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'terms' && pkg.terms_html && (
+            <div className='package-section'>
+              <h2>Terms & Conditions</h2>
+              <div
+                className='package-html-content'
+                dangerouslySetInnerHTML={{ __html: pkg.terms_html }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Drawer */}
+      {isMobile && (
+        <>
+          {showMobileDrawer && (
+            <div
+              className='mobile-drawer-overlay'
+              onClick={() => setShowMobileDrawer(false)}
+            />
+          )}
+          <div
+            className={`mobile-booking-drawer ${
+              showMobileDrawer ? 'mobile-drawer-open' : ''
+            }`}
+          >
+            <div className='mobile-drawer-header'>
+              <h3>Booking Details</h3>
+              <button
+                className='mobile-drawer-close'
+                onClick={() => setShowMobileDrawer(false)}
+              >
+                <X className='close-icon' />
+              </button>
+            </div>
+            <div className='mobile-drawer-content'>
+              <div className='mobile-booking-price-section'>
+                <span className='mobile-booking-price-amount'>
+                  {formatPrice(
+                    calculatedPrice !== null
+                      ? calculatedPrice
+                      : pkg.package_price
+                  )}
+                </span>
+                <span className='mobile-booking-price-label'>
+                  {persons.adult > 0 || persons.child > 0
+                    ? 'total'
+                    : 'per night'}
+                </span>
+              </div>
+
+              <div className='mobile-input-selectors'>
+                {/* Persons Selector */}
+                <div
+                  className='mobile-booking-input-wrapper'
+                  ref={personsDropdownRef}
+                >
+                  <Users className='mobile-booking-input-icon' />
+                  <input
+                    type='text'
+                    placeholder='Persons'
+                    className='mobile-booking-input'
+                    value={getPersonsDisplayText()}
+                    readOnly
+                    onClick={() => setShowPersonsDropdown(!showPersonsDropdown)}
+                  />
+                  <ChevronDown className='mobile-booking-dropdown-chevron' />
+                  {showPersonsDropdown && (
+                    <div className='mobile-booking-persons-dropdown'>
+                      <div className='mobile-person-counter-row'>
+                        <span className='mobile-person-label'>Adult</span>
+                        <div className='mobile-person-counter'>
+                          <button
+                            className='mobile-counter-button'
+                            onClick={() => updatePersonCount('adult', -1)}
+                            disabled={persons.adult === 0}
+                          >
+                            <Minus className='mobile-counter-icon' />
+                          </button>
+                          <span className='mobile-counter-value'>
+                            {persons.adult}
+                          </span>
+                          <button
+                            className='mobile-counter-button'
+                            onClick={() => updatePersonCount('adult', 1)}
+                          >
+                            <Plus className='mobile-counter-icon' />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='mobile-person-counter-row'>
+                        <span className='mobile-person-label'>Child</span>
+                        <div className='mobile-person-counter'>
+                          <button
+                            className='mobile-counter-button'
+                            onClick={() => updatePersonCount('child', -1)}
+                            disabled={persons.child === 0}
+                          >
+                            <Minus className='mobile-counter-icon' />
+                          </button>
+                          <span className='mobile-counter-value'>
+                            {persons.child}
+                          </span>
+                          <button
+                            className='mobile-counter-button'
+                            onClick={() => updatePersonCount('child', 1)}
+                          >
+                            <Plus className='mobile-counter-icon' />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Date Picker / Calendar */}
+                {isPackageType() ? (
+                  // Package: Show dropdown with dates
+                  <div
+                    className='mobile-booking-input-wrapper'
+                    ref={dateDropdownRef}
+                  >
+                    <Calendar className='mobile-booking-input-icon' />
+                    <input
+                      type='text'
+                      placeholder={
+                        getAvailableDates().length === 0
+                          ? 'No dates available'
+                          : 'Select date'
+                      }
+                      className='mobile-booking-input'
+                      value={
+                        selectedDateString
+                          ? format(new Date(selectedDateString), 'MMM dd, yyyy')
+                          : ''
+                      }
+                      readOnly
+                      disabled={getAvailableDates().length === 0}
+                      onClick={() => {
+                        if (getAvailableDates().length > 0) {
+                          setShowDateDropdown(!showDateDropdown);
+                        }
+                      }}
+                    />
+                    <ChevronDown className='mobile-booking-dropdown-chevron' />
+                    {showDateDropdown && getAvailableDates().length > 0 && (
+                      <div className='mobile-booking-dates-dropdown'>
+                        {getAvailableDates().map((dateStr, idx) => (
+                          <div
+                            key={idx}
+                            className='mobile-booking-date-item'
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDateStringSelect(dateStr);
+                            }}
+                          >
+                            {format(new Date(dateStr), 'MMM dd, yyyy')}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Tour: Show calendar
+                  <div
+                    className='mobile-booking-input-wrapper'
+                    ref={datePickerRef}
+                  >
+                    <Calendar className='mobile-booking-input-icon' />
+                    <input
+                      type='text'
+                      placeholder='Add dates'
+                      className='mobile-booking-input'
+                      value={
+                        selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''
+                      }
+                      readOnly
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                    />
+                    {showDatePicker && (
+                      <div className='mobile-booking-calendar-dropdown'>
+                        <div className='mobile-calendar-header-nav'>
+                          <button
+                            className='mobile-calendar-nav-button'
+                            onClick={e => {
+                              e.stopPropagation();
+                              const newMonth = new Date(month);
+                              newMonth.setMonth(newMonth.getMonth() - 1);
+                              setMonth(newMonth);
+                            }}
+                          >
+                            ‹
+                          </button>
+                          <button
+                            className='mobile-calendar-nav-button'
+                            onClick={e => {
+                              e.stopPropagation();
+                              const newMonth = new Date(month);
+                              newMonth.setMonth(newMonth.getMonth() + 1);
+                              setMonth(newMonth);
+                            }}
+                          >
+                            ›
+                          </button>
+                        </div>
+                        <DayPicker
+                          mode='single'
+                          selected={selectedDate}
+                          onSelect={handleDateSelect}
+                          disabled={{ before: new Date() }}
+                          numberOfMonths={1}
+                          showOutsideDays={true}
+                          month={month}
+                          onMonthChange={setMonth}
+                          className='mobile-custom-calendar'
+                        />
+                        <div className='mobile-calendar-footer'>
+                          <button
+                            className='mobile-clear-dates-button'
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedDate(undefined);
+                            }}
+                          >
+                            Clear dates
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className='mobile-booking-actions'>
+                <button
+                  onClick={handleAddToCart}
+                  className='mobile-booking-add-to-cart-button'
+                >
+                  Add to Cart
+                </button>
+                <Link
+                  href='/contact'
+                  className='mobile-booking-contact-button'
+                  onClick={() => setShowMobileDrawer(false)}
+                >
+                  Contact Now
+                </Link>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Horizontal Booking Card - Fixed at Bottom - Desktop Only */}
+      {!isMobile && (
+        <div className='package-booking-card-horizontal'>
+          <div className='booking-card-content'>
+            <div className='booking-price-section'>
+              <span className='booking-price-amount'>
+                {formatPrice(
+                  calculatedPrice !== null ? calculatedPrice : pkg.package_price
+                )}
+              </span>
+              <span className='booking-price-label'>
+                {persons.adult > 0 || persons.child > 0 ? 'total' : 'per night'}
+              </span>
+            </div>
+
+            <div className='input-selectors'>
+              {/* Persons Selector */}
+              <div className='booking-input-wrapper' ref={personsDropdownRef}>
+                <Users className='booking-input-icon' />
+                <input
+                  type='text'
+                  placeholder='Persons'
+                  className='booking-input'
+                  value={getPersonsDisplayText()}
+                  readOnly
+                  onClick={() => setShowPersonsDropdown(!showPersonsDropdown)}
+                />
+                <ChevronDown className='booking-dropdown-chevron' />
+                {showPersonsDropdown && (
+                  <div className='booking-persons-dropdown'>
+                    <div className='person-counter-row'>
+                      <span className='person-label'>Adult</span>
+                      <div className='person-counter'>
+                        <button
+                          className='counter-button'
+                          onClick={() => updatePersonCount('adult', -1)}
+                          disabled={persons.adult === 0}
+                        >
+                          <Minus className='counter-icon' />
+                        </button>
+                        <span className='counter-value'>{persons.adult}</span>
+                        <button
+                          className='counter-button'
+                          onClick={() => updatePersonCount('adult', 1)}
+                        >
+                          <Plus className='counter-icon' />
+                        </button>
+                      </div>
+                    </div>
+                    <div className='person-counter-row'>
+                      <span className='person-label'>Child</span>
+                      <div className='person-counter'>
+                        <button
+                          className='counter-button'
+                          onClick={() => updatePersonCount('child', -1)}
+                          disabled={persons.child === 0}
+                        >
+                          <Minus className='counter-icon' />
+                        </button>
+                        <span className='counter-value'>{persons.child}</span>
+                        <button
+                          className='counter-button'
+                          onClick={() => updatePersonCount('child', 1)}
+                        >
+                          <Plus className='counter-icon' />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Date Picker / Calendar */}
+              {isPackageType() ? (
+                // Package: Show dropdown with dates
+                <div className='booking-input-wrapper' ref={dateDropdownRef}>
+                  <Calendar className='booking-input-icon' />
+                  <input
+                    type='text'
+                    placeholder={
+                      getAvailableDates().length === 0
+                        ? 'No dates available'
+                        : 'Select date'
+                    }
+                    className='booking-input'
+                    value={
+                      selectedDateString
+                        ? format(new Date(selectedDateString), 'MMM dd, yyyy')
+                        : ''
+                    }
+                    readOnly
+                    disabled={getAvailableDates().length === 0}
+                    onClick={() => {
+                      if (getAvailableDates().length > 0) {
+                        setShowDateDropdown(!showDateDropdown);
+                      }
+                    }}
+                  />
+                  <ChevronDown className='booking-dropdown-chevron' />
+                  {showDateDropdown && getAvailableDates().length > 0 && (
+                    <div className='booking-dates-dropdown'>
+                      {getAvailableDates().map((dateStr, idx) => (
+                        <div
+                          key={idx}
+                          className='booking-date-item'
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleDateStringSelect(dateStr);
+                          }}
+                        >
+                          {format(new Date(dateStr), 'MMM dd, yyyy')}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Tour: Show calendar
+                <div className='booking-input-wrapper' ref={datePickerRef}>
+                  <Calendar className='booking-input-icon' />
+                  <input
+                    type='text'
+                    placeholder='Add dates'
+                    className='booking-input'
+                    value={
+                      selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''
+                    }
+                    readOnly
+                    onClick={() => setShowDatePicker(!showDatePicker)}
+                  />
+                  {showDatePicker && (
+                    <div className='booking-calendar-dropdown'>
+                      <div className='calendar-header-nav'>
+                        <button
+                          className='calendar-nav-button'
+                          onClick={e => {
+                            e.stopPropagation();
+                            const newMonth = new Date(month);
+                            newMonth.setMonth(newMonth.getMonth() - 1);
+                            setMonth(newMonth);
+                          }}
+                        >
+                          ‹
+                        </button>
+                        <button
+                          className='calendar-nav-button'
+                          onClick={e => {
+                            e.stopPropagation();
+                            const newMonth = new Date(month);
+                            newMonth.setMonth(newMonth.getMonth() + 1);
+                            setMonth(newMonth);
+                          }}
+                        >
+                          ›
+                        </button>
+                      </div>
+                      <DayPicker
+                        mode='single'
+                        selected={selectedDate}
+                        onSelect={handleDateSelect}
+                        disabled={{ before: new Date() }}
+                        numberOfMonths={1}
+                        showOutsideDays={true}
+                        month={month}
+                        onMonthChange={setMonth}
+                        className='custom-calendar'
+                      />
+                      <div className='calendar-footer'>
+                        <button
+                          className='clear-dates-button'
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedDate(undefined);
+                          }}
+                        >
+                          Clear dates
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className='booking-actions'>
+              <button
+                onClick={handleAddToCart}
+                className='booking-add-to-cart-button'
+              >
+                Add to Cart
+              </button>
+              <Link href='/contact' className='booking-contact-button'>
+                Contact Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scroll to Top Button */}
+      {showScrollToTop && (
+        <button
+          className='scroll-to-top-button'
+          onClick={scrollToTop}
+          aria-label='Scroll to top'
+        >
+          <ArrowUp className='scroll-to-top-icon' />
+        </button>
+      )}
+    </div>
+  );
+}

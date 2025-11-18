@@ -35,7 +35,9 @@ export default function AuthCallbackPage() {
             }
 
             if (data.session) {
-              toast.success('Email confirmed successfully! Welcome to Proptz!');
+              toast.success(
+                'Email confirmed successfully! Welcome to Aapka Tourism!'
+              );
               router.push('/dashboard');
               return;
             }
@@ -55,7 +57,9 @@ export default function AuthCallbackPage() {
         }
 
         const user = session.user;
-        toast.success('Email confirmed successfully! Welcome to Proptz!');
+        toast.success(
+          'Email confirmed successfully! Welcome to Aapka Tourism!'
+        );
         router.push('/dashboard');
       } catch (error) {
         console.error('Auth callback error:', error);
