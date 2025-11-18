@@ -961,7 +961,7 @@ export default function PackageDetailsPage() {
                 )}
               </span>
               <span className='booking-price-label'>
-                {persons.adult > 0 || persons.child > 0 ? 'total' : 'per night'}
+                {persons.adult > 0 || persons.child > 0 ? 'total' : 'total'}
               </span>
             </div>
 
