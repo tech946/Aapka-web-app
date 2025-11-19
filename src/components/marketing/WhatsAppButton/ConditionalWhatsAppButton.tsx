@@ -1,12 +1,12 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Footer from './Footer';
+import WhatsAppButton from './WhatsAppButton';
 
-export default function ConditionalFooter() {
+export default function ConditionalWhatsAppButton() {
   const pathname = usePathname();
 
-  // Hide footer on dashboard routes and maintenance page
+  // Hide WhatsApp button on dashboard routes and maintenance page
   const isDashboardRoute = pathname?.startsWith('/dashboard');
   const isMaintenancePage = pathname === '/';
 
@@ -14,5 +14,5 @@ export default function ConditionalFooter() {
     return null;
   }
 
-  return <Footer />;
+  return <WhatsAppButton />;
 }

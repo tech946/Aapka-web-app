@@ -6,7 +6,7 @@ import { Toaster } from 'sonner';
 import 'antd/dist/reset.css';
 import ConditionalHeader from '@/components/marketing/Header/ConditionalHeader';
 import ConditionalFooter from '@/components/marketing/Footer/ConditionalFooter';
-import WhatsAppButton from '@/components/marketing/WhatsAppButton/WhatsAppButton';
+import ConditionalWhatsAppButton from '@/components/marketing/WhatsAppButton/ConditionalWhatsAppButton';
 import { CartProvider } from '@/context/CartContext';
 
 const poppins = Poppins({
@@ -35,7 +35,7 @@ export default function RootLayout({
           <Toaster position='top-right' /> {/* Required */}
           {children}
           <ConditionalFooter />
-          <WhatsAppButton />
+          <ConditionalWhatsAppButton />
         </CartProvider>
       </body>
     </html>

@@ -17,58 +17,118 @@ const CACHE_DURATION = 3600000; // 1 hour in milliseconds
 
 /**
  * Fetch real-time AED to INR exchange rate
- * Uses exchangerate-api.io (free, no API key required for basic usage)
+ * Uses multiple reliable free APIs with fallbacks for maximum accuracy
+ * Primary: fawazahmed0/currency-api (free, accurate, no API key)
+ * Fallbacks: exchangerate.host and exchangerate-api.com
  */
 async function fetchExchangeRate(): Promise<number> {
+  // Primary: fawazahmed0/currency-api - Free, accurate, updated daily
+  // This API provides rates similar to Google Finance
   try {
-    // Using exchangerate-api.io free tier (no API key needed)
     const response = await fetch(
-      'https://api.exchangerate-api.com/v4/latest/AED',
+      'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/aed.json',
       {
         next: { revalidate: 3600 }, // Cache for 1 hour
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
       }
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch exchange rate');
+      throw new Error(`HTTP ${response.status}: Failed to fetch exchange rate`);
     }
 
     const data = await response.json();
-    const inrRate = data.rates?.INR;
+    // Response format: { "aed": { "inr": 22.75, ... } }
+    const inrRate = data?.aed?.inr;
 
-    if (!inrRate || typeof inrRate !== 'number') {
-      throw new Error('Invalid exchange rate data');
+    if (
+      inrRate &&
+      typeof inrRate === 'number' &&
+      inrRate > 0 &&
+      inrRate < 100
+    ) {
+      // Validate rate is in reasonable range (AED to INR is typically 20-25)
+      console.log('Primary API rate fetched:', inrRate);
+      return inrRate;
     }
 
-    return inrRate;
+    throw new Error('Invalid exchange rate data from primary API');
   } catch (error) {
-    console.error('Error fetching exchange rate:', error);
+    console.error('Error fetching exchange rate (primary):', error);
 
-    // Fallback: Try alternative API (fixer.io format via exchangerate.host)
+    // Fallback 1: exchangerate.host - Free, reliable, frequently updated
     try {
-      const fallbackResponse = await fetch(
+      const fallbackResponse1 = await fetch(
         'https://api.exchangerate.host/latest?base=AED&symbols=INR',
         {
           next: { revalidate: 3600 },
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
         }
       );
 
-      if (fallbackResponse.ok) {
-        const fallbackData = await fallbackResponse.json();
-        if (fallbackData.rates?.INR) {
-          return fallbackData.rates.INR;
+      if (fallbackResponse1.ok) {
+        const fallbackData = await fallbackResponse1.json();
+        const inrRate = fallbackData?.rates?.INR;
+
+        if (
+          inrRate &&
+          typeof inrRate === 'number' &&
+          inrRate > 0 &&
+          inrRate < 100
+        ) {
+          console.log('Fallback 1 API rate fetched:', inrRate);
+          return inrRate;
         }
       }
-    } catch (fallbackError) {
-      console.error('Fallback API also failed:', fallbackError);
+    } catch (fallbackError1) {
+      console.error('Fallback API 1 failed:', fallbackError1);
+    }
+
+    // Fallback 2: exchangerate-api.com (original but as fallback)
+    try {
+      const fallbackResponse2 = await fetch(
+        'https://api.exchangerate-api.com/v4/latest/AED',
+        {
+          next: { revalidate: 3600 },
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        }
+      );
+
+      if (fallbackResponse2.ok) {
+        const fallbackData = await fallbackResponse2.json();
+        const inrRate = fallbackData?.rates?.INR;
+
+        if (
+          inrRate &&
+          typeof inrRate === 'number' &&
+          inrRate > 0 &&
+          inrRate < 100
+        ) {
+          console.log('Fallback 2 API rate fetched:', inrRate);
+          return inrRate;
+        }
+      }
+    } catch (fallbackError2) {
+      console.error('Fallback API 2 failed:', fallbackError2);
     }
 
     // If all APIs fail, return cached rate or default
     if (cachedRate) {
+      console.log('Using cached rate:', cachedRate.rate);
       return cachedRate.rate;
     }
 
     // Last resort: return approximate rate
+    console.warn('All APIs failed, using fallback rate:', 22.5);
     return 22.5;
   }
 }
