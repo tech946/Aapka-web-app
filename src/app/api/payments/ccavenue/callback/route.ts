@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { decrypt } from '@/lib/ccavenue-crypto';
+import { redirectResponseToJson } from '@/lib/ccavenue-crypto';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Handle both GET and POST requests (CCAvenue typically uses POST)
-export async function GET(req: NextRequest) {
+// Handle POST requests (CCAvenue sends POST with encResp in body)
+export async function POST(req: NextRequest) {
   return handleCallback(req);
 }
 
-export async function POST(req: NextRequest) {
+// Also handle GET for compatibility
+export async function GET(req: NextRequest) {
   return handleCallback(req);
 }
 
@@ -18,24 +19,37 @@ async function handleCallback(req: NextRequest) {
   try {
     let encryptedResponse = '';
 
-    // CCAvenue sends response as POST data with encResp parameter
-    // But also check GET params for compatibility
+    // According to the guide, CCAvenue sends POST with encResp in request body
+    // In Pages Router: req.body.encResp
+    // In App Router: we need to parse the body ourselves
     if (req.method === 'POST') {
-      // Read body as text and parse as URL-encoded form data
       try {
-        const body = await req.text();
-        const params = new URLSearchParams(body);
+        // CCAvenue sends form-encoded data: encResp=XXX
+        const bodyText = await req.text();
+
+        // Parse as URL-encoded form data (most common format)
+        const params = new URLSearchParams(bodyText);
         encryptedResponse = params.get('encResp') || '';
+
+        // If not found, try to extract from raw body string
+        if (!encryptedResponse && bodyText.includes('encResp=')) {
+          // Handle URL-encoded value
+          const match = bodyText.match(/encResp=([^&]+)/);
+          if (match) {
+            encryptedResponse = decodeURIComponent(match[1]);
+          }
+        }
       } catch (e) {
         console.error('Error parsing POST data:', e);
       }
     } else {
-      // GET request - check query params
+      // GET request - check query params (for testing/debugging)
       const searchParams = req.nextUrl.searchParams;
       encryptedResponse = searchParams.get('encResp') || '';
     }
 
     if (!encryptedResponse) {
+      console.error('No encResp parameter found in CCAvenue callback');
       return NextResponse.redirect(
         new URL('/checkout?error=payment_failed', req.nextUrl.origin)
       );
@@ -43,16 +57,22 @@ async function handleCallback(req: NextRequest) {
 
     const workingKey = process.env.CCAVENUE_WORKING_KEY || '';
 
-    // Decrypt the response using official CCAvenue method
-    const decryptedResponse = decrypt(encryptedResponse, workingKey);
-    const params = new URLSearchParams(decryptedResponse);
+    if (!workingKey) {
+      console.error('CCAvenue working key not configured');
+      return NextResponse.redirect(
+        new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin)
+      );
+    }
 
-    const orderStatus = params.get('order_status');
-    const orderId = params.get('order_id');
-    const amount = params.get('amount');
-    const bookingId = params.get('merchant_param1') || '';
-    const paymentType = params.get('merchant_param2') || 'full';
-    const trackingId = params.get('tracking_id') || '';
+    // Use the guide's method to decrypt and parse response
+    const data = redirectResponseToJson(encryptedResponse, workingKey);
+
+    const orderStatus = data.order_status;
+    const orderId = data.order_id;
+    const amount = data.amount;
+    const bookingId = data.merchant_param1 || '';
+    const paymentType = data.merchant_param2 || 'full';
+    const trackingId = data.tracking_id || '';
 
     if (orderStatus !== 'Success') {
       // Payment failed

@@ -346,18 +346,13 @@ export default function CheckoutPage() {
       let paymentAmount: number;
       let currency: string;
 
-      if (userLocation.isIndia) {
-        // Indian users: convert to INR and pay in INR
-        const totalAmountINR = await convertAEDToINRAsync(totalAmountAED);
-        paymentAmount =
-          paymentType === 'half' ? totalAmountINR / 2 : totalAmountINR;
-        currency = 'INR';
-      } else {
-        // International users: pay in AED
-        paymentAmount =
-          paymentType === 'half' ? totalAmountAED / 2 : totalAmountAED;
-        currency = 'AED';
-      }
+      // CCAvenue typically uses INR currency
+      // Convert all payments to INR for CCAvenue (check your CCAvenue account settings)
+      // If your account supports AED, you can use currency = 'AED' for international users
+      const totalAmountINR = await convertAEDToINRAsync(totalAmountAED);
+      paymentAmount =
+        paymentType === 'half' ? totalAmountINR / 2 : totalAmountINR;
+      currency = 'INR'; // CCAvenue standard currency - change if your account supports AED
 
       // Create booking first
       const bookingResponse = await fetch('/api/checkout/create-booking', {
@@ -508,18 +503,29 @@ export default function CheckoutPage() {
         throw new Error(orderData.error || 'Failed to create payment order');
       }
 
-      // Create form and submit to CCAvenue
-      // CCAvenue requires encRequest, access_code, and merchant_id in the form
-      // According to CCAvenue documentation, merchant_id should be a separate form field
+      // According to the guide, we can either:
+      // 1. Use the full URL with query params (redirect)
+      // 2. Use form POST with encRequest and access_code
+      // The guide shows using router.push with full URL, but form POST is also valid
+
+      // Option 1: Direct redirect (as shown in guide)
+      if (orderData.paymentUrl) {
+        window.location.href = orderData.paymentUrl;
+        return;
+      }
+
+      // Option 2: Form POST (fallback)
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = orderData.redirectUrl;
+      form.action =
+        orderData.redirectUrl ||
+        'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
 
-      // Required fields by CCAvenue
+      // According to guide: merchant_id, encRequest, and access_code
       const fields = {
-        encRequest: orderData.encryptedData, // Official CCAvenue field name
+        merchant_id: orderData.merchantId,
+        encRequest: orderData.encryptedData,
         access_code: orderData.accessCode,
-        merchant_id: orderData.merchantId, // Required as separate form field
       };
 
       Object.entries(fields).forEach(([key, value]) => {

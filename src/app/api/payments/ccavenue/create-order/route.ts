@@ -51,7 +51,30 @@ export async function POST(req: NextRequest) {
         hasWorkingKey: !!workingKey,
       });
       return NextResponse.json(
-        { error: 'CCAvenue credentials not configured' },
+        {
+          error:
+            'CCAvenue credentials not configured. Please check your environment variables: CCAVENUE_MERCHANT_ID, CCAVENUE_ACCESS_CODE, CCAVENUE_WORKING_KEY',
+        },
+        { status: 500 }
+      );
+    }
+
+    // Validate credentials format (basic validation)
+    if (
+      merchantId.length < 3 ||
+      accessCode.length < 3 ||
+      workingKey.length < 10
+    ) {
+      console.error('CCAvenue credentials appear invalid:', {
+        merchantIdLength: merchantId.length,
+        accessCodeLength: accessCode.length,
+        workingKeyLength: workingKey.length,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'CCAvenue credentials appear to be invalid. Please verify your Merchant ID, Access Code, and Working Key from CCAvenue MARS account (Settings > API Keys).',
+        },
         { status: 500 }
       );
     }
@@ -72,40 +95,56 @@ export async function POST(req: NextRequest) {
     // Create order ID
     const orderId = `booking_${bookingId}_${Date.now()}`;
 
-    // Prepare payment parameters
-    // Note: CCAvenue requires specific field names (lowercase with underscores)
-    // IMPORTANT: merchant_id should NOT be in encrypted data, it goes as separate form field
-    // But some implementations include it - let's include it in encrypted data as per CCAvenue docs
+    // Prepare payment parameters according to CCAvenue official documentation
+    // Required parameters: merchant_id, order_id, currency, amount, redirect_url, cancel_url, language
+    // merchant_id MUST be in encrypted data (not as separate form field)
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      'http://localhost:3000';
+
     const paymentParams: Record<string, string> = {
-      merchant_id: merchantId,
-      order_id: orderId,
-      amount: amount.toFixed(2),
-      currency: currency || 'AED', // Use currency from request (AED for international users)
-      redirect_url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/payments/ccavenue/callback`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout?error=payment_cancelled`,
-      billing_name: customerName,
-      billing_email: customerEmail,
-      billing_tel: customerPhone,
-      billing_address: customerName || 'Dubai', // Use name as address if empty
-      billing_city: 'Dubai',
-      billing_state: 'Dubai',
-      billing_zip: '000000',
-      billing_country: billingCountry, // Use provided country code
-      delivery_name: customerName,
-      delivery_address: customerName || 'Dubai',
+      merchant_id: merchantId, // Required - must be in encrypted data
+      order_id: orderId, // Required - unique order identifier (max 30 chars, alphanumeric with -/_)
+      amount: amount.toFixed(2), // Required - order amount (numeric, 12 digits, 2 decimals)
+      currency: currency || 'INR', // Required - must match account currency (INR/USD/SGD/GBP/EUR)
+      redirect_url: `${baseUrl}/api/payments/ccavenue/callback`, // Required - MUST be registered in CCAvenue MARS
+      cancel_url: `${baseUrl}/checkout?error=payment_cancelled`, // Required
+      language: 'en', // Required - billing page language (en/hi/gu/mr/bn)
+      // Billing information (optional but recommended to avoid errors)
+      billing_name: (customerName || 'Customer').substring(0, 60), // Alphabets only, max 60 chars
+      billing_email: (customerEmail || '').substring(0, 70), // Alphanumeric with @, dot, underscore, max 70 chars
+      billing_tel: (customerPhone || '').substring(0, 20), // Numeric, max 20 chars
+      billing_address: (customerName || 'Dubai').substring(0, 150), // Alphanumeric with special chars, max 150 chars
+      billing_city: 'Dubai', // Alphabets only, max 30 chars
+      billing_state: 'Dubai', // Alphabets only, max 30 chars
+      billing_zip: '000000', // Alphanumeric, max 15 chars
+      billing_country: (billingCountry || 'AE').substring(0, 50), // Alphabets only, max 50 chars
+      // Delivery information (optional but recommended)
+      delivery_name: (customerName || 'Customer').substring(0, 50),
+      delivery_address: (customerName || 'Dubai').substring(0, 150),
       delivery_city: 'Dubai',
       delivery_state: 'Dubai',
       delivery_zip: '000000',
-      delivery_country: billingCountry,
-      merchant_param1: bookingId,
-      merchant_param2: paymentType,
+      delivery_country: (billingCountry || 'AE').substring(0, 50),
+      delivery_tel: (customerPhone || '').substring(0, 20),
+      // Merchant parameters for additional info (optional)
+      merchant_param1: bookingId.substring(0, 100), // Alphanumeric with special chars, max 100 chars
+      merchant_param2: paymentType.substring(0, 100), // Alphanumeric with special chars, max 100 chars
     };
 
     // Create encrypted data
-    // CCAvenue requires parameters in specific format: key=value&key=value
-    const plainText = Object.entries(paymentParams)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&');
+    // IMPORTANT: According to the guide, merchant_id must be FIRST in the encrypted string
+    // Format: merchant_id=XXX&key=value&key=value
+    let plainText = `merchant_id=${merchantId}`;
+
+    // Add all other parameters (excluding merchant_id since it's already added)
+    const otherParams = Object.entries(paymentParams)
+      .filter(([key]) => key !== 'merchant_id')
+      .map(([key, value]) => `&${key}=${value}`)
+      .join('');
+
+    plainText += otherParams;
 
     console.log('Plain text to encrypt:', plainText.substring(0, 100) + '...'); // Log first 100 chars for debugging
 
@@ -125,12 +164,37 @@ export async function POST(req: NextRequest) {
     }
 
     // Log the redirect URL being used (for debugging)
-    console.log('CCAvenue payment request:', {
-      redirectUrl: paymentParams.redirect_url,
-      orderId: orderId,
-      amount: paymentParams.amount,
-      currency: paymentParams.currency,
-    });
+    // IMPORTANT: The redirect_url MUST be registered in CCAvenue MARS account
+    // Steps to register:
+    // 1. Login to CCAvenue MARS account
+    // 2. Go to Settings (top right) > Dynamic Event Notifications
+    // 3. Add/Register this exact URL: [redirectUrl shown below]
+    // 4. Save the settings
+    console.log('=== CCAvenue Payment Configuration ===');
+    console.log('REDIRECT URL TO REGISTER:', paymentParams.redirect_url);
+    console.log('CANCEL URL:', paymentParams.cancel_url);
+    console.log('Currency:', paymentParams.currency);
+    console.log('Amount:', paymentParams.amount);
+    console.log('Order ID:', orderId);
+    console.log('Merchant ID:', merchantId.substring(0, 3) + '...');
+    console.log('=====================================');
+    console.log(
+      '⚠️  ACTION REQUIRED: Register the redirect URL above in CCAvenue MARS:'
+    );
+    console.log('   Settings > Dynamic Event Notifications > Add URL');
+    console.log('=====================================');
+
+    // Build the payment URL exactly as shown in the guide
+    // Format: https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction&merchant_id=XXX&encRequest=XXX&access_code=XXX
+    // Note: encRequest needs to be URL-encoded since it contains special characters
+    const ccavenueBaseUrl =
+      process.env.CCAVENUE_USE_UAE === 'true'
+        ? 'https://secure.ccavenue.ae'
+        : 'https://secure.ccavenue.com';
+
+    const paymentUrl = `${ccavenueBaseUrl}/transaction/transaction.do?command=initiateTransaction&merchant_id=${encodeURIComponent(merchantId)}&encRequest=${encodeURIComponent(encryptedData)}&access_code=${encodeURIComponent(accessCode)}`;
+
+    const finalPaymentUrl = process.env.CCAVENUE_PAYMENT_URL || paymentUrl;
 
     return NextResponse.json({
       success: true,
@@ -138,9 +202,7 @@ export async function POST(req: NextRequest) {
       accessCode,
       encryptedData,
       orderId,
-      redirectUrl:
-        process.env.CCAVENUE_PAYMENT_URL ||
-        'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction',
+      paymentUrl: finalPaymentUrl, // Full URL with all params (as per guide)
     });
   } catch (error: any) {
     console.error('Error creating CCAvenue order:', error);

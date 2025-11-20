@@ -1,87 +1,88 @@
 /**
  * CCAvenue Encryption/Decryption Utility
- * Based on official CCAvenue Node.js integration kit
- * Source: src/lib/NodeJS_Integration_Kit/nonseamless/ccavutil.js
+ * Based on official CCAvenue integration guide
+ * Source: https://javascript.plainenglish.io/integrating-ccavenue-payment-gateway-with-next-js-projects-8f9de6637ced
  */
 
-import crypto from 'crypto';
+import { createHash, createCipheriv, createDecipheriv } from 'crypto';
 
 /**
  * Encrypt data for CCAvenue payment gateway
- * Official CCAvenue encryption method from their Node.js integration kit
- * Based on official CCAvenue Node.js integration documentation
+ * Exact implementation from the official guide
  */
 export function encrypt(plainText: string, workingKey: string): string {
-  try {
-    if (!plainText || !workingKey) {
-      throw new Error('Plain text and working key are required');
-    }
-
-    // Official CCAvenue method: MD5 hash the working key and use binary digest
-    // This is the critical part - CCAvenue uses binary digest, not hex
-    const m = crypto.createHash('md5');
-    m.update(workingKey);
-    const key = m.digest(); // Get binary digest (16 bytes Buffer) - this is what CCAvenue expects
-
-    // Official CCAvenue IV - must be all zeros (16 bytes)
-    // According to CCAvenue documentation, IV should be Buffer.alloc(16, 0)
-    const iv = Buffer.alloc(16, 0);
-
-    // Create cipher with AES-128-CBC
-    const cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
-    cipher.setAutoPadding(true);
-
-    let encrypted = cipher.update(plainText, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-
-    return encrypted.toUpperCase(); // CCAvenue expects uppercase hex
-  } catch (error: any) {
-    console.error('CCAvenue encryption error:', error);
-    console.error('Error details:', {
-      message: error?.message,
-      stack: error?.stack,
-      plainTextLength: plainText?.length,
-      workingKeyLength: workingKey?.length,
-      hasPlainText: !!plainText,
-      hasWorkingKey: !!workingKey,
-    });
-    throw new Error(
-      `Failed to encrypt payment data: ${error?.message || 'Unknown error'}`
-    );
+  if (!plainText || !workingKey) {
+    throw new Error('Plain text and working key are required');
   }
+
+  // MD5 hash the working key and use binary digest (exact from guide)
+  const m = createHash('md5');
+  m.update(workingKey);
+  const key = m.digest();
+
+  // IV as string literal (exact format from guide)
+  const iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f';
+
+  // Create cipher with AES-128-CBC
+  const cipher = createCipheriv('aes-128-cbc', key, iv);
+  let encoded = cipher.update(plainText, 'utf8', 'hex');
+  encoded += cipher.final('hex');
+
+  return encoded; // Guide doesn't uppercase, but CCAvenue accepts both
 }
 
 /**
  * Decrypt data from CCAvenue payment gateway
- * Official CCAvenue decryption method from their Node.js integration kit
+ * Exact implementation from the official guide
  */
 export function decrypt(encryptedText: string, workingKey: string): string {
-  try {
-    if (!encryptedText || !workingKey) {
-      throw new Error('Encrypted text and working key are required');
-    }
-
-    // Official CCAvenue method: MD5 hash the working key and use binary digest
-    const m = crypto.createHash('md5');
-    m.update(workingKey);
-    const key = m.digest(); // Get binary digest (16 bytes Buffer) - this is what CCAvenue expects
-
-    // Official CCAvenue IV - must be all zeros (16 bytes)
-    // According to CCAvenue documentation, IV should be Buffer.alloc(16, 0)
-    const iv = Buffer.alloc(16, 0);
-
-    // Create decipher with AES-128-CBC
-    const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
-    decipher.setAutoPadding(true);
-
-    let decrypted = decipher.update(encryptedText.toLowerCase(), 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
-  } catch (error: any) {
-    console.error('CCAvenue decryption error:', error);
-    throw new Error(
-      `Failed to decrypt payment response: ${error?.message || 'Unknown error'}`
-    );
+  if (!encryptedText || !workingKey) {
+    throw new Error('Encrypted text and working key are required');
   }
+
+  // MD5 hash the working key and use binary digest (exact from guide)
+  const m = createHash('md5');
+  m.update(workingKey);
+  const key = m.digest();
+
+  // IV as string literal (exact format from guide)
+  const iv = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f';
+
+  // Create decipher with AES-128-CBC
+  const decipher = createDecipheriv('aes-128-cbc', key, iv);
+  let decoded = decipher.update(encryptedText, 'hex', 'utf8');
+  decoded += decipher.final('utf8');
+
+  return decoded;
+}
+
+/**
+ * Convert CCAvenue encrypted response to JSON object
+ * Exact implementation from the official guide
+ */
+export function redirectResponseToJson(
+  response: string,
+  workingKey: string
+): Record<string, string> {
+  if (!response) {
+    throw new Error('CCAvenue encrypted response is required');
+  }
+
+  // Decrypt the response
+  let ccavResponse = decrypt(response, workingKey);
+
+  // Parse the response string (format: key=value&key=value)
+  const responseArray = ccavResponse.split('&');
+  const stringify = JSON.stringify(responseArray);
+  const removeQ = stringify.replace(/['"]+/g, '');
+  const removeS = removeQ.replace(/[[\]]/g, '');
+
+  // Convert to object
+  return removeS
+    .split(',')
+    .reduce((o: Record<string, string>, pair: string) => {
+      const [key, value] = pair.split('=');
+      o[key] = value;
+      return o;
+    }, {});
 }
