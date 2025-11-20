@@ -53,6 +53,13 @@ export default function CheckoutPage() {
   const [paymentType, setPaymentType] = useState<'half' | 'full'>('full');
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
+  // Check if any cart item is a tour (not a package)
+  // Tours typically have "tour" in the category slug/name
+  const isTourCheckout = cartItems.some(item => {
+    const categorySlug = item.categorySlug?.toLowerCase() || '';
+    return categorySlug.includes('tour');
+  });
+
   // Calculate total passengers
   const totalAdults = cartItems.reduce((sum, item) => sum + item.adults, 0);
   const totalChildren = cartItems.reduce((sum, item) => sum + item.children, 0);
@@ -243,7 +250,8 @@ export default function CheckoutPage() {
         if (!passenger.country) {
           newErrors[`passenger_${actualIndex}_country`] = 'Country is required';
         }
-        if (!passenger.pickupLocation.trim()) {
+        // Only require pickup location for tours
+        if (isTourCheckout && !passenger.pickupLocation.trim()) {
           newErrors[`passenger_${actualIndex}_pickupLocation`] =
             'Pickup location is required';
         }
@@ -793,8 +801,8 @@ export default function CheckoutPage() {
                         </div>
                       )}
 
-                      {/* Pickup Location - Only for first passenger */}
-                      {index === 0 && (
+                      {/* Pickup Location - Only for tours and first passenger */}
+                      {index === 0 && isTourCheckout && (
                         <div className='form-group'>
                           <label>
                             Pickup Location in Dubai{' '}
