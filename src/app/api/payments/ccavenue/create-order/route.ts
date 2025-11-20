@@ -40,44 +40,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const merchantId = process.env.CCAVENUE_MERCHANT_ID || '';
-    const accessCode = process.env.CCAVENUE_ACCESS_CODE || '';
-    const workingKey = process.env.CCAVENUE_WORKING_KEY || '';
+    // Using credentials directly (as provided)
+    const merchantId = '54983';
+    const accessCode = 'AVLG05MJ58AS49GLSA';
+    const workingKey = '5E25D58B6BF1633A1525984EB4E2E944';
 
-    if (!merchantId || !accessCode || !workingKey) {
-      console.error('CCAvenue credentials missing:', {
-        hasMerchantId: !!merchantId,
-        hasAccessCode: !!accessCode,
-        hasWorkingKey: !!workingKey,
-      });
-      return NextResponse.json(
-        {
-          error:
-            'CCAvenue credentials not configured. Please check your environment variables: CCAVENUE_MERCHANT_ID, CCAVENUE_ACCESS_CODE, CCAVENUE_WORKING_KEY',
-        },
-        { status: 500 }
-      );
-    }
+    // Fallback to env if needed (for production)
+    // const merchantId = process.env.CCAVENUE_MERCHANT_ID || '54983';
+    // const accessCode = process.env.CCAVENUE_ACCESS_CODE || 'AVLG05MJ58AS49GLSA';
+    // const workingKey = process.env.CCAVENUE_WORKING_KEY || '5E25D58B6BF1633A1525984EB4E2E944';
 
-    // Validate credentials format (basic validation)
-    if (
-      merchantId.length < 3 ||
-      accessCode.length < 3 ||
-      workingKey.length < 10
-    ) {
-      console.error('CCAvenue credentials appear invalid:', {
-        merchantIdLength: merchantId.length,
-        accessCodeLength: accessCode.length,
-        workingKeyLength: workingKey.length,
-      });
-      return NextResponse.json(
-        {
-          error:
-            'CCAvenue credentials appear to be invalid. Please verify your Merchant ID, Access Code, and Working Key from CCAvenue MARS account (Settings > API Keys).',
-        },
-        { status: 500 }
-      );
-    }
+    console.log('=== USING CCAVENUE CREDENTIALS ===');
+    console.log('Merchant ID:', merchantId);
+    console.log('Access Code:', accessCode);
+    console.log('Working Key length:', workingKey.length);
+    console.log('==================================');
 
     // Log for debugging (remove in production)
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/payments/ccavenue/callback`;
@@ -146,12 +123,23 @@ export async function POST(req: NextRequest) {
 
     plainText += otherParams;
 
-    console.log('Plain text to encrypt:', plainText.substring(0, 100) + '...'); // Log first 100 chars for debugging
+    // Log plain text for debugging (first 200 chars)
+    console.log('=== PLAIN TEXT TO ENCRYPT ===');
+    console.log(
+      plainText.substring(0, 200) + (plainText.length > 200 ? '...' : '')
+    );
+    console.log('Full length:', plainText.length);
+    console.log('=============================');
 
     let encryptedData: string;
     try {
       encryptedData = encrypt(plainText, workingKey);
-      console.log('Encryption successful, length:', encryptedData.length);
+      console.log('Encryption successful');
+      console.log('Encrypted length:', encryptedData.length);
+      console.log(
+        'Encrypted (first 100 chars):',
+        encryptedData.substring(0, 100)
+      );
     } catch (encryptError: any) {
       console.error('Encryption failed:', encryptError);
       return NextResponse.json(
@@ -186,15 +174,56 @@ export async function POST(req: NextRequest) {
 
     // Build the payment URL exactly as shown in the guide
     // Format: https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction&merchant_id=XXX&encRequest=XXX&access_code=XXX
-    // Note: encRequest needs to be URL-encoded since it contains special characters
+    // Key names must be exactly: merchant_id, encRequest, access_code (as per guide)
+
+    // Determine which domain to use (.com for India, .ae for UAE)
+    // Based on your credentials, try .com first (India account)
     const ccavenueBaseUrl =
       process.env.CCAVENUE_USE_UAE === 'true'
         ? 'https://secure.ccavenue.ae'
         : 'https://secure.ccavenue.com';
 
-    const paymentUrl = `${ccavenueBaseUrl}/transaction/transaction.do?command=initiateTransaction&merchant_id=${encodeURIComponent(merchantId)}&encRequest=${encodeURIComponent(encryptedData)}&access_code=${encodeURIComponent(accessCode)}`;
+    // Build URL exactly as shown in guide
+    // The guide shows: merchant_id, encRequest, access_code as query parameters
+    // Note: encRequest contains hex characters, so we need to URL-encode it
+    // merchant_id and access_code are alphanumeric, but encoding is safer
+    // Build URL - try both encoded and non-encoded versions
+    // Option 1: No encoding (as guide shows)
+    const paymentUrlNoEncode = `${ccavenueBaseUrl}/transaction/transaction.do?command=initiateTransaction&merchant_id=${merchantId}&encRequest=${encryptedData}&access_code=${accessCode}`;
 
+    // Option 2: With encoding (safer for hex characters)
+    const paymentUrlWithEncode = `${ccavenueBaseUrl}/transaction/transaction.do?command=initiateTransaction&merchant_id=${encodeURIComponent(merchantId)}&encRequest=${encodeURIComponent(encryptedData)}&access_code=${encodeURIComponent(accessCode)}`;
+
+    // Use encoded version (more reliable)
+    const paymentUrl = paymentUrlWithEncode;
     const finalPaymentUrl = process.env.CCAVENUE_PAYMENT_URL || paymentUrl;
+
+    // Log the exact URL being used (for debugging)
+    console.log('=== PAYMENT URL CONSTRUCTION ===');
+    console.log('Base URL:', ccavenueBaseUrl);
+    console.log('Merchant ID:', merchantId);
+    console.log('Access Code:', accessCode);
+    console.log('Encrypted Data (first 50):', encryptedData.substring(0, 50));
+    console.log(
+      'URL (NO encoding, first 200):',
+      paymentUrlNoEncode.substring(0, 200)
+    );
+    console.log(
+      'URL (WITH encoding, first 200):',
+      paymentUrlWithEncode.substring(0, 200)
+    );
+    console.log('Using:', 'WITH encoding');
+    console.log(
+      'Final URL (first 300 chars):',
+      finalPaymentUrl.substring(0, 300)
+    );
+    console.log('================================');
+
+    // Additional debug info
+    console.log(
+      '⚠️  REMEMBER: Domain must be registered with CCAvenue Customer Help Center'
+    );
+    console.log('   Your redirect URL:', paymentParams.redirect_url);
 
     return NextResponse.json({
       success: true,

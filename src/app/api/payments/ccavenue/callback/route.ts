@@ -55,7 +55,11 @@ async function handleCallback(req: NextRequest) {
       );
     }
 
-    const workingKey = process.env.CCAVENUE_WORKING_KEY || '';
+    // Using working key directly (matching create-order)
+    const workingKey = '5E25D58B6BF1633A1525984EB4E2E944';
+
+    // Fallback to env if needed (for production)
+    // const workingKey = process.env.CCAVENUE_WORKING_KEY || '5E25D58B6BF1633A1525984EB4E2E944';
 
     if (!workingKey) {
       console.error('CCAvenue working key not configured');

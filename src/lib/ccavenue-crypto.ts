@@ -28,7 +28,8 @@ export function encrypt(plainText: string, workingKey: string): string {
   let encoded = cipher.update(plainText, 'utf8', 'hex');
   encoded += cipher.final('hex');
 
-  return encoded; // Guide doesn't uppercase, but CCAvenue accepts both
+  // Return uppercase hex (CCAvenue expects uppercase based on common implementations)
+  return encoded.toUpperCase();
 }
 
 /**
