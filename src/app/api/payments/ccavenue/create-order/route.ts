@@ -100,11 +100,27 @@ export async function POST(req: NextRequest) {
     };
 
     // Create encrypted data
+    // CCAvenue requires parameters in specific format: key=value&key=value
     const plainText = Object.entries(paymentParams)
       .map(([key, value]) => `${key}=${value}`)
       .join('&');
 
-    const encryptedData = encrypt(plainText, workingKey);
+    console.log('Plain text to encrypt:', plainText.substring(0, 100) + '...'); // Log first 100 chars for debugging
+
+    let encryptedData: string;
+    try {
+      encryptedData = encrypt(plainText, workingKey);
+      console.log('Encryption successful, length:', encryptedData.length);
+    } catch (encryptError: any) {
+      console.error('Encryption failed:', encryptError);
+      return NextResponse.json(
+        {
+          error: 'Failed to encrypt payment data',
+          details: encryptError?.message || 'Unknown encryption error',
+        },
+        { status: 500 }
+      );
+    }
 
     // Log the redirect URL being used (for debugging)
     console.log('CCAvenue payment request:', {
