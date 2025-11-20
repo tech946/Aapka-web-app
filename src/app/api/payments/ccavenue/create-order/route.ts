@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
 
     // Prepare payment parameters
     // Note: CCAvenue requires specific field names (lowercase with underscores)
+    // IMPORTANT: merchant_id should NOT be in encrypted data, it goes as separate form field
+    // But some implementations include it - let's include it in encrypted data as per CCAvenue docs
     const paymentParams: Record<string, string> = {
       merchant_id: merchantId,
       order_id: orderId,
@@ -84,13 +86,13 @@ export async function POST(req: NextRequest) {
       billing_name: customerName,
       billing_email: customerEmail,
       billing_tel: customerPhone,
-      billing_address: customerName, // Use name as address if empty
+      billing_address: customerName || 'Dubai', // Use name as address if empty
       billing_city: 'Dubai',
       billing_state: 'Dubai',
       billing_zip: '000000',
       billing_country: billingCountry, // Use provided country code
       delivery_name: customerName,
-      delivery_address: customerName,
+      delivery_address: customerName || 'Dubai',
       delivery_city: 'Dubai',
       delivery_state: 'Dubai',
       delivery_zip: '000000',

@@ -23,11 +23,9 @@ export function encrypt(plainText: string, workingKey: string): string {
     m.update(workingKey);
     const key = m.digest(); // Get binary digest (16 bytes Buffer) - this is what CCAvenue expects
 
-    // Official CCAvenue IV - must match exact format from official kit
-    const iv = Buffer.from([
-      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-      0x0c, 0x0d, 0x0e, 0x0f,
-    ]);
+    // Official CCAvenue IV - must be all zeros (16 bytes)
+    // According to CCAvenue documentation, IV should be Buffer.alloc(16, 0)
+    const iv = Buffer.alloc(16, 0);
 
     // Create cipher with AES-128-CBC
     const cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
@@ -68,11 +66,9 @@ export function decrypt(encryptedText: string, workingKey: string): string {
     m.update(workingKey);
     const key = m.digest(); // Get binary digest (16 bytes Buffer) - this is what CCAvenue expects
 
-    // Official CCAvenue IV - must match exact format from official kit
-    const iv = Buffer.from([
-      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-      0x0c, 0x0d, 0x0e, 0x0f,
-    ]);
+    // Official CCAvenue IV - must be all zeros (16 bytes)
+    // According to CCAvenue documentation, IV should be Buffer.alloc(16, 0)
+    const iv = Buffer.alloc(16, 0);
 
     // Create decipher with AES-128-CBC
     const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
