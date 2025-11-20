@@ -36,6 +36,7 @@ interface Package {
 interface PersonsCount {
   adult: number;
   child: number;
+  infant: number;
 }
 
 export default function BannerSection() {
@@ -51,6 +52,7 @@ export default function BannerSection() {
   const [persons, setPersons] = useState<PersonsCount>({
     adult: 0,
     child: 0,
+    infant: 0,
   });
 
   const [showPackageDropdown, setShowPackageDropdown] = useState(false);
@@ -287,7 +289,7 @@ export default function BannerSection() {
   };
 
   const getTotalPersons = () => {
-    return persons.adult + persons.child;
+    return persons.adult + persons.child + persons.infant;
   };
 
   const getPersonsDisplayText = () => {
@@ -332,6 +334,9 @@ export default function BannerSection() {
       }
       if (persons.child > 0) {
         queryParams.set('children', persons.child.toString());
+      }
+      if (persons.infant > 0) {
+        queryParams.set('infants', persons.infant.toString());
       }
 
       const queryString = queryParams.toString();
@@ -612,6 +617,25 @@ export default function BannerSection() {
                         <button
                           className='counter_button'
                           onClick={() => updatePersonCount('child', 1)}
+                        >
+                          <Plus className='counter_icon' />
+                        </button>
+                      </div>
+                    </div>
+                    <div className='person_counter_row'>
+                      <span className='person_label'>Infant</span>
+                      <div className='person_counter'>
+                        <button
+                          className='counter_button'
+                          onClick={() => updatePersonCount('infant', -1)}
+                          disabled={persons.infant === 0}
+                        >
+                          <Minus className='counter_icon' />
+                        </button>
+                        <span className='counter_value'>{persons.infant}</span>
+                        <button
+                          className='counter_button'
+                          onClick={() => updatePersonCount('infant', 1)}
                         >
                           <Plus className='counter_icon' />
                         </button>

@@ -5,7 +5,7 @@
 // Fallback rate if API fails
 const FALLBACK_AED_TO_INR_RATE = 22.5;
 
-// Client-side cache for exchange rate
+// Client-side cache for exchange rate (manual price from database)
 let clientRateCache: { rate: number; timestamp: number } | null = null;
 const CLIENT_CACHE_DURATION = 3600000; // 1 hour in milliseconds
 
@@ -108,7 +108,7 @@ export async function detectUserLocation(): Promise<UserLocation> {
 }
 
 /**
- * Fetch real-time AED to INR exchange rate from API
+ * Fetch manual AED to INR exchange rate from price_master table
  * Uses cached rate if available and fresh
  */
 export async function getExchangeRate(): Promise<number> {
@@ -122,29 +122,39 @@ export async function getExchangeRate(): Promise<number> {
       return clientRateCache.rate;
     }
 
-    // Fetch fresh rate from API
-    const response = await fetch('/api/currency/rate', {
+    // Fetch manual rate from price_master table
+    const response = await fetch('/api/price-master', {
       cache: 'no-store', // Always fetch fresh
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch exchange rate');
+      throw new Error('Failed to fetch price master');
     }
 
     const data = await response.json();
 
-    if (data.success && data.rate) {
-      // Update cache
-      clientRateCache = {
-        rate: data.rate,
-        timestamp: data.timestamp || now,
-      };
-      return data.rate;
+    if (data.data && Array.isArray(data.data)) {
+      // Find INR entry
+      const inrEntry = data.data.find(
+        (item: any) => item.name === 'INR'
+      );
+
+      if (inrEntry && inrEntry.equivalent) {
+        const rate = Number(inrEntry.equivalent);
+        if (!isNaN(rate) && rate > 0) {
+          // Update cache
+          clientRateCache = {
+            rate: rate,
+            timestamp: now,
+          };
+          return rate;
+        }
+      }
     }
 
-    throw new Error('Invalid exchange rate response');
+    throw new Error('Invalid price master response');
   } catch (error) {
-    console.error('Error fetching exchange rate:', error);
+    console.error('Error fetching price master:', error);
 
     // Return cached rate if available (even if expired)
     if (clientRateCache) {

@@ -15,6 +15,7 @@ export interface CartItemStorage {
   categorySlug: string;
   adults: number;
   children: number;
+  infants: number;
   selectedDate: string | null;
 }
 
@@ -25,6 +26,7 @@ export interface CartItem extends CartItemStorage {
   price: number;
   adultPrice: number | null;
   childPrice: number | null;
+  infantPrice: number | null;
   basePrice: number | null;
   isPackageType: boolean;
   nights?: number | null;
@@ -73,6 +75,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             packageId: item.packageId,
             adults: item.adults,
             children: item.children,
+            infants: item.infants,
             selectedDate: item.selectedDate,
           }));
 
@@ -114,6 +117,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   price: validated.price,
                   adultPrice: validated.adultPrice,
                   childPrice: validated.childPrice,
+                  infantPrice: validated.infantPrice,
                   basePrice: validated.basePrice,
                   nights: validated.nights,
                   days: validated.days,
@@ -147,11 +151,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Convert storage items to cart items (without prices initially)
         const items: CartItem[] = parsed.map(item => ({
           ...item,
+          infants: item.infants || 0, // Handle legacy items without infants
           packageName: '',
           thumbnailImage: null,
           price: 0,
           adultPrice: null,
           childPrice: null,
+          infantPrice: null,
           basePrice: null,
           isPackageType: false,
           validated: false,
@@ -179,6 +185,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           categorySlug: item.categorySlug,
           adults: item.adults,
           children: item.children,
+          infants: item.infants,
           selectedDate: item.selectedDate,
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
@@ -204,6 +211,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           ...updated[existingIndex],
           adults: item.adults,
           children: item.children,
+          infants: item.infants,
           validated: false, // Mark as needing validation
         };
         // Validate after update
@@ -213,11 +221,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Add new item (without prices, will be validated)
         const newItem: CartItem = {
           ...item,
+          infants: item.infants || 0, // Ensure infants is set
           packageName: '',
           thumbnailImage: null,
           price: 0,
           adultPrice: null,
           childPrice: null,
+          infantPrice: null,
           basePrice: null,
           isPackageType: false,
           validated: false,

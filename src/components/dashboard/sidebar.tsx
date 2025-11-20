@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { PriceMasterModal } from '@/app/(dashboard)/dashboard/price-master/PriceMasterClient';
 
 type Category = { id: string; name: string };
 
@@ -188,7 +189,53 @@ export function Sidebar() {
           </svg>
           <span>Contact Queries</span>
         </Link>
+
+        {/* Price Master - Button to open modal */}
+        <PriceMasterSidebarButton />
       </div>
     </div>
+  );
+}
+
+function PriceMasterSidebarButton() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className={`sidebar_item ${pathname === '/dashboard/price-master' ? 'active' : ''}`}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          width='24'
+          height='24'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='2'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          className='lucide lucide-dollar-sign w-16 h-16'
+          aria-hidden='true'
+        >
+          <line x1='12' x2='12' y1='2' y2='22'></line>
+          <path d='M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'></path>
+        </svg>
+        <span>Price Master</span>
+      </button>
+      <PriceMasterModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 }

@@ -5,13 +5,14 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface CreateCCAvenueOrderRequest {
-  amount: number; // Amount in INR
+  amount: number; // Amount in specified currency (AED for international, INR for Indian)
   currency: string;
   bookingId: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   paymentType: 'half' | 'full';
+  billingCountry?: string; // Country code for billing
 }
 
 export async function POST(req: NextRequest) {
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
       customerEmail,
       customerPhone,
       paymentType,
+      billingCountry = 'AE', // Default to UAE for international users
     } = body;
 
     if (!amount || amount <= 0) {
@@ -76,7 +78,7 @@ export async function POST(req: NextRequest) {
       merchant_id: merchantId,
       order_id: orderId,
       amount: amount.toFixed(2),
-      currency: currency || 'INR',
+      currency: currency || 'AED', // Use currency from request (AED for international users)
       redirect_url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/payments/ccavenue/callback`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout?error=payment_cancelled`,
       billing_name: customerName,
@@ -86,13 +88,13 @@ export async function POST(req: NextRequest) {
       billing_city: 'Dubai',
       billing_state: 'Dubai',
       billing_zip: '000000',
-      billing_country: 'IN', // India country code
+      billing_country: billingCountry, // Use provided country code
       delivery_name: customerName,
       delivery_address: customerName,
       delivery_city: 'Dubai',
       delivery_state: 'Dubai',
       delivery_zip: '000000',
-      delivery_country: 'IN',
+      delivery_country: billingCountry,
       merchant_param1: bookingId,
       merchant_param2: paymentType,
     };

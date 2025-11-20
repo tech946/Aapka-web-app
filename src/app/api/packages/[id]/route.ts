@@ -19,12 +19,14 @@ export async function GET(
       );
     }
 
-    // Fetch all packages and find by slug (name converted to slug)
+    // Fetch all active packages and find by slug (name converted to slug)
+    // Marketing pages should only see active packages
     const { data: allPackages, error: fetchError } = await supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at'
-      );
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at'
+      )
+      .eq('status', 'active');
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
@@ -44,6 +46,43 @@ export async function GET(
     }
 
     return NextResponse.json({ data: packageData });
+  } catch (e: any) {
+    return NextResponse.json(
+      { error: e?.message ?? 'Unexpected error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    const id = resolvedParams.id;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Package ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Delete the package by package_id
+    const { error } = await supabaseAdmin
+      .from('packages')
+      .delete()
+      .eq('package_id', id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Package deleted successfully',
+    });
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message ?? 'Unexpected error' },

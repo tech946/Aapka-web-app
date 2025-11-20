@@ -14,7 +14,6 @@ import {
 import {
   detectUserLocation,
   convertAEDToINR,
-  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -80,13 +79,11 @@ export default function CategoryPage() {
     }
   }, [category?.id, page, sortBy]);
 
-  // Detect user location and initialize exchange rate on mount
+  // Detect user location on mount
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Initialize exchange rate first (for accurate conversions)
-        await initializeExchangeRate();
-        // Then detect location
+        // Detect location
         const location = await detectUserLocation();
         console.log('Category page - Detected location:', location);
         setUserLocation(location);
@@ -112,25 +109,15 @@ export default function CategoryPage() {
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
     if (!userLocation) {
-      console.log('formatPrice: No userLocation, showing AED');
       return `AED ${price.toLocaleString()}`;
     }
 
-    console.log(
-      'formatPrice: userLocation.isIndia =',
-      userLocation.isIndia,
-      'location:',
-      userLocation
-    );
-
+    // Indian users always see INR, international users always see AED
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
-      const formatted = formatCurrency(inrPrice, userLocation);
-      console.log('formatPrice: Converted to INR:', formatted);
-      return formatted;
+      return formatCurrency(inrPrice, userLocation);
     }
 
-    console.log('formatPrice: Not India, showing AED');
     return `AED ${price.toLocaleString()}`;
   };
 
@@ -449,16 +436,12 @@ function PackageCard({
       userLocation
     );
 
-    // If user is in India, convert to INR
+    // Indian users always see INR, international users always see AED
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
-      const formatted = formatCurrency(inrPrice, userLocation);
-      console.log('PackageCard formatPrice: Converted to INR:', formatted);
-      return formatted;
+      return formatCurrency(inrPrice, userLocation);
     }
 
-    // Otherwise show in AED
-    console.log('PackageCard formatPrice: Not India, showing AED');
     return `AED ${price.toLocaleString()}`;
   };
   const rating = 99; // Mock rating - replace with actual data

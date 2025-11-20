@@ -6,11 +6,10 @@ import Header from './Header';
 export default function ConditionalHeader() {
   const pathname = usePathname();
 
-  // Hide header on dashboard routes and maintenance page
+  // Hide header on dashboard routes only
   const isDashboardRoute = pathname?.startsWith('/dashboard');
-  const isMaintenancePage = pathname === '/';
 
-  if (isDashboardRoute || isMaintenancePage) {
+  if (isDashboardRoute) {
     return null;
   }
 

@@ -15,7 +15,6 @@ import { useEffect, useState } from 'react';
 import {
   detectUserLocation,
   convertAEDToINR,
-  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -34,13 +33,11 @@ export default function CartPage() {
   } = useCart();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
-  // Detect user location and initialize exchange rate on mount
+  // Detect user location on mount
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Initialize exchange rate first (for accurate conversions)
-        await initializeExchangeRate();
-        // Then detect location
+        // Detect location
         const location = await detectUserLocation();
         console.log('Cart page - Detected location:', location);
         setUserLocation(location);
@@ -72,34 +69,24 @@ export default function CartPage() {
   // Helper function to format price based on region
   const formatPrice = (price: number): string => {
     if (!userLocation) {
-      console.log('Cart formatPrice: No userLocation, showing AED');
       return `AED ${price.toLocaleString()}`;
     }
 
-    console.log(
-      'Cart formatPrice: userLocation.isIndia =',
-      userLocation.isIndia,
-      'location:',
-      userLocation
-    );
-
+    // Indian users always see INR, international users always see AED
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
-      const formatted = formatCurrency(inrPrice, userLocation);
-      console.log('Cart formatPrice: Converted to INR:', formatted);
-      return formatted;
+      return formatCurrency(inrPrice, userLocation);
     }
 
-    console.log('Cart formatPrice: Not India, showing AED');
     return `AED ${price.toLocaleString()}`;
   };
 
   const handleQuantityChange = (
     item: any,
-    type: 'adults' | 'children',
+    type: 'adults' | 'children' | 'infants',
     delta: number
   ) => {
-    const newValue = Math.max(0, item[type] + delta);
+    const newValue = Math.max(0, (item[type] || 0) + delta);
     const updates: any = { [type]: newValue };
 
     // Update cart item (price will be recalculated server-side)
@@ -241,6 +228,32 @@ export default function CartPage() {
                         <button
                           onClick={() =>
                             handleQuantityChange(item, 'children', 1)
+                          }
+                          className='cart-quantity-button'
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className='cart-person-control'>
+                      <label>Infants:</label>
+                      <div className='cart-quantity-control'>
+                        <button
+                          onClick={() =>
+                            handleQuantityChange(item, 'infants', -1)
+                          }
+                          disabled={(item.infants || 0) === 0}
+                          className='cart-quantity-button'
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className='cart-quantity-value'>
+                          {item.infants || 0}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleQuantityChange(item, 'infants', 1)
                           }
                           className='cart-quantity-button'
                         >

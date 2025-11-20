@@ -6,11 +6,10 @@ import Footer from './Footer';
 export default function ConditionalFooter() {
   const pathname = usePathname();
 
-  // Hide footer on dashboard routes and maintenance page
+  // Hide footer on dashboard routes only
   const isDashboardRoute = pathname?.startsWith('/dashboard');
-  const isMaintenancePage = pathname === '/';
 
-  if (isDashboardRoute || isMaintenancePage) {
+  if (isDashboardRoute) {
     return null;
   }
 

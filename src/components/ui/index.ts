@@ -21,3 +21,4 @@ export {
 } from './form';
 export { Alert, AlertTitle, AlertDescription } from './alert';
 export { Separator } from './separator';
+export { default as MaintenancePage } from './MaintenancePage';

@@ -20,7 +20,6 @@ import {
   detectUserLocation,
   convertAEDToINR,
   convertAEDToINRAsync,
-  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -123,14 +122,12 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  // Detect user location and initialize exchange rate on mount
+  // Detect user location on mount
   useEffect(() => {
     const initialize = async () => {
       try {
         setIsLoadingLocation(true);
-        // Initialize exchange rate first (for accurate conversions)
-        await initializeExchangeRate();
-        // Then detect location
+        // Detect location
         const location = await detectUserLocation();
         console.log('Checkout page - Detected location:', location);
         setUserLocation(location);
@@ -158,6 +155,7 @@ export default function CheckoutPage() {
   const formatPrice = (price: number): string => {
     if (!userLocation) return `AED ${price.toLocaleString()}`;
 
+    // Indian users always see INR, international users always see AED
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
       return formatCurrency(inrPrice, userLocation);
@@ -335,10 +333,23 @@ export default function CheckoutPage() {
       );
 
       const totalAmountAED = getTotalPrice();
-      // Use async conversion for accurate real-time exchange rate
-      const totalAmountINR = await convertAEDToINRAsync(totalAmountAED);
-      const paymentAmount =
-        paymentType === 'half' ? totalAmountINR / 2 : totalAmountINR;
+
+      // Indian users pay in INR, international users pay in AED
+      let paymentAmount: number;
+      let currency: string;
+
+      if (userLocation.isIndia) {
+        // Indian users: convert to INR and pay in INR
+        const totalAmountINR = await convertAEDToINRAsync(totalAmountAED);
+        paymentAmount =
+          paymentType === 'half' ? totalAmountINR / 2 : totalAmountINR;
+        currency = 'INR';
+      } else {
+        // International users: pay in AED
+        paymentAmount =
+          paymentType === 'half' ? totalAmountAED / 2 : totalAmountAED;
+        currency = 'AED';
+      }
 
       // Create booking first
       const bookingResponse = await fetch('/api/checkout/create-booking', {
@@ -351,6 +362,7 @@ export default function CheckoutPage() {
             packageId: item.packageId,
             adults: item.adults,
             children: item.children,
+            infants: item.infants || 0,
             selectedDate: item.selectedDate,
           })),
           passengers: passengersWithBase64,
@@ -358,7 +370,7 @@ export default function CheckoutPage() {
           totalAmount: totalAmountAED,
           paymentType,
           paymentAmount,
-          currency: 'INR',
+          currency,
         }),
       });
 
@@ -372,8 +384,9 @@ export default function CheckoutPage() {
       const firstPassengerData = passengersToProcess[0];
 
       // Initialize payment based on location
+      // Indian users: HDFC (INR), International users: CCAvenue (AED)
       if (userLocation.isIndia) {
-        // Use HDFC
+        // Use HDFC for Indian users (INR)
         await initializeHDFCPayment({
           bookingId,
           amount: paymentAmount,
@@ -383,7 +396,7 @@ export default function CheckoutPage() {
           paymentType,
         });
       } else {
-        // Use CCAvenue
+        // Use CCAvenue for international users only (AED)
         await initializeCCAvenuePayment({
           bookingId,
           amount: paymentAmount,
@@ -391,6 +404,7 @@ export default function CheckoutPage() {
           customerEmail: firstPassengerData.email,
           customerPhone: firstPassengerData.phone,
           paymentType,
+          billingCountry: userLocation.countryCode || 'AE',
         });
       }
     } catch (error: any) {
@@ -419,7 +433,7 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           ...params,
-          currency: 'INR',
+          currency: 'AED', // CCAvenue for international users - use AED
         }),
       });
 
@@ -464,6 +478,7 @@ export default function CheckoutPage() {
     customerEmail: string;
     customerPhone: string;
     paymentType: 'half' | 'full';
+    billingCountry?: string;
   }) => {
     try {
       // Create CCAvenue order
@@ -474,7 +489,8 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           ...params,
-          currency: 'INR',
+          currency: 'AED', // CCAvenue for international users - use AED
+          billingCountry: params.billingCountry || 'AE',
         }),
       });
 
@@ -1070,10 +1086,7 @@ export default function CheckoutPage() {
                       <div className='payment-type-content'>
                         <span className='payment-type-label'>Full Payment</span>
                         <span className='payment-type-amount'>
-                          {formatCurrency(
-                            convertAEDToINR(getTotalPrice()),
-                            userLocation
-                          )}
+                          {formatPrice(getTotalPrice())}
                         </span>
                       </div>
                     </label>
@@ -1092,10 +1105,7 @@ export default function CheckoutPage() {
                           Half Payment (50%)
                         </span>
                         <span className='payment-type-amount'>
-                          {formatCurrency(
-                            convertAEDToINR(getTotalPrice()) / 2,
-                            userLocation
-                          )}
+                          {formatPrice(getTotalPrice() / 2)}
                         </span>
                       </div>
                     </label>

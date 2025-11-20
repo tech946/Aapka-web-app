@@ -19,6 +19,7 @@ type Pkg = {
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   adult_price?: number | null;
   child_price?: number | null;
+  infant_price?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -49,6 +50,7 @@ export default function EditPackageClient({
   >([]);
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
+  const [infantPrice, setInfantPrice] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -82,6 +84,7 @@ export default function EditPackageClient({
     if (pkg.package_nights != null) setNights(String(pkg.package_nights));
     if (pkg.adult_price != null) setAdultPrice(String(pkg.adult_price));
     if (pkg.child_price != null) setChildPrice(String(pkg.child_price));
+    if (pkg.infant_price != null) setInfantPrice(String(pkg.infant_price));
     setTermsHtml(pkg.terms_html || '');
     setInclusionHtml(pkg.inclusion_html || '');
     setExclusionHtml(pkg.exclusion_html || '');
@@ -118,7 +121,9 @@ export default function EditPackageClient({
 
   return (
     <>
-      <button onClick={() => setOpen(true)}>Edit</button>
+      <button className='btn_secondary btn_small' onClick={() => setOpen(true)}>
+        Edit
+      </button>
       {open && (
         <div className='modal_overlay' onClick={() => setOpen(false)}>
           <div
@@ -361,6 +366,14 @@ export default function EditPackageClient({
                 />
               </div>
               <div className='form_row'>
+                <label>Infant price</label>
+                <input
+                  value={infantPrice}
+                  onChange={e => setInfantPrice(e.target.value)}
+                  placeholder='e.g. 499'
+                />
+              </div>
+              <div className='form_row'>
                 <label>Terms & Conditions (bullet points)</label>
                 <TipTapEditor
                   content={termsHtml}
@@ -530,6 +543,9 @@ export default function EditPackageClient({
                             : undefined,
                           child_price: childPrice
                             ? Number(childPrice)
+                            : undefined,
+                          infant_price: infantPrice
+                            ? Number(infantPrice)
                             : undefined,
                           terms_html: termsHtml || undefined,
                           inclusion_html: inclusionHtml || undefined,

@@ -24,6 +24,7 @@ export default function AddPackageClient({
   >([]);
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
+  const [infantPrice, setInfantPrice] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -294,6 +295,14 @@ export default function AddPackageClient({
                 />
               </div>
               <div className='form_row'>
+                <label>Infant price</label>
+                <input
+                  value={infantPrice}
+                  onChange={e => setInfantPrice(e.target.value)}
+                  placeholder='e.g. 499'
+                />
+              </div>
+              <div className='form_row'>
                 <label>Terms & Conditions (bullet points)</label>
                 <TipTapEditor
                   content={termsHtml}
@@ -448,6 +457,9 @@ export default function AddPackageClient({
                           child_price: childPrice
                             ? Number(childPrice)
                             : undefined,
+                          infant_price: infantPrice
+                            ? Number(infantPrice)
+                            : undefined,
                           terms_html: termsHtml || undefined,
                           inclusion_html: inclusionHtml || undefined,
                           exclusion_html: exclusionHtml || undefined,
@@ -472,6 +484,7 @@ export default function AddPackageClient({
                       setTravelDates([]);
                       setAdultPrice('');
                       setChildPrice('');
+                      setInfantPrice('');
                       setTermsHtml('');
                       setInclusionHtml('');
                       setExclusionHtml('');

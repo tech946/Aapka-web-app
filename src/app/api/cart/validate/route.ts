@@ -8,6 +8,7 @@ interface CartItemRequest {
   packageId: string;
   adults: number;
   children: number;
+  infants: number;
   selectedDate: string | null;
 }
 
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     const { data: packages, error: fetchError } = await supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_price, adult_price, child_price, package_nights, package_days, thumbnail_image'
+        'package_id, package_name, package_price, adult_price, child_price, infant_price, package_nights, package_days, thumbnail_image'
       )
       .in('package_id', packageIds);
 
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      // Validate adults and children are non-negative
-      if (item.adults < 0 || item.children < 0) {
+      // Validate adults, children, and infants are non-negative
+      if (item.adults < 0 || item.children < 0 || item.infants < 0) {
         return {
           packageId: item.packageId,
           valid: false,
@@ -57,13 +58,16 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      // Calculate price based on adult_price and child_price if available
+      // Calculate price based on adult_price, child_price, and infant_price if available
       let calculatedPrice = 0;
       if (pkg.adult_price && item.adults > 0) {
         calculatedPrice += pkg.adult_price * item.adults;
       }
       if (pkg.child_price && item.children > 0) {
         calculatedPrice += pkg.child_price * item.children;
+      }
+      if (pkg.infant_price && item.infants > 0) {
+        calculatedPrice += pkg.infant_price * item.infants;
       }
 
       // If no adult/child pricing, use base price
@@ -78,6 +82,7 @@ export async function POST(req: NextRequest) {
         price: calculatedPrice,
         adultPrice: pkg.adult_price,
         childPrice: pkg.child_price,
+        infantPrice: pkg.infant_price,
         basePrice: pkg.package_price,
         nights: pkg.package_nights,
         days: pkg.package_days,

@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at',
         { count: 'exact' }
       )
       .range(from, to);
@@ -60,6 +60,18 @@ export async function GET(req: NextRequest) {
     if (categoryId) {
       query = query.eq('package_category_id', categoryId);
     }
+
+    // Filter by status
+    // Dashboard can pass status=all to see all packages, or status=active/inactive for specific status
+    // Marketing pages (no status param) will only see active packages
+    const statusParam = (searchParams.get('status') || '').trim();
+    if (statusParam && statusParam !== 'all') {
+      query = query.eq('status', statusParam);
+    } else if (!statusParam) {
+      // Default to active packages for marketing/public pages
+      query = query.eq('status', 'active');
+    }
+    // If statusParam is 'all', don't filter by status (show all packages for dashboard)
 
     const { data, count, error } = await query;
     if (error) {
@@ -129,6 +141,12 @@ export async function POST(req: NextRequest) {
           ? null
           : Number(body.child_price)
         : null;
+    const infantPrice =
+      body?.infant_price !== undefined
+        ? Number.isNaN(Number(body.infant_price))
+          ? null
+          : Number(body.infant_price)
+        : null;
     // rich content
     const termsHtml: string | null =
       body?.terms_html !== undefined ? String(body.terms_html) : null;
@@ -175,6 +193,7 @@ export async function POST(req: NextRequest) {
           travel_dates: travelDates,
           adult_price: adultPrice,
           child_price: childPrice,
+          infant_price: infantPrice,
           terms_html: termsHtml,
           inclusion_html: inclusionHtml,
           exclusion_html: exclusionHtml,
@@ -254,6 +273,12 @@ export async function PUT(req: NextRequest) {
           ? null
           : Number(body.child_price)
         : undefined;
+    const infantPrice =
+      body?.infant_price !== undefined
+        ? Number.isNaN(Number(body.infant_price))
+          ? null
+          : Number(body.infant_price)
+        : undefined;
     const termsHtml =
       body?.terms_html !== undefined ? String(body.terms_html) : undefined;
     const inclusionHtml =
@@ -276,6 +301,10 @@ export async function PUT(req: NextRequest) {
       body?.thumbnail_image !== undefined
         ? String(body.thumbnail_image).trim() || null
         : undefined;
+    const status =
+      body?.status !== undefined
+        ? String(body.status).trim() || null
+        : undefined;
 
     if (!id) {
       return NextResponse.json(
@@ -295,6 +324,7 @@ export async function PUT(req: NextRequest) {
       updates.travel_dates = travelDatesUpdate;
     if (adultPrice !== undefined) updates.adult_price = adultPrice;
     if (childPrice !== undefined) updates.child_price = childPrice;
+    if (infantPrice !== undefined) updates.infant_price = infantPrice;
     if (termsHtml !== undefined) updates.terms_html = termsHtml;
     if (inclusionHtml !== undefined) updates.inclusion_html = inclusionHtml;
     if (exclusionHtml !== undefined) updates.exclusion_html = exclusionHtml;
@@ -303,6 +333,7 @@ export async function PUT(req: NextRequest) {
       updates.holiday_description_html = holidayDescriptionHtml;
     if (itineraryJson !== undefined) updates.itinerary = itineraryJson;
     if (thumbnailImage !== undefined) updates.thumbnail_image = thumbnailImage;
+    if (status !== undefined) updates.status = status;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

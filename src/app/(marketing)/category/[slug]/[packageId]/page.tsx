@@ -27,7 +27,6 @@ import useEmblaCarousel from 'embla-carousel-react';
 import {
   detectUserLocation,
   convertAEDToINR,
-  initializeExchangeRate,
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -45,6 +44,7 @@ interface Package {
   package_category_id?: string;
   adult_price?: number | null;
   child_price?: number | null;
+  infant_price?: number | null;
   overview?: string | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
@@ -79,6 +79,7 @@ export default function PackageDetailsPage() {
   const [persons, setPersons] = useState({
     adult: 0,
     child: 0,
+    infant: 0,
   });
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [expandedItineraryItems, setExpandedItineraryItems] = useState<
@@ -111,13 +112,11 @@ export default function PackageDetailsPage() {
     }
   }, [pkg?.package_category_id]);
 
-  // Detect user location and initialize exchange rate on mount
+  // Detect user location on mount
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Initialize exchange rate first (for accurate conversions)
-        await initializeExchangeRate();
-        // Then detect location
+        // Detect location
         const location = await detectUserLocation();
         console.log('Package details page - Detected location:', location);
         setUserLocation(location);
@@ -198,10 +197,12 @@ export default function PackageDetailsPage() {
     }
 
     // Initialize persons
-    if (adultsParam || childrenParam) {
+    const infantsParam = searchParams.get('infants');
+    if (adultsParam || childrenParam || infantsParam) {
       setPersons({
         adult: adultsParam ? parseInt(adultsParam, 10) : 0,
         child: childrenParam ? parseInt(childrenParam, 10) : 0,
+        infant: infantsParam ? parseInt(infantsParam, 10) : 0,
       });
     }
   }, [searchParams, pkg, category, getAvailableDates]);
@@ -219,6 +220,9 @@ export default function PackageDetailsPage() {
         : 0) +
       (persons.child > 0 && pkg.child_price
         ? persons.child * pkg.child_price
+        : 0) +
+      (persons.infant > 0 && pkg.infant_price
+        ? persons.infant * pkg.infant_price
         : 0);
 
     // If no persons selected or no adult/child prices, use base price
@@ -227,13 +231,14 @@ export default function PackageDetailsPage() {
     } else {
       setCalculatedPrice(totalPrice);
     }
-  }, [pkg, persons.adult, persons.child]);
+  }, [pkg, persons.adult, persons.child, persons.infant]);
 
   // Helper function to format price based on region
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
     if (!userLocation) return `AED ${price.toLocaleString()}`;
 
+    // Indian users always see INR, international users always see AED
     if (userLocation.isIndia) {
       const inrPrice = convertAEDToINR(price);
       return formatCurrency(inrPrice, userLocation);
@@ -279,7 +284,10 @@ export default function PackageDetailsPage() {
     setIsFavorite(!isFavorite);
   };
 
-  const updatePersonCount = (type: 'adult' | 'child', delta: number) => {
+  const updatePersonCount = (
+    type: 'adult' | 'child' | 'infant',
+    delta: number
+  ) => {
     setPersons(prev => {
       const newValue = Math.max(0, prev[type] + delta);
       return { ...prev, [type]: newValue };
@@ -287,7 +295,7 @@ export default function PackageDetailsPage() {
   };
 
   const getTotalPersons = () => {
-    return persons.adult + persons.child;
+    return persons.adult + persons.child + persons.infant;
   };
 
   const getPersonsDisplayText = () => {
@@ -325,7 +333,7 @@ export default function PackageDetailsPage() {
     }
 
     // Validate that at least one person is selected
-    if (persons.adult === 0 && persons.child === 0) {
+    if (persons.adult === 0 && persons.child === 0 && persons.infant === 0) {
       toast.error('Please select at least one person');
       return;
     }
@@ -337,6 +345,7 @@ export default function PackageDetailsPage() {
       categorySlug: slug,
       adults: persons.adult,
       children: persons.child,
+      infants: persons.infant,
       selectedDate: dateToUse,
     };
 
@@ -750,7 +759,9 @@ export default function PackageDetailsPage() {
                   )}
                 </span>
                 <span className='mobile-booking-price-label'>
-                  {persons.adult > 0 || persons.child > 0 ? 'total' : 'total'}
+                  {persons.adult > 0 || persons.child > 0 || persons.infant > 0
+                    ? 'total'
+                    : 'total'}
                 </span>
               </div>
 
@@ -809,6 +820,27 @@ export default function PackageDetailsPage() {
                           <button
                             className='mobile-counter-button'
                             onClick={() => updatePersonCount('child', 1)}
+                          >
+                            <Plus className='mobile-counter-icon' />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='mobile-person-counter-row'>
+                        <span className='mobile-person-label'>Infant</span>
+                        <div className='mobile-person-counter'>
+                          <button
+                            className='mobile-counter-button'
+                            onClick={() => updatePersonCount('infant', -1)}
+                            disabled={persons.infant === 0}
+                          >
+                            <Minus className='mobile-counter-icon' />
+                          </button>
+                          <span className='mobile-counter-value'>
+                            {persons.infant}
+                          </span>
+                          <button
+                            className='mobile-counter-button'
+                            onClick={() => updatePersonCount('infant', 1)}
                           >
                             <Plus className='mobile-counter-icon' />
                           </button>
@@ -961,7 +993,9 @@ export default function PackageDetailsPage() {
                 )}
               </span>
               <span className='booking-price-label'>
-                {persons.adult > 0 || persons.child > 0 ? 'total' : 'total'}
+                {persons.adult > 0 || persons.child > 0 || persons.infant > 0
+                  ? 'total'
+                  : 'total'}
               </span>
             </div>
 
@@ -1013,6 +1047,25 @@ export default function PackageDetailsPage() {
                         <button
                           className='counter-button'
                           onClick={() => updatePersonCount('child', 1)}
+                        >
+                          <Plus className='counter-icon' />
+                        </button>
+                      </div>
+                    </div>
+                    <div className='person-counter-row'>
+                      <span className='person-label'>Infant</span>
+                      <div className='person-counter'>
+                        <button
+                          className='counter-button'
+                          onClick={() => updatePersonCount('infant', -1)}
+                          disabled={persons.infant === 0}
+                        >
+                          <Minus className='counter-icon' />
+                        </button>
+                        <span className='counter-value'>{persons.infant}</span>
+                        <button
+                          className='counter-button'
+                          onClick={() => updatePersonCount('infant', 1)}
                         >
                           <Plus className='counter-icon' />
                         </button>
