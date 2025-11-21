@@ -118,10 +118,8 @@ export default function PackageDetailsPage() {
       try {
         // Detect location
         const location = await detectUserLocation();
-        console.log('Package details page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error initializing:', error);
         // Default to non-India
         const defaultLocation = {
           country: 'Unknown',
@@ -130,10 +128,6 @@ export default function PackageDetailsPage() {
           currency: 'AED',
           currencySymbol: 'AED',
         };
-        console.log(
-          'Package details page - Using default location:',
-          defaultLocation
-        );
         setUserLocation(defaultLocation);
       }
     };
@@ -255,10 +249,8 @@ export default function PackageDetailsPage() {
       if (result.data) {
         setPkg(result.data);
       } else {
-        console.error('Package not found');
       }
     } catch (error) {
-      console.error('Error fetching package:', error);
     } finally {
       setLoading(false);
     }
@@ -275,9 +267,7 @@ export default function PackageDetailsPage() {
         );
         setCategory(foundCategory);
       }
-    } catch (error) {
-      console.error('Error fetching category:', error);
-    }
+    } catch (error) {}
   };
 
   const toggleFavorite = () => {

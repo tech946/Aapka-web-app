@@ -72,7 +72,6 @@ export default function ContactPage() {
         message: '',
       });
     } catch (error: any) {
-      console.error('Error submitting contact form:', error);
       toast.error(error.message || 'Failed to submit. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -85,10 +85,8 @@ export default function CategoryPage() {
       try {
         // Detect location
         const location = await detectUserLocation();
-        console.log('Category page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error initializing:', error);
         // Default to non-India
         const defaultLocation = {
           country: 'Unknown',
@@ -97,7 +95,6 @@ export default function CategoryPage() {
           currency: 'AED',
           currencySymbol: 'AED',
         };
-        console.log('Category page - Using default location:', defaultLocation);
         setUserLocation(defaultLocation);
       }
     };
@@ -140,15 +137,12 @@ export default function CategoryPage() {
         if (foundCategory) {
           setCategory(foundCategory);
         } else {
-          console.error('Category not found for slug:', slug);
           setLoading(false);
         }
       } else {
-        console.error('No categories found');
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error fetching category:', error);
       setLoading(false);
     }
   };
@@ -190,7 +184,6 @@ export default function CategoryPage() {
         setTotal(result.total || 0);
       }
     } catch (error) {
-      console.error('Error fetching packages:', error);
     } finally {
       setLoading(false);
     }
@@ -425,16 +418,8 @@ function PackageCard({
 
     // If location is not yet detected, show AED
     if (!userLocation) {
-      console.log('PackageCard formatPrice: No userLocation, showing AED');
       return `AED ${price.toLocaleString()}`;
     }
-
-    console.log(
-      'PackageCard formatPrice: userLocation.isIndia =',
-      userLocation.isIndia,
-      'location:',
-      userLocation
-    );
 
     // Indian users always see INR, international users always see AED
     if (userLocation.isIndia) {

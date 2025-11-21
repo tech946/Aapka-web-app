@@ -73,7 +73,6 @@ export default function BannerSection() {
   // Fetch packages when category changes (initial load only)
   // Note: handleCategoryClick will fetch packages when user clicks tabs
   useEffect(() => {
-    console.log('Active category changed (useEffect):', activeCategoryId);
     if (
       activeCategoryId &&
       activeCategoryId !== 'undefined' &&
@@ -84,10 +83,6 @@ export default function BannerSection() {
       // Subsequent category changes are handled by handleCategoryClick
       const isInitialLoad = packages.length === 0;
       if (isInitialLoad) {
-        console.log(
-          'Initial load - fetching packages for category:',
-          activeCategoryId
-        );
         fetchPackages(activeCategoryId);
       }
     } else if (
@@ -138,12 +133,9 @@ export default function BannerSection() {
     try {
       const response = await fetch('/api/package-categories?limit=100');
       const result = await response.json();
-      console.log('Categories API response:', result);
       if (result.data && Array.isArray(result.data)) {
         // Log first category to see its structure
         if (result.data.length > 0) {
-          console.log('First category object:', result.data[0]);
-          console.log('Available keys:', Object.keys(result.data[0]));
         }
         setCategories(result.data);
         if (result.data.length > 0) {
@@ -153,25 +145,17 @@ export default function BannerSection() {
             firstCategory.category_id ||
             firstCategory.id ||
             firstCategory.categoryId;
-          console.log('Setting active category ID:', categoryId);
           if (categoryId) {
             setActiveCategoryId(categoryId);
           } else {
-            console.error(
-              'No valid category ID found in category object:',
-              firstCategory
-            );
           }
         }
       }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
+    } catch (error) {}
   };
 
   const fetchPackages = async (categoryId: string) => {
     if (!categoryId || categoryId === 'undefined' || categoryId === 'null') {
-      console.error('Invalid categoryId provided:', categoryId);
       setPackages([]);
       setLoadingPackages(false);
       return;
@@ -179,38 +163,24 @@ export default function BannerSection() {
 
     try {
       setLoadingPackages(true);
-      console.log('Fetching packages with categoryId:', categoryId);
       const response = await fetch(
         `/api/packages?category_id=${categoryId}&limit=100`
       );
 
       if (!response.ok) {
-        console.error(
-          'API response not OK:',
-          response.status,
-          response.statusText
-        );
         setPackages([]);
         setLoadingPackages(false);
         return;
       }
 
       const result = await response.json();
-      console.log('Packages API response:', result);
 
       if (result.data && Array.isArray(result.data)) {
-        console.log('Setting packages:', result.data.length, 'packages found');
         setPackages(result.data);
-        // Log package details for debugging
-        if (result.data.length > 0) {
-          console.log('First package:', result.data[0]);
-        }
       } else {
-        console.warn('No data in response or data is not an array:', result);
         setPackages([]);
       }
     } catch (error) {
-      console.error('Error fetching packages:', error);
       setPackages([]);
     } finally {
       setLoadingPackages(false);
@@ -219,11 +189,9 @@ export default function BannerSection() {
 
   const handleCategoryClick = (categoryId: string | null | undefined) => {
     if (!categoryId || categoryId === 'undefined' || categoryId === 'null') {
-      console.error('Invalid categoryId in handleCategoryClick:', categoryId);
       return;
     }
 
-    console.log('Category clicked:', categoryId);
     // Clear previous selection and packages
     setSelectedPackage(null);
     setPackages([]);
@@ -236,7 +204,6 @@ export default function BannerSection() {
     // Set active category (this will trigger useEffect, but we'll also fetch directly)
     setActiveCategoryId(categoryId);
     // Immediately fetch packages for the selected category
-    console.log('Fetching packages for category:', categoryId);
     fetchPackages(categoryId);
   };
 
@@ -300,7 +267,6 @@ export default function BannerSection() {
 
   const handleSearch = () => {
     if (!selectedPackage) {
-      console.log('Please select a package');
       return;
     }
 
@@ -347,7 +313,6 @@ export default function BannerSection() {
       // Navigate to package details page
       router.push(url);
     } else {
-      console.log('Category not found');
     }
   };
 
@@ -374,8 +339,6 @@ export default function BannerSection() {
                     key={categoryId || category.name}
                     className={`search_tab ${activeCategoryId === categoryId ? 'active' : ''}`}
                     onClick={() => {
-                      console.log('Button clicked, category object:', category);
-                      console.log('Extracted categoryId:', categoryId);
                       handleCategoryClick(categoryId);
                     }}
                   >
@@ -411,11 +374,6 @@ export default function BannerSection() {
                       </div>
                     ) : packages.length > 0 ? (
                       packages.map(pkg => {
-                        console.log(
-                          'Rendering package:',
-                          pkg.package_id,
-                          pkg.package_name
-                        );
                         return (
                           <div
                             key={pkg.package_id}

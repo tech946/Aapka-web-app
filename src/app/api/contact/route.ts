@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating contact query:', error);
       return NextResponse.json(
         { error: 'Failed to submit query', details: error.message },
         { status: 500 }
@@ -63,7 +62,6 @@ export async function POST(req: NextRequest) {
       data,
     });
   } catch (error: any) {
-    console.error('Error in contact POST:', error);
     return NextResponse.json(
       { error: error?.message || 'Unexpected error occurred' },
       { status: 500 }
@@ -105,7 +103,6 @@ export async function GET(req: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Error fetching contact queries:', error);
       return NextResponse.json(
         { error: 'Failed to fetch queries', details: error.message },
         { status: 500 }
@@ -123,7 +120,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error in contact GET:', error);
     return NextResponse.json(
       { error: error?.message || 'Unexpected error occurred' },
       { status: 500 }

@@ -28,10 +28,9 @@ export async function detectUserLocation(): Promise<UserLocation> {
     if (testLocation) {
       try {
         const parsed = JSON.parse(testLocation);
-        console.log('Using test location from localStorage:', parsed);
         return parsed;
       } catch (e) {
-        console.error('Error parsing test location:', e);
+        // Error parsing test location
       }
     }
   }
@@ -66,10 +65,9 @@ export async function detectUserLocation(): Promise<UserLocation> {
       currencySymbol: isIndia ? '₹' : 'AED',
     };
 
-    console.log('Location detection result:', location);
     return location;
   } catch (error) {
-    console.error('Error detecting location:', error);
+    // Error detecting location
 
     // Try fallback: Check browser timezone
     try {
@@ -87,11 +85,10 @@ export async function detectUserLocation(): Promise<UserLocation> {
           currency: 'INR',
           currencySymbol: '₹',
         };
-        console.log('Detected India from timezone:', timezone, location);
         return location;
       }
     } catch (tzError) {
-      console.error('Error checking timezone:', tzError);
+      // Error checking timezone
     }
 
     // Default to non-India
@@ -102,7 +99,6 @@ export async function detectUserLocation(): Promise<UserLocation> {
       currency: 'AED',
       currencySymbol: 'AED',
     };
-    console.log('Using default location:', defaultLocation);
     return defaultLocation;
   }
 }
@@ -135,9 +131,7 @@ export async function getExchangeRate(): Promise<number> {
 
     if (data.data && Array.isArray(data.data)) {
       // Find INR entry
-      const inrEntry = data.data.find(
-        (item: any) => item.name === 'INR'
-      );
+      const inrEntry = data.data.find((item: any) => item.name === 'INR');
 
       if (inrEntry && inrEntry.equivalent) {
         const rate = Number(inrEntry.equivalent);
@@ -154,8 +148,6 @@ export async function getExchangeRate(): Promise<number> {
 
     throw new Error('Invalid price master response');
   } catch (error) {
-    console.error('Error fetching price master:', error);
-
     // Return cached rate if available (even if expired)
     if (clientRateCache) {
       return clientRateCache.rate;
@@ -183,9 +175,6 @@ export function convertAEDToINR(aedAmount: number): number {
   // Use cached rate if available, otherwise use fallback
   const rate = clientRateCache?.rate || FALLBACK_AED_TO_INR_RATE;
   const converted = Math.round(aedAmount * rate);
-  console.log(
-    `Converting ${aedAmount} AED to INR: rate=${rate}, result=${converted}, cache=${!!clientRateCache}`
-  );
   return converted;
 }
 
@@ -197,7 +186,7 @@ export async function initializeExchangeRate(): Promise<void> {
   try {
     await getExchangeRate();
   } catch (error) {
-    console.error('Failed to initialize exchange rate:', error);
+    // Failed to initialize exchange rate
   }
 }
 

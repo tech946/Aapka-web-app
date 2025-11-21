@@ -43,7 +43,6 @@ export async function GET(req: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Error fetching bookings:', error);
       return NextResponse.json(
         { error: 'Failed to fetch bookings', details: error.message },
         { status: 500 }
@@ -61,7 +60,6 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error in bookings GET:', error);
     return NextResponse.json(
       { error: error?.message || 'Unexpected error occurred' },
       { status: 500 }
