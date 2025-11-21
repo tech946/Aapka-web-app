@@ -173,15 +173,13 @@ export async function POST(req: NextRequest) {
     console.log('=====================================');
 
     // Build the payment URL exactly as shown in the guide
-    // Format: https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction&merchant_id=XXX&encRequest=XXX&access_code=XXX
+    // Format: https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction&merchant_id=XXX&encRequest=XXX&access_code=XXX
     // Key names must be exactly: merchant_id, encRequest, access_code (as per guide)
+    // NOTE: Using .ae domain for Dubai account
 
     // Determine which domain to use (.com for India, .ae for UAE)
-    // Based on your credentials, try .com first (India account)
-    const ccavenueBaseUrl =
-      process.env.CCAVENUE_USE_UAE === 'true'
-        ? 'https://secure.ccavenue.ae'
-        : 'https://secure.ccavenue.com';
+    // Account is in Dubai, so ALWAYS use .ae domain
+    const ccavenueBaseUrl = 'https://secure.ccavenue.ae'; // Fixed to .ae for Dubai account
 
     // Build URL exactly as shown in guide
     // The guide shows: merchant_id, encRequest, access_code as query parameters
@@ -196,14 +194,16 @@ export async function POST(req: NextRequest) {
 
     // Use encoded version (more reliable)
     const paymentUrl = paymentUrlWithEncode;
-    const finalPaymentUrl = process.env.CCAVENUE_PAYMENT_URL || paymentUrl;
+    // IMPORTANT: Always use the constructed .ae URL, no environment variable override
+    const finalPaymentUrl = paymentUrl; // Fixed to always use .ae domain
 
     // Log the exact URL being used (for debugging)
     console.log('=== PAYMENT URL CONSTRUCTION ===');
-    console.log('Base URL:', ccavenueBaseUrl);
+    console.log('Base URL:', ccavenueBaseUrl, '(Dubai account - .ae domain)');
     console.log('Merchant ID:', merchantId);
     console.log('Access Code:', accessCode);
     console.log('Encrypted Data (first 50):', encryptedData.substring(0, 50));
+    console.log('Redirect URL:', paymentParams.redirect_url);
     console.log(
       'URL (NO encoding, first 200):',
       paymentUrlNoEncode.substring(0, 200)

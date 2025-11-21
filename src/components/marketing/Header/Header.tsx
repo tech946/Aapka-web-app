@@ -1,45 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ShoppingCart, Menu, X } from 'lucide-react';
+import { ShoppingCart, Menu, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import './header.css';
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 export default function Header() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isPackagesDropdownOpen, setIsPackagesDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobilePackagesOpen, setIsMobilePackagesOpen] = useState(false);
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/api/package-categories?limit=100');
-        const result = await response.json();
-        if (result.data) {
-          setCategories(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  const getCategorySlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
-  };
 
   return (
     <>
@@ -57,47 +27,18 @@ export default function Header() {
                   Home
                 </Link>
               </li>
-              <li className='header-dropdown-container'>
-                <button
-                  className='header-dropdown-button'
-                  onClick={() =>
-                    setIsPackagesDropdownOpen(!isPackagesDropdownOpen)
-                  }
+              <li>
+                <Link
+                  href='/category/offer-packages'
+                  className='header-nav-link'
                 >
-                  Packages
-                  <ChevronDown
-                    size={16}
-                    className={`header-chevron ${
-                      isPackagesDropdownOpen ? 'open' : ''
-                    }`}
-                  />
-                </button>
-                {isPackagesDropdownOpen && (
-                  <>
-                    <div
-                      className='header-dropdown-overlay'
-                      onClick={() => setIsPackagesDropdownOpen(false)}
-                    />
-                    <div className='header-dropdown-menu'>
-                      {categories.length > 0 ? (
-                        categories.map(category => (
-                          <Link
-                            key={category.id}
-                            href={`/category/${getCategorySlug(category.name)}`}
-                            className='header-dropdown-item'
-                            onClick={() => setIsPackagesDropdownOpen(false)}
-                          >
-                            {category.name}
-                          </Link>
-                        ))
-                      ) : (
-                        <div className='header-dropdown-item disabled'>
-                          No categories available
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
+                  Offer Packages
+                </Link>
+              </li>
+              <li>
+                <Link href='/category/uae-tours' className='header-nav-link'>
+                  Tours
+                </Link>
               </li>
               <li>
                 <Link href='/About' className='header-nav-link'>
@@ -187,43 +128,21 @@ export default function Header() {
               Home
             </Link>
 
-            <div className='mobile-sidebar-dropdown'>
-              <button
-                className='mobile-sidebar-link mobile-sidebar-dropdown-button'
-                onClick={() => setIsMobilePackagesOpen(!isMobilePackagesOpen)}
-              >
-                Packages
-                <ChevronDown
-                  size={18}
-                  className={`mobile-sidebar-chevron ${
-                    isMobilePackagesOpen ? 'open' : ''
-                  }`}
-                />
-              </button>
-              {isMobilePackagesOpen && (
-                <div className='mobile-sidebar-dropdown-menu'>
-                  {categories.length > 0 ? (
-                    categories.map(category => (
-                      <Link
-                        key={category.id}
-                        href={`/category/${getCategorySlug(category.name)}`}
-                        className='mobile-sidebar-dropdown-item'
-                        onClick={() => {
-                          setIsMobilePackagesOpen(false);
-                          setIsMobileMenuOpen(false);
-                        }}
-                      >
-                        {category.name}
-                      </Link>
-                    ))
-                  ) : (
-                    <div className='mobile-sidebar-dropdown-item disabled'>
-                      No categories available
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <Link
+              href='/category/offer-packages'
+              className='mobile-sidebar-link'
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Offer Packages
+            </Link>
+
+            <Link
+              href='/category/uae-tours'
+              className='mobile-sidebar-link'
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Tours
+            </Link>
 
             <Link
               href='/About'

@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
     const limitParam = parseInt(searchParams.get('limit') || '10', 10);
     const q = (searchParams.get('q') || '').trim();
     const categoryId = (searchParams.get('category_id') || '').trim();
+    const categorySlug = (searchParams.get('categorySlug') || '').trim();
     const sortBy = (searchParams.get('sort_by') || '').trim();
 
     const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -61,6 +62,16 @@ export async function GET(req: NextRequest) {
       query = query.eq('package_category_id', categoryId);
     }
 
+    // Filter by category name (converted from slug for footer links)
+    if (categorySlug) {
+      // Convert slug back to name for matching (e.g., 'offer-packages' -> 'Offer Packages')
+      const categoryName = categorySlug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      query = query.ilike('package_categories.name', categoryName);
+    }
+
     // Filter by status
     // Dashboard can pass status=all to see all packages, or status=active/inactive for specific status
     // Marketing pages (no status param) will only see active packages
@@ -78,8 +89,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Map the data to flatten category information
+    const mappedData = data?.map((pkg: any) => ({
+      ...pkg,
+      category_name: pkg.package_categories?.name || null,
+      package_categories: undefined, // Remove the nested object
+    }));
+
     return NextResponse.json({
-      data: data ?? [],
+      success: true,
+      data: mappedData ?? [],
       total: count ?? 0,
       page,
       limit,

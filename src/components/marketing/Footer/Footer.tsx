@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Clock4,
   CreditCard,
@@ -14,6 +16,8 @@ import {
   Youtube,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import './footer.css';
 
 const stats = [
@@ -21,23 +25,6 @@ const stats = [
   { icon: Clock4, value: '12+', label: 'Travel Experience' },
   { icon: Smile, value: '20+', label: 'Happy Traveler' },
   { icon: CreditCard, value: '98%', label: 'Retention Rate' },
-];
-
-const topDestinations = [
-  '4 Night 5 Days Dubai Summer Holiday Package',
-  '3 Nights 4 Days Dubai Holiday Package',
-  '4 Night 5 Days Dubai City Tour Package',
-  '4 Night 5 Days Dubai Safari Tour Package',
-];
-
-const popularSearch = [
-  'Dubai Trio Tour Package',
-  'Evening Desert Safari With BBQ Dinner (Private Upto 6 Pax)',
-  'Dubai Airport Drop off',
-  'Dubai City Tour',
-  'Dubai Airport Pickup All Terminals',
-  'Chrysler Limousine Ride',
-  'Global Village',
 ];
 
 const resources = [
@@ -50,7 +37,51 @@ const resources = [
   'Refund & Cancellation Policy',
 ];
 
+interface Package {
+  package_id: string;
+  package_name: string;
+  category_name: string;
+}
+
 export default function Footer() {
+  const [offerPackages, setOfferPackages] = useState<Package[]>([]);
+  const [tours, setTours] = useState<Package[]>([]);
+
+  useEffect(() => {
+    const fetchFooterPackages = async () => {
+      try {
+        // Fetch packages from "Offer Packages" category
+        const offerResponse = await fetch(
+          '/api/packages?categorySlug=offer-packages&limit=4'
+        );
+        const offerResult = await offerResponse.json();
+        if (offerResult.success && offerResult.data) {
+          setOfferPackages(offerResult.data);
+        }
+
+        // Fetch packages from "UAE Tours" category
+        const toursResponse = await fetch(
+          '/api/packages?categorySlug=uae-tours&limit=7'
+        );
+        const toursResult = await toursResponse.json();
+        if (toursResult.success && toursResult.data) {
+          setTours(toursResult.data);
+        }
+      } catch (error) {
+        console.error('Error fetching footer packages:', error);
+      }
+    };
+
+    fetchFooterPackages();
+  }, []);
+
+  const getCategorySlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  };
+
   return (
     <footer className='footer_section'>
       <div className='footer_contact_bar'>
@@ -66,7 +97,8 @@ export default function Footer() {
             <MessageCircle size={22} />
             <div>
               <span>WhatsApp</span>
-              <p>+971 565798798</p>
+              <p>AE - +971567809460</p>
+              <p>IN - +917042857575</p>
             </div>
           </div>
           <div className='footer_contact_item'>
@@ -80,7 +112,8 @@ export default function Footer() {
             <Phone size={22} />
             <div>
               <span>Call Us</span>
-              <p>+971 565798798</p>
+              <p>AE - +971567809460</p>
+              <p>IN - +917042857575</p>
             </div>
           </div>
         </div>
@@ -103,8 +136,10 @@ export default function Footer() {
 
             <address>
               Office #10118, CBD Bank Building, Near Sharaf DG Metro Exit 1, Al
-              Mankhool, Bur Dubai, UAE. India Office: 1522 B, Hemkunt Chambers
-              89, Nehru Place, Delhi 110019
+              Mankhool, Bur Dubai, UAE.
+              <br />
+              India Office: 1522 B, Hemkunt Chambers 89, Nehru Place, Delhi
+              110019
             </address>
 
             <div className='footer_social'>
@@ -140,24 +175,46 @@ export default function Footer() {
 
           <div className='footer_links'>
             <div className='footer_links_column'>
-              <h4>Holiday Package</h4>
+              <h4>Offer Packages</h4>
               <ul>
-                {topDestinations.map(item => (
-                  <li key={item}>
-                    <a href='#'>{item}</a>
+                {offerPackages.length > 0 ? (
+                  offerPackages.map(pkg => (
+                    <li key={pkg.package_id}>
+                      <Link
+                        href={`/category/${getCategorySlug(pkg.category_name)}/${pkg.package_id}`}
+                      >
+                        {pkg.package_name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li>
+                    <Link href='/category/offer-packages'>
+                      View Offer Packages
+                    </Link>
                   </li>
-                ))}
+                )}
               </ul>
             </div>
 
             <div className='footer_links_column'>
               <h4>Top Tours</h4>
               <ul>
-                {popularSearch.map(item => (
-                  <li key={item}>
-                    <a href='#'>{item}</a>
+                {tours.length > 0 ? (
+                  tours.map(tour => (
+                    <li key={tour.package_id}>
+                      <Link
+                        href={`/category/${getCategorySlug(tour.category_name)}/${tour.package_id}`}
+                      >
+                        {tour.package_name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li>
+                    <Link href='/category/uae-tours'>View Tours</Link>
                   </li>
-                ))}
+                )}
               </ul>
             </div>
 
@@ -177,7 +234,7 @@ export default function Footer() {
 
       <div className='footer_bottom'>
         <div className='footer_bottom_inner container'>
-          <p>Copyright ©2025 Egens Lab | All Right Reserved.</p>
+          <p>Copyright ©2025 Aapka Tourism | All Right Reserved.</p>
           <div className='footer_payments'>
             <span>Accepted Payment Methods :</span>
             <ul>

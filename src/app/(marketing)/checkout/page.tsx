@@ -369,7 +369,7 @@ export default function CheckoutPage() {
             selectedDate: item.selectedDate,
           })),
           passengers: passengersWithBase64,
-          paymentMethod: userLocation.isIndia ? 'hdfc' : 'ccavenue',
+          paymentMethod: 'ccavenue', // TEMPORARY: Always use CCAvenue
           totalAmount: totalAmountAED,
           paymentType,
           paymentAmount,
@@ -387,29 +387,41 @@ export default function CheckoutPage() {
       const firstPassengerData = passengersToProcess[0];
 
       // Initialize payment based on location
+      // TEMPORARY: Using CCAvenue for ALL users (HDFC temporarily disabled)
       // Indian users: HDFC (INR), International users: CCAvenue (AED)
-      if (userLocation.isIndia) {
-        // Use HDFC for Indian users (INR)
-        await initializeHDFCPayment({
-          bookingId,
-          amount: paymentAmount,
-          customerName: `${firstPassengerData.firstName} ${firstPassengerData.lastName}`,
-          customerEmail: firstPassengerData.email,
-          customerPhone: firstPassengerData.phone,
-          paymentType,
-        });
-      } else {
-        // Use CCAvenue for international users only (AED)
-        await initializeCCAvenuePayment({
-          bookingId,
-          amount: paymentAmount,
-          customerName: `${firstPassengerData.firstName} ${firstPassengerData.lastName}`,
-          customerEmail: firstPassengerData.email,
-          customerPhone: firstPassengerData.phone,
-          paymentType,
-          billingCountry: userLocation.countryCode || 'AE',
-        });
-      }
+      // if (userLocation.isIndia) {
+      //   // Use HDFC for Indian users (INR)
+      //   await initializeHDFCPayment({
+      //     bookingId,
+      //     amount: paymentAmount,
+      //     customerName: `${firstPassengerData.firstName} ${firstPassengerData.lastName}`,
+      //     customerEmail: firstPassengerData.email,
+      //     customerPhone: firstPassengerData.phone,
+      //     paymentType,
+      //   });
+      // } else {
+      //   // Use CCAvenue for international users only (AED)
+      //   await initializeCCAvenuePayment({
+      //     bookingId,
+      //     amount: paymentAmount,
+      //     customerName: `${firstPassengerData.firstName} ${firstPassengerData.lastName}`,
+      //     customerEmail: firstPassengerData.email,
+      //     customerPhone: firstPassengerData.phone,
+      //     paymentType,
+      //     billingCountry: userLocation.countryCode || 'AE',
+      //   });
+      // }
+
+      // Use CCAvenue for ALL users temporarily
+      await initializeCCAvenuePayment({
+        bookingId,
+        amount: paymentAmount,
+        customerName: `${firstPassengerData.firstName} ${firstPassengerData.lastName}`,
+        customerEmail: firstPassengerData.email,
+        customerPhone: firstPassengerData.phone,
+        paymentType,
+        billingCountry: userLocation.countryCode || 'AE',
+      });
     } catch (error: any) {
       console.error('Error processing payment:', error);
       toast.error(
@@ -517,9 +529,11 @@ export default function CheckoutPage() {
       // Option 2: Form POST (fallback)
       const form = document.createElement('form');
       form.method = 'POST';
+      // Use the redirectUrl from the API response (should be .ae for Dubai account)
       form.action =
         orderData.redirectUrl ||
-        'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+        orderData.paymentUrl ||
+        'https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction';
 
       // According to guide: merchant_id, encRequest, and access_code
       const fields = {
@@ -1076,9 +1090,7 @@ export default function CheckoutPage() {
                     <span className='global-location'>
                       <Globe size={14} /> {userLocation.country}
                     </span>
-                    <span className='gateway-badge'>
-                      {userLocation.isIndia ? 'HDFC' : 'CCAvenue'}
-                    </span>
+                    <span className='gateway-badge'>CCAvenue</span>
                   </div>
                 )}
               </div>
@@ -1137,9 +1149,7 @@ export default function CheckoutPage() {
                   disabled={isSubmitting || isLoadingLocation || !userLocation}
                 >
                   <CreditCard size={20} />
-                  {userLocation?.isIndia
-                    ? 'Pay with HDFC'
-                    : 'Pay with CCAvenue'}
+                  Pay with CCAvenue
                 </button>
                 {isSubmitting && (
                   <div className='submitting-overlay'>
