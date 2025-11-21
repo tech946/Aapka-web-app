@@ -346,13 +346,11 @@ export default function CheckoutPage() {
       let paymentAmount: number;
       let currency: string;
 
-      // CCAvenue typically uses INR currency
-      // Convert all payments to INR for CCAvenue (check your CCAvenue account settings)
-      // If your account supports AED, you can use currency = 'AED' for international users
-      const totalAmountINR = await convertAEDToINRAsync(totalAmountAED);
+      // CCAvenue Dubai account (.ae domain) uses AED currency
+      // Use AED for all transactions since the account is configured for AED
       paymentAmount =
-        paymentType === 'half' ? totalAmountINR / 2 : totalAmountINR;
-      currency = 'INR'; // CCAvenue standard currency - change if your account supports AED
+        paymentType === 'half' ? totalAmountAED / 2 : totalAmountAED;
+      currency = 'AED'; // Dubai CCAvenue account uses AED
 
       // Create booking first
       const bookingResponse = await fetch('/api/checkout/create-booking', {
@@ -504,7 +502,7 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           ...params,
-          currency: 'AED', // CCAvenue for international users - use AED
+          currency: 'AED', // Dubai CCAvenue account uses AED
           billingCountry: params.billingCountry || 'AE',
         }),
       });
@@ -515,31 +513,16 @@ export default function CheckoutPage() {
         throw new Error(orderData.error || 'Failed to create payment order');
       }
 
-      // According to the guide, we can either:
-      // 1. Use the full URL with query params (redirect)
-      // 2. Use form POST with encRequest and access_code
-      // The guide shows using router.push with full URL, but form POST is also valid
-
-      // Option 1: Direct redirect (as shown in guide)
-      if (orderData.paymentUrl) {
-        window.location.href = orderData.paymentUrl;
-        return;
-      }
-
-      // Option 2: Form POST (fallback)
+      // Create form POST submission exactly as per official CCAvenue JSP example
+      // Official format: POST to action URL with encRequest and access_code as form data
       const form = document.createElement('form');
       form.method = 'POST';
-      // Use the redirectUrl from the API response (should be .ae for Dubai account)
-      form.action =
-        orderData.redirectUrl ||
-        orderData.paymentUrl ||
-        'https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction';
+      form.action = orderData.redirectUrl; // Clean URL: https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction
 
-      // According to guide: merchant_id, encRequest, and access_code
+      // Official JSP example fields: encRequest and access_code ONLY (merchant_id is in encrypted data)
       const fields = {
-        merchant_id: orderData.merchantId,
-        encRequest: orderData.encryptedData,
-        access_code: orderData.accessCode,
+        encRequest: orderData.encRequest, // Encrypted payment data
+        access_code: orderData.accessCode, // Access code for authentication
       };
 
       Object.entries(fields).forEach(([key, value]) => {
@@ -551,7 +534,7 @@ export default function CheckoutPage() {
       });
 
       document.body.appendChild(form);
-      form.submit();
+      form.submit(); // Auto-submit form (like JavaScript in JSP example)
     } catch (error: any) {
       console.error('CCAvenue initialization error:', error);
       toast.error(error.message || 'Failed to initialize payment');

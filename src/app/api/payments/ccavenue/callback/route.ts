@@ -74,6 +74,7 @@ async function handleCallback(req: NextRequest) {
     const orderStatus = data.order_status;
     const orderId = data.order_id;
     const amount = data.amount;
+    const currency = data.currency || 'AED'; // Get currency from response
     const bookingId = data.merchant_param1 || '';
     const paymentType = data.merchant_param2 || 'full';
     const trackingId = data.tracking_id || '';
@@ -89,15 +90,15 @@ async function handleCallback(req: NextRequest) {
     }
 
     // Update booking with payment details
-    const amountInRupees = parseFloat(amount || '0');
+    const paymentAmount = parseFloat(amount || '0');
 
     const { error: updateError } = await supabaseAdmin
       .from('bookings')
       .update({
         payment_status: 'completed',
         payment_transaction_id: trackingId || orderId,
-        payment_amount: amountInRupees,
-        payment_amount_currency: 'INR',
+        payment_amount: paymentAmount,
+        payment_amount_currency: currency, // Use actual currency from response
         payment_type: paymentType,
         payment_gateway: 'ccavenue',
         payment_done: paymentType,

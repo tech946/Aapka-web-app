@@ -28,8 +28,8 @@ export function encrypt(plainText: string, workingKey: string): string {
   let encoded = cipher.update(plainText, 'utf8', 'hex');
   encoded += cipher.final('hex');
 
-  // Return uppercase hex (CCAvenue expects uppercase based on common implementations)
-  return encoded.toUpperCase();
+  // Return lowercase hex (CCAvenue expects lowercase hex encoding)
+  return encoded;
 }
 
 /**
