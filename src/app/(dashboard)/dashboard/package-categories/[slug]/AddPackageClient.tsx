@@ -67,353 +67,398 @@ export default function AddPackageClient({
               </button>
             </div>
             <div className='modal_body'>
-              <div className='form_row'>
-                <label>Name</label>
-                <input
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder='Package name'
-                />
-              </div>
-              <div className='form_row'>
-                <label>Thumbnail Image</label>
-                <input
-                  ref={fileInputRef}
-                  type='file'
-                  accept='image/*'
-                  onChange={async e => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+              {/* Basic Information Section */}
+              <div className='form_section'>
+                <h5 className='section_title'>Basic Information</h5>
+                <div className='form_grid'>
+                  <div className='form_row full_width'>
+                    <label>Package Name *</label>
+                    <input
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder='Enter package name'
+                    />
+                  </div>
 
-                    // Validate file type
-                    if (!file.type.startsWith('image/')) {
-                      toast.error('Please select a valid image file');
-                      return;
-                    }
+                  <div className='form_row full_width'>
+                    <label>Thumbnail Image</label>
+                    <input
+                      ref={fileInputRef}
+                      type='file'
+                      accept='image/*'
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
 
-                    // Validate file size (max 5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                      toast.error('Image size should be less than 5MB');
-                      return;
-                    }
+                        // Validate file type
+                        if (!file.type.startsWith('image/')) {
+                          toast.error('Please select a valid image file');
+                          return;
+                        }
 
-                    setThumbnailImage(file);
-                    setImageLoadError(false);
-                    // Create preview
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setThumbnailImagePreview(reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error('Image size should be less than 5MB');
+                          return;
+                        }
 
-                    // Upload to Cloudinary
-                    setIsUploadingImage(true);
-                    try {
-                      const url = await uploadImageToCloudinary(
-                        file,
-                        'packages'
-                      );
-                      setThumbnailImageUrl(url);
-                      toast.success('Image uploaded successfully');
-                    } catch (error) {
-                      console.error('Upload error:', error);
-                      toast.error(
-                        error instanceof Error
-                          ? error.message
-                          : 'Failed to upload image'
-                      );
-                      setThumbnailImage(null);
-                      setThumbnailImagePreview('');
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    } finally {
-                      setIsUploadingImage(false);
-                    }
-                  }}
-                  disabled={isUploadingImage}
-                />
-                {thumbnailImagePreview &&
-                  thumbnailImagePreview.trim() &&
-                  !imageLoadError && (
-                    <div style={{ marginTop: '12px' }}>
-                      <img
-                        src={thumbnailImagePreview}
-                        alt='Thumbnail preview'
-                        onError={() => {
-                          setImageLoadError(true);
-                        }}
-                        onLoad={() => {
-                          setImageLoadError(false);
-                        }}
-                        style={{
-                          maxWidth: '300px',
-                          maxHeight: '200px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border)',
-                        }}
-                      />
-                      <button
-                        type='button'
-                        className='itinerary_remove_btn'
-                        style={{ marginTop: '8px' }}
-                        onClick={() => {
+                        setThumbnailImage(file);
+                        setImageLoadError(false);
+                        // Create preview
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setThumbnailImagePreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+
+                        // Upload to Cloudinary
+                        setIsUploadingImage(true);
+                        try {
+                          const url = await uploadImageToCloudinary(
+                            file,
+                            'packages'
+                          );
+                          setThumbnailImageUrl(url);
+                          toast.success('Image uploaded successfully');
+                        } catch (error) {
+                          console.error('Upload error:', error);
+                          toast.error(
+                            error instanceof Error
+                              ? error.message
+                              : 'Failed to upload image'
+                          );
                           setThumbnailImage(null);
                           setThumbnailImagePreview('');
-                          setThumbnailImageUrl('');
-                          setImageLoadError(false);
                           if (fileInputRef.current) {
                             fileInputRef.current.value = '';
                           }
+                        } finally {
+                          setIsUploadingImage(false);
+                        }
+                      }}
+                      disabled={isUploadingImage}
+                    />
+                    {thumbnailImagePreview &&
+                      thumbnailImagePreview.trim() &&
+                      !imageLoadError && (
+                        <div className='image_preview_container'>
+                          <img
+                            src={thumbnailImagePreview}
+                            alt='Thumbnail preview'
+                            onError={() => {
+                              setImageLoadError(true);
+                            }}
+                            onLoad={() => {
+                              setImageLoadError(false);
+                            }}
+                            className='image_preview'
+                          />
+                          <button
+                            type='button'
+                            className='btn_remove_image'
+                            onClick={() => {
+                              setThumbnailImage(null);
+                              setThumbnailImagePreview('');
+                              setThumbnailImageUrl('');
+                              setImageLoadError(false);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                              }
+                            }}
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      )}
+                    {isUploadingImage && (
+                      <p className='upload_status'>Uploading image...</p>
+                    )}
+                  </div>
+
+                  <div className='form_row full_width'>
+                    <label>Description</label>
+                    <textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder='Enter short description'
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Days</label>
+                    <select
+                      value={days}
+                      onChange={e => setDays(e.target.value)}
+                    >
+                      <option value=''>Select days</option>
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1} {i + 1 === 1 ? 'Day' : 'Days'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Nights</label>
+                    <select
+                      value={nights}
+                      onChange={e => setNights(e.target.value)}
+                    >
+                      <option value=''>Select nights</option>
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1} {i + 1 === 1 ? 'Night' : 'Nights'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className='form_row full_width'>
+                    <label>Travel Dates</label>
+                    <div className='date_input_group'>
+                      <input
+                        type='date'
+                        value={travelDate}
+                        onChange={e => setTravelDate(e.target.value)}
+                      />
+                      <button
+                        type='button'
+                        className='btn_add_date'
+                        onClick={() => {
+                          if (!travelDate) {
+                            toast.error('Please select a date to add');
+                            return;
+                          }
+                          if (travelDates.some(t => t.value === travelDate)) {
+                            toast.error('Date already added');
+                            return;
+                          }
+                          setTravelDates(prev => [
+                            ...prev,
+                            {
+                              id: crypto.randomUUID?.() || String(Date.now()),
+                              value: travelDate,
+                            },
+                          ]);
+                          setTravelDate('');
                         }}
                       >
-                        Remove Image
+                        + Add Date
                       </button>
                     </div>
-                  )}
-                {isUploadingImage && (
-                  <p
-                    style={{ marginTop: '8px', color: 'var(--text-secondary)' }}
-                  >
-                    Uploading image...
-                  </p>
-                )}
+                    {travelDates.length > 0 && (
+                      <div className='date_chips'>
+                        {travelDates.map(d => (
+                          <span key={d.id} className='date_chip'>
+                            {new Date(d.value).toLocaleDateString()}
+                            <button
+                              type='button'
+                              onClick={() =>
+                                setTravelDates(prev =>
+                                  prev.filter(x => x.id !== d.id)
+                                )
+                              }
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Status</label>
+                    <select
+                      value={status}
+                      onChange={e => setStatus(e.target.value)}
+                    >
+                      <option value='active'>Active</option>
+                      <option value='inactive'>Inactive</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className='form_row'>
-                <label>Description</label>
-                <textarea
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder='Short description'
-                />
+
+              {/* Pricing Section */}
+              <div className='form_section'>
+                <h5 className='section_title'>Pricing</h5>
+                <div className='form_grid pricing_grid'>
+                  <div className='form_row'>
+                    <label>Base Price *</label>
+                    <input
+                      type='number'
+                      value={price}
+                      onChange={e => setPrice(e.target.value)}
+                      placeholder='999'
+                    />
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Adult Price</label>
+                    <input
+                      type='number'
+                      value={adultPrice}
+                      onChange={e => setAdultPrice(e.target.value)}
+                      placeholder='1299'
+                    />
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Child Price</label>
+                    <input
+                      type='number'
+                      value={childPrice}
+                      onChange={e => setChildPrice(e.target.value)}
+                      placeholder='899'
+                    />
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Infant Price</label>
+                    <input
+                      type='number'
+                      value={infantPrice}
+                      onChange={e => setInfantPrice(e.target.value)}
+                      placeholder='499'
+                    />
+                  </div>
+                </div>
               </div>
-              <div className='form_row'>
-                <label>Days</label>
-                <select value={days} onChange={e => setDays(e.target.value)}>
-                  <option value=''>Select days</option>
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className='form_row'>
-                <label>Nights</label>
-                <select
-                  value={nights}
-                  onChange={e => setNights(e.target.value)}
-                >
-                  <option value=''>Select nights</option>
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className='form_row'>
-                <label>Travel dates</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    type='date'
-                    value={travelDate}
-                    onChange={e => setTravelDate(e.target.value)}
+
+              {/* Package Details Section */}
+              <div className='form_section'>
+                <h5 className='section_title'>Package Details</h5>
+
+                <div className='form_row full_width'>
+                  <label>Overview</label>
+                  <textarea
+                    value={overview}
+                    onChange={e => setOverview(e.target.value)}
+                    placeholder='Enter package overview'
+                    rows={4}
                   />
+                </div>
+
+                <div className='form_row full_width'>
+                  <label>Holiday Description</label>
+                  <TipTapEditor
+                    content={holidayDescHtml}
+                    onChange={setHolidayDescHtml}
+                    height={180}
+                  />
+                </div>
+
+                <div className='form_row full_width'>
+                  <label>Terms & Conditions</label>
+                  <TipTapEditor
+                    content={termsHtml}
+                    onChange={setTermsHtml}
+                    height={140}
+                  />
+                </div>
+
+                <div className='form_row full_width'>
+                  <label>Inclusions</label>
+                  <TipTapEditor
+                    content={inclusionHtml}
+                    onChange={setInclusionHtml}
+                    height={140}
+                  />
+                </div>
+
+                <div className='form_row full_width'>
+                  <label>Exclusions</label>
+                  <TipTapEditor
+                    content={exclusionHtml}
+                    onChange={setExclusionHtml}
+                    height={140}
+                  />
+                </div>
+              </div>
+
+              {/* Itinerary Section */}
+              <div className='form_section'>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <h5 className='section_title'>Itinerary</h5>
                   <button
-                    className='itinerary_remove_btn'
-                    onClick={() => {
-                      if (!travelDate) {
-                        toast.error('Please select a date to add');
-                        return;
-                      }
-                      if (travelDates.some(t => t.value === travelDate)) {
-                        toast.error('Date already added');
-                        return;
-                      }
-                      setTravelDates(prev => [
+                    type='button'
+                    className='btn_add_itinerary'
+                    onClick={() =>
+                      setItinerary(prev => [
                         ...prev,
                         {
-                          id: crypto.randomUUID?.() || String(Date.now()),
-                          value: travelDate,
+                          id:
+                            crypto.randomUUID?.() ||
+                            String(Date.now() + prev.length),
+                          heading: '',
+                          desc: '',
                         },
-                      ]);
-                      setTravelDate('');
-                    }}
+                      ])
+                    }
                   >
-                    Add date
+                    + Add Day
                   </button>
                 </div>
-                {travelDates.length > 0 && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                      flexWrap: 'wrap',
-                      marginTop: 8,
-                    }}
-                  >
-                    {travelDates.map(d => (
-                      <button
-                        key={d.id}
-                        className='itinerary_remove_btn'
-                        onClick={() =>
-                          setTravelDates(prev =>
-                            prev.filter(x => x.id !== d.id)
-                          )
-                        }
-                      >
-                        {new Date(d.value).toLocaleDateString()} ×
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className='form_row'>
-                <label>Price</label>
-                <input
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  placeholder='e.g. 999'
-                />
-              </div>
-              <div className='form_row'>
-                <label>Adult price</label>
-                <input
-                  value={adultPrice}
-                  onChange={e => setAdultPrice(e.target.value)}
-                  placeholder='e.g. 1299'
-                />
-              </div>
-              <div className='form_row'>
-                <label>Child price</label>
-                <input
-                  value={childPrice}
-                  onChange={e => setChildPrice(e.target.value)}
-                  placeholder='e.g. 899'
-                />
-              </div>
-              <div className='form_row'>
-                <label>Infant price</label>
-                <input
-                  value={infantPrice}
-                  onChange={e => setInfantPrice(e.target.value)}
-                  placeholder='e.g. 499'
-                />
-              </div>
-              <div className='form_row'>
-                <label>Terms & Conditions (bullet points)</label>
-                <TipTapEditor
-                  content={termsHtml}
-                  onChange={setTermsHtml}
-                  height={140}
-                />
-              </div>
-              <div className='form_row'>
-                <label>Inclusions (bullet points)</label>
-                <TipTapEditor
-                  content={inclusionHtml}
-                  onChange={setInclusionHtml}
-                  height={140}
-                />
-              </div>
-              <div className='form_row'>
-                <label>Exclusions (bullet points)</label>
-                <TipTapEditor
-                  content={exclusionHtml}
-                  onChange={setExclusionHtml}
-                  height={140}
-                />
-              </div>
-              <div className='form_row'>
-                <label>Overview</label>
-                <textarea
-                  value={overview}
-                  onChange={e => setOverview(e.target.value)}
-                />
-              </div>
-              <div className='form_row'>
-                <label>Holiday Description</label>
-                <TipTapEditor
-                  content={holidayDescHtml}
-                  onChange={setHolidayDescHtml}
-                  height={180}
-                />
-              </div>
-              <div className='form_row'>
-                <label>Itinerary</label>
-                {itinerary.map((item, idx) => (
-                  <div key={item.id} className='itinerary_item'>
-                    <div className='form_row'>
-                      <label>Heading</label>
-                      <TipTapEditor
-                        content={item.heading}
-                        onChange={v => {
-                          setItinerary(prev =>
-                            prev.map(x =>
-                              x.id === item.id ? { ...x, heading: v } : x
-                            )
-                          );
-                        }}
-                        height={100}
-                      />
+
+                <div className='itinerary_list'>
+                  {itinerary.map((item, idx) => (
+                    <div key={item.id} className='itinerary_item'>
+                      <div className='itinerary_header'>
+                        <span className='itinerary_day'>Day {idx + 1}</span>
+                        {itinerary.length > 1 && (
+                          <button
+                            type='button'
+                            className='btn_remove_itinerary'
+                            onClick={() =>
+                              setItinerary(prev =>
+                                prev.filter(x => x.id !== item.id)
+                              )
+                            }
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <div className='form_row'>
+                        <label>Heading</label>
+                        <TipTapEditor
+                          content={item.heading}
+                          onChange={v => {
+                            setItinerary(prev =>
+                              prev.map(x =>
+                                x.id === item.id ? { ...x, heading: v } : x
+                              )
+                            );
+                          }}
+                          height={100}
+                        />
+                      </div>
+                      <div className='form_row'>
+                        <label>Description</label>
+                        <TipTapEditor
+                          content={item.desc}
+                          onChange={v => {
+                            setItinerary(prev =>
+                              prev.map(x =>
+                                x.id === item.id ? { ...x, desc: v } : x
+                              )
+                            );
+                          }}
+                          height={140}
+                        />
+                      </div>
                     </div>
-                    <div className='form_row'>
-                      <label>Description</label>
-                      <TipTapEditor
-                        content={item.desc}
-                        onChange={v => {
-                          setItinerary(prev =>
-                            prev.map(x =>
-                              x.id === item.id ? { ...x, desc: v } : x
-                            )
-                          );
-                        }}
-                        height={140}
-                      />
-                    </div>
-                    <div className='itinerary_actions'>
-                      <button
-                        className='itinerary_remove_btn'
-                        onClick={() =>
-                          setItinerary(prev =>
-                            prev.filter(x => x.id !== item.id)
-                          )
-                        }
-                      >
-                        Remove item
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <button
-                  className='itinerary_remove_btn'
-                  onClick={() =>
-                    setItinerary(prev => [
-                      ...prev,
-                      {
-                        id:
-                          crypto.randomUUID?.() ||
-                          String(Date.now() + prev.length),
-                        heading: '',
-                        desc: '',
-                      },
-                    ])
-                  }
-                >
-                  + Add Itinerary Item
-                </button>
-              </div>
-              <div className='form_row'>
-                <label>Status</label>
-                <select
-                  value={status}
-                  onChange={e => setStatus(e.target.value)}
-                >
-                  <option value='active'>active</option>
-                  <option value='inactive'>inactive</option>
-                </select>
+                  ))}
+                </div>
               </div>
             </div>
             <div className='modal_footer'>

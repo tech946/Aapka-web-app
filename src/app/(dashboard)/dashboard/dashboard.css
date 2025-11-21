@@ -727,14 +727,20 @@
 }
 .modal {
   width: 520px;
+  max-width: 95vw;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   color: var(--text);
-  max-height: 80vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
+}
+
+.modal.category_modal {
+  width: 900px;
+  max-width: 95vw;
 }
 .modal_header {
   display: flex;
@@ -752,25 +758,359 @@
   cursor: pointer;
 }
 .modal_body {
-  padding: 16px;
+  padding: 20px;
   overflow: auto;
   flex: 1 1 auto;
 }
+
+/* Form Section Styling */
+.form_section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form_section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.section_title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 20px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: inline-block;
+}
+
+/* Form Grid Layout */
+.form_grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.pricing_grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
 .form_row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
 }
+
+.form_row.full_width {
+  grid-column: 1 / -1;
+  margin-bottom: 16px;
+}
+
+.form_row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
 .form_row input,
 .form_row textarea,
 .form_row select {
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   color: var(--text);
   outline: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form_row input:focus,
+.form_row textarea:focus,
+.form_row select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 76, 0, 0.1);
+}
+
+.form_row textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form_row input[type='file'] {
+  padding: 8px;
+  cursor: pointer;
+}
+
+/* Image Preview */
+.image_preview_container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.image_preview {
+  max-width: 100%;
+  max-height: 250px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn_remove_image {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn_remove_image:hover {
+  background: #fdd;
+  border-color: #fbb;
+}
+
+.upload_status {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Date Input Group */
+.date_input_group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.date_input_group input[type='date'] {
+  flex: 1;
+}
+
+.btn_add_date {
+  padding: 10px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn_add_date:hover {
+  background: #e64500;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 76, 0, 0.3);
+}
+
+/* Date Chips */
+.date_chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.date_chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+  border: 1px solid var(--badge-fg);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.date_chip button {
+  background: none;
+  border: none;
+  color: var(--badge-fg);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.date_chip button:hover {
+  transform: scale(1.2);
+}
+
+/* Itinerary Styling - Horizontal Layout */
+.itinerary_list {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  scroll-snap-type: x mandatory;
+}
+
+.itinerary_list::-webkit-scrollbar {
+  height: 8px;
+}
+
+.itinerary_list::-webkit-scrollbar-track {
+  background: var(--panel-2);
+  border-radius: 4px;
+}
+
+.itinerary_list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.itinerary_list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.itinerary_item {
+  min-width: 400px;
+  max-width: 400px;
+  padding: 24px;
+  /* background: var(--panel-2); */
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  scroll-snap-align: start;
+  position: relative;
+}
+
+.itinerary_item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(255, 76, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+.itinerary_item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), #ff7a45);
+  border-radius: 16px 16px 0 0;
+}
+
+.itinerary_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 11px;
+  border-bottom: 2px solid var(--border);
+  margin-top: 8px;
+}
+
+.itinerary_day {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--accent), #ff7a45);
+  padding: 4px 16px;
+  border-radius: 8px;
+  /* box-shadow: 0 2px 8px rgba(255, 76, 0, 0.3); */
+  letter-spacing: 0.5px;
+}
+
+.btn_add_itinerary {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--accent), #ff7a45);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 76, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.btn_add_itinerary:hover {
+  background: linear-gradient(135deg, #e64500, #ff6a35);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 76, 0, 0.4);
+}
+
+.itinerary_item .form_row {
+  margin-bottom: 20px;
+}
+
+.itinerary_item .form_row:last-child {
+  margin-bottom: 0;
+}
+
+.itinerary_item .form_row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.btn_remove_itinerary {
+  padding: 8px 14px;
+  background: white;
+  color: #c33;
+  border: 2px solid #fcc;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn_remove_itinerary:hover {
+  background: #fee;
+  border-color: #c33;
+  transform: translateX(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form_grid,
+  .pricing_grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form_section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+  }
+
+  .modal_body {
+    padding: 16px;
+  }
+
+  .itinerary_item {
+    min-width: 320px;
+    max-width: 320px;
+    padding: 20px;
+  }
+
+  .itinerary_day {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
 }
 .modal_footer {
   display: flex;
@@ -1004,12 +1344,4 @@
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
-}
-.modal.category_modal label {
-  font-size: 12px;
-}
-.modal.category_modal input,
-.modal.category_modal select,
-.modal.category_modal textarea {
-  font-size: 12px;
 }
