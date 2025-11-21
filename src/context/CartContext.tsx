@@ -90,7 +90,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const result = await response.json();
 
           if (!response.ok || !result.success) {
-            console.error('Cart validation failed:', result.error);
             // Remove invalid items
             if (result.invalidItems) {
               const invalidIds = result.invalidItems.map(
@@ -131,7 +130,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
           setIsValidating(false);
         } catch (error) {
-          console.error('Error validating cart:', error);
           setIsValidating(false);
         }
       })();
@@ -169,7 +167,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Error loading cart from localStorage:', error);
+      // Error loading cart from localStorage
     } finally {
       setIsLoaded(true);
     }
@@ -190,7 +188,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
       } catch (error) {
-        console.error('Error saving cart to localStorage:', error);
+        // Error saving cart to localStorage
       }
     }
   }, [cartItems, isLoaded]);

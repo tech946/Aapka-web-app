@@ -136,10 +136,8 @@ export default function CheckoutPage() {
         setIsLoadingLocation(true);
         // Detect location
         const location = await detectUserLocation();
-        console.log('Checkout page - Detected location:', location);
         setUserLocation(location);
       } catch (error) {
-        console.error('Error initializing:', error);
         // Default to non-India
         const defaultLocation = {
           country: 'Unknown',
@@ -148,7 +146,6 @@ export default function CheckoutPage() {
           currency: 'AED',
           currencySymbol: 'AED',
         };
-        console.log('Checkout page - Using default location:', defaultLocation);
         setUserLocation(defaultLocation);
       } finally {
         setIsLoadingLocation(false);
@@ -421,7 +418,6 @@ export default function CheckoutPage() {
         billingCountry: userLocation.countryCode || 'AE',
       });
     } catch (error: any) {
-      console.error('Error processing payment:', error);
       toast.error(
         error.message || 'Failed to process payment. Please try again.'
       );
@@ -478,7 +474,6 @@ export default function CheckoutPage() {
       document.body.appendChild(form);
       form.submit();
     } catch (error: any) {
-      console.error('HDFC initialization error:', error);
       toast.error(error.message || 'Failed to initialize payment');
       setIsSubmitting(false);
     }
@@ -536,7 +531,6 @@ export default function CheckoutPage() {
       document.body.appendChild(form);
       form.submit(); // Auto-submit form (like JavaScript in JSP example)
     } catch (error: any) {
-      console.error('CCAvenue initialization error:', error);
       toast.error(error.message || 'Failed to initialize payment');
       setIsSubmitting(false);
     }

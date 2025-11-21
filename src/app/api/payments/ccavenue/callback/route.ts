@@ -40,7 +40,7 @@ async function handleCallback(req: NextRequest) {
           }
         }
       } catch (e) {
-        console.error('Error parsing POST data:', e);
+        // Error parsing POST data
       }
     } else {
       // GET request - check query params (for testing/debugging)
@@ -49,7 +49,6 @@ async function handleCallback(req: NextRequest) {
     }
 
     if (!encryptedResponse) {
-      console.error('No encResp parameter found in CCAvenue callback');
       return NextResponse.redirect(
         new URL('/checkout?error=payment_failed', req.nextUrl.origin)
       );
@@ -62,7 +61,6 @@ async function handleCallback(req: NextRequest) {
     // const workingKey = process.env.CCAVENUE_WORKING_KEY || '5E25D58B6BF1633A1525984EB4E2E944';
 
     if (!workingKey) {
-      console.error('CCAvenue working key not configured');
       return NextResponse.redirect(
         new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin)
       );
@@ -107,7 +105,6 @@ async function handleCallback(req: NextRequest) {
       .eq('id', bookingId);
 
     if (updateError) {
-      console.error('Error updating booking:', updateError);
       return NextResponse.redirect(
         new URL(
           `/checkout?error=payment_verified_but_update_failed&bookingId=${bookingId}`,
@@ -121,7 +118,6 @@ async function handleCallback(req: NextRequest) {
       new URL(`/checkout/success?bookingId=${bookingId}`, req.nextUrl.origin)
     );
   } catch (error: any) {
-    console.error('Error processing CCAvenue callback:', error);
     return NextResponse.redirect(
       new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin)
     );

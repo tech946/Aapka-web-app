@@ -50,25 +50,6 @@ export async function POST(req: NextRequest) {
     // const accessCode = process.env.CCAVENUE_ACCESS_CODE || 'AVLG05MJ58AS49GLSA';
     // const workingKey = process.env.CCAVENUE_WORKING_KEY || '5E25D58B6BF1633A1525984EB4E2E944';
 
-    console.log('=== USING CCAVENUE CREDENTIALS ===');
-    console.log('Merchant ID:', merchantId);
-    console.log('Access Code:', accessCode);
-    console.log('Working Key length:', workingKey.length);
-    console.log('==================================');
-
-    // Log for debugging (remove in production)
-    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/payments/ccavenue/callback`;
-    console.log('CCAvenue credentials check:', {
-      merchantId: merchantId.substring(0, 3) + '...',
-      accessCode: accessCode.substring(0, 3) + '...',
-      hasWorkingKey: workingKey.length > 0,
-      redirectUrl: redirectUrl,
-      appUrl:
-        process.env.NEXT_PUBLIC_APP_URL ||
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        'http://localhost:3000',
-    });
-
     // Create order ID (max 30 chars for CCAvenue)
     // Format: BK<last-12-chars-of-bookingId><last-6-digits-of-timestamp>
     // Example: BK123456789abc987654 (20 chars total, well under 30 limit)
@@ -79,10 +60,7 @@ export async function POST(req: NextRequest) {
     // Prepare payment parameters according to CCAvenue official documentation
     // Required parameters: merchant_id, order_id, currency, amount, redirect_url, cancel_url, language
     // merchant_id MUST be in encrypted data (not as separate form field)
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
     const paymentParams: Record<string, string> = {
       merchant_id: merchantId, // Required - must be in encrypted data
@@ -143,10 +121,11 @@ export async function POST(req: NextRequest) {
     // Build the payment URL exactly as per CCAvenue official JSP example
     // IMPORTANT: encRequest and access_code are sent as POST form data, NOT in URL
     // URL only contains: base_url + command parameter
-    const ccavenueBaseUrl = 'https://secure.ccavenue.ae'; // Official documentation URL
+    const ccavenueBaseUrl = 'https://secure.ccavenue.ae'; // Official documentation uses .com
 
     // Clean URL - NO parameters except command (as per official JSP example)
     const paymentActionUrl = `${ccavenueBaseUrl}/transaction/transaction.do?command=initiateTransaction`;
+
     // Return data for frontend to create form submission
     return NextResponse.json({
       success: true,
@@ -156,7 +135,6 @@ export async function POST(req: NextRequest) {
       orderId,
     });
   } catch (error: any) {
-    console.error('Error creating CCAvenue order:', error);
     return NextResponse.json(
       { error: error?.message || 'Failed to create payment order' },
       { status: 500 }

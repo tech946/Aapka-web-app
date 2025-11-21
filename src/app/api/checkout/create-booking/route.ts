@@ -146,7 +146,6 @@ export async function POST(req: NextRequest) {
 
         uploadedDocuments.push(passengerDocs);
       } catch (error) {
-        console.error(`Error uploading documents for passenger ${i}:`, error);
         return NextResponse.json(
           {
             error: `Failed to upload documents for passenger ${i + 1}`,
@@ -228,7 +227,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (bookingError) {
-      console.error('Error creating booking:', bookingError);
       return NextResponse.json(
         { error: 'Failed to create booking', details: bookingError.message },
         { status: 500 }
@@ -241,7 +239,6 @@ export async function POST(req: NextRequest) {
       booking,
     });
   } catch (error: any) {
-    console.error('Error in create-booking:', error);
     return NextResponse.json(
       { error: error?.message || 'Unexpected error occurred' },
       { status: 500 }
