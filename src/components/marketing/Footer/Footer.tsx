@@ -126,7 +126,7 @@ export default function Footer() {
               <div>
                 <Image
                   className='mb-2'
-                  src='/aapka-tourism-logo.png'
+                  src='/aapka-tourism-logo-footer.png'
                   alt='Aapka Tourism'
                   width={80}
                   height={100}

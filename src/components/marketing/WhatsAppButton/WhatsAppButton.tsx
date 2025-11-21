@@ -4,7 +4,7 @@ import Link from 'next/link';
 import './whatsapp-button.css';
 
 export default function WhatsAppButton() {
-  const phoneNumber = '+971565798798';
+  const phoneNumber = '+971567809468';
   const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}`;
 
   return (
