@@ -1,7 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import Link from 'next/link';
 import './styles.css';
-// @ts-expect-error - next app dir client import
 import AddPackageClient from './AddPackageClient';
 import CategoryPackagesClient from './CategoryPackagesClient';
 
@@ -73,11 +72,19 @@ export default async function CategoryDetailPage({
       <div className='table_toolbar category_toolbar'>
         <div />
         <div className='table_actions'>
-          <AddPackageClient categoryId={category.id} />
+          <AddPackageClient
+            categoryId={category.id}
+            categorySlug={decoded}
+            categoryName={category.name}
+          />
         </div>
       </div>
 
-      <CategoryPackagesClient categoryId={category.id} />
+      <CategoryPackagesClient
+        categoryId={category.id}
+        categorySlug={decoded}
+        categoryName={category.name}
+      />
 
       <div className='table_pagination category_back_pagination'>
         <div />

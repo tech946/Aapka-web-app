@@ -86,7 +86,30 @@ export default function CartPage() {
     type: 'adults' | 'children' | 'infants',
     delta: number
   ) => {
-    const newValue = Math.max(0, (item[type] || 0) + delta);
+    const currentValue = item[type] || 0;
+    let newValue = currentValue + delta;
+    const isOfferPackage = item.categorySlug === 'offer-packages';
+
+    // Prevent adults from going below minimum
+    if (type === 'adults') {
+      if (isOfferPackage) {
+        // Offer packages require minimum 2 adults
+        if (newValue < 2) {
+          newValue = 2;
+        }
+      } else {
+        // Regular packages require minimum 1 adult
+        if (newValue < 1) {
+          newValue = 1;
+        }
+      }
+    } else {
+      // Children and infants can't go below 0
+      if (newValue < 0) {
+        newValue = 0;
+      }
+    }
+
     const updates: any = { [type]: newValue };
 
     // Update cart item (price will be recalculated server-side)
@@ -191,7 +214,11 @@ export default function CartPage() {
                           onClick={() =>
                             handleQuantityChange(item, 'adults', -1)
                           }
-                          disabled={item.adults === 0}
+                          disabled={
+                            item.categorySlug === 'offer-packages'
+                              ? item.adults <= 2
+                              : item.adults <= 1
+                          }
                           className='cart-quantity-button'
                         >
                           <Minus size={16} />

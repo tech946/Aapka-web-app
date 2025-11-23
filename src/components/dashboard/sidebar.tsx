@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { PriceMasterModal } from '@/app/(dashboard)/dashboard/price-master/PriceMasterClient';
+import { PlatformFeeModal } from '@/app/(dashboard)/dashboard/platform-fee/PlatformFeeClient';
 
 type Category = { id: string; name: string };
 
@@ -192,6 +193,9 @@ export function Sidebar() {
 
         {/* Price Master - Button to open modal */}
         <PriceMasterSidebarButton />
+
+        {/* Platform Fee - Button to open modal */}
+        <PlatformFeeSidebarButton />
       </div>
     </div>
   );
@@ -233,6 +237,50 @@ function PriceMasterSidebarButton() {
         <span>Price Master</span>
       </button>
       <PriceMasterModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
+  );
+}
+
+function PlatformFeeSidebarButton() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className={`sidebar_item ${pathname === '/dashboard/platform-fee' ? 'active' : ''}`}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          width='24'
+          height='24'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='2'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          className='lucide lucide-percent w-16 h-16'
+          aria-hidden='true'
+        >
+          <line x1='19' x2='5' y1='5' y2='19'></line>
+          <circle cx='6.5' cy='6.5' r='2.5'></circle>
+          <circle cx='17.5' cy='17.5' r='2.5'></circle>
+        </svg>
+        <span>Platform Fee</span>
+      </button>
+      <PlatformFeeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

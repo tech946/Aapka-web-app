@@ -22,8 +22,12 @@ type Pkg = {
 
 export default function CategoryPackagesClient({
   categoryId,
+  categorySlug,
+  categoryName,
 }: {
   categoryId: string;
+  categorySlug: string;
+  categoryName: string;
 }) {
   const [rows, setRows] = useState<Pkg[]>([]);
   const [total, setTotal] = useState(0);
@@ -357,7 +361,12 @@ export default function CategoryPackagesClient({
                         alignItems: 'center',
                       }}
                     >
-                      <EditPackageClient pkg={p} categoryId={categoryId} />
+                      <EditPackageClient
+                        pkg={p}
+                        categoryId={categoryId}
+                        categorySlug={categorySlug}
+                        categoryName={categoryName}
+                      />
                       <button
                         className='btn_secondary btn_small btn_danger'
                         onClick={() =>

@@ -684,6 +684,49 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   cursor: not-allowed;
 }
 
+/* Unavailable dates (booking slots) - UAE Tours only */
+.custom-calendar .rdp-day_unavailable {
+  position: relative;
+  color: #d1d5db !important;
+  cursor: not-allowed !important;
+  background: #f9fafb !important;
+  opacity: 0.6;
+}
+
+.custom-calendar .rdp-day_unavailable:hover {
+  background: #f3f4f6 !important;
+}
+
+.custom-calendar .rdp-day_unavailable:hover::after {
+  content: 'Not available';
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.custom-calendar .rdp-day_unavailable:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+  z-index: 1000;
+  pointer-events: none;
+}
+
 .custom-calendar .rdp-day_outside {
   color: #9ca3af;
 }
@@ -1384,6 +1427,49 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   .mobile-custom-calendar .rdp-day[disabled] {
     color: #d1d5db;
     cursor: not-allowed;
+  }
+
+  /* Unavailable dates (booking slots) - UAE Tours only - Mobile */
+  .mobile-custom-calendar .rdp-day_unavailable {
+    position: relative;
+    color: #d1d5db !important;
+    cursor: not-allowed !important;
+    background: #f9fafb !important;
+    opacity: 0.6;
+  }
+
+  .mobile-custom-calendar .rdp-day_unavailable:hover {
+    background: #f3f4f6 !important;
+  }
+
+  .mobile-custom-calendar .rdp-day_unavailable:hover::after {
+    content: 'Not available';
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-custom-calendar .rdp-day_unavailable:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1f2937;
+    z-index: 1000;
+    pointer-events: none;
   }
 
   .mobile-custom-calendar .rdp-day_outside {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { ArrowDownUp, X } from 'lucide-react';
 
@@ -91,7 +92,7 @@ export function PriceMasterModal({ isOpen, onClose }: PriceMasterModalProps) {
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div className='modal_overlay' onClick={onClose}>
       <div
         className='modal price_master_modal'
@@ -193,6 +194,13 @@ export function PriceMasterModal({ isOpen, onClose }: PriceMasterModalProps) {
       </div>
     </div>
   );
+
+  // Render modal in a portal at document body level to avoid z-index issues
+  if (typeof window !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 }
 
 export default function PriceMasterClient() {

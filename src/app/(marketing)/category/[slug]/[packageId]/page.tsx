@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DayPicker } from 'react-day-picker';
-import { format } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { usesBookingSlots } from '@/lib/package-config';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
   detectUserLocation,
@@ -52,6 +53,11 @@ interface Package {
   holiday_description_html?: string | null;
   itinerary?: Array<{ heading: string; desc: string }> | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
+  booking_slots?: Array<{
+    id: string;
+    fromDate: string;
+    toDate: string;
+  }> | null;
   thumbnail_image?: string | null;
   created_at?: string | null;
 }
@@ -77,10 +83,19 @@ export default function PackageDetailsPage() {
   const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const [persons, setPersons] = useState({
-    adult: 0,
+    adult: 1, // Start with 1 adult minimum
     child: 0,
     infant: 0,
   });
+
+  // Initialize minimum adults: 1 for all packages, 2 for offer packages
+  useEffect(() => {
+    if (slug === 'offer-packages' && persons.adult < 2) {
+      setPersons(prev => ({ ...prev, adult: 2 }));
+    } else if (persons.adult < 1) {
+      setPersons(prev => ({ ...prev, adult: 1 }));
+    }
+  }, [slug]);
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [expandedItineraryItems, setExpandedItineraryItems] = useState<
     Set<number>
@@ -138,9 +153,19 @@ export default function PackageDetailsPage() {
   const getAvailableDates = useCallback((): string[] => {
     if (!pkg?.travel_dates) return [];
     if (Array.isArray(pkg.travel_dates)) {
-      return pkg.travel_dates.map((d: any) =>
-        typeof d === 'string' ? d : d.value
-      );
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sixDaysFromNow = new Date(today);
+      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
+
+      return pkg.travel_dates
+        .map((d: any) => (typeof d === 'string' ? d : d.value))
+        .filter((dateStr: string) => {
+          const date = new Date(dateStr);
+          date.setHours(0, 0, 0, 0);
+          // Only include dates that are more than 6 days from today (for all packages including offer packages)
+          return date > sixDaysFromNow;
+        });
     }
     return [];
   }, [pkg?.travel_dates]);
@@ -279,7 +304,26 @@ export default function PackageDetailsPage() {
     delta: number
   ) => {
     setPersons(prev => {
-      const newValue = Math.max(0, prev[type] + delta);
+      const isOfferPackage = slug === 'offer-packages';
+      let newValue = prev[type] + delta;
+
+      // Prevent negative values for children and infants
+      if (type !== 'adult' && newValue < 0) {
+        return prev;
+      }
+
+      // For offer packages, ensure minimum 2 adults
+      if (isOfferPackage && type === 'adult') {
+        if (newValue < 2) {
+          toast.error('Offer packages require a minimum of 2 adults');
+          return prev;
+        }
+      } else if (type === 'adult' && newValue < 1) {
+        // For all other packages, minimum 1 adult
+        toast.error('At least 1 adult is required');
+        return prev;
+      }
+
       return { ...prev, [type]: newValue };
     });
   };
@@ -301,6 +345,43 @@ export default function PackageDetailsPage() {
     }
   };
 
+  // Check if a date falls within any booking slot (for UAE Tours only)
+  const isDateInBookingSlot = (date: Date): boolean => {
+    if (!pkg?.booking_slots || !Array.isArray(pkg.booking_slots)) return false;
+
+    // Only apply to UAE tours - use slug from URL params
+    if (!slug || !usesBookingSlots(slug)) return false;
+
+    const dateToCheck = startOfDay(date);
+
+    return pkg.booking_slots.some(slot => {
+      const fromDate = startOfDay(new Date(slot.fromDate));
+      const toDate = endOfDay(new Date(slot.toDate));
+      return isWithinInterval(dateToCheck, { start: fromDate, end: toDate });
+    });
+  };
+
+  // Get disabled dates for DayPicker (for UAE Tours)
+  const getDisabledDates = (date: Date): boolean => {
+    const today = startOfDay(new Date());
+    const checkDate = startOfDay(date);
+
+    // Disable past dates
+    if (checkDate < today) return true;
+
+    // Only check booking slots for UAE tours - use slug from URL params
+    if (!slug || !usesBookingSlots(slug)) {
+      return false;
+    }
+
+    if (!pkg?.booking_slots || !Array.isArray(pkg.booking_slots)) {
+      return false;
+    }
+
+    // Disable dates in booking slots
+    return isDateInBookingSlot(date);
+  };
+
   const handleDateStringSelect = (dateString: string) => {
     setSelectedDateString(dateString);
     setSelectedDate(new Date(dateString));
@@ -310,21 +391,38 @@ export default function PackageDetailsPage() {
   const handleAddToCart = () => {
     if (!pkg) return;
 
-    // Validate that date is selected
+    // For offer packages, date is optional but can be selected
+    const isOfferPackage = slug === 'offer-packages';
+
+    // Get date (optional for offer packages, required for others)
     const dateToUse = isPackageType()
-      ? selectedDateString
+      ? selectedDateString || null
       : selectedDate
         ? selectedDate.toISOString().split('T')[0]
         : null;
 
-    if (!dateToUse) {
+    // Date is required for non-offer packages
+    if (!isOfferPackage && !dateToUse) {
       toast.error('Please select a date');
       return;
     }
 
-    // Validate that at least one person is selected
-    if (persons.adult === 0 && persons.child === 0 && persons.infant === 0) {
-      toast.error('Please select at least one person');
+    // Validate that at least one adult is selected
+    if (persons.adult === 0) {
+      toast.error('At least 1 adult is required');
+      return;
+    }
+
+    // Validate total passengers (can't be 0)
+    const totalPassengers = persons.adult + persons.child + persons.infant;
+    if (totalPassengers === 0) {
+      toast.error('Please select at least one passenger');
+      return;
+    }
+
+    // Validate minimum 2 adults for offer packages
+    if (isOfferPackage && persons.adult < 2) {
+      toast.error('Offer packages require a minimum of 2 adults');
       return;
     }
 
@@ -336,7 +434,7 @@ export default function PackageDetailsPage() {
       adults: persons.adult,
       children: persons.child,
       infants: persons.infant,
-      selectedDate: dateToUse,
+      selectedDate: dateToUse || null, // Use null instead of undefined for offer packages
     };
 
     addToCart(cartItem);
@@ -779,7 +877,11 @@ export default function PackageDetailsPage() {
                           <button
                             className='mobile-counter-button'
                             onClick={() => updatePersonCount('adult', -1)}
-                            disabled={persons.adult === 0}
+                            disabled={
+                              slug === 'offer-packages'
+                                ? persons.adult <= 2
+                                : persons.adult <= 1
+                            }
                           >
                             <Minus className='mobile-counter-icon' />
                           </button>
@@ -934,12 +1036,15 @@ export default function PackageDetailsPage() {
                           mode='single'
                           selected={selectedDate}
                           onSelect={handleDateSelect}
-                          disabled={{ before: new Date() }}
+                          disabled={getDisabledDates}
                           numberOfMonths={1}
                           showOutsideDays={true}
                           month={month}
                           onMonthChange={setMonth}
                           className='mobile-custom-calendar'
+                          modifiersClassNames={{
+                            disabled: 'rdp-day_unavailable',
+                          }}
                         />
                         <div className='mobile-calendar-footer'>
                           <button
@@ -1010,7 +1115,11 @@ export default function PackageDetailsPage() {
                         <button
                           className='counter-button'
                           onClick={() => updatePersonCount('adult', -1)}
-                          disabled={persons.adult === 0}
+                          disabled={
+                            slug === 'offer-packages'
+                              ? persons.adult <= 2
+                              : persons.adult <= 1
+                          }
                         >
                           <Minus className='counter-icon' />
                         </button>
@@ -1153,12 +1262,15 @@ export default function PackageDetailsPage() {
                         mode='single'
                         selected={selectedDate}
                         onSelect={handleDateSelect}
-                        disabled={{ before: new Date() }}
+                        disabled={getDisabledDates}
                         numberOfMonths={1}
                         showOutsideDays={true}
                         month={month}
                         onMonthChange={setMonth}
                         className='custom-calendar'
+                        modifiersClassNames={{
+                          disabled: 'rdp-day_unavailable',
+                        }}
                       />
                       <div className='calendar-footer'>
                         <button

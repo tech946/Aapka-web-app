@@ -185,11 +185,15 @@
   gap: 12px;
 }
 .header button.btn_primary {
-  background: var(--accent);
-  color: #fff;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.header button.btn_primary:hover {
+  background: transparent;
 }
 .header button.btn_primary svg {
-  fill: #fff;
+  stroke: var(--accent);
 }
 .header button {
   display: flex;
@@ -723,7 +727,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 99999 !important;
+  isolation: isolate;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 .modal {
   width: 520px;
@@ -736,6 +745,9 @@
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 100000 !important;
+  isolation: isolate;
 }
 
 .modal.category_modal {
@@ -1155,6 +1167,18 @@
   cursor: pointer;
   user-select: none;
   pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure table elements stay below modals */
+.table_wrapper,
+.table,
+.table tbody,
+.table td,
+.table th {
+  position: relative;
+  z-index: 1;
 }
 
 .status_toggle {

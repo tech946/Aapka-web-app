@@ -8,6 +8,9 @@ import {
   uploadImageToCloudinary,
   deleteImageFromCloudinary,
 } from '@/lib/cloudinary';
+import { usesBookingSlots } from '@/lib/package-config';
+import BookingSlotsCalendar from './BookingSlotsCalendar';
+import '../../dashboard.css';
 
 type Pkg = {
   package_id: string;
@@ -17,6 +20,11 @@ type Pkg = {
   package_days?: number | null;
   package_nights?: number | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
+  booking_slots?: Array<{
+    id: string;
+    fromDate: string;
+    toDate: string;
+  }> | null;
   adult_price?: number | null;
   child_price?: number | null;
   infant_price?: number | null;
@@ -32,9 +40,13 @@ type Pkg = {
 export default function EditPackageClient({
   pkg,
   categoryId,
+  categorySlug,
+  categoryName,
 }: {
   pkg: Pkg;
   categoryId: string;
+  categorySlug: string;
+  categoryName: string;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(pkg.package_name || '');
@@ -48,6 +60,12 @@ export default function EditPackageClient({
   const [travelDates, setTravelDates] = useState<
     Array<{ id: string; value: string }>
   >([]);
+  // Booking slots (unavailable date ranges) for UAE Tours
+  const [bookingSlots, setBookingSlots] = useState<
+    Array<{ id: string; fromDate: string; toDate: string }>
+  >([]);
+
+  const usesSlots = usesBookingSlots(categorySlug);
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
@@ -100,15 +118,25 @@ export default function EditPackageClient({
       }));
       setItinerary(norm);
     }
-    if (Array.isArray(pkg.travel_dates)) {
-      const normalized = (pkg.travel_dates as any[]).map((d: any) =>
-        typeof d === 'string'
-          ? { id: crypto.randomUUID?.() || String(Date.now()) + d, value: d }
-          : d
-      );
-      setTravelDates(normalized);
+    if (usesSlots) {
+      // Load booking slots for UAE Tours
+      if (Array.isArray(pkg.booking_slots)) {
+        setBookingSlots(pkg.booking_slots);
+      } else {
+        setBookingSlots([]);
+      }
     } else {
-      setTravelDates([]);
+      // Load travel dates for other categories
+      if (Array.isArray(pkg.travel_dates)) {
+        const normalized = (pkg.travel_dates as any[]).map((d: any) =>
+          typeof d === 'string'
+            ? { id: crypto.randomUUID?.() || String(Date.now()) + d, value: d }
+            : d
+        );
+        setTravelDates(normalized);
+      } else {
+        setTravelDates([]);
+      }
     }
     // Set thumbnail image
     const thumbUrl = pkg.thumbnail_image || '';
@@ -286,59 +314,66 @@ export default function EditPackageClient({
                     </select>
                   </div>
 
-                  <div className='form_row full_width'>
-                    <label>Travel Dates</label>
-                    <div className='date_input_group'>
-                      <input
-                        type='date'
-                        value={travelDate}
-                        onChange={e => setTravelDate(e.target.value)}
-                      />
-                      <button
-                        type='button'
-                        className='btn_add_date'
-                        onClick={() => {
-                          if (!travelDate) {
-                            toast.error('Please select a date to add');
-                            return;
-                          }
-                          if (travelDates.some(t => t.value === travelDate)) {
-                            toast.error('Date already added');
-                            return;
-                          }
-                          setTravelDates(prev => [
-                            ...prev,
-                            {
-                              id: crypto.randomUUID?.() || String(Date.now()),
-                              value: travelDate,
-                            },
-                          ]);
-                          setTravelDate('');
-                        }}
-                      >
-                        + Add Date
-                      </button>
-                    </div>
-                    {travelDates.length > 0 && (
-                      <div className='date_chips'>
-                        {travelDates.map(d => (
-                          <span key={d.id} className='date_chip'>
-                            {new Date(d.value).toLocaleDateString()}
-                            <button
-                              type='button'
-                              onClick={() =>
-                                setTravelDates(prev =>
-                                  prev.filter(x => x.id !== d.id)
-                                )
-                              }
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
+                  {usesSlots ? (
+                    <BookingSlotsCalendar
+                      bookingSlots={bookingSlots}
+                      onBookingSlotsChange={setBookingSlots}
+                    />
+                  ) : (
+                    <div className='form_row full_width'>
+                      <label>Travel Dates</label>
+                      <div className='date_input_group'>
+                        <input
+                          type='date'
+                          value={travelDate}
+                          onChange={e => setTravelDate(e.target.value)}
+                        />
+                        <button
+                          type='button'
+                          className='btn_add_date'
+                          onClick={() => {
+                            if (!travelDate) {
+                              toast.error('Please select a date to add');
+                              return;
+                            }
+                            if (travelDates.some(t => t.value === travelDate)) {
+                              toast.error('Date already added');
+                              return;
+                            }
+                            setTravelDates(prev => [
+                              ...prev,
+                              {
+                                id: crypto.randomUUID?.() || String(Date.now()),
+                                value: travelDate,
+                              },
+                            ]);
+                            setTravelDate('');
+                          }}
+                        >
+                          + Add Date
+                        </button>
                       </div>
-                    )}
-                  </div>
+                      {travelDates.length > 0 && (
+                        <div className='date_chips'>
+                          {travelDates.map(d => (
+                            <span key={d.id} className='date_chip'>
+                              {new Date(d.value).toLocaleDateString()}
+                              <button
+                                type='button'
+                                onClick={() =>
+                                  setTravelDates(prev =>
+                                    prev.filter(x => x.id !== d.id)
+                                  )
+                                }
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -581,7 +616,9 @@ export default function EditPackageClient({
                           category_id: categoryId,
                           days: days ? Number(days) : undefined,
                           nights: nights ? Number(nights) : undefined,
-                          travel_dates: travelDates,
+                          ...(usesSlots
+                            ? { booking_slots: bookingSlots }
+                            : { travel_dates: travelDates }),
                           adult_price: adultPrice
                             ? Number(adultPrice)
                             : undefined,

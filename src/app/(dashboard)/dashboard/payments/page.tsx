@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 type PaymentRow = {
   id: string;
@@ -38,6 +39,8 @@ export default function PaymentsPage() {
     null
   );
   const [modalOpen, setModalOpen] = useState(false);
+  const [packageDetails, setPackageDetails] = useState<Record<string, any>>({});
+  const [loadingPackages, setLoadingPackages] = useState(false);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / limit)),
@@ -169,9 +172,283 @@ export default function PaymentsPage() {
     }).format(amount);
   };
 
-  const handleViewDetails = (payment: PaymentRow) => {
+  const handleViewDetails = async (payment: PaymentRow) => {
     setSelectedPayment(payment);
     setModalOpen(true);
+    setPackageDetails({});
+    setLoadingPackages(true);
+
+    // Fetch package details for cart items
+    if (payment.cart_items && Array.isArray(payment.cart_items)) {
+      const packageIds = [
+        ...new Set(
+          payment.cart_items
+            .map((item: any) => item.packageId)
+            .filter((id: any) => id)
+        ),
+      ];
+
+      if (packageIds.length > 0) {
+        try {
+          // Fetch all packages once and filter by IDs
+          const res = await fetch(`/api/packages?status=all&limit=10000`);
+          if (res.ok) {
+            const json = await res.json();
+            const detailsMap: Record<string, any> = {};
+            packageIds.forEach((packageId: string) => {
+              const packageData = json.data?.find(
+                (pkg: any) => pkg.package_id === packageId
+              );
+              if (packageData) {
+                detailsMap[packageId] = packageData;
+              }
+            });
+            setPackageDetails(detailsMap);
+          }
+        } catch (error) {
+          console.error('Failed to fetch package details:', error);
+        }
+      }
+    }
+    setLoadingPackages(false);
+  };
+
+  const handleExportSinglePayment = (payment: PaymentRow) => {
+    try {
+      const passengers = Array.isArray(payment.passengers)
+        ? payment.passengers
+        : [];
+      const excelData: any[] = [];
+
+      if (passengers.length === 0) {
+        excelData.push({
+          'Transaction ID': payment.payment_transaction_id || 'N/A',
+          'Payment Status': payment.payment_status,
+          'Booking Status': payment.booking_status,
+          'Payment Gateway': payment.payment_gateway || 'N/A',
+          'Payment Method': payment.payment_method || 'N/A',
+          'Payment Type': payment.payment_type || 'N/A',
+          'Total Amount': payment.total_amount,
+          'Payment Amount': payment.payment_amount || 0,
+          'Payment Currency': payment.payment_amount_currency || 'AED',
+          'Passenger Name': 'N/A',
+          Salutation: 'N/A',
+          'First Name': 'N/A',
+          'Last Name': 'N/A',
+          Email: 'N/A',
+          Phone: 'N/A',
+          WhatsApp: 'N/A',
+          Country: 'N/A',
+          Nationality: 'N/A',
+          'Passport Expiry': 'N/A',
+          'Pickup Location': 'N/A',
+          'Permanent Address': 'N/A',
+          'Applicant Photo': 'N/A',
+          'National ID Card': 'N/A',
+          'Passport Last Page': 'N/A',
+          'Passport Main Copy': 'N/A',
+          'Customer Notes': payment.customer_notes || '',
+          'Admin Notes': payment.notes || '',
+          'Created At': payment.created_at
+            ? format(new Date(payment.created_at), 'MMM dd, yyyy HH:mm:ss')
+            : 'N/A',
+          'Updated At': payment.updated_at
+            ? format(new Date(payment.updated_at), 'MMM dd, yyyy HH:mm:ss')
+            : 'N/A',
+        });
+      } else {
+        passengers.forEach((passenger: any) => {
+          const documents = passenger.documents || {};
+          excelData.push({
+            'Transaction ID': payment.payment_transaction_id || 'N/A',
+            'Payment Status': payment.payment_status,
+            'Booking Status': payment.booking_status,
+            'Payment Gateway': payment.payment_gateway || 'N/A',
+            'Payment Method': payment.payment_method || 'N/A',
+            'Payment Type': payment.payment_type || 'N/A',
+            'Total Amount': payment.total_amount,
+            'Payment Amount': payment.payment_amount || 0,
+            'Payment Currency': payment.payment_amount_currency || 'AED',
+            'Passenger Name':
+              `${passenger.salutation || ''} ${passenger.firstName || ''} ${passenger.lastName || ''}`.trim(),
+            Salutation: passenger.salutation || 'N/A',
+            'First Name': passenger.firstName || 'N/A',
+            'Last Name': passenger.lastName || 'N/A',
+            Email: passenger.email || 'N/A',
+            Phone: passenger.phone || 'N/A',
+            WhatsApp: passenger.whatsapp || 'N/A',
+            Country: passenger.country || 'N/A',
+            Nationality: passenger.nationality || 'N/A',
+            'Passport Expiry': passenger.passportExpiry || 'N/A',
+            'Pickup Location': passenger.pickupLocation || 'N/A',
+            'Permanent Address': passenger.permanentAddress || 'N/A',
+            'Applicant Photo': documents.applicantPhoto || 'N/A',
+            'National ID Card': documents.nationalIdCard || 'N/A',
+            'Passport Last Page': documents.passportLastPage || 'N/A',
+            'Passport Main Copy': documents.passportMainCopy || 'N/A',
+            'Customer Notes': payment.customer_notes || '',
+            'Admin Notes': payment.notes || '',
+            'Created At': payment.created_at
+              ? format(new Date(payment.created_at), 'MMM dd, yyyy HH:mm:ss')
+              : 'N/A',
+            'Updated At': payment.updated_at
+              ? format(new Date(payment.updated_at), 'MMM dd, yyyy HH:mm:ss')
+              : 'N/A',
+          });
+        });
+      }
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Payment Details');
+
+      // Auto-size columns
+      const colWidths = Object.keys(excelData[0] || {}).map(key => ({
+        wch: Math.max(key.length, 15),
+      }));
+      ws['!cols'] = colWidths;
+
+      // Generate filename
+      const transactionId =
+        payment.payment_transaction_id || payment.id.substring(0, 8);
+      const filename = `payment_${transactionId}_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.xlsx`;
+
+      // Write file
+      XLSX.writeFile(wb, filename);
+    } catch (error: any) {
+      console.error('Export error:', error);
+      alert('Failed to export: ' + (error?.message || 'Unknown error'));
+    }
+  };
+
+  const handleExportToExcel = async () => {
+    try {
+      // Fetch all payments (without pagination)
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '10000', // Large limit to get all
+      });
+      if (query) params.append('search', query);
+      if (paymentStatusFilter)
+        params.append('payment_status', paymentStatusFilter);
+      if (bookingStatusFilter)
+        params.append('booking_status', bookingStatusFilter);
+
+      const res = await fetch(`/api/bookings?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to load payments');
+      const json = await res.json();
+      const allPayments = json.data ?? [];
+
+      // Prepare data for Excel
+      const excelData: any[] = [];
+
+      allPayments.forEach((payment: PaymentRow) => {
+        const passengers = Array.isArray(payment.passengers)
+          ? payment.passengers
+          : [];
+
+        if (passengers.length === 0) {
+          // Add row even if no passengers
+          excelData.push({
+            'Transaction ID': payment.payment_transaction_id || 'N/A',
+            'Payment Status': payment.payment_status,
+            'Booking Status': payment.booking_status,
+            'Payment Gateway': payment.payment_gateway || 'N/A',
+            'Payment Method': payment.payment_method || 'N/A',
+            'Payment Type': payment.payment_type || 'N/A',
+            'Total Amount': payment.total_amount,
+            'Payment Amount': payment.payment_amount || 0,
+            'Payment Currency': payment.payment_amount_currency || 'INR',
+            'Passenger Name': 'N/A',
+            Salutation: 'N/A',
+            'First Name': 'N/A',
+            'Last Name': 'N/A',
+            Email: 'N/A',
+            Phone: 'N/A',
+            WhatsApp: 'N/A',
+            Country: 'N/A',
+            Nationality: 'N/A',
+            'Passport Expiry': 'N/A',
+            'Pickup Location': 'N/A',
+            'Permanent Address': 'N/A',
+            'Applicant Photo': 'N/A',
+            'National ID Card': 'N/A',
+            'Passport Last Page': 'N/A',
+            'Passport Main Copy': 'N/A',
+            'Customer Notes': payment.customer_notes || '',
+            'Admin Notes': payment.notes || '',
+            'Created At': payment.created_at
+              ? format(new Date(payment.created_at), 'MMM dd, yyyy HH:mm:ss')
+              : 'N/A',
+            'Updated At': payment.updated_at
+              ? format(new Date(payment.updated_at), 'MMM dd, yyyy HH:mm:ss')
+              : 'N/A',
+          });
+        } else {
+          // Add a row for each passenger
+          passengers.forEach((passenger: any) => {
+            const documents = passenger.documents || {};
+            excelData.push({
+              'Transaction ID': payment.payment_transaction_id || 'N/A',
+              'Payment Status': payment.payment_status,
+              'Booking Status': payment.booking_status,
+              'Payment Gateway': payment.payment_gateway || 'N/A',
+              'Payment Method': payment.payment_method || 'N/A',
+              'Payment Type': payment.payment_type || 'N/A',
+              'Total Amount': payment.total_amount,
+              'Payment Amount': payment.payment_amount || 0,
+              'Payment Currency': payment.payment_amount_currency || 'INR',
+              'Passenger Name':
+                `${passenger.salutation || ''} ${passenger.firstName || ''} ${passenger.lastName || ''}`.trim(),
+              Salutation: passenger.salutation || 'N/A',
+              'First Name': passenger.firstName || 'N/A',
+              'Last Name': passenger.lastName || 'N/A',
+              Email: passenger.email || 'N/A',
+              Phone: passenger.phone || 'N/A',
+              WhatsApp: passenger.whatsapp || 'N/A',
+              Country: passenger.country || 'N/A',
+              Nationality: passenger.nationality || 'N/A',
+              'Passport Expiry': passenger.passportExpiry || 'N/A',
+              'Pickup Location': passenger.pickupLocation || 'N/A',
+              'Permanent Address': passenger.permanentAddress || 'N/A',
+              'Applicant Photo': documents.applicantPhoto || 'N/A',
+              'National ID Card': documents.nationalIdCard || 'N/A',
+              'Passport Last Page': documents.passportLastPage || 'N/A',
+              'Passport Main Copy': documents.passportMainCopy || 'N/A',
+              'Customer Notes': payment.customer_notes || '',
+              'Admin Notes': payment.notes || '',
+              'Created At': payment.created_at
+                ? format(new Date(payment.created_at), 'MMM dd, yyyy HH:mm:ss')
+                : 'N/A',
+              'Updated At': payment.updated_at
+                ? format(new Date(payment.updated_at), 'MMM dd, yyyy HH:mm:ss')
+                : 'N/A',
+            });
+          });
+        }
+      });
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Payments');
+
+      // Auto-size columns
+      const colWidths = Object.keys(excelData[0] || {}).map(key => ({
+        wch: Math.max(key.length, 15),
+      }));
+      ws['!cols'] = colWidths;
+
+      // Generate filename with timestamp
+      const filename = `payments_export_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.xlsx`;
+
+      // Write file
+      XLSX.writeFile(wb, filename);
+    } catch (error: any) {
+      console.error('Export error:', error);
+      alert('Failed to export: ' + (error?.message || 'Unknown error'));
+    }
   };
 
   return (
@@ -276,7 +553,7 @@ export default function PaymentsPage() {
                         </div>
                       </div>
                     </td>
-                    <td>{formatCurrency(payment.total_amount)}</td>
+                    <td>{formatCurrency(payment.total_amount, 'AED')}</td>
                     <td>
                       {payment.payment_amount
                         ? formatCurrency(
@@ -354,7 +631,11 @@ export default function PaymentsPage() {
       {/* Details Modal */}
       {modalOpen && selectedPayment && (
         <div className='modal_overlay' onClick={() => setModalOpen(false)}>
-          <div className='modal_content' onClick={e => e.stopPropagation()}>
+          <div
+            className='modal_content'
+            onClick={e => e.stopPropagation()}
+            style={{ width: '800px', maxWidth: '90vw' }}
+          >
             <div className='modal_header'>
               <h3>Payment Details</h3>
               <button
@@ -404,7 +685,9 @@ export default function PaymentsPage() {
                   </div>
                   <div className='detail_item'>
                     <strong>Total Amount:</strong>
-                    <span>{formatCurrency(selectedPayment.total_amount)}</span>
+                    <span>
+                      {formatCurrency(selectedPayment.total_amount, 'AED')}
+                    </span>
                   </div>
                   <div className='detail_item'>
                     <strong>Payment Amount:</strong>
@@ -425,59 +708,334 @@ export default function PaymentsPage() {
                 {selectedPayment.passengers &&
                 Array.isArray(selectedPayment.passengers) ? (
                   selectedPayment.passengers.map(
-                    (passenger: any, idx: number) => (
-                      <div
-                        key={idx}
-                        style={{
-                          marginBottom: '16px',
-                          padding: '12px',
-                          backgroundColor: 'var(--panel-2)',
-                          borderRadius: '8px',
-                          border: '1px solid var(--border)',
-                        }}
-                      >
-                        <div className='detail_grid'>
-                          <div className='detail_item'>
-                            <strong>Name:</strong>
-                            <span>
-                              {passenger.salutation || ''}{' '}
-                              {passenger.firstName || ''}{' '}
-                              {passenger.lastName || ''}
-                            </span>
-                          </div>
-                          <div className='detail_item'>
-                            <strong>Email:</strong>
-                            <a
-                              href={`mailto:${passenger.email}`}
-                              style={{ color: 'var(--accent)' }}
+                    (passenger: any, idx: number) => {
+                      const documents = passenger.documents || {};
+                      const address = passenger.permanentAddress || '';
+                      const passengerTitle =
+                        idx === 0 ? 'Lead Passenger' : `Passenger ${idx + 1}`;
+
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            marginBottom: '16px',
+                            padding: '12px',
+                            backgroundColor: 'var(--panel-2)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                          }}
+                        >
+                          <h5
+                            style={{
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              color: 'var(--text)',
+                              margin: '0 0 12px 0',
+                              paddingBottom: '8px',
+                              width: 'max-content',
+                              borderBottom: '2px solid var(--accent)',
+                            }}
+                          >
+                            {passengerTitle}
+                          </h5>
+                          <div className='detail_grid'>
+                            <div className='detail_item'>
+                              <strong>Name:</strong>
+                              <span>
+                                {passenger.salutation || ''}{' '}
+                                {passenger.firstName || ''}{' '}
+                                {passenger.lastName || ''}
+                              </span>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>Email:</strong>
+                              <a
+                                href={`mailto:${passenger.email}`}
+                                style={{ color: 'var(--accent)' }}
+                              >
+                                {passenger.email || 'N/A'}
+                              </a>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>Phone:</strong>
+                              <a
+                                href={`tel:${passenger.phone}`}
+                                style={{ color: 'var(--accent)' }}
+                              >
+                                {passenger.phone || 'N/A'}
+                              </a>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>WhatsApp:</strong>
+                              <span>{passenger.whatsapp || 'N/A'}</span>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>Country:</strong>
+                              <span>{passenger.country || 'N/A'}</span>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>Nationality:</strong>
+                              <span>{passenger.nationality || 'N/A'}</span>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>Passport Expiry:</strong>
+                              <span>
+                                {passenger.passportExpiry
+                                  ? format(
+                                      new Date(passenger.passportExpiry),
+                                      'MMM dd, yyyy'
+                                    )
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                            <div className='detail_item'>
+                              <strong>Pickup Location:</strong>
+                              <span>{passenger.pickupLocation || 'N/A'}</span>
+                            </div>
+                            <div
+                              className='detail_item'
+                              style={{ gridColumn: '1 / -1' }}
                             >
-                              {passenger.email || 'N/A'}
-                            </a>
+                              <strong>Permanent Address:</strong>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                }}
+                              >
+                                <span
+                                  title={address || 'N/A'}
+                                  style={{
+                                    flex: 1,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {address || 'N/A'}
+                                </span>
+                                {address && address.length > 50 && (
+                                  <span
+                                    title={address}
+                                    style={{
+                                      cursor: 'help',
+                                      color: 'var(--accent)',
+                                      fontSize: '14px',
+                                      lineHeight: 1,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      padding: '2px 6px',
+                                      backgroundColor: 'var(--panel-2)',
+                                      borderRadius: '4px',
+                                      border: '1px solid var(--border)',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    i
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className='detail_item'>
-                            <strong>Phone:</strong>
-                            <a
-                              href={`tel:${passenger.phone}`}
-                              style={{ color: 'var(--accent)' }}
+
+                          {/* Documents Section */}
+                          {(documents.applicantPhoto ||
+                            documents.nationalIdCard ||
+                            documents.passportLastPage ||
+                            documents.passportMainCopy) && (
+                            <div
+                              style={{
+                                marginTop: '16px',
+                                paddingTop: '16px',
+                                borderTop: '1px solid var(--border)',
+                              }}
                             >
-                              {passenger.phone || 'N/A'}
-                            </a>
-                          </div>
-                          <div className='detail_item'>
-                            <strong>WhatsApp:</strong>
-                            <span>{passenger.whatsapp || 'N/A'}</span>
-                          </div>
-                          <div className='detail_item'>
-                            <strong>Country:</strong>
-                            <span>{passenger.country || 'N/A'}</span>
-                          </div>
-                          <div className='detail_item'>
-                            <strong>Nationality:</strong>
-                            <span>{passenger.nationality || 'N/A'}</span>
-                          </div>
+                              <strong
+                                style={{
+                                  fontSize: '12px',
+                                  color: 'var(--text-muted)',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                  marginBottom: '12px',
+                                  display: 'block',
+                                }}
+                              >
+                                Documents
+                              </strong>
+                              <div
+                                style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: 'repeat(2, 1fr)',
+                                  gap: '12px',
+                                }}
+                              >
+                                {documents.applicantPhoto && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '8px',
+                                    }}
+                                  >
+                                    <strong
+                                      style={{
+                                        fontSize: '11px',
+                                        color: 'var(--text-muted)',
+                                      }}
+                                    >
+                                      Applicant Photo
+                                    </strong>
+                                    <a
+                                      href={documents.applicantPhoto}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      style={{
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border)',
+                                      }}
+                                    >
+                                      <img
+                                        src={documents.applicantPhoto}
+                                        alt='Applicant Photo'
+                                        style={{
+                                          width: '100%',
+                                          height: '120px',
+                                          objectFit: 'cover',
+                                          display: 'block',
+                                        }}
+                                      />
+                                    </a>
+                                  </div>
+                                )}
+                                {documents.nationalIdCard && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '8px',
+                                    }}
+                                  >
+                                    <strong
+                                      style={{
+                                        fontSize: '11px',
+                                        color: 'var(--text-muted)',
+                                      }}
+                                    >
+                                      National ID Card
+                                    </strong>
+                                    <a
+                                      href={documents.nationalIdCard}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      style={{
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border)',
+                                      }}
+                                    >
+                                      <img
+                                        src={documents.nationalIdCard}
+                                        alt='National ID Card'
+                                        style={{
+                                          width: '100%',
+                                          height: '120px',
+                                          objectFit: 'cover',
+                                          display: 'block',
+                                        }}
+                                      />
+                                    </a>
+                                  </div>
+                                )}
+                                {documents.passportLastPage && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '8px',
+                                    }}
+                                  >
+                                    <strong
+                                      style={{
+                                        fontSize: '11px',
+                                        color: 'var(--text-muted)',
+                                      }}
+                                    >
+                                      Passport Last Page
+                                    </strong>
+                                    <a
+                                      href={documents.passportLastPage}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      style={{
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border)',
+                                      }}
+                                    >
+                                      <img
+                                        src={documents.passportLastPage}
+                                        alt='Passport Last Page'
+                                        style={{
+                                          width: '100%',
+                                          height: '120px',
+                                          objectFit: 'cover',
+                                          display: 'block',
+                                        }}
+                                      />
+                                    </a>
+                                  </div>
+                                )}
+                                {documents.passportMainCopy && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '8px',
+                                    }}
+                                  >
+                                    <strong
+                                      style={{
+                                        fontSize: '11px',
+                                        color: 'var(--text-muted)',
+                                      }}
+                                    >
+                                      Passport Main Copy
+                                    </strong>
+                                    <a
+                                      href={documents.passportMainCopy}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      style={{
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border)',
+                                      }}
+                                    >
+                                      <img
+                                        src={documents.passportMainCopy}
+                                        alt='Passport Main Copy'
+                                        style={{
+                                          width: '100%',
+                                          height: '120px',
+                                          objectFit: 'cover',
+                                          display: 'block',
+                                        }}
+                                      />
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )
+                      );
+                    }
                   )
                 ) : (
                   <div className='detail_message'>
@@ -485,6 +1043,162 @@ export default function PaymentsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Cart Items / Package Details Section */}
+              {selectedPayment.cart_items &&
+                Array.isArray(selectedPayment.cart_items) &&
+                selectedPayment.cart_items.length > 0 && (
+                  <div className='detail_section'>
+                    <h4 className='detail_section_title'>Package Details</h4>
+                    {loadingPackages ? (
+                      <div className='detail_message'>
+                        Loading package details...
+                      </div>
+                    ) : (
+                      selectedPayment.cart_items.map(
+                        (cartItem: any, idx: number) => {
+                          const packageData =
+                            packageDetails[cartItem.packageId];
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                marginBottom: '16px',
+                                padding: '12px',
+                                backgroundColor: 'var(--panel-2)',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)',
+                              }}
+                            >
+                              <h5
+                                style={{
+                                  fontSize: '14px',
+                                  fontWeight: 600,
+                                  color: 'var(--text)',
+                                  margin: '0 0 12px 0',
+                                  paddingBottom: '8px',
+                                  width: 'max-content',
+                                  borderBottom: '2px solid var(--accent)',
+                                }}
+                              >
+                                Package {idx + 1}
+                              </h5>
+                              <div className='detail_grid'>
+                                {packageData ? (
+                                  <>
+                                    {/* First Row: Package Name and Duration */}
+                                    <div className='detail_item'>
+                                      <strong>Package Name:</strong>
+                                      <span>
+                                        {packageData.package_name || 'N/A'}
+                                      </span>
+                                    </div>
+                                    <div className='detail_item'>
+                                      <strong>Duration:</strong>
+                                      <span>
+                                        {packageData.package_days || 0} Days/
+                                        {packageData.package_nights || 0} Nights
+                                      </span>
+                                    </div>
+
+                                    {/* Second Row: Adults, Children, Infants */}
+                                    <div className='detail_item'>
+                                      <strong>Adults:</strong>
+                                      <span>{cartItem.adults || 0}</span>
+                                    </div>
+                                    <div className='detail_item'>
+                                      <strong>Children:</strong>
+                                      <span>{cartItem.children || 0}</span>
+                                    </div>
+                                    <div className='detail_item'>
+                                      <strong>Infants:</strong>
+                                      <span>{cartItem.infants || 0}</span>
+                                    </div>
+
+                                    {/* Thumbnail Image */}
+                                    {packageData.thumbnail_image && (
+                                      <div
+                                        className='detail_item'
+                                        style={{ gridColumn: '1 / -1' }}
+                                      >
+                                        <strong>Thumbnail:</strong>
+                                        <div style={{ marginTop: '8px' }}>
+                                          <img
+                                            src={packageData.thumbnail_image}
+                                            alt={packageData.package_name}
+                                            style={{
+                                              maxWidth: '200px',
+                                              maxHeight: '150px',
+                                              borderRadius: '6px',
+                                              border: '1px solid var(--border)',
+                                              objectFit: 'cover',
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Selected Date if available */}
+                                    {cartItem.selectedDate && (
+                                      <div className='detail_item'>
+                                        <strong>Selected Date:</strong>
+                                        <span>
+                                          {format(
+                                            new Date(cartItem.selectedDate),
+                                            'MMM dd, yyyy'
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className='detail_item'>
+                                      <strong>Package ID:</strong>
+                                      <span>{cartItem.packageId || 'N/A'}</span>
+                                      <div
+                                        style={{
+                                          marginTop: '8px',
+                                          fontSize: '12px',
+                                          color: 'var(--text-muted)',
+                                        }}
+                                      >
+                                        Package details not found
+                                      </div>
+                                    </div>
+                                    <div className='detail_item'>
+                                      <strong>Adults:</strong>
+                                      <span>{cartItem.adults || 0}</span>
+                                    </div>
+                                    <div className='detail_item'>
+                                      <strong>Children:</strong>
+                                      <span>{cartItem.children || 0}</span>
+                                    </div>
+                                    <div className='detail_item'>
+                                      <strong>Infants:</strong>
+                                      <span>{cartItem.infants || 0}</span>
+                                    </div>
+                                    {cartItem.selectedDate && (
+                                      <div className='detail_item'>
+                                        <strong>Selected Date:</strong>
+                                        <span>
+                                          {format(
+                                            new Date(cartItem.selectedDate),
+                                            'MMM dd, yyyy'
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                      )
+                    )}
+                  </div>
+                )}
 
               {selectedPayment.customer_notes && (
                 <div className='detail_section'>
@@ -531,6 +1245,12 @@ export default function PaymentsPage() {
               </div>
             </div>
             <div className='modal_footer'>
+              <button
+                onClick={() => handleExportSinglePayment(selectedPayment)}
+                className='btn_primary'
+              >
+                Export to Excel
+              </button>
               <button
                 onClick={() => setModalOpen(false)}
                 className='btn_secondary'

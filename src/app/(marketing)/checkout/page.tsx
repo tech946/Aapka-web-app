@@ -52,6 +52,7 @@ export default function CheckoutPage() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [paymentType, setPaymentType] = useState<'half' | 'full'>('full');
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [platformFeePercentage, setPlatformFeePercentage] = useState<number>(0);
 
   // Check if any cart item is a tour (not a package)
   // Tours typically have "tour" in the category slug/name
@@ -129,11 +130,23 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  // Detect user location on mount
+  // Fetch platform fee and detect user location on mount
   useEffect(() => {
     const initialize = async () => {
       try {
         setIsLoadingLocation(true);
+        // Fetch platform fee
+        try {
+          const feeResponse = await fetch('/api/platform-fee');
+          const feeResult = await feeResponse.json();
+          if (feeResult.data) {
+            setPlatformFeePercentage(feeResult.data.fee_percentage || 0);
+          }
+        } catch (error) {
+          console.error('Error fetching platform fee:', error);
+          setPlatformFeePercentage(0);
+        }
+
         // Detect location
         const location = await detectUserLocation();
         setUserLocation(location);
@@ -305,6 +318,34 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Validate minimum adults and total passengers for all packages
+    for (const item of cartItems) {
+      // Check total passengers (can't be 0)
+      const totalPassengers = item.adults + item.children + (item.infants || 0);
+      if (totalPassengers === 0) {
+        toast.error(
+          `Please select at least one passenger for "${item.packageName}". Please update your cart.`
+        );
+        return;
+      }
+
+      // All packages require at least 1 adult
+      if (item.adults === 0) {
+        toast.error(
+          `At least 1 adult is required for "${item.packageName}". Please update your cart.`
+        );
+        return;
+      }
+
+      // Offer packages require minimum 2 adults
+      if (item.categorySlug === 'offer-packages' && item.adults < 2) {
+        toast.error(
+          `Offer packages require a minimum of 2 adults. Please update "${item.packageName}" in your cart.`
+        );
+        return;
+      }
+    }
+
     if (!userLocation) {
       toast.error('Please wait while we detect your location...');
       return;
@@ -345,8 +386,14 @@ export default function CheckoutPage() {
 
       // CCAvenue Dubai account (.ae domain) uses AED currency
       // Use AED for all transactions since the account is configured for AED
-      paymentAmount =
+      const basePaymentAmount =
         paymentType === 'half' ? totalAmountAED / 2 : totalAmountAED;
+
+      // Calculate platform fee
+      const platformFee = (basePaymentAmount * platformFeePercentage) / 100;
+
+      // Add platform fee to payment amount
+      paymentAmount = basePaymentAmount + platformFee;
       currency = 'AED'; // Dubai CCAvenue account uses AED
 
       // Create booking first
@@ -1054,6 +1101,53 @@ export default function CheckoutPage() {
                   <span>Total Amount:</span>
                   <span>{formatPrice(getTotalPrice())}</span>
                 </div>
+                {userLocation &&
+                  platformFeePercentage > 0 &&
+                  (() => {
+                    const baseAmount =
+                      paymentType === 'half'
+                        ? getTotalPrice() / 2
+                        : getTotalPrice();
+                    const platformFee =
+                      (baseAmount * platformFeePercentage) / 100;
+                    const totalWithFee = baseAmount + platformFee;
+
+                    return (
+                      <>
+                        <div
+                          className='summary-row'
+                          style={{ fontSize: '13px', color: '#666' }}
+                        >
+                          <span>
+                            {paymentType === 'half'
+                              ? 'Half Payment'
+                              : 'Full Payment'}
+                            :
+                          </span>
+                          <span>{formatPrice(baseAmount)}</span>
+                        </div>
+                        <div
+                          className='summary-row'
+                          style={{ fontSize: '13px', color: '#666' }}
+                        >
+                          <span>Platform Fee ({platformFeePercentage}%):</span>
+                          <span>{formatPrice(platformFee)}</span>
+                        </div>
+                        <div
+                          className='summary-row'
+                          style={{
+                            fontWeight: '600',
+                            borderTop: '1px solid #eee',
+                            paddingTop: '8px',
+                            marginTop: '8px',
+                          }}
+                        >
+                          <span>Amount to Pay:</span>
+                          <span>{formatPrice(totalWithFee)}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 {isLoadingLocation && (
                   <div className='summary-row'>
                     <span>
@@ -1090,7 +1184,12 @@ export default function CheckoutPage() {
                       <div className='payment-type-content'>
                         <span className='payment-type-label'>Full Payment</span>
                         <span className='payment-type-amount'>
-                          {formatPrice(getTotalPrice())}
+                          {(() => {
+                            const baseAmount = getTotalPrice();
+                            const fee =
+                              (baseAmount * platformFeePercentage) / 100;
+                            return formatPrice(baseAmount + fee);
+                          })()}
                         </span>
                       </div>
                     </label>
@@ -1109,7 +1208,12 @@ export default function CheckoutPage() {
                           Half Payment (50%)
                         </span>
                         <span className='payment-type-amount'>
-                          {formatPrice(getTotalPrice() / 2)}
+                          {(() => {
+                            const baseAmount = getTotalPrice() / 2;
+                            const fee =
+                              (baseAmount * platformFeePercentage) / 100;
+                            return formatPrice(baseAmount + fee);
+                          })()}
                         </span>
                       </div>
                     </label>

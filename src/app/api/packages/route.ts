@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, booking_slots, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -148,6 +148,11 @@ export async function POST(req: NextRequest) {
         { id: String(Date.now()), value: String(body.travel_date) },
       ];
     }
+    // booking slots array support (expects array of objects { id, fromDate, toDate })
+    let bookingSlots: any[] | null = null;
+    if (Array.isArray(body?.booking_slots)) {
+      bookingSlots = body.booking_slots;
+    }
     const adultPrice =
       body?.adult_price !== undefined
         ? Number.isNaN(Number(body.adult_price))
@@ -199,29 +204,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const insertData: Record<string, any> = {
+      package_name: name,
+      package_description: description,
+      package_price: price,
+      package_category_id: categoryId,
+      package_days: days,
+      package_nights: nights,
+      adult_price: adultPrice,
+      child_price: childPrice,
+      infant_price: infantPrice,
+      terms_html: termsHtml,
+      inclusion_html: inclusionHtml,
+      exclusion_html: exclusionHtml,
+      overview: overviewText,
+      holiday_description_html: holidayDescriptionHtml,
+      itinerary: itineraryJson,
+      thumbnail_image: thumbnailImage,
+    };
+
+    // Add travel_dates or booking_slots based on what's provided
+    if (bookingSlots !== null) {
+      insertData.booking_slots = bookingSlots;
+    } else if (travelDates !== null) {
+      insertData.travel_dates = travelDates;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('packages')
-      .insert([
-        {
-          package_name: name,
-          package_description: description,
-          package_price: price,
-          package_category_id: categoryId,
-          package_days: days,
-          package_nights: nights,
-          travel_dates: travelDates,
-          adult_price: adultPrice,
-          child_price: childPrice,
-          infant_price: infantPrice,
-          terms_html: termsHtml,
-          inclusion_html: inclusionHtml,
-          exclusion_html: exclusionHtml,
-          overview: overviewText,
-          holiday_description_html: holidayDescriptionHtml,
-          itinerary: itineraryJson,
-          thumbnail_image: thumbnailImage,
-        },
-      ])
+      .insert([insertData])
       .select('*')
       .single();
 
@@ -279,6 +290,13 @@ export async function PUT(req: NextRequest) {
       travelDatesUpdate = [
         { id: String(Date.now()), value: String(body.travel_date) },
       ];
+    }
+    // booking slots array support (expects array of objects { id, fromDate, toDate })
+    let bookingSlotsUpdate: any[] | undefined = undefined;
+    if (body?.booking_slots !== undefined) {
+      bookingSlotsUpdate = Array.isArray(body.booking_slots)
+        ? body.booking_slots
+        : undefined;
     }
     const adultPrice =
       body?.adult_price !== undefined
@@ -339,8 +357,19 @@ export async function PUT(req: NextRequest) {
     if (categoryId !== undefined) updates.package_category_id = categoryId;
     if (days !== undefined) updates.package_days = days;
     if (nights !== undefined) updates.package_nights = nights;
-    if (travelDatesUpdate !== undefined)
+    if (bookingSlotsUpdate !== undefined) {
+      updates.booking_slots = bookingSlotsUpdate;
+      // Clear travel_dates if booking_slots is being set
+      if (bookingSlotsUpdate.length > 0) {
+        updates.travel_dates = null;
+      }
+    } else if (travelDatesUpdate !== undefined) {
       updates.travel_dates = travelDatesUpdate;
+      // Clear booking_slots if travel_dates is being set
+      if (travelDatesUpdate.length > 0) {
+        updates.booking_slots = null;
+      }
+    }
     if (adultPrice !== undefined) updates.adult_price = adultPrice;
     if (childPrice !== undefined) updates.child_price = childPrice;
     if (infantPrice !== undefined) updates.infant_price = infantPrice;
