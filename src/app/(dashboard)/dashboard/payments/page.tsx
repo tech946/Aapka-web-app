@@ -32,7 +32,6 @@ export default function PaymentsPage() {
   const [limit, setLimit] = useState(10);
   const [query, setQuery] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
-  const [bookingStatusFilter, setBookingStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<PaymentRow | null>(
@@ -61,8 +60,6 @@ export default function PaymentsPage() {
         if (query) params.append('search', query);
         if (paymentStatusFilter)
           params.append('payment_status', paymentStatusFilter);
-        if (bookingStatusFilter)
-          params.append('booking_status', bookingStatusFilter);
 
         const res = await fetch(`/api/bookings?${params.toString()}`, {
           method: 'GET',
@@ -87,7 +84,7 @@ export default function PaymentsPage() {
       active = false;
       controller.abort();
     };
-  }, [page, limit, query, paymentStatusFilter, bookingStatusFilter]);
+  }, [page, limit, query, paymentStatusFilter]);
 
   // Debounced search typing
   const [pendingQuery, setPendingQuery] = useState('');
@@ -105,30 +102,6 @@ export default function PaymentsPage() {
       completed: { bg: '#d1fae5', text: '#065f46' },
       failed: { bg: '#fee2e2', text: '#991b1b' },
       refunded: { bg: '#e0e7ff', text: '#3730a3' },
-    };
-    const colors = statusColors[status] || statusColors.pending;
-    return (
-      <span
-        style={{
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: 600,
-          backgroundColor: colors.bg,
-          color: colors.text,
-        }}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
-  const getBookingStatusBadge = (status: string) => {
-    const statusColors: Record<string, { bg: string; text: string }> = {
-      pending: { bg: '#fef3c7', text: '#92400e' },
-      confirmed: { bg: '#dbeafe', text: '#1e40af' },
-      cancelled: { bg: '#fee2e2', text: '#991b1b' },
-      completed: { bg: '#d1fae5', text: '#065f46' },
     };
     const colors = statusColors[status] || statusColors.pending;
     return (
@@ -332,8 +305,6 @@ export default function PaymentsPage() {
       if (query) params.append('search', query);
       if (paymentStatusFilter)
         params.append('payment_status', paymentStatusFilter);
-      if (bookingStatusFilter)
-        params.append('booking_status', bookingStatusFilter);
 
       const res = await fetch(`/api/bookings?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to load payments');
@@ -482,21 +453,6 @@ export default function PaymentsPage() {
             <option value='failed'>Failed</option>
             <option value='refunded'>Refunded</option>
           </select>
-          <select
-            value={bookingStatusFilter}
-            onChange={e => {
-              setBookingStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className='select_filter'
-            style={{ marginLeft: '8px' }}
-          >
-            <option value=''>All Booking Status</option>
-            <option value='pending'>Pending</option>
-            <option value='confirmed'>Confirmed</option>
-            <option value='cancelled'>Cancelled</option>
-            <option value='completed'>Completed</option>
-          </select>
         </div>
       </div>
 
@@ -509,7 +465,6 @@ export default function PaymentsPage() {
               <th>Total Amount</th>
               <th>Payment Amount</th>
               <th>Payment Status</th>
-              <th>Booking Status</th>
               <th>Gateway</th>
               <th>Date</th>
               <th>Actions</th>
@@ -518,14 +473,14 @@ export default function PaymentsPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className='table_loading'>
+                <td colSpan={8} className='table_loading'>
                   Loading...
                 </td>
               </tr>
             )}
             {!loading && payments.length === 0 && (
               <tr>
-                <td colSpan={9} className='table_empty'>
+                <td colSpan={8} className='table_empty'>
                   No payments found
                 </td>
               </tr>
@@ -563,7 +518,6 @@ export default function PaymentsPage() {
                         : '-'}
                     </td>
                     <td>{getPaymentStatusBadge(payment.payment_status)}</td>
-                    <td>{getBookingStatusBadge(payment.booking_status)}</td>
                     <td>
                       {payment.payment_gateway ? (
                         <span style={{ textTransform: 'uppercase' }}>
@@ -658,10 +612,6 @@ export default function PaymentsPage() {
                   <div className='detail_item'>
                     <strong>Payment Status:</strong>
                     {getPaymentStatusBadge(selectedPayment.payment_status)}
-                  </div>
-                  <div className='detail_item'>
-                    <strong>Booking Status:</strong>
-                    {getBookingStatusBadge(selectedPayment.booking_status)}
                   </div>
                   <div className='detail_item'>
                     <strong>Payment Gateway:</strong>

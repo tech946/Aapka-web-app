@@ -18,6 +18,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { generateShortSlug } from '@/lib/utils';
 import './footer.css';
 
 const stats = [
@@ -41,6 +42,8 @@ interface Package {
   package_id: string;
   package_name: string;
   category_name: string;
+  package_days?: number | null;
+  package_nights?: number | null;
 }
 
 export default function Footer() {
@@ -178,15 +181,23 @@ export default function Footer() {
               <h4>Offer Packages</h4>
               <ul>
                 {offerPackages.length > 0 ? (
-                  offerPackages.map(pkg => (
-                    <li key={pkg.package_id}>
-                      <Link
-                        href={`/category/${getCategorySlug(pkg.category_name)}/${pkg.package_id}`}
-                      >
-                        {pkg.package_name}
-                      </Link>
-                    </li>
-                  ))
+                  offerPackages.map(pkg => {
+                    const packageSlug = generateShortSlug(
+                      pkg.package_name,
+                      pkg.package_id,
+                      pkg.package_days,
+                      pkg.package_nights
+                    );
+                    return (
+                      <li key={pkg.package_id}>
+                        <Link
+                          href={`/category/${getCategorySlug(pkg.category_name)}/${packageSlug}`}
+                        >
+                          {pkg.package_name}
+                        </Link>
+                      </li>
+                    );
+                  })
                 ) : (
                   <li>
                     <Link href='/category/offer-packages'>
@@ -201,15 +212,23 @@ export default function Footer() {
               <h4>Top Tours</h4>
               <ul>
                 {tours.length > 0 ? (
-                  tours.map(tour => (
-                    <li key={tour.package_id}>
-                      <Link
-                        href={`/category/${getCategorySlug(tour.category_name)}/${tour.package_id}`}
-                      >
-                        {tour.package_name}
-                      </Link>
-                    </li>
-                  ))
+                  tours.map(tour => {
+                    const packageSlug = generateShortSlug(
+                      tour.package_name,
+                      tour.package_id,
+                      tour.package_days,
+                      tour.package_nights
+                    );
+                    return (
+                      <li key={tour.package_id}>
+                        <Link
+                          href={`/category/${getCategorySlug(tour.category_name)}/${packageSlug}`}
+                        >
+                          {tour.package_name}
+                        </Link>
+                      </li>
+                    );
+                  })
                 ) : (
                   <li>
                     <Link href='/category/uae-tours'>View Tours</Link>

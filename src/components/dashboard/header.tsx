@@ -1,11 +1,12 @@
 'use client';
 
 import { TeamSelector } from './TeamSelector';
-import { LogoutOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { LogoutOutlined, MailOutlined } from '@ant-design/icons';
+import { Button, Modal } from 'antd';
 import { ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+import { EmailTemplatePreview } from './EmailTemplatePreview';
 
 type Category = { id: string; name: string };
 
@@ -13,6 +14,7 @@ export function Header() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -169,6 +171,15 @@ export function Header() {
           )}
         </div>
         <Button
+          type='default'
+          icon={<MailOutlined />}
+          onClick={() => setShowEmailPreview(true)}
+          style={{ marginLeft: '8px' }}
+          title='Preview Email Templates'
+        >
+          Preview Emails
+        </Button>
+        <Button
           type='primary'
           danger
           icon={<LogoutOutlined />}
@@ -178,6 +189,16 @@ export function Header() {
           Logout
         </Button>
       </div>
+      <Modal
+        open={showEmailPreview}
+        onCancel={() => setShowEmailPreview(false)}
+        footer={null}
+        width='90%'
+        style={{ maxWidth: '1200px' }}
+        title='Email Template Preview'
+      >
+        <EmailTemplatePreview />
+      </Modal>
     </div>
   );
 }

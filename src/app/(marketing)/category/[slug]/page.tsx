@@ -17,6 +17,7 @@ import {
   formatCurrency,
   type UserLocation,
 } from '@/lib/location-utils';
+import { generateShortSlug } from '@/lib/utils';
 import '../packages.css';
 
 interface Package {
@@ -321,11 +322,13 @@ export default function CategoryPage() {
                 <div className='packages-empty'>No packages found</div>
               ) : (
                 packages.map(pkg => {
-                  // Convert package name to slug
-                  const packageSlug = pkg.package_name
-                    .toLowerCase()
-                    .replace(/\s+/g, '-')
-                    .replace(/[^a-z0-9-]/g, '');
+                  // Generate short slug for URL (under 70 chars total)
+                  const packageSlug = generateShortSlug(
+                    pkg.package_name,
+                    pkg.package_id,
+                    pkg.package_days,
+                    pkg.package_nights
+                  );
 
                   return (
                     <div

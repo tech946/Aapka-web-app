@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
+import { generateShortSlug } from '@/lib/utils';
 import 'react-day-picker/dist/style.css';
 import './home.css';
 
@@ -30,6 +31,8 @@ interface Package {
   package_id: string;
   package_name: string;
   package_price: number;
+  package_days?: number | null;
+  package_nights?: number | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
 }
 
@@ -282,11 +285,13 @@ export default function BannerSection() {
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
 
-      // Convert package name to slug
-      const packageSlug = selectedPackage.package_name
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+      // Generate short slug for URL (under 70 chars total)
+      const packageSlug = generateShortSlug(
+        selectedPackage.package_name,
+        selectedPackage.package_id,
+        selectedPackage.package_days,
+        selectedPackage.package_nights
+      );
 
       // Build query parameters
       const queryParams = new URLSearchParams();
