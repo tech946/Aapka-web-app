@@ -1,6 +1,9 @@
-import { Resend } from 'resend';
+// Resend email functionality temporarily disabled
+// import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend only if API key is available
+// const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend: any = null;
 
 // Helper function for currency formatting
 function formatCurrency(amount: number, currency: string): string {
@@ -605,8 +608,9 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
 
 export async function sendBookingConfirmationEmail(data: BookingEmailData) {
   try {
-    if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY is not configured');
+    // Email functionality temporarily disabled
+    if (!resend || !process.env.RESEND_API_KEY) {
+      console.log('Email service is disabled - RESEND_API_KEY not configured');
       return { success: false, error: 'Email service not configured' };
     }
 
