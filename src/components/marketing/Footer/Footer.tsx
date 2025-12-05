@@ -101,7 +101,6 @@ export default function Footer() {
             <div>
               <span>WhatsApp</span>
               <p>AE - +971567809460</p>
-              <p>IN - +917042857575</p>
             </div>
           </div>
           <div className='footer_contact_item'>
