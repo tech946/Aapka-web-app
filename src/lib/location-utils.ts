@@ -187,6 +187,7 @@ export async function initializeExchangeRate(): Promise<void> {
     await getExchangeRate();
   } catch (error) {
     // Failed to initialize exchange rate
+    console.error('Failed to initialize exchange rate:', error);
   }
 }
 

@@ -15,6 +15,7 @@ import {
   detectUserLocation,
   convertAEDToINR,
   formatCurrency,
+  initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
 import { generateShortSlug } from '@/lib/utils';
@@ -80,10 +81,12 @@ export default function CategoryPage() {
     }
   }, [category?.id, page, sortBy]);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
     const initialize = async () => {
       try {
+        // Initialize exchange rate first (fetch from database)
+        await initializeExchangeRate();
         // Detect location
         const location = await detectUserLocation();
         setUserLocation(location);

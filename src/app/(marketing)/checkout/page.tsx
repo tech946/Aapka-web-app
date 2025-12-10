@@ -21,6 +21,7 @@ import {
   convertAEDToINR,
   convertAEDToINRAsync,
   formatCurrency,
+  initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
 import './checkout.css';
@@ -135,6 +136,8 @@ export default function CheckoutPage() {
     const initialize = async () => {
       try {
         setIsLoadingLocation(true);
+        // Initialize exchange rate first (fetch from database)
+        await initializeExchangeRate();
         // Fetch platform fee
         try {
           const feeResponse = await fetch('/api/platform-fee');

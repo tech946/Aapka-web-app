@@ -29,6 +29,7 @@ import {
   detectUserLocation,
   convertAEDToINR,
   formatCurrency,
+  initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
 import 'react-day-picker/dist/style.css';
@@ -127,10 +128,12 @@ export default function PackageDetailsPage() {
     }
   }, [pkg?.package_category_id]);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
     const initialize = async () => {
       try {
+        // Initialize exchange rate first (fetch from database)
+        await initializeExchangeRate();
         // Detect location
         const location = await detectUserLocation();
         setUserLocation(location);

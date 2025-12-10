@@ -16,6 +16,7 @@ import {
   detectUserLocation,
   convertAEDToINR,
   formatCurrency,
+  initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
 import './cart.css';
@@ -33,10 +34,12 @@ export default function CartPage() {
   } = useCart();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
-  // Detect user location on mount
+  // Detect user location and initialize exchange rate on mount
   useEffect(() => {
     const initialize = async () => {
       try {
+        // Initialize exchange rate first (fetch from database)
+        await initializeExchangeRate();
         // Detect location
         const location = await detectUserLocation();
         console.log('Cart page - Detected location:', location);
