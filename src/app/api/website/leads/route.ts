@@ -23,12 +23,21 @@ export async function POST(req: NextRequest) {
     // The API key (WEBSITE_API_KEY) is stored server-side in environment variables
 
     // Get API key from environment
-    const apiKey = process.env.WEBSITE_API_KEY;
+    const apiKey = process.env.WEBSITE_API_KEY?.trim();
 
     if (!apiKey) {
       console.error('WEBSITE_API_KEY is not configured');
+      console.error('Available env vars:', {
+        hasApiKey: !!process.env.WEBSITE_API_KEY,
+        hasCrmUrl: !!process.env.CRM_API_URL,
+        nodeEnv: process.env.NODE_ENV,
+      });
       return NextResponse.json(
-        { error: 'API key not configured' },
+        {
+          error: 'API key not configured',
+          message:
+            'Please ensure WEBSITE_API_KEY is set in your .env.local file and restart your dev server.',
+        },
         { status: 500 }
       );
     }
