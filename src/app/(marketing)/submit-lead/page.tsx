@@ -206,28 +206,33 @@ export default function SubmitLeadPage() {
       const toDate = new Date(formData.check_out_date);
       const diffTime = Math.abs(toDate.getTime() - fromDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setFormData((prev) => ({ ...prev, total_nights: diffDays }));
+      setFormData(prev => ({ ...prev, total_nights: diffDays }));
     }
   }, [formData.check_in_date, formData.check_out_date]);
 
   // Calculate total travelers
   useEffect(() => {
-    const total = formData.adults + formData.children_count + formData.infant_count;
-    setFormData((prev) => ({ ...prev, total_travelers: total }));
+    const total =
+      formData.adults + formData.children_count + formData.infant_count;
+    setFormData(prev => ({ ...prev, total_travelers: total }));
   }, [formData.adults, formData.children_count, formData.infant_count]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.full_name_as_per_passport.trim()) {
-      newErrors.full_name_as_per_passport = 'Full name (as per passport) is required';
+      newErrors.full_name_as_per_passport =
+        'Full name (as per passport) is required';
     }
 
     if (!formData.whatsapp_number.trim()) {
       newErrors.whatsapp_number = 'WhatsApp number is required';
     }
 
-    if (formData.email_id && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email_id)) {
+    if (
+      formData.email_id &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email_id)
+    ) {
       newErrors.email_id = 'Please enter a valid email address';
     }
 
@@ -332,9 +337,9 @@ export default function SubmitLeadPage() {
   };
 
   const handleInputChange = (field: keyof LeadFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
@@ -342,7 +347,11 @@ export default function SubmitLeadPage() {
     }
   };
 
-  const renderYesNoField = (label: string, field: keyof LeadFormData, required = false) => {
+  const renderYesNoField = (
+    label: string,
+    field: keyof LeadFormData,
+    required = false
+  ) => {
     const value = formData[field] ? 'yes' : 'no';
     return (
       <div className='lead-form-group'>
@@ -352,7 +361,7 @@ export default function SubmitLeadPage() {
         <Select
           options={YES_NO_OPTIONS}
           value={value}
-          onChange={(val) => handleInputChange(field, val === 'yes')}
+          onChange={val => handleInputChange(field, val === 'yes')}
         />
       </div>
     );
@@ -365,7 +374,10 @@ export default function SubmitLeadPage() {
           <div className='lead-success-message'>
             <CheckCircle2 size={64} className='success-icon' />
             <h1>Thank You!</h1>
-            <p>Your lead has been submitted successfully. We will contact you soon.</p>
+            <p>
+              Your lead has been submitted successfully. We will contact you
+              soon.
+            </p>
           </div>
         </div>
       </div>
@@ -378,7 +390,8 @@ export default function SubmitLeadPage() {
         <div className='lead-header'>
           <h1 className='lead-title'>Submit Your Travel Inquiry</h1>
           <p className='lead-subtitle'>
-            Fill in the details below and our team will get back to you with the best travel package for you.
+            Fill in the details below and our team will get back to you with the
+            best travel package for you.
           </p>
         </div>
 
@@ -389,17 +402,25 @@ export default function SubmitLeadPage() {
             <div className='lead-form-grid'>
               <div className='lead-form-group'>
                 <Label>
-                  Full Name (as per passport) <span className='required'>*</span>
+                  Full Name (as per passport){' '}
+                  <span className='required'>*</span>
                 </Label>
                 <input
                   type='text'
                   value={formData.full_name_as_per_passport}
-                  onChange={(e) => handleInputChange('full_name_as_per_passport', e.target.value)}
+                  onChange={e =>
+                    handleInputChange(
+                      'full_name_as_per_passport',
+                      e.target.value
+                    )
+                  }
                   placeholder='Enter full name as per passport'
                   className={`lead-input ${errors.full_name_as_per_passport ? 'error' : ''}`}
                 />
                 {errors.full_name_as_per_passport && (
-                  <p className='lead-error'>{errors.full_name_as_per_passport}</p>
+                  <p className='lead-error'>
+                    {errors.full_name_as_per_passport}
+                  </p>
                 )}
               </div>
 
@@ -410,11 +431,15 @@ export default function SubmitLeadPage() {
                 <input
                   type='tel'
                   value={formData.whatsapp_number}
-                  onChange={(e) => handleInputChange('whatsapp_number', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('whatsapp_number', e.target.value)
+                  }
                   placeholder='Enter WhatsApp number'
                   className={`lead-input ${errors.whatsapp_number ? 'error' : ''}`}
                 />
-                {errors.whatsapp_number && <p className='lead-error'>{errors.whatsapp_number}</p>}
+                {errors.whatsapp_number && (
+                  <p className='lead-error'>{errors.whatsapp_number}</p>
+                )}
               </div>
 
               <div className='lead-form-group'>
@@ -422,11 +447,13 @@ export default function SubmitLeadPage() {
                 <input
                   type='email'
                   value={formData.email_id}
-                  onChange={(e) => handleInputChange('email_id', e.target.value)}
+                  onChange={e => handleInputChange('email_id', e.target.value)}
                   placeholder='Enter email ID'
                   className={`lead-input ${errors.email_id ? 'error' : ''}`}
                 />
-                {errors.email_id && <p className='lead-error'>{errors.email_id}</p>}
+                {errors.email_id && (
+                  <p className='lead-error'>{errors.email_id}</p>
+                )}
               </div>
 
               <div className='lead-form-group'>
@@ -434,7 +461,9 @@ export default function SubmitLeadPage() {
                 <input
                   type='text'
                   value={formData.nationality}
-                  onChange={(e) => handleInputChange('nationality', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('nationality', e.target.value)
+                  }
                   placeholder='Enter nationality'
                   className='lead-input'
                 />
@@ -445,7 +474,12 @@ export default function SubmitLeadPage() {
                 <input
                   type='text'
                   value={formData.city_country_of_departure}
-                  onChange={(e) => handleInputChange('city_country_of_departure', e.target.value)}
+                  onChange={e =>
+                    handleInputChange(
+                      'city_country_of_departure',
+                      e.target.value
+                    )
+                  }
                   placeholder='Enter city/country of departure'
                   className='lead-input'
                 />
@@ -462,7 +496,9 @@ export default function SubmitLeadPage() {
                 <input
                   type='date'
                   value={formData.check_in_date}
-                  onChange={(e) => handleInputChange('check_in_date', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('check_in_date', e.target.value)
+                  }
                   className='lead-input'
                 />
               </div>
@@ -472,7 +508,9 @@ export default function SubmitLeadPage() {
                 <input
                   type='date'
                   value={formData.check_out_date}
-                  onChange={(e) => handleInputChange('check_out_date', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('check_out_date', e.target.value)
+                  }
                   className='lead-input'
                 />
               </div>
@@ -513,7 +551,9 @@ export default function SubmitLeadPage() {
                   type='number'
                   min='0'
                   value={formData.adults}
-                  onChange={(e) => handleInputChange('adults', parseInt(e.target.value) || 0)}
+                  onChange={e =>
+                    handleInputChange('adults', parseInt(e.target.value) || 0)
+                  }
                   className='lead-input'
                 />
               </div>
@@ -524,7 +564,12 @@ export default function SubmitLeadPage() {
                   type='number'
                   min='0'
                   value={formData.children_count}
-                  onChange={(e) => handleInputChange('children_count', parseInt(e.target.value) || 0)}
+                  onChange={e =>
+                    handleInputChange(
+                      'children_count',
+                      parseInt(e.target.value) || 0
+                    )
+                  }
                   placeholder='Number of children'
                   className='lead-input'
                 />
@@ -535,7 +580,9 @@ export default function SubmitLeadPage() {
                 <input
                   type='text'
                   value={formData.children_ages}
-                  onChange={(e) => handleInputChange('children_ages', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('children_ages', e.target.value)
+                  }
                   placeholder='e.g., 5, 7'
                   className='lead-input'
                 />
@@ -547,7 +594,12 @@ export default function SubmitLeadPage() {
                   type='number'
                   min='0'
                   value={formData.infant_count}
-                  onChange={(e) => handleInputChange('infant_count', parseInt(e.target.value) || 0)}
+                  onChange={e =>
+                    handleInputChange(
+                      'infant_count',
+                      parseInt(e.target.value) || 0
+                    )
+                  }
                   className='lead-input'
                 />
               </div>
@@ -560,7 +612,12 @@ export default function SubmitLeadPage() {
                   <input
                     type='text'
                     value={formData.senior_travelers_age_detail}
-                    onChange={(e) => handleInputChange('senior_travelers_age_detail', e.target.value)}
+                    onChange={e =>
+                      handleInputChange(
+                        'senior_travelers_age_detail',
+                        e.target.value
+                      )
+                    }
                     placeholder='Enter age details'
                     className='lead-input'
                   />
@@ -571,7 +628,9 @@ export default function SubmitLeadPage() {
                 <Label>Special Needs</Label>
                 <textarea
                   value={formData.special_needs}
-                  onChange={(e) => handleInputChange('special_needs', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('special_needs', e.target.value)
+                  }
                   placeholder='Enter any special needs or requirements'
                   className='lead-input'
                   rows={3}
@@ -597,7 +656,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={HOTEL_CATEGORY_OPTIONS}
                   value={formData.hotel_category}
-                  onChange={(val) => handleInputChange('hotel_category', val)}
+                  onChange={val => handleInputChange('hotel_category', val)}
                   placeholder='Select hotel category'
                 />
               </div>
@@ -607,7 +666,7 @@ export default function SubmitLeadPage() {
                 <input
                   type='text'
                   value={formData.room_type}
-                  onChange={(e) => handleInputChange('room_type', e.target.value)}
+                  onChange={e => handleInputChange('room_type', e.target.value)}
                   placeholder='Enter room type'
                   className='lead-input'
                 />
@@ -618,7 +677,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={MEAL_PLAN_OPTIONS}
                   value={formData.meal_plan}
-                  onChange={(val) => handleInputChange('meal_plan', val)}
+                  onChange={val => handleInputChange('meal_plan', val)}
                   placeholder='Select meal plan'
                 />
               </div>
@@ -628,7 +687,9 @@ export default function SubmitLeadPage() {
                 <input
                   type='text'
                   value={formData.preferred_location}
-                  onChange={(e) => handleInputChange('preferred_location', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('preferred_location', e.target.value)
+                  }
                   placeholder='e.g., Deira, Bur Dubai, Downtown, Marina, JBR, Palm'
                   className='lead-input'
                 />
@@ -639,12 +700,15 @@ export default function SubmitLeadPage() {
                 <Select
                   options={BED_TYPE_OPTIONS}
                   value={formData.bed_type}
-                  onChange={(val) => handleInputChange('bed_type', val)}
+                  onChange={val => handleInputChange('bed_type', val)}
                   placeholder='Select bed type'
                 />
               </div>
 
-              {renderYesNoField('Smoking Room Required', 'smoking_room_required')}
+              {renderYesNoField(
+                'Smoking Room Required',
+                'smoking_room_required'
+              )}
             </div>
           </div>
 
@@ -660,7 +724,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={DESERT_SAFARI_OPTIONS}
                   value={formData.desert_safari}
-                  onChange={(val) => handleInputChange('desert_safari', val)}
+                  onChange={val => handleInputChange('desert_safari', val)}
                   placeholder='Select desert safari type'
                 />
               </div>
@@ -673,7 +737,9 @@ export default function SubmitLeadPage() {
                 <Select
                   options={BURJ_KHALIFA_OPTIONS}
                   value={formData.burj_khalifa_ticket}
-                  onChange={(val) => handleInputChange('burj_khalifa_ticket', val)}
+                  onChange={val =>
+                    handleInputChange('burj_khalifa_ticket', val)
+                  }
                   placeholder='Select level'
                 />
               </div>
@@ -692,7 +758,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={MOTIONGATE_IMG_OPTIONS}
                   value={formData.motiongate_img}
-                  onChange={(val) => handleInputChange('motiongate_img', val)}
+                  onChange={val => handleInputChange('motiongate_img', val)}
                   placeholder='Select option'
                 />
               </div>
@@ -702,7 +768,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={YACHT_EXPERIENCE_OPTIONS}
                   value={formData.yacht_experience}
-                  onChange={(val) => handleInputChange('yacht_experience', val)}
+                  onChange={val => handleInputChange('yacht_experience', val)}
                   placeholder='Select duration'
                 />
               </div>
@@ -729,7 +795,12 @@ export default function SubmitLeadPage() {
                   step='0.01'
                   min='0'
                   value={formData.per_person_budget || ''}
-                  onChange={(e) => handleInputChange('per_person_budget', parseFloat(e.target.value) || 0)}
+                  onChange={e =>
+                    handleInputChange(
+                      'per_person_budget',
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
                   placeholder='Enter per person budget'
                   className='lead-input'
                 />
@@ -742,7 +813,12 @@ export default function SubmitLeadPage() {
                   step='0.01'
                   min='0'
                   value={formData.full_package_budget || ''}
-                  onChange={(e) => handleInputChange('full_package_budget', parseFloat(e.target.value) || 0)}
+                  onChange={e =>
+                    handleInputChange(
+                      'full_package_budget',
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
                   placeholder='Enter full package budget'
                   className='lead-input'
                 />
@@ -755,7 +831,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={PAYMENT_MODE_OPTIONS}
                   value={formData.payment_mode}
-                  onChange={(val) => handleInputChange('payment_mode', val)}
+                  onChange={val => handleInputChange('payment_mode', val)}
                   placeholder='Select payment mode'
                 />
               </div>
@@ -765,7 +841,7 @@ export default function SubmitLeadPage() {
                 <Select
                   options={CURRENCY_OPTIONS}
                   value={formData.currency}
-                  onChange={(val) => handleInputChange('currency', val)}
+                  onChange={val => handleInputChange('currency', val)}
                   placeholder='Select currency'
                 />
               </div>
@@ -785,7 +861,11 @@ export default function SubmitLeadPage() {
           </div>
 
           <div className='lead-form-actions'>
-            <button type='submit' className='lead-submit-btn' disabled={loading}>
+            <button
+              type='submit'
+              className='lead-submit-btn'
+              disabled={loading}
+            >
               {loading ? (
                 <>
                   <Loader2 size={20} className='spinning' />
@@ -801,4 +881,3 @@ export default function SubmitLeadPage() {
     </div>
   );
 }
-
