@@ -23,7 +23,7 @@
 }
 
 .lead-subtitle {
-  font-size: 1.1rem;
+  font-size: 15px;
   color: #6b7280;
   margin: 0;
   line-height: 1.6;
@@ -64,7 +64,7 @@
 .lead-form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
 .lead-form-group.full-width {
@@ -206,7 +206,7 @@
   }
 
   .lead-subtitle {
-    font-size: 1rem;
+    font-size: 15px;
   }
 
   .lead-form-grid {
@@ -219,12 +219,16 @@
   }
 
   .lead-section-title {
-    font-size: 1.25rem;
+    font-size: 18px;
   }
 
   .lead-submit-btn {
     width: 100%;
     min-width: auto;
+  }
+  .lead-input {
+    height: 40px;
+    padding-block: 0;
   }
 }
 
@@ -234,7 +238,7 @@
   }
 
   .lead-title {
-    font-size: 1.75rem;
+    font-size: 22px;
   }
 
   .lead-form {
