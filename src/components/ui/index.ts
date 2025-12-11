@@ -23,3 +23,4 @@ export { Alert, AlertTitle, AlertDescription } from './alert';
 export { Separator } from './separator';
 export { default as MaintenancePage } from './MaintenancePage';
 export { Select } from './select';
+export { Popover, PopoverTrigger, PopoverContent } from './popover';

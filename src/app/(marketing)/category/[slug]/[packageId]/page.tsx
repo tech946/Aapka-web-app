@@ -26,6 +26,11 @@ import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { usesBookingSlots } from '@/lib/package-config';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
+import {
   detectUserLocation,
   convertAEDToINR,
   formatCurrency,
@@ -83,6 +88,7 @@ export default function PackageDetailsPage() {
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [showDesktopPopover, setShowDesktopPopover] = useState(false);
   const [persons, setPersons] = useState({
     adult: 1, // Start with 1 adult minimum
     child: 0,
@@ -446,6 +452,11 @@ export default function PackageDetailsPage() {
     // Close drawer on mobile after adding to cart
     if (isMobile) {
       setShowMobileDrawer(false);
+    }
+
+    // Close popover on desktop after adding to cart
+    if (!isMobile) {
+      setShowDesktopPopover(false);
     }
   };
 
@@ -1080,229 +1091,255 @@ export default function PackageDetailsPage() {
         </>
       )}
 
-      {/* Horizontal Booking Card - Fixed at Bottom - Desktop Only */}
+      {/* Desktop Add to Cart Button - Fixed Center Bottom */}
       {!isMobile && (
-        <div className='package-booking-card-horizontal'>
-          <div className='booking-card-content'>
-            <div className='booking-price-section'>
-              <span className='booking-price-amount'>
-                {formatPrice(
-                  calculatedPrice !== null ? calculatedPrice : pkg.package_price
-                )}
-              </span>
-              <span className='booking-price-label'>
-                {persons.adult > 0 || persons.child > 0 || persons.infant > 0
-                  ? 'total'
-                  : 'total'}
-              </span>
+        <Popover open={showDesktopPopover} onOpenChange={setShowDesktopPopover}>
+          <PopoverTrigger asChild>
+            <button className='desktop-add-to-cart-button-fixed'>
+              Add to Cart
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className='desktop-booking-popover'
+            side='top'
+            align='center'
+            sideOffset={16}
+          >
+            <div className='desktop-booking-popover-header'>
+              <h3 className='desktop-booking-popover-title'>Booking Details</h3>
+              <button
+                className='desktop-booking-popover-close'
+                onClick={() => setShowDesktopPopover(false)}
+                aria-label='Close booking popover'
+              >
+                <X className='desktop-booking-popover-close-icon' />
+              </button>
             </div>
+            <div className='desktop-booking-popover-content'>
+              <div className='booking-price-section'>
+                <span className='booking-price-amount'>
+                  {formatPrice(
+                    calculatedPrice !== null
+                      ? calculatedPrice
+                      : pkg.package_price
+                  )}
+                </span>
+                <span className='booking-price-label'>
+                  {persons.adult > 0 || persons.child > 0 || persons.infant > 0
+                    ? 'total'
+                    : 'total'}
+                </span>
+              </div>
 
-            <div className='input-selectors'>
-              {/* Persons Selector */}
-              <div className='booking-input-wrapper' ref={personsDropdownRef}>
-                <Users className='booking-input-icon' />
-                <input
-                  type='text'
-                  placeholder='Persons'
-                  className='booking-input'
-                  value={getPersonsDisplayText()}
-                  readOnly
-                  onClick={() => setShowPersonsDropdown(!showPersonsDropdown)}
-                />
-                <ChevronDown className='booking-dropdown-chevron' />
-                {showPersonsDropdown && (
-                  <div className='booking-persons-dropdown'>
-                    <div className='person-counter-row'>
-                      <span className='person-label'>Adult</span>
-                      <div className='person-counter'>
-                        <button
-                          className='counter-button'
-                          onClick={() => updatePersonCount('adult', -1)}
-                          disabled={
-                            slug === 'offer-packages'
-                              ? persons.adult <= 2
-                              : persons.adult <= 1
-                          }
-                        >
-                          <Minus className='counter-icon' />
-                        </button>
-                        <span className='counter-value'>{persons.adult}</span>
-                        <button
-                          className='counter-button'
-                          onClick={() => updatePersonCount('adult', 1)}
-                        >
-                          <Plus className='counter-icon' />
-                        </button>
+              <div className='input-selectors'>
+                {/* Persons Selector */}
+                <div className='booking-input-wrapper' ref={personsDropdownRef}>
+                  <Users className='booking-input-icon' />
+                  <input
+                    type='text'
+                    placeholder='Persons'
+                    className='booking-input'
+                    value={getPersonsDisplayText()}
+                    readOnly
+                    onClick={() => setShowPersonsDropdown(!showPersonsDropdown)}
+                  />
+                  <ChevronDown className='booking-dropdown-chevron' />
+                  {showPersonsDropdown && (
+                    <div className='booking-persons-dropdown'>
+                      <div className='person-counter-row'>
+                        <span className='person-label'>Adult</span>
+                        <div className='person-counter'>
+                          <button
+                            className='counter-button'
+                            onClick={() => updatePersonCount('adult', -1)}
+                            disabled={
+                              slug === 'offer-packages'
+                                ? persons.adult <= 2
+                                : persons.adult <= 1
+                            }
+                          >
+                            <Minus className='counter-icon' />
+                          </button>
+                          <span className='counter-value'>{persons.adult}</span>
+                          <button
+                            className='counter-button'
+                            onClick={() => updatePersonCount('adult', 1)}
+                          >
+                            <Plus className='counter-icon' />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='person-counter-row'>
+                        <span className='person-label'>Child</span>
+                        <div className='person-counter'>
+                          <button
+                            className='counter-button'
+                            onClick={() => updatePersonCount('child', -1)}
+                            disabled={persons.child === 0}
+                          >
+                            <Minus className='counter-icon' />
+                          </button>
+                          <span className='counter-value'>{persons.child}</span>
+                          <button
+                            className='counter-button'
+                            onClick={() => updatePersonCount('child', 1)}
+                          >
+                            <Plus className='counter-icon' />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='person-counter-row'>
+                        <span className='person-label'>Infant</span>
+                        <div className='person-counter'>
+                          <button
+                            className='counter-button'
+                            onClick={() => updatePersonCount('infant', -1)}
+                            disabled={persons.infant === 0}
+                          >
+                            <Minus className='counter-icon' />
+                          </button>
+                          <span className='counter-value'>
+                            {persons.infant}
+                          </span>
+                          <button
+                            className='counter-button'
+                            onClick={() => updatePersonCount('infant', 1)}
+                          >
+                            <Plus className='counter-icon' />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className='person-counter-row'>
-                      <span className='person-label'>Child</span>
-                      <div className='person-counter'>
-                        <button
-                          className='counter-button'
-                          onClick={() => updatePersonCount('child', -1)}
-                          disabled={persons.child === 0}
-                        >
-                          <Minus className='counter-icon' />
-                        </button>
-                        <span className='counter-value'>{persons.child}</span>
-                        <button
-                          className='counter-button'
-                          onClick={() => updatePersonCount('child', 1)}
-                        >
-                          <Plus className='counter-icon' />
-                        </button>
+                  )}
+                </div>
+
+                {/* Date Picker / Calendar */}
+                {isPackageType() ? (
+                  // Package: Show dropdown with dates
+                  <div className='booking-input-wrapper' ref={dateDropdownRef}>
+                    <Calendar className='booking-input-icon' />
+                    <input
+                      type='text'
+                      placeholder={
+                        getAvailableDates().length === 0
+                          ? 'No dates available'
+                          : 'Select date'
+                      }
+                      className='booking-input'
+                      value={
+                        selectedDateString
+                          ? format(new Date(selectedDateString), 'MMM dd, yyyy')
+                          : ''
+                      }
+                      readOnly
+                      disabled={getAvailableDates().length === 0}
+                      onClick={() => {
+                        if (getAvailableDates().length > 0) {
+                          setShowDateDropdown(!showDateDropdown);
+                        }
+                      }}
+                    />
+                    <ChevronDown className='booking-dropdown-chevron' />
+                    {showDateDropdown && getAvailableDates().length > 0 && (
+                      <div className='booking-dates-dropdown'>
+                        {getAvailableDates().map((dateStr, idx) => (
+                          <div
+                            key={idx}
+                            className='booking-date-item'
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleDateStringSelect(dateStr);
+                            }}
+                          >
+                            {format(new Date(dateStr), 'MMM dd, yyyy')}
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <div className='person-counter-row'>
-                      <span className='person-label'>Infant</span>
-                      <div className='person-counter'>
-                        <button
-                          className='counter-button'
-                          onClick={() => updatePersonCount('infant', -1)}
-                          disabled={persons.infant === 0}
-                        >
-                          <Minus className='counter-icon' />
-                        </button>
-                        <span className='counter-value'>{persons.infant}</span>
-                        <button
-                          className='counter-button'
-                          onClick={() => updatePersonCount('infant', 1)}
-                        >
-                          <Plus className='counter-icon' />
-                        </button>
+                    )}
+                  </div>
+                ) : (
+                  // Tour: Show calendar
+                  <div className='booking-input-wrapper' ref={datePickerRef}>
+                    <Calendar className='booking-input-icon' />
+                    <input
+                      type='text'
+                      placeholder='Add dates'
+                      className='booking-input'
+                      value={
+                        selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''
+                      }
+                      readOnly
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                    />
+                    {showDatePicker && (
+                      <div className='booking-calendar-dropdown'>
+                        <div className='calendar-header-nav'>
+                          <button
+                            className='calendar-nav-button'
+                            onClick={e => {
+                              e.stopPropagation();
+                              const newMonth = new Date(month);
+                              newMonth.setMonth(newMonth.getMonth() - 1);
+                              setMonth(newMonth);
+                            }}
+                          >
+                            ‹
+                          </button>
+                          <button
+                            className='calendar-nav-button'
+                            onClick={e => {
+                              e.stopPropagation();
+                              const newMonth = new Date(month);
+                              newMonth.setMonth(newMonth.getMonth() + 1);
+                              setMonth(newMonth);
+                            }}
+                          >
+                            ›
+                          </button>
+                        </div>
+                        <DayPicker
+                          mode='single'
+                          selected={selectedDate}
+                          onSelect={handleDateSelect}
+                          disabled={getDisabledDates}
+                          numberOfMonths={1}
+                          showOutsideDays={true}
+                          month={month}
+                          onMonthChange={setMonth}
+                          className='custom-calendar'
+                          modifiersClassNames={{
+                            disabled: 'rdp-day_unavailable',
+                          }}
+                        />
+                        <div className='calendar-footer'>
+                          <button
+                            className='clear-dates-button'
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedDate(undefined);
+                            }}
+                          >
+                            Clear dates
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Date Picker / Calendar */}
-              {isPackageType() ? (
-                // Package: Show dropdown with dates
-                <div className='booking-input-wrapper' ref={dateDropdownRef}>
-                  <Calendar className='booking-input-icon' />
-                  <input
-                    type='text'
-                    placeholder={
-                      getAvailableDates().length === 0
-                        ? 'No dates available'
-                        : 'Select date'
-                    }
-                    className='booking-input'
-                    value={
-                      selectedDateString
-                        ? format(new Date(selectedDateString), 'MMM dd, yyyy')
-                        : ''
-                    }
-                    readOnly
-                    disabled={getAvailableDates().length === 0}
-                    onClick={() => {
-                      if (getAvailableDates().length > 0) {
-                        setShowDateDropdown(!showDateDropdown);
-                      }
-                    }}
-                  />
-                  <ChevronDown className='booking-dropdown-chevron' />
-                  {showDateDropdown && getAvailableDates().length > 0 && (
-                    <div className='booking-dates-dropdown'>
-                      {getAvailableDates().map((dateStr, idx) => (
-                        <div
-                          key={idx}
-                          className='booking-date-item'
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleDateStringSelect(dateStr);
-                          }}
-                        >
-                          {format(new Date(dateStr), 'MMM dd, yyyy')}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Tour: Show calendar
-                <div className='booking-input-wrapper' ref={datePickerRef}>
-                  <Calendar className='booking-input-icon' />
-                  <input
-                    type='text'
-                    placeholder='Add dates'
-                    className='booking-input'
-                    value={
-                      selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''
-                    }
-                    readOnly
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                  />
-                  {showDatePicker && (
-                    <div className='booking-calendar-dropdown'>
-                      <div className='calendar-header-nav'>
-                        <button
-                          className='calendar-nav-button'
-                          onClick={e => {
-                            e.stopPropagation();
-                            const newMonth = new Date(month);
-                            newMonth.setMonth(newMonth.getMonth() - 1);
-                            setMonth(newMonth);
-                          }}
-                        >
-                          ‹
-                        </button>
-                        <button
-                          className='calendar-nav-button'
-                          onClick={e => {
-                            e.stopPropagation();
-                            const newMonth = new Date(month);
-                            newMonth.setMonth(newMonth.getMonth() + 1);
-                            setMonth(newMonth);
-                          }}
-                        >
-                          ›
-                        </button>
-                      </div>
-                      <DayPicker
-                        mode='single'
-                        selected={selectedDate}
-                        onSelect={handleDateSelect}
-                        disabled={getDisabledDates}
-                        numberOfMonths={1}
-                        showOutsideDays={true}
-                        month={month}
-                        onMonthChange={setMonth}
-                        className='custom-calendar'
-                        modifiersClassNames={{
-                          disabled: 'rdp-day_unavailable',
-                        }}
-                      />
-                      <div className='calendar-footer'>
-                        <button
-                          className='clear-dates-button'
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedDate(undefined);
-                          }}
-                        >
-                          Clear dates
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Action Buttons */}
+              <div className='booking-actions'>
+                <button
+                  onClick={handleAddToCart}
+                  className='booking-add-to-cart-button'
+                >
+                  Add to Cart
+                </button>
+              </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className='booking-actions'>
-              <button
-                onClick={handleAddToCart}
-                className='booking-add-to-cart-button'
-              >
-                Add to Cart
-              </button>
-            </div>
-          </div>
-        </div>
+          </PopoverContent>
+        </Popover>
       )}
 
       {/* Scroll to Top Button */}

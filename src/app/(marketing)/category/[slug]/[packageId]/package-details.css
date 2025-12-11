@@ -339,7 +339,162 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   padding: 0 20px 20px;
 }
 
-/* Horizontal Booking Card - Fixed at Bottom */
+/* Desktop Add to Cart Button - Fixed Center Bottom */
+.desktop-add-to-cart-button-fixed {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 32px;
+  height: 56px;
+  background: #ff4d00;
+  color: #fff;
+  border: none;
+  border-radius: 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(255, 77, 0, 0.4);
+  z-index: 1000;
+}
+
+.desktop-add-to-cart-button-fixed:hover {
+  background: #e64500;
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 77, 0, 0.6);
+}
+
+@media (max-width: 767px) {
+  .desktop-add-to-cart-button-fixed {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .desktop-add-to-cart-button-fixed {
+    padding: 12px 28px;
+    height: 52px;
+    font-size: 15px;
+  }
+}
+
+/* Desktop Booking Popover */
+.desktop-booking-popover {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1001;
+  padding: 0;
+  min-width: 420px;
+  max-width: 480px;
+  animation: popoverFadeIn 0.2s ease-out;
+}
+
+.desktop-booking-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.desktop-booking-popover-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.desktop-booking-popover-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
+  transition: background 0.2s;
+  color: #6b7280;
+}
+
+.desktop-booking-popover-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.desktop-booking-popover-close-icon {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 1024px) {
+  .desktop-booking-popover {
+    min-width: 380px;
+    max-width: 440px;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-booking-popover {
+    min-width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
+  }
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.desktop-booking-popover-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.desktop-booking-popover-content .booking-price-section {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.desktop-booking-popover-content .input-selectors {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.desktop-booking-popover-content .booking-input-wrapper {
+  width: 100%;
+  min-width: unset;
+}
+
+.desktop-booking-popover-content .booking-actions {
+  width: 100%;
+  margin-left: 0;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.desktop-booking-popover-content .booking-add-to-cart-button {
+  width: 100%;
+}
+
+/* Horizontal Booking Card - Fixed at Bottom (Legacy - Hidden on Desktop) */
 .package-booking-card-horizontal {
   position: fixed;
   bottom: 0;
@@ -350,11 +505,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   padding: 16px 24px;
+  display: none; /* Hidden on desktop, only show on mobile if needed */
 }
 
 @media (max-width: 767px) {
   .package-booking-card-horizontal {
-    display: none;
+    display: none; /* Keep hidden on mobile too since we have mobile drawer */
   }
 }
 
@@ -453,7 +609,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  z-index: 1001;
+  z-index: 1002;
   padding: 16px;
 }
 
@@ -533,7 +689,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   max-height: 300px;
   overflow-y: auto;
-  z-index: 1001;
+  z-index: 1002;
 }
 
 .booking-date-item {
@@ -564,7 +720,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  z-index: 1001;
+  z-index: 1002;
   padding: 20px;
   min-width: 350px;
 }
