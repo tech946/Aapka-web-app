@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -44,22 +52,7 @@ interface LeadFormData {
   smoking_room_required: boolean;
 
   // 6. Tours & Activities
-  dubai_city_tour: boolean;
-  abu_dhabi_city_tour: boolean;
-  desert_safari: string;
-  marina_dinner_cruise: boolean;
-  creek_cruise: boolean;
-  burj_khalifa_ticket: string;
-  dubai_frame: boolean;
-  miracle_garden: boolean;
-  global_village: boolean;
-  ain_dubai: boolean;
-  atlantis_aquaventure: boolean;
-  ski_dubai: boolean;
-  ferrari_world: boolean;
-  warner_bros: boolean;
-  motiongate_img: string;
-  yacht_experience: string;
+  tours_and_activities: string[]; // Array of selected attraction IDs
 
   // 7. Food Preferences
   vegetarian: boolean;
@@ -138,10 +131,21 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD' },
 ];
 
+interface Attraction {
+  id: string;
+  name: string;
+  code?: string;
+}
+
 export default function SubmitLeadPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [attractions, setAttractions] = useState<Attraction[]>([]);
+  const [attractionsLoading, setAttractionsLoading] = useState(true);
+  const [attractionsSearch, setAttractionsSearch] = useState('');
+  const [showAttractionsDropdown, setShowAttractionsDropdown] = useState(false);
+  const [showSelectedAttractions, setShowSelectedAttractions] = useState(true);
 
   const [formData, setFormData] = useState<LeadFormData>({
     full_name_as_per_passport: '',
@@ -169,22 +173,7 @@ export default function SubmitLeadPage() {
     preferred_location: '',
     bed_type: '',
     smoking_room_required: false,
-    dubai_city_tour: false,
-    abu_dhabi_city_tour: false,
-    desert_safari: '',
-    marina_dinner_cruise: false,
-    creek_cruise: false,
-    burj_khalifa_ticket: '',
-    dubai_frame: false,
-    miracle_garden: false,
-    global_village: false,
-    ain_dubai: false,
-    atlantis_aquaventure: false,
-    ski_dubai: false,
-    ferrari_world: false,
-    warner_bros: false,
-    motiongate_img: '',
-    yacht_experience: '',
+    tours_and_activities: [],
     vegetarian: false,
     jain_food: false,
     per_person_budget: 0,
@@ -216,6 +205,36 @@ export default function SubmitLeadPage() {
       formData.adults + formData.children_count + formData.infant_count;
     setFormData(prev => ({ ...prev, total_travelers: total }));
   }, [formData.adults, formData.children_count, formData.infant_count]);
+
+  // Fetch attractions from API
+  useEffect(() => {
+    const fetchAttractions = async () => {
+      try {
+        setAttractionsLoading(true);
+        const response = await fetch('/api/website/area-category-dropdowns');
+        const result = await response.json();
+
+        if (response.ok && result.data) {
+          // API now returns only attractions category master
+          const attractionsData = Array.isArray(result.data)
+            ? result.data
+            : [];
+
+          setAttractions(attractionsData);
+        } else {
+          console.error('Failed to fetch attractions:', result);
+          toast.error('Failed to load attractions. Please refresh the page.');
+        }
+      } catch (error) {
+        console.error('Error fetching attractions:', error);
+        toast.error('Failed to load attractions. Please refresh the page.');
+      } finally {
+        setAttractionsLoading(false);
+      }
+    };
+
+    fetchAttractions();
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -297,22 +316,7 @@ export default function SubmitLeadPage() {
           preferred_location: '',
           bed_type: '',
           smoking_room_required: false,
-          dubai_city_tour: false,
-          abu_dhabi_city_tour: false,
-          desert_safari: '',
-          marina_dinner_cruise: false,
-          creek_cruise: false,
-          burj_khalifa_ticket: '',
-          dubai_frame: false,
-          miracle_garden: false,
-          global_village: false,
-          ain_dubai: false,
-          atlantis_aquaventure: false,
-          ski_dubai: false,
-          ferrari_world: false,
-          warner_bros: false,
-          motiongate_img: '',
-          yacht_experience: '',
+          tours_and_activities: [],
           vegetarian: false,
           jain_food: false,
           per_person_budget: 0,
@@ -346,6 +350,14 @@ export default function SubmitLeadPage() {
       });
     }
   };
+
+  // Filter attractions based on search
+  const filteredAttractions = attractions.filter(
+    attraction =>
+      attraction.name.toLowerCase().includes(attractionsSearch.toLowerCase()) ||
+      (attraction.code &&
+        attraction.code.toLowerCase().includes(attractionsSearch.toLowerCase()))
+  );
 
   const renderYesNoField = (
     label: string,
@@ -715,62 +727,151 @@ export default function SubmitLeadPage() {
           {/* 6. Tours & Activities */}
           <div className='lead-section'>
             <h3 className='lead-section-title'>6. Tours & Activities</h3>
-            <div className='lead-form-grid'>
-              {renderYesNoField('Dubai City Tour', 'dubai_city_tour')}
-              {renderYesNoField('Abu Dhabi City Tour', 'abu_dhabi_city_tour')}
+            <div className='lead-form-group full-width'>
+              <Label>Select Tours & Activities</Label>
 
-              <div className='lead-form-group'>
-                <Label>Desert Safari</Label>
-                <Select
-                  options={DESERT_SAFARI_OPTIONS}
-                  value={formData.desert_safari}
-                  onChange={val => handleInputChange('desert_safari', val)}
-                  placeholder='Select desert safari type'
-                />
-              </div>
+              {/* Selected Attractions Chips */}
+              {formData.tours_and_activities.length > 0 && (
+                <div className='attractions-selected-container'>
+                  <div className='attractions-selected-header'>
+                    <span className='attractions-selected-count'>
+                      {formData.tours_and_activities.length} selected
+                    </span>
+                    <button
+                      type='button'
+                      className='attractions-toggle-btn'
+                      onClick={() =>
+                        setShowSelectedAttractions(!showSelectedAttractions)
+                      }
+                    >
+                      {showSelectedAttractions ? (
+                        <ChevronUp size={16} />
+                      ) : (
+                        <ChevronDown size={16} />
+                      )}
+                    </button>
+                  </div>
 
-              {renderYesNoField('Marina Dinner Cruise', 'marina_dinner_cruise')}
-              {renderYesNoField('Creek Cruise', 'creek_cruise')}
+                  {showSelectedAttractions && (
+                    <div className='attractions-chips-container'>
+                      {formData.tours_and_activities.map(attractionId => {
+                        const attraction = attractions.find(
+                          a => a.id === attractionId
+                        );
+                        if (!attraction) return null;
+                        return (
+                          <div key={attractionId} className='attraction-chip'>
+                            <span className='attraction-chip-name'>
+                              {attraction.name}
+                              {attraction.code && ` (${attraction.code})`}
+                            </span>
+                            <button
+                              type='button'
+                              className='attraction-chip-remove'
+                              onClick={() => {
+                                handleInputChange(
+                                  'tours_and_activities',
+                                  formData.tours_and_activities.filter(
+                                    id => id !== attractionId
+                                  )
+                                );
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              <div className='lead-form-group'>
-                <Label>Burj Khalifa Ticket</Label>
-                <Select
-                  options={BURJ_KHALIFA_OPTIONS}
-                  value={formData.burj_khalifa_ticket}
-                  onChange={val =>
-                    handleInputChange('burj_khalifa_ticket', val)
-                  }
-                  placeholder='Select level'
-                />
-              </div>
+              {/* Search and Dropdown */}
+              <div className='attractions-selector-wrapper'>
+                <div className='attractions-search-container'>
+                  <Search className='attractions-search-icon' size={18} />
+                  <input
+                    type='text'
+                    placeholder='Search attractions...'
+                    value={attractionsSearch}
+                    onChange={e => setAttractionsSearch(e.target.value)}
+                    onFocus={() => setShowAttractionsDropdown(true)}
+                    className='attractions-search-input'
+                  />
+                </div>
 
-              {renderYesNoField('Dubai Frame', 'dubai_frame')}
-              {renderYesNoField('Miracle Garden', 'miracle_garden')}
-              {renderYesNoField('Global Village', 'global_village')}
-              {renderYesNoField('Ain Dubai', 'ain_dubai')}
-              {renderYesNoField('Atlantis Aquaventure', 'atlantis_aquaventure')}
-              {renderYesNoField('Ski Dubai', 'ski_dubai')}
-              {renderYesNoField('Ferrari World', 'ferrari_world')}
-              {renderYesNoField('Warner Bros', 'warner_bros')}
-
-              <div className='lead-form-group'>
-                <Label>MotionGate / IMG</Label>
-                <Select
-                  options={MOTIONGATE_IMG_OPTIONS}
-                  value={formData.motiongate_img}
-                  onChange={val => handleInputChange('motiongate_img', val)}
-                  placeholder='Select option'
-                />
-              </div>
-
-              <div className='lead-form-group'>
-                <Label>Yacht Experience</Label>
-                <Select
-                  options={YACHT_EXPERIENCE_OPTIONS}
-                  value={formData.yacht_experience}
-                  onChange={val => handleInputChange('yacht_experience', val)}
-                  placeholder='Select duration'
-                />
+                {showAttractionsDropdown && (
+                  <>
+                    <div
+                      className='attractions-dropdown-overlay'
+                      onClick={() => setShowAttractionsDropdown(false)}
+                    />
+                    <div className='attractions-dropdown'>
+                      {attractionsLoading ? (
+                        <div className='attractions-loading'>
+                          <Loader2 size={20} className='spinning' />
+                          <span>Loading attractions...</span>
+                        </div>
+                      ) : (
+                        <>
+                          {filteredAttractions.length === 0 ? (
+                            <div className='attractions-empty'>
+                              No attractions found
+                            </div>
+                          ) : (
+                            <div className='attractions-list'>
+                              {filteredAttractions.map(attraction => {
+                                const isSelected =
+                                  formData.tours_and_activities.includes(
+                                    attraction.id
+                                  );
+                                return (
+                                  <label
+                                    key={attraction.id}
+                                    className={`attraction-item ${isSelected ? 'selected' : ''}`}
+                                  >
+                                    <input
+                                      type='checkbox'
+                                      checked={isSelected}
+                                      onChange={e => {
+                                        if (e.target.checked) {
+                                          handleInputChange(
+                                            'tours_and_activities',
+                                            [
+                                              ...formData.tours_and_activities,
+                                              attraction.id,
+                                            ]
+                                          );
+                                        } else {
+                                          handleInputChange(
+                                            'tours_and_activities',
+                                            formData.tours_and_activities.filter(
+                                              id => id !== attraction.id
+                                            )
+                                          );
+                                        }
+                                      }}
+                                    />
+                                    <span className='attraction-item-name'>
+                                      {attraction.name}
+                                      {attraction.code && (
+                                        <span className='attraction-item-code'>
+                                          {' '}
+                                          ({attraction.code})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

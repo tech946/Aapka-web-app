@@ -248,3 +248,201 @@
   }
 }
 
+/* Tours & Activities Multiselect Styles */
+.attractions-selected-container {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.attractions-selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.attractions-selected-count {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.attractions-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.attractions-toggle-btn:hover {
+  color: #374151;
+}
+
+.attractions-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.attraction-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.attraction-chip-name {
+  font-weight: 500;
+}
+
+.attraction-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+  margin-left: 0.25rem;
+}
+
+.attraction-chip-remove:hover {
+  color: #dc2626;
+}
+
+.attractions-selector-wrapper {
+  position: relative;
+}
+
+.attractions-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.attractions-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #6b7280;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.attractions-search-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.attractions-search-input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.attractions-dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 998;
+  background: transparent;
+}
+
+.attractions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+.attractions-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.attractions-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.attractions-list {
+  padding: 0.5rem;
+}
+
+.attraction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.attraction-item:hover {
+  background: #f9fafb;
+}
+
+.attraction-item.selected {
+  background: #fef3c7;
+}
+
+.attraction-item input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #f97316;
+}
+
+.attraction-item-name {
+  font-size: 0.9rem;
+  color: #374151;
+  flex: 1;
+}
+
+.attraction-item-code {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments for attractions */
+@media (max-width: 768px) {
+  .attractions-dropdown {
+    max-height: 250px;
+  }
+}
