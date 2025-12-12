@@ -9,6 +9,7 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  Star,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select } from '@/components/ui/select';
@@ -135,6 +136,9 @@ interface Attraction {
   id: string;
   name: string;
   code?: string;
+  area_id?: string;
+  area_name?: string | null;
+  top_attraction?: boolean;
 }
 
 export default function SubmitLeadPage() {
@@ -216,9 +220,7 @@ export default function SubmitLeadPage() {
 
         if (response.ok && result.data) {
           // API now returns only attractions category master
-          const attractionsData = Array.isArray(result.data)
-            ? result.data
-            : [];
+          const attractionsData = Array.isArray(result.data) ? result.data : [];
 
           setAttractions(attractionsData);
         } else {
@@ -356,7 +358,13 @@ export default function SubmitLeadPage() {
     attraction =>
       attraction.name.toLowerCase().includes(attractionsSearch.toLowerCase()) ||
       (attraction.code &&
-        attraction.code.toLowerCase().includes(attractionsSearch.toLowerCase()))
+        attraction.code
+          .toLowerCase()
+          .includes(attractionsSearch.toLowerCase())) ||
+      (attraction.area_name &&
+        attraction.area_name
+          .toLowerCase()
+          .includes(attractionsSearch.toLowerCase()))
   );
 
   const renderYesNoField = (
@@ -762,7 +770,17 @@ export default function SubmitLeadPage() {
                         return (
                           <div key={attractionId} className='attraction-chip'>
                             <span className='attraction-chip-name'>
+                              {attraction.top_attraction && (
+                                <Star
+                                  size={12}
+                                  fill='#fbbf24'
+                                  stroke='#fbbf24'
+                                  className='attraction-chip-star'
+                                />
+                              )}
                               {attraction.name}
+                              {attraction.area_name &&
+                                ` - ${attraction.area_name}`}
                               {attraction.code && ` (${attraction.code})`}
                             </span>
                             <button
@@ -829,7 +847,7 @@ export default function SubmitLeadPage() {
                                 return (
                                   <label
                                     key={attraction.id}
-                                    className={`attraction-item ${isSelected ? 'selected' : ''}`}
+                                    className={`attraction-item ${isSelected ? 'selected' : ''} ${attraction.top_attraction ? 'top-attraction' : ''}`}
                                   >
                                     <input
                                       type='checkbox'
@@ -854,7 +872,21 @@ export default function SubmitLeadPage() {
                                       }}
                                     />
                                     <span className='attraction-item-name'>
+                                      {attraction.top_attraction && (
+                                        <Star
+                                          size={14}
+                                          fill='#fbbf24'
+                                          stroke='#fbbf24'
+                                          className='attraction-star-icon'
+                                        />
+                                      )}
                                       {attraction.name}
+                                      {attraction.area_name && (
+                                        <span className='attraction-item-area'>
+                                          {' - '}
+                                          {attraction.area_name}
+                                        </span>
+                                      )}
                                       {attraction.code && (
                                         <span className='attraction-item-code'>
                                           {' '}

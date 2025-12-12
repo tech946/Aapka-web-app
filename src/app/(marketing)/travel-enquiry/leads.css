@@ -309,6 +309,16 @@
 
 .attraction-chip-name {
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.attraction-chip-star {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .attraction-chip-remove {
@@ -426,6 +436,15 @@
   background: #fef3c7;
 }
 
+.attraction-item.top-attraction {
+  font-weight: 500;
+}
+
+.attraction-item.top-attraction.selected {
+  background: #fef3c7;
+  border-left: 3px solid #fbbf24;
+}
+
 .attraction-item input[type='checkbox'] {
   width: 18px;
   height: 18px;
@@ -437,11 +456,33 @@
   font-size: 0.9rem;
   color: #374151;
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.attraction-star-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.attraction-item-area {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: normal;
 }
 
 .attraction-item-code {
   color: #6b7280;
   font-size: 0.85rem;
+}
+
+.attraction-chip-star {
+  margin-right: 4px;
+  vertical-align: middle;
+  display: inline-block;
 }
 
 /* Responsive adjustments for attractions */
