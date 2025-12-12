@@ -258,7 +258,6 @@ export default function Footer() {
             <ul>
               <li>Visa</li>
               <li>Mastercard</li>
-              <li>PayPal</li>
               <li>G Pay</li>
             </ul>
           </div>

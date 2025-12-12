@@ -886,7 +886,10 @@ export default function PackageDetailsPage() {
                   {showPersonsDropdown && (
                     <div className='mobile-booking-persons-dropdown'>
                       <div className='mobile-person-counter-row'>
-                        <span className='mobile-person-label'>Adult</span>
+                        <span className='mobile-person-label'>
+                          Adult{' '}
+                          <span className='person-age-info'>(8+ years)</span>
+                        </span>
                         <div className='mobile-person-counter'>
                           <button
                             className='mobile-counter-button'
@@ -911,7 +914,10 @@ export default function PackageDetailsPage() {
                         </div>
                       </div>
                       <div className='mobile-person-counter-row'>
-                        <span className='mobile-person-label'>Child</span>
+                        <span className='mobile-person-label'>
+                          Child{' '}
+                          <span className='person-age-info'>(3-8 years)</span>
+                        </span>
                         <div className='mobile-person-counter'>
                           <button
                             className='mobile-counter-button'
@@ -932,7 +938,10 @@ export default function PackageDetailsPage() {
                         </div>
                       </div>
                       <div className='mobile-person-counter-row'>
-                        <span className='mobile-person-label'>Infant</span>
+                        <span className='mobile-person-label'>
+                          Infant{' '}
+                          <span className='person-age-info'>(0-2 years)</span>
+                        </span>
                         <div className='mobile-person-counter'>
                           <button
                             className='mobile-counter-button'
@@ -1147,7 +1156,10 @@ export default function PackageDetailsPage() {
                   {showPersonsDropdown && (
                     <div className='booking-persons-dropdown'>
                       <div className='person-counter-row'>
-                        <span className='person-label'>Adult</span>
+                        <span className='person-label'>
+                          Adult{' '}
+                          <span className='person-age-info'>(8+ years)</span>
+                        </span>
                         <div className='person-counter'>
                           <button
                             className='counter-button'
@@ -1170,7 +1182,10 @@ export default function PackageDetailsPage() {
                         </div>
                       </div>
                       <div className='person-counter-row'>
-                        <span className='person-label'>Child</span>
+                        <span className='person-label'>
+                          Child{' '}
+                          <span className='person-age-info'>(3-8 years)</span>
+                        </span>
                         <div className='person-counter'>
                           <button
                             className='counter-button'
@@ -1189,7 +1204,10 @@ export default function PackageDetailsPage() {
                         </div>
                       </div>
                       <div className='person-counter-row'>
-                        <span className='person-label'>Infant</span>
+                        <span className='person-label'>
+                          Infant{' '}
+                          <span className='person-age-info'>(0-2 years)</span>
+                        </span>
                         <div className='person-counter'>
                           <button
                             className='counter-button'

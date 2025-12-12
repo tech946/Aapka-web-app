@@ -631,6 +631,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-weight: 500;
 }
 
+.person-age-info {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
 .person-counter {
   display: flex;
   align-items: center;
@@ -820,6 +826,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   border-radius: 6px;
   font-size: 14px;
   transition: all 0.2s;
+  position: relative;
+}
+
+.custom-calendar .rdp-day button {
+  width: 100%;
+  height: 100%;
 }
 
 .custom-calendar .rdp-day:hover:not([disabled]):not(.rdp-day_selected) {
@@ -846,41 +858,29 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   color: #d1d5db !important;
   cursor: not-allowed !important;
   background: #f9fafb !important;
-  opacity: 0.6;
+  opacity: 1;
+}
+
+.custom-calendar .rdp-day_unavailable button {
+  padding-bottom: 14px;
+}
+
+.custom-calendar .rdp-day_unavailable::after {
+  content: 'N/A';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .custom-calendar .rdp-day_unavailable:hover {
   background: #f3f4f6 !important;
-}
-
-.custom-calendar .rdp-day_unavailable:hover::after {
-  content: 'Not available';
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1f2937;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  z-index: 1000;
-  pointer-events: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.custom-calendar .rdp-day_unavailable:hover::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: #1f2937;
-  z-index: 1000;
-  pointer-events: none;
 }
 
 .custom-calendar .rdp-day_outside {
@@ -1371,6 +1371,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     font-weight: 500;
   }
 
+  .mobile-person-label .person-age-info {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 400;
+  }
+
   .mobile-person-counter {
     display: flex;
     align-items: center;
@@ -1564,6 +1570,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     border-radius: 6px;
     font-size: 14px;
     transition: all 0.2s;
+    position: relative;
+  }
+
+  .mobile-custom-calendar .rdp-day button {
+    width: 100%;
+    height: 100%;
   }
 
   .mobile-custom-calendar
@@ -1594,38 +1606,26 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     opacity: 0.6;
   }
 
+  .mobile-custom-calendar .rdp-day_unavailable button {
+    padding-bottom: 14px;
+  }
+
+  .mobile-custom-calendar .rdp-day_unavailable::after {
+    content: 'N/A';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ef4444;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 1;
+  }
+
   .mobile-custom-calendar .rdp-day_unavailable:hover {
     background: #f3f4f6 !important;
-  }
-
-  .mobile-custom-calendar .rdp-day_unavailable:hover::after {
-    content: 'Not available';
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1f2937;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    z-index: 1000;
-    pointer-events: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  .mobile-custom-calendar .rdp-day_unavailable:hover::before {
-    content: '';
-    position: absolute;
-    bottom: calc(100% + 2px);
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: #1f2937;
-    z-index: 1000;
-    pointer-events: none;
   }
 
   .mobile-custom-calendar .rdp-day_outside {
