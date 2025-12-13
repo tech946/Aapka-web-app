@@ -98,7 +98,7 @@
 
 .cart-content {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: calc(100% - 432px) 400px;
   gap: 32px;
 }
 
@@ -178,6 +178,7 @@
   display: flex;
   gap: 24px;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .cart-person-control {

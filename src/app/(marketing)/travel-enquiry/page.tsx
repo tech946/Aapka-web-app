@@ -56,8 +56,7 @@ interface LeadFormData {
   tours_and_activities: string[]; // Array of selected attraction IDs
 
   // 7. Food Preferences
-  vegetarian: boolean;
-  jain_food: boolean;
+  food_preference_id: number | null;
 
   // 8. Budget & Payments
   per_person_budget: number;
@@ -132,6 +131,13 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'USD' },
 ];
 
+const FOOD_PREFERENCE_OPTIONS = [
+  { value: '1', label: 'Veg' },
+  { value: '2', label: 'Non Veg' },
+  { value: '3', label: 'Jain Food' },
+  { value: '4', label: 'Mix' },
+];
+
 interface Attraction {
   id: string;
   name: string;
@@ -178,8 +184,7 @@ export default function SubmitLeadPage() {
     bed_type: '',
     smoking_room_required: false,
     tours_and_activities: [],
-    vegetarian: false,
-    jain_food: false,
+    food_preference_id: null,
     per_person_budget: 0,
     full_package_budget: 0,
     flexible_budget: false,
@@ -319,8 +324,7 @@ export default function SubmitLeadPage() {
           bed_type: '',
           smoking_room_required: false,
           tours_and_activities: [],
-          vegetarian: false,
-          jain_food: false,
+          food_preference_id: null,
           per_person_budget: 0,
           full_package_budget: 0,
           flexible_budget: false,
@@ -912,8 +916,24 @@ export default function SubmitLeadPage() {
           <div className='lead-section'>
             <h3 className='lead-section-title'>7. Food Preferences</h3>
             <div className='lead-form-grid'>
-              {renderYesNoField('Vegetarian', 'vegetarian')}
-              {renderYesNoField('Jain Food', 'jain_food')}
+              <div className='lead-form-group'>
+                <Label>Food Preference</Label>
+                <Select
+                  options={FOOD_PREFERENCE_OPTIONS}
+                  value={
+                    formData.food_preference_id
+                      ? String(formData.food_preference_id)
+                      : ''
+                  }
+                  onChange={val =>
+                    handleInputChange(
+                      'food_preference_id',
+                      val ? parseInt(val, 10) : null
+                    )
+                  }
+                  placeholder='Select food preference'
+                />
+              </div>
             </div>
           </div>
 
