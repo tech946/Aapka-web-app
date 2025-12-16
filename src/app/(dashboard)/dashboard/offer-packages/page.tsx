@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type PackageRow = {
   id: string;
@@ -229,7 +230,7 @@ function AddPackageModal({
   const [price, setPrice] = useState<string>('');
   const [status, setStatus] = useState('active');
 
-  return (
+  const modalContent = (
     <div className='modal_overlay' onClick={onClose}>
       <div className='modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
@@ -291,4 +292,10 @@ function AddPackageModal({
       </div>
     </div>
   );
+
+  if (typeof window !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 }
