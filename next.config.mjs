@@ -12,10 +12,18 @@ const nextConfig = {
   // Configure API routes to handle larger request bodies
   experimental: {
     // Increase the maximum request body size for API routes
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    serverComponentsExternalPackages: [
+      '@supabase/supabase-js',
+      '@supabase/auth-helpers-nextjs',
+      '@supabase/auth-helpers-shared',
+    ],
   },
-  // Externalize Supabase to avoid bundling issues
-  serverExternalPackages: ['@supabase/supabase-js'],
+  // Externalize Supabase packages to avoid bundling issues
+  serverExternalPackages: [
+    '@supabase/supabase-js',
+    '@supabase/auth-helpers-nextjs',
+    '@supabase/auth-helpers-shared',
+  ],
   // Configure body parser for API routes
   api: {
     bodyParser: {
@@ -31,11 +39,22 @@ const nextConfig = {
         tls: false,
       };
     }
-    // Handle ESM modules for Supabase
-    config.resolve.extensionAlias = {
-      '.js': ['.js', '.ts', '.tsx'],
-      '.jsx': ['.jsx', '.tsx'],
-    };
+
+    // Externalize Supabase packages on server side to avoid ESM bundling issues
+    if (isServer) {
+      const originalExternals = config.externals;
+      config.externals = [
+        ...(Array.isArray(originalExternals)
+          ? originalExternals
+          : [originalExternals]),
+        {
+          '@supabase/supabase-js': '@supabase/supabase-js',
+          '@supabase/auth-helpers-nextjs': '@supabase/auth-helpers-nextjs',
+          '@supabase/auth-helpers-shared': '@supabase/auth-helpers-shared',
+        },
+      ];
+    }
+
     return config;
   },
 };
