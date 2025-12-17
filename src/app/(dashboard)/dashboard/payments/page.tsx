@@ -136,12 +136,12 @@ export default function PaymentsPage() {
 
   const formatCurrency = (
     amount: number | null | undefined,
-    currency: string | null | undefined = 'INR'
+    currency: string | null | undefined = 'AED'
   ) => {
     if (amount === null || amount === undefined) return '-';
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'INR',
+      currency: currency || 'AED',
     }).format(amount);
   };
 

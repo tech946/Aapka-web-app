@@ -2,13 +2,6 @@
  * Location detection and currency utilities
  */
 
-// Fallback rate if API fails
-const FALLBACK_AED_TO_INR_RATE = 22.5;
-
-// Client-side cache for exchange rate (manual price from database)
-let clientRateCache: { rate: number; timestamp: number } | null = null;
-const CLIENT_CACHE_DURATION = 3600000; // 1 hour in milliseconds
-
 export interface UserLocation {
   country: string;
   countryCode: string;
@@ -28,7 +21,12 @@ export async function detectUserLocation(): Promise<UserLocation> {
     if (testLocation) {
       try {
         const parsed = JSON.parse(testLocation);
-        return parsed;
+        // Override currency to always be AED
+        return {
+          ...parsed,
+          currency: 'AED',
+          currencySymbol: 'AED',
+        };
       } catch (e) {
         // Error parsing test location
       }
@@ -61,8 +59,8 @@ export async function detectUserLocation(): Promise<UserLocation> {
       country,
       countryCode,
       isIndia,
-      currency: isIndia ? 'INR' : 'AED',
-      currencySymbol: isIndia ? '₹' : 'AED',
+      currency: 'AED', // Always use AED
+      currencySymbol: 'AED', // Always use AED
     };
 
     return location;
@@ -82,8 +80,8 @@ export async function detectUserLocation(): Promise<UserLocation> {
           country: 'India',
           countryCode: 'IN',
           isIndia: true,
-          currency: 'INR',
-          currencySymbol: '₹',
+          currency: 'AED', // Always use AED
+          currencySymbol: 'AED', // Always use AED
         };
         return location;
       }
@@ -104,115 +102,57 @@ export async function detectUserLocation(): Promise<UserLocation> {
 }
 
 /**
- * Fetch manual AED to INR exchange rate from price_master table
- * Uses cached rate if available and fresh
- */
-export async function getExchangeRate(): Promise<number> {
-  try {
-    // Check client-side cache first
-    const now = Date.now();
-    if (
-      clientRateCache &&
-      now - clientRateCache.timestamp < CLIENT_CACHE_DURATION
-    ) {
-      return clientRateCache.rate;
-    }
-
-    // Fetch manual rate from price_master table
-    const response = await fetch('/api/price-master', {
-      cache: 'no-store', // Always fetch fresh
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch price master');
-    }
-
-    const data = await response.json();
-
-    if (data.data && Array.isArray(data.data)) {
-      // Find INR entry
-      const inrEntry = data.data.find((item: any) => item.name === 'INR');
-
-      if (inrEntry && inrEntry.equivalent) {
-        const rate = Number(inrEntry.equivalent);
-        if (!isNaN(rate) && rate > 0) {
-          // Update cache
-          clientRateCache = {
-            rate: rate,
-            timestamp: now,
-          };
-          return rate;
-        }
-      }
-    }
-
-    throw new Error('Invalid price master response');
-  } catch (error) {
-    // Return cached rate if available (even if expired)
-    if (clientRateCache) {
-      return clientRateCache.rate;
-    }
-
-    // Last resort: return fallback rate
-    return FALLBACK_AED_TO_INR_RATE;
-  }
-}
-
-/**
- * Convert AED amount to INR using real-time exchange rate
- * This is an async function that fetches the latest rate
+ * Convert AED amount to INR - DEPRECATED: Always returns the same amount (no conversion)
+ * Kept for backward compatibility but does not perform conversion
  */
 export async function convertAEDToINRAsync(aedAmount: number): Promise<number> {
-  const rate = await getExchangeRate();
-  return Math.round(aedAmount * rate);
+  // No conversion - always return AED amount
+  return aedAmount;
 }
 
 /**
- * Convert AED amount to INR (synchronous version using cached rate)
- * For immediate calculations, use this. For accurate rates, use convertAEDToINRAsync
+ * Convert AED amount to INR - DEPRECATED: Always returns the same amount (no conversion)
+ * Kept for backward compatibility but does not perform conversion
  */
 export function convertAEDToINR(aedAmount: number): number {
-  // Use cached rate if available, otherwise use fallback
-  const rate = clientRateCache?.rate || FALLBACK_AED_TO_INR_RATE;
-  const converted = Math.round(aedAmount * rate);
-  return converted;
+  // No conversion - always return AED amount
+  return aedAmount;
 }
 
 /**
- * Initialize exchange rate on client side
- * Call this once when the app loads to fetch the latest rate
+ * Initialize exchange rate on client side - DEPRECATED: No longer needed
+ * Kept for backward compatibility
  */
 export async function initializeExchangeRate(): Promise<void> {
-  try {
-    await getExchangeRate();
-  } catch (error) {
-    // Failed to initialize exchange rate
-    console.error('Failed to initialize exchange rate:', error);
-  }
+  // No longer needed - currency is always AED
+  return Promise.resolve();
 }
 
 /**
- * Convert INR amount to AED
+ * Convert INR amount to AED - DEPRECATED: Always returns the same amount (no conversion)
+ * Kept for backward compatibility but does not perform conversion
  */
 export async function convertINRToAEDAsync(inrAmount: number): Promise<number> {
-  const rate = await getExchangeRate();
-  return Math.round((inrAmount / rate) * 100) / 100;
+  // No conversion - always return the same amount
+  return inrAmount;
 }
 
 /**
- * Convert INR amount to AED (synchronous version)
+ * Convert INR amount to AED - DEPRECATED: Always returns the same amount (no conversion)
+ * Kept for backward compatibility but does not perform conversion
  */
 export function convertINRToAED(inrAmount: number): number {
-  const rate = clientRateCache?.rate || FALLBACK_AED_TO_INR_RATE;
-  return Math.round((inrAmount / rate) * 100) / 100;
+  // No conversion - always return the same amount
+  return inrAmount;
 }
 
 /**
- * Format currency based on location
+ * Format currency - always formats as AED
  */
 export function formatCurrency(amount: number, location: UserLocation): string {
-  if (location.isIndia) {
-    return `₹${amount.toLocaleString('en-IN')}`;
-  }
-  return `AED ${amount.toLocaleString()}`;
+  // Always format as AED regardless of location
+  return `AED ${amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }

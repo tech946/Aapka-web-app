@@ -14,8 +14,6 @@ import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import {
   detectUserLocation,
-  convertAEDToINR,
-  formatCurrency,
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -69,19 +67,12 @@ export default function CartPage() {
     }
   }, [cartItems.length, validateCart]);
 
-  // Helper function to format price based on region
+  // Helper function to format price - always shows AED
   const formatPrice = (price: number): string => {
-    if (!userLocation) {
-      return `AED ${price.toLocaleString()}`;
-    }
-
-    // Indian users always see INR, international users always see AED
-    if (userLocation.isIndia) {
-      const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
-    }
-
-    return `AED ${price.toLocaleString()}`;
+    return `AED ${price.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const handleQuantityChange = (
@@ -172,7 +163,7 @@ export default function CartPage() {
           <div className='cart-items'>
             {cartItems.map((item, index) => (
               <div
-                key={`${item.packageId}-${item.selectedDate}-${index}-${userLocation?.isIndia ? 'inr' : 'aed'}`}
+                key={`${item.packageId}-${item.selectedDate}-${index}-aed`}
                 className='cart-item'
               >
                 <div className='cart-item-image'>

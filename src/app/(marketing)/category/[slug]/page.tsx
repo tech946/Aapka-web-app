@@ -13,8 +13,6 @@ import {
 } from 'lucide-react';
 import {
   detectUserLocation,
-  convertAEDToINR,
-  formatCurrency,
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -106,20 +104,13 @@ export default function CategoryPage() {
     initialize();
   }, []);
 
-  // Helper function to format price based on region
+  // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
-    if (!userLocation) {
-      return `AED ${price.toLocaleString()}`;
-    }
-
-    // Indian users always see INR, international users always see AED
-    if (userLocation.isIndia) {
-      const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
-    }
-
-    return `AED ${price.toLocaleString()}`;
+    return `AED ${price.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const fetchCategory = async () => {
@@ -335,7 +326,7 @@ export default function CategoryPage() {
 
                   return (
                     <div
-                      key={`${pkg.package_id}-${userLocation?.isIndia ? 'inr' : 'aed'}`}
+                      key={`${pkg.package_id}-aed`}
                       className='package-card-wrapper'
                     >
                       <PackageCard
@@ -418,22 +409,13 @@ function PackageCard({
     return null;
   };
 
-  // Helper function to format price based on region
+  // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
-
-    // If location is not yet detected, show AED
-    if (!userLocation) {
-      return `AED ${price.toLocaleString()}`;
-    }
-
-    // Indian users always see INR, international users always see AED
-    if (userLocation.isIndia) {
-      const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
-    }
-
-    return `AED ${price.toLocaleString()}`;
+    return `AED ${price.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
   const rating = 99; // Mock rating - replace with actual data
   const reviewCount = 1004; // Mock review count - replace with actual data

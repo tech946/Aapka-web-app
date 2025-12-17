@@ -32,8 +32,6 @@ import {
 } from '@/components/ui/popover';
 import {
   detectUserLocation,
-  convertAEDToINR,
-  formatCurrency,
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -261,17 +259,13 @@ export default function PackageDetailsPage() {
     }
   }, [pkg, persons.adult, persons.child, persons.infant]);
 
-  // Helper function to format price based on region
+  // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
-    if (!userLocation) return `AED ${price.toLocaleString()}`;
-
-    // Indian users always see INR, international users always see AED
-    if (userLocation.isIndia) {
-      const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
-    }
-    return `AED ${price.toLocaleString()}`;
+    return `AED ${price.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const fetchPackage = async () => {

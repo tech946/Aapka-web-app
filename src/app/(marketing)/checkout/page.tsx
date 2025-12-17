@@ -18,9 +18,6 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
   detectUserLocation,
-  convertAEDToINR,
-  convertAEDToINRAsync,
-  formatCurrency,
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
@@ -171,16 +168,12 @@ export default function CheckoutPage() {
     initialize();
   }, []);
 
-  // Helper function to format price based on region
+  // Helper function to format price - always shows AED
   const formatPrice = (price: number): string => {
-    if (!userLocation) return `AED ${price.toLocaleString()}`;
-
-    // Indian users always see INR, international users always see AED
-    if (userLocation.isIndia) {
-      const inrPrice = convertAEDToINR(price);
-      return formatCurrency(inrPrice, userLocation);
-    }
-    return `AED ${price.toLocaleString()}`;
+    return `AED ${price.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   const updatePassenger = (
@@ -383,7 +376,7 @@ export default function CheckoutPage() {
 
       const totalAmountAED = getTotalPrice();
 
-      // Indian users pay in INR, international users pay in AED
+      // Always use AED for all transactions
       let paymentAmount: number;
       let currency: string;
 
@@ -397,7 +390,7 @@ export default function CheckoutPage() {
 
       // Add platform fee to payment amount
       paymentAmount = basePaymentAmount + platformFee;
-      currency = 'AED'; // Dubai CCAvenue account uses AED
+      currency = 'AED'; // Always use AED
 
       // Create booking first
       const bookingResponse = await fetch('/api/checkout/create-booking', {

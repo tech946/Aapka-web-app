@@ -127,7 +127,6 @@ const PAYMENT_MODE_OPTIONS = [
 
 const CURRENCY_OPTIONS = [
   { value: 'AED', label: 'AED' },
-  { value: 'INR', label: 'INR' },
   { value: 'USD', label: 'USD' },
 ];
 
