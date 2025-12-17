@@ -59,6 +59,14 @@ export default function CheckoutPage() {
     return categorySlug.includes('tour');
   });
 
+  // For tours: only full payment. For packages/offer packages: allow half or full
+  // Update payment type if cart changes and becomes a tour
+  useEffect(() => {
+    if (isTourCheckout && paymentType === 'half') {
+      setPaymentType('full');
+    }
+  }, [isTourCheckout, paymentType]);
+
   // Calculate total passengers
   const totalAdults = cartItems.reduce((sum, item) => sum + item.adults, 0);
   const totalChildren = cartItems.reduce((sum, item) => sum + item.children, 0);
@@ -1189,30 +1197,33 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                     </label>
-                    <label className='payment-type-option'>
-                      <input
-                        type='radio'
-                        name='paymentType'
-                        value='half'
-                        checked={paymentType === 'half'}
-                        onChange={e =>
-                          setPaymentType(e.target.value as 'half' | 'full')
-                        }
-                      />
-                      <div className='payment-type-content'>
-                        <span className='payment-type-label'>
-                          Half Payment (50%)
-                        </span>
-                        <span className='payment-type-amount'>
-                          {(() => {
-                            const baseAmount = getTotalPrice() / 2;
-                            const fee =
-                              (baseAmount * platformFeePercentage) / 100;
-                            return formatPrice(baseAmount + fee);
-                          })()}
-                        </span>
-                      </div>
-                    </label>
+                    {/* Only show half payment option for packages and offer packages, not for tours */}
+                    {!isTourCheckout && (
+                      <label className='payment-type-option'>
+                        <input
+                          type='radio'
+                          name='paymentType'
+                          value='half'
+                          checked={paymentType === 'half'}
+                          onChange={e =>
+                            setPaymentType(e.target.value as 'half' | 'full')
+                          }
+                        />
+                        <div className='payment-type-content'>
+                          <span className='payment-type-label'>
+                            Half Payment (50%)
+                          </span>
+                          <span className='payment-type-amount'>
+                            {(() => {
+                              const baseAmount = getTotalPrice() / 2;
+                              const fee =
+                                (baseAmount * platformFeePercentage) / 100;
+                              return formatPrice(baseAmount + fee);
+                            })()}
+                          </span>
+                        </div>
+                      </label>
+                    )}
                   </div>
                 </div>
               )}
