@@ -35,9 +35,13 @@ export async function detectUserLocation(): Promise<UserLocation> {
 
   try {
     // Try to get location from IP geolocation service
+    // Note: This may fail due to CORS in production, which is handled gracefully
     const response = await fetch('https://ipapi.co/json/', {
       // Add timeout to prevent hanging
       signal: AbortSignal.timeout(5000),
+    }).catch((fetchError) => {
+      // Handle CORS and network errors gracefully
+      throw new Error('Location API unavailable');
     });
 
     if (!response.ok) {
@@ -65,7 +69,8 @@ export async function detectUserLocation(): Promise<UserLocation> {
 
     return location;
   } catch (error) {
-    // Error detecting location
+    // Error detecting location (CORS, network, timeout, etc.)
+    // Silently fall through to default location
 
     // Try fallback: Check browser timezone
     try {

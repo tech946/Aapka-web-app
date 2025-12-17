@@ -62,10 +62,11 @@ export default function CheckoutPage() {
   // For tours: only full payment. For packages/offer packages: allow half or full
   // Update payment type if cart changes and becomes a tour
   useEffect(() => {
-    if (isTourCheckout && paymentType === 'half') {
+    if (isTourCheckout) {
+      // Force full payment when tours are in cart
       setPaymentType('full');
     }
-  }, [isTourCheckout, paymentType]);
+  }, [isTourCheckout, cartItems.length]); // Update when tour status or cart changes
 
   // Calculate total passengers
   const totalAdults = cartItems.reduce((sum, item) => sum + item.adults, 0);
@@ -155,9 +156,25 @@ export default function CheckoutPage() {
           setPlatformFeePercentage(0);
         }
 
-        // Detect location
-        const location = await detectUserLocation();
-        setUserLocation(location);
+        // Detect location with error handling for CORS issues
+        try {
+          const location = await detectUserLocation();
+          setUserLocation(location);
+        } catch (locationError) {
+          // If location detection fails (CORS, network, etc.), use default
+          console.warn(
+            'Location detection failed, using default:',
+            locationError
+          );
+          const defaultLocation = {
+            country: 'Unknown',
+            countryCode: 'US',
+            isIndia: false,
+            currency: 'AED',
+            currencySymbol: 'AED',
+          };
+          setUserLocation(defaultLocation);
+        }
       } catch (error) {
         // Default to non-India
         const defaultLocation = {
@@ -348,6 +365,15 @@ export default function CheckoutPage() {
         );
         return;
       }
+    }
+
+    // If cart contains tours, payment type must be 'full'
+    if (isTourCheckout && paymentType === 'half') {
+      toast.error(
+        'Tours require full payment. Please select full payment option.'
+      );
+      setPaymentType('full');
+      return;
     }
 
     if (!userLocation) {
@@ -1069,10 +1095,19 @@ export default function CheckoutPage() {
                       <h4>{item.packageName}</h4>
                       <p className='package-date'>
                         Date:{' '}
-                        {format(
-                          new Date(item.selectedDate || ''),
-                          'MMM dd, yyyy'
-                        )}
+                        {item.selectedDate
+                          ? (() => {
+                              try {
+                                const date = new Date(item.selectedDate);
+                                if (!isNaN(date.getTime())) {
+                                  return format(date, 'MMM dd, yyyy');
+                                }
+                              } catch (e) {
+                                // Invalid date
+                              }
+                              return 'Not selected';
+                            })()
+                          : 'Not selected'}
                       </p>
                       <p className='package-persons'>
                         {item.adults} Adult{item.adults !== 1 ? 's' : ''}
