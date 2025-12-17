@@ -1,9 +1,9 @@
-// Resend email functionality temporarily disabled
-// import { Resend } from 'resend';
+import { Resend } from 'resend';
 
 // Initialize Resend only if API key is available
-// const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const resend: any = null;
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 // Helper function for currency formatting
 function formatCurrency(amount: number, currency: string): string {
@@ -355,73 +355,56 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Booking Notification</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f7fa; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #ffffff;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #ffffff; padding: 20px;">
     <tr>
       <td align="center">
-        <table role="presentation" style="max-width: 700px; width: 100%; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border: 1px solid #e5e7eb;">
           
-          <!-- Header with Alert Style -->
+          <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
-                🎉 New Booking Received!
+            <td style="padding: 24px 24px 16px 24px; background-color: #ffffff; border-bottom: 2px solid #e5e7eb;">
+              <h1 style="margin: 0; color: #111827; font-size: 24px; font-weight: 600;">
+                New Booking #${data.bookingId}
               </h1>
-              <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
-                Action Required - Booking #${data.bookingId}
+              <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px;">
+                ${formatCurrency(data.paymentAmount, data.paymentCurrency)} received
               </p>
-            </td>
-          </tr>
-
-          <!-- Booking Alert Box -->
-          <tr>
-            <td style="padding: 30px 30px 20px 30px; background-color: #ffffff;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; padding: 20px; text-align: center;">
-                <p style="margin: 0; color: #ffffff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
-                  Booking Reference
-                </p>
-                <p style="margin: 8px 0 0 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: 2px;">
-                  ${data.bookingId}
-                </p>
-                <p style="margin: 15px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 18px; font-weight: 600;">
-                  ${formatCurrency(data.paymentAmount, data.paymentCurrency)} Paid
-                </p>
-              </div>
             </td>
           </tr>
 
           <!-- Customer Information -->
           <tr>
-            <td style="padding: 0 30px 20px 30px;">
-              <h2 style="margin: 0 0 15px 0; color: #212529; font-size: 20px; font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">
-                👤 Customer Details
+            <td style="padding: 24px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 16px; font-weight: 600;">
+                Customer Information
               </h2>
               <table role="presentation" style="width: 100%; border-collapse: collapse;">
                 <tr>
-                  <td style="padding: 10px 0; color: #6c757d; font-size: 14px; width: 150px; font-weight: 600;">Full Name:</td>
-                  <td style="padding: 10px 0; color: #212529; font-size: 15px; font-weight: 600;">${data.customerName}</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px; width: 120px;">Name:</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; font-weight: 500;">${data.customerName}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Email:</td>
-                  <td style="padding: 10px 0;">
-                    <a href="mailto:${data.customerEmail}" style="color: #667eea; font-size: 15px; font-weight: 500; text-decoration: none;">${data.customerEmail}</a>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Email:</td>
+                  <td style="padding: 6px 0;">
+                    <a href="mailto:${data.customerEmail}" style="color: #2563eb; font-size: 14px; text-decoration: none;">${data.customerEmail}</a>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Phone:</td>
-                  <td style="padding: 10px 0;">
-                    <a href="tel:${data.customerPhone}" style="color: #212529; font-size: 15px; font-weight: 500; text-decoration: none;">${data.customerPhone}</a>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Phone:</td>
+                  <td style="padding: 6px 0;">
+                    <a href="tel:${data.customerPhone}" style="color: #111827; font-size: 14px; text-decoration: none;">${data.customerPhone}</a>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 0; color: #6c757d; font-size: 14px; font-weight: 600;">WhatsApp:</td>
-                  <td style="padding: 10px 0;">
-                    <a href="https://wa.me/${data.customerWhatsApp.replace(/[^0-9]/g, '')}" style="color: #25d366; font-size: 15px; font-weight: 500; text-decoration: none;">${data.customerWhatsApp}</a>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">WhatsApp:</td>
+                  <td style="padding: 6px 0;">
+                    <a href="https://wa.me/${data.customerWhatsApp.replace(/[^0-9]/g, '')}" style="color: #25d366; font-size: 14px; text-decoration: none;">${data.customerWhatsApp}</a>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Booking Date:</td>
-                  <td style="padding: 10px 0; color: #212529; font-size: 15px; font-weight: 500;">${formatDate(data.bookingDate)}</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Booking Date:</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px;">${formatDate(data.bookingDate)}</td>
                 </tr>
               </table>
             </td>
@@ -429,37 +412,37 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
 
           <!-- Package Details -->
           <tr>
-            <td style="padding: 0 30px 20px 30px;">
-              <h2 style="margin: 0 0 15px 0; color: #212529; font-size: 20px; font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">
-                📦 Package Information
+            <td style="padding: 0 24px 24px 24px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 16px; font-weight: 600;">
+                Package Details
               </h2>
               ${data.packages
                 .map(
-                  (pkg, index) => `
-              <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; border-radius: 6px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="margin: 0 0 12px 0; color: #667eea; font-size: 18px; font-weight: 700;">
+                  pkg => `
+              <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin-bottom: 12px;">
+                <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 15px; font-weight: 600;">
                   ${pkg.packageName}
                 </h3>
                 <table role="presentation" style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 8px 0; color: #6c757d; font-size: 14px; width: 150px; font-weight: 600;">Package ID:</td>
-                    <td style="padding: 8px 0; color: #212529; font-size: 14px; font-family: monospace;">${pkg.packageId}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px; width: 120px;">Package ID:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px; font-family: monospace;">${pkg.packageId}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Travel Date:</td>
-                    <td style="padding: 8px 0; color: #212529; font-size: 14px; font-weight: 500;">${formatDate(pkg.selectedDate)}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Travel Date:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${formatDate(pkg.selectedDate)}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Passengers:</td>
-                    <td style="padding: 8px 0; color: #212529; font-size: 14px; font-weight: 500;">
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Passengers:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">
                       ${pkg.adults} Adult${pkg.adults !== 1 ? 's' : ''}
                       ${pkg.children > 0 ? `, ${pkg.children} Child${pkg.children !== 1 ? 'ren' : ''}` : ''}
                       ${pkg.infants && pkg.infants > 0 ? `, ${pkg.infants} Infant${pkg.infants !== 1 ? 's' : ''}` : ''}
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Package Price:</td>
-                    <td style="padding: 8px 0; color: #212529; font-size: 16px; font-weight: 700;">${formatCurrency(pkg.price, data.paymentCurrency)}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Price:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px; font-weight: 600;">${formatCurrency(pkg.price, data.paymentCurrency)}</td>
                   </tr>
                 </table>
               </div>
@@ -471,37 +454,37 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
 
           <!-- Payment Details -->
           <tr>
-            <td style="padding: 0 30px 20px 30px;">
-              <h2 style="margin: 0 0 15px 0; color: #212529; font-size: 20px; font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">
-                💳 Payment Details
+            <td style="padding: 0 24px 24px 24px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 16px; font-weight: 600;">
+                Payment Information
               </h2>
-              <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px;">
+              <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px;">
                 <table role="presentation" style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 10px 0; color: #856404; font-size: 15px; font-weight: 700; width: 200px;">Total Booking Amount:</td>
-                    <td style="padding: 10px 0; color: #856404; font-size: 18px; font-weight: 700; text-align: right;">${formatCurrency(data.totalAmount, data.paymentCurrency)}</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px; width: 160px;">Total Amount:</td>
+                    <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${formatCurrency(data.totalAmount, data.paymentCurrency)}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #856404; font-size: 15px; font-weight: 600;">Payment Type:</td>
-                    <td style="padding: 10px 0; color: #856404; font-size: 15px; font-weight: 500; text-align: right; text-transform: capitalize;">${data.paymentType}</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Payment Type:</td>
+                    <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; text-transform: capitalize;">${data.paymentType}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #856404; font-size: 15px; font-weight: 600;">Amount Received:</td>
-                    <td style="padding: 10px 0; color: #28a745; font-size: 20px; font-weight: 700; text-align: right;">${formatCurrency(data.paymentAmount, data.paymentCurrency)}</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Amount Paid:</td>
+                    <td style="padding: 8px 0; color: #059669; font-size: 14px; font-weight: 600; text-align: right;">${formatCurrency(data.paymentAmount, data.paymentCurrency)}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 600;">Transaction ID:</td>
-                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 500; text-align: right; font-family: monospace;">${data.paymentTransactionId}</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Transaction ID:</td>
+                    <td style="padding: 8px 0; color: #111827; font-size: 13px; text-align: right; font-family: monospace;">${data.paymentTransactionId}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 600;">Payment Gateway:</td>
-                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 500; text-align: right; text-transform: uppercase;">${data.paymentGateway}</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Payment Gateway:</td>
+                    <td style="padding: 8px 0; color: #111827; font-size: 13px; text-align: right; text-transform: uppercase;">${data.paymentGateway}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 600;">Payment Status:</td>
-                    <td style="padding: 10px 0; text-align: right;">
-                      <span style="background-color: #28a745; color: #ffffff; padding: 6px 16px; border-radius: 16px; font-size: 13px; font-weight: 700; text-transform: uppercase;">
-                        ✓ ${data.paymentStatus}
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Status:</td>
+                    <td style="padding: 8px 0; text-align: right;">
+                      <span style="background-color: #059669; color: #ffffff; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; text-transform: uppercase;">
+                        ${data.paymentStatus}
                       </span>
                     </td>
                   </tr>
@@ -512,46 +495,46 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
 
           <!-- Passengers Information -->
           <tr>
-            <td style="padding: 0 30px 20px 30px;">
-              <h2 style="margin: 0 0 15px 0; color: #212529; font-size: 20px; font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">
-                👥 Passenger Details
+            <td style="padding: 0 24px 24px 24px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 16px; font-weight: 600;">
+                Passenger Details
               </h2>
               ${data.passengers
                 .map(
                   (passenger, index) => `
-              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 15px; border: 1px solid #e9ecef;">
-                <h3 style="margin: 0 0 12px 0; color: #667eea; font-size: 16px; font-weight: 700;">
-                  ${index === 0 ? '👤 Lead Passenger' : `👤 Passenger ${index + 1}`}
+              <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin-bottom: 12px;">
+                <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 14px; font-weight: 600;">
+                  ${index === 0 ? 'Lead Passenger' : `Passenger ${index + 1}`}
                 </h3>
                 <table role="presentation" style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; width: 150px; font-weight: 600;">Full Name:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.salutation} ${passenger.firstName} ${passenger.lastName}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px; width: 120px;">Name:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.salutation} ${passenger.firstName} ${passenger.lastName}</td>
                   </tr>
                   ${
                     index === 0
                       ? `
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Email:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.email}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Email:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.email}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Phone:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.phone}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Phone:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.phone}</td>
                   </tr>
                   `
                       : ''
                   }
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Country:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.country}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Country:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.country}</td>
                   </tr>
                   ${
                     passenger.nationality
                       ? `
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Nationality:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.nationality}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Nationality:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.nationality}</td>
                   </tr>
                   `
                       : ''
@@ -560,40 +543,25 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
                     passenger.pickupLocation
                       ? `
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Pickup Location:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.pickupLocation}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Pickup Location:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.pickupLocation}</td>
                   </tr>
                   `
                       : ''
                   }
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Address:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${passenger.permanentAddress}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Address:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${passenger.permanentAddress}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 0; color: #6c757d; font-size: 13px; font-weight: 600;">Passport Expiry:</td>
-                    <td style="padding: 6px 0; color: #212529; font-size: 14px; font-weight: 500;">${formatDate(passenger.passportExpiry)}</td>
+                    <td style="padding: 4px 0; color: #6b7280; font-size: 13px;">Passport Expiry:</td>
+                    <td style="padding: 4px 0; color: #111827; font-size: 13px;">${formatDate(passenger.passportExpiry)}</td>
                   </tr>
                 </table>
               </div>
               `
                 )
                 .join('')}
-            </td>
-          </tr>
-
-          <!-- Action Footer -->
-          <tr>
-            <td style="padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center;">
-              <p style="margin: 0 0 15px 0; color: #ffffff; font-size: 16px; font-weight: 600;">
-                ⚡ Action Required
-              </p>
-              <p style="margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; line-height: 1.6;">
-                Please review this booking and take necessary actions. Contact the customer if needed.
-              </p>
-              <p style="margin: 20px 0 0 0; color: rgba(255, 255, 255, 0.8); font-size: 12px;">
-                This is an automated notification from Aapka Tourism booking system.
-              </p>
             </td>
           </tr>
 
@@ -608,39 +576,29 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
 
 export async function sendBookingConfirmationEmail(data: BookingEmailData) {
   try {
-    // Email functionality temporarily disabled
+    // Check if Resend is configured
     if (!resend || !process.env.RESEND_API_KEY) {
       console.log('Email service is disabled - RESEND_API_KEY not configured');
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Send to customer
-    const customerEmailResult = await resend.emails.send({
-      from: 'Aapka Tourism <noreply@aapkatourism.com>',
-      to: data.customerEmail,
-      subject: `Booking Confirmed - ${data.bookingId} | Aapka Tourism`,
-      html: getCustomerEmailTemplate(data),
-    });
-
-    // Send to internal team
-    const internalEmails = ['info@aapkatourism.com', 'sam@aapkatourism.com'];
+    // Send to internal team only
     const internalEmailResult = await resend.emails.send({
       from: 'Aapka Tourism <noreply@aapkatourism.com>',
-      to: internalEmails,
-      subject: `🎉 New Booking #${data.bookingId} - ${formatCurrency(data.paymentAmount, data.paymentCurrency)}`,
+      to: 'info@aapkatourism.com',
+      subject: `New Booking #${data.bookingId} - ${formatCurrency(data.paymentAmount, data.paymentCurrency)}`,
       html: getInternalEmailTemplate(data),
     });
 
     return {
       success: true,
-      customerEmailId: customerEmailResult.data?.id,
       internalEmailId: internalEmailResult.data?.id,
     };
   } catch (error: any) {
-    console.error('Error sending booking confirmation emails:', error);
+    console.error('Error sending booking confirmation email:', error);
     return {
       success: false,
-      error: error.message || 'Failed to send emails',
+      error: error.message || 'Failed to send email',
     };
   }
 }
