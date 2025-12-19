@@ -29,13 +29,13 @@ const stats = [
 ];
 
 const resources = [
-  'About Us',
-  'Contact Us',
-  'Terms and Conditions',
-  'Disclaimer',
-  'Privacy Policy',
-  'Site Map',
-  'Refund & Cancellation Policy',
+  { label: 'About Us', href: '/About' },
+  { label: 'Contact Us', href: '/contact' },
+  { label: 'Terms and Conditions', href: '/terms-and-conditions' },
+  { label: 'Disclaimer', href: '/disclaimer' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Site Map', href: '#' },
+  { label: 'Refund & Cancellation Policy', href: '/cancellation-policy' },
 ];
 
 interface Package {
@@ -240,8 +240,8 @@ export default function Footer() {
               <h4>Useful Links</h4>
               <ul>
                 {resources.map(item => (
-                  <li key={item}>
-                    <a href='#'>{item}</a>
+                  <li key={item.label}>
+                    <Link href={item.href}>{item.label}</Link>
                   </li>
                 ))}
               </ul>
