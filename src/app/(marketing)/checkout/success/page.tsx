@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
@@ -10,17 +10,15 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = searchParams.get('bookingId');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!bookingId) {
-      router.push('/cart');
-    } else {
-      setLoading(false);
+      router.replace('/cart');
     }
   }, [bookingId, router]);
 
-  if (loading) {
+  // Show loading while redirecting or if no bookingId
+  if (!bookingId) {
     return (
       <div className='success-page'>
         <div className='success-container'>Loading...</div>
@@ -34,9 +32,9 @@ function CheckoutSuccessContent() {
         <div className='success-icon'>
           <CheckCircle size={80} />
         </div>
-        <h1>Booking Confirmed!</h1>
+        <h1>Thank You for Your Booking!</h1>
         <p className='success-message'>
-          Thank you for your booking. Your booking ID is:{' '}
+          Your booking has been confirmed. Your booking ID is:{' '}
           <strong>{bookingId}</strong>
         </p>
         <p className='success-info'>
