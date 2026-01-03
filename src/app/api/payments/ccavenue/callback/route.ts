@@ -116,6 +116,12 @@ async function handleCallback(req: NextRequest) {
 
     // Fetch booking details and send confirmation emails
     // Don't block redirect if email fails - send in background
+    console.log(
+      `📧 [CCAVENUE CALLBACK] Payment successful! Triggering email for Booking #${bookingId}`
+    );
+    console.log(
+      `📧 [CCAVENUE CALLBACK] Amount: ${paymentAmount} ${currency}, Transaction ID: ${trackingId || orderId}`
+    );
     sendBookingEmails(
       bookingId,
       paymentAmount,
@@ -124,7 +130,10 @@ async function handleCallback(req: NextRequest) {
       trackingId || orderId
     ).catch(emailError => {
       // Log error but don't block the user redirect
-      console.error('Failed to send booking confirmation emails:', emailError);
+      console.error(
+        `❌ [CCAVENUE CALLBACK] Failed to send booking confirmation emails for Booking #${bookingId}:`,
+        emailError
+      );
     });
 
     // Redirect to success page
@@ -146,7 +155,14 @@ async function sendBookingEmails(
   paymentType: string,
   transactionId: string
 ) {
+  console.log(`📧 [SEND EMAILS] Function called for Booking #${bookingId}`);
+  console.log(`📧 [SEND EMAILS] Payment Amount: ${paymentAmount} ${currency}`);
+  console.log(
+    `📧 [SEND EMAILS] Payment Type: ${paymentType}, Transaction ID: ${transactionId}`
+  );
+
   try {
+    console.log(`📧 [SEND EMAILS] Fetching booking details from database...`);
     // Fetch booking with all details
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
@@ -155,14 +171,25 @@ async function sendBookingEmails(
       .single();
 
     if (bookingError || !booking) {
-      console.error('Failed to fetch booking for email:', bookingError);
+      console.error(
+        `❌ [SEND EMAILS] Failed to fetch booking for email:`,
+        bookingError
+      );
+      console.error(`❌ [SEND EMAILS] Booking ID: ${bookingId}`);
       return;
     }
 
+    console.log(`✅ [SEND EMAILS] Booking fetched successfully`);
+    console.log(
+      `📧 [SEND EMAILS] Booking status: ${booking.payment_status}, Gateway: ${booking.payment_gateway}`
+    );
+
     // Get passenger data
+    console.log(`📧 [SEND EMAILS] Extracting passenger data...`);
     const passengers = Array.isArray(booking.passengers)
       ? booking.passengers
       : [];
+    console.log(`📧 [SEND EMAILS] Number of passengers: ${passengers.length}`);
     const leadPassenger = passengers[0] || {};
 
     // Get customer info from lead passenger
@@ -172,12 +199,26 @@ async function sendBookingEmails(
     const customerPhone = leadPassenger.phone || '';
     const customerWhatsApp = leadPassenger.whatsapp || '';
 
+    console.log(`📧 [SEND EMAILS] Lead passenger: ${customerName}`);
+    console.log(
+      `📧 [SEND EMAILS] Customer email: ${customerEmail || 'NOT FOUND'}`
+    );
+    console.log(
+      `📧 [SEND EMAILS] Customer phone: ${customerPhone || 'NOT FOUND'}`
+    );
+
     if (!customerEmail) {
-      console.error('No customer email found in booking');
+      console.error(
+        `❌ [SEND EMAILS] No customer email found in booking #${bookingId}`
+      );
+      console.error(
+        `❌ [SEND EMAILS] Cannot send email without customer email`
+      );
       return;
     }
 
     // Fetch package details for all packages in booking
+    console.log(`📧 [SEND EMAILS] Fetching package details...`);
     const packageIds = Array.isArray(booking.package_ids)
       ? booking.package_ids
       : [];
@@ -185,7 +226,11 @@ async function sendBookingEmails(
       ? booking.cart_items
       : [];
 
+    console.log(`📧 [SEND EMAILS] Package IDs: ${packageIds.join(', ')}`);
+    console.log(`📧 [SEND EMAILS] Cart items count: ${cartItems.length}`);
+
     // Fetch package names from database
+    console.log(`📧 [SEND EMAILS] Querying package names from database...`);
     const packageDetails = await Promise.all(
       packageIds.map(async (packageId: string) => {
         const { data: pkg } = await supabaseAdmin
@@ -249,9 +294,41 @@ async function sendBookingEmails(
     };
 
     // Send emails
-    await sendBookingConfirmationEmail(emailData);
+    console.log(
+      `📧 [SEND EMAILS] All data prepared, calling sendBookingConfirmationEmail...`
+    );
+    console.log(`📧 [SEND EMAILS] Email data summary:`, {
+      bookingId: emailData.bookingId,
+      customerName: emailData.customerName,
+      customerEmail: emailData.customerEmail,
+      packagesCount: emailData.packages.length,
+      totalAmount: emailData.totalAmount,
+      paymentAmount: emailData.paymentAmount,
+    });
+
+    const emailResult = await sendBookingConfirmationEmail(emailData);
+    if (emailResult.success) {
+      console.log(
+        `✅ [SEND EMAILS] Booking confirmation email sent successfully for Booking #${emailData.bookingId}`
+      );
+      console.log(
+        `✅ [SEND EMAILS] Resend Email ID: ${emailResult.internalEmailId}`
+      );
+    } else {
+      console.error(
+        `❌ [SEND EMAILS] Failed to send booking confirmation email for Booking #${emailData.bookingId}`
+      );
+      console.error(`❌ [SEND EMAILS] Error: ${emailResult.error}`);
+    }
   } catch (error) {
-    console.error('Error in sendBookingEmails:', error);
+    console.error(
+      `❌ [SEND EMAILS] Unexpected error in sendBookingEmails for Booking #${bookingId}:`,
+      error
+    );
+    console.error(
+      `❌ [SEND EMAILS] Error stack:`,
+      error instanceof Error ? error.stack : 'No stack trace'
+    );
     // Don't throw - we don't want to block the payment flow
   }
 }
