@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { redirectResponseToJson } from '@/lib/ccavenue-crypto';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -113,34 +114,34 @@ async function handleCallback(req: NextRequest) {
       );
     }
 
-    // Fetch booking details and send confirmation emails via API
+    // Fetch booking details and send confirmation emails
     // Don't block redirect if email fails - send in background
     console.log(
-      `📧 [CCAVENUE CALLBACK] Payment successful! Triggering email via API for Booking #${bookingId}`
+      `📧 [CCAVENUE CALLBACK] Payment successful! Triggering email for Booking #${bookingId}`
     );
     console.log(
       `📧 [CCAVENUE CALLBACK] Amount: ${paymentAmount} ${currency}, Transaction ID: ${trackingId || orderId}`
     );
-    
-    // Call email API endpoint (non-blocking - fire and forget)
-    sendBookingEmailsViaAPI(
-      bookingId,
+
+    // Send emails in background (non-blocking - fire and forget)
+    // Use transaction ID to query booking (as that's what we save in DB)
+    sendBookingEmails(
+      trackingId || orderId, // Use transaction ID to query booking
       paymentAmount,
       currency,
-      paymentType,
-      trackingId || orderId,
-      req.nextUrl.origin
+      paymentType
     ).catch(emailError => {
       // Log error but don't block the user redirect
       console.error(
-        `❌ [CCAVENUE CALLBACK] Failed to trigger email API for Booking #${bookingId}:`,
+        `❌ [CCAVENUE CALLBACK] Failed to send booking confirmation emails for Transaction ID: ${trackingId || orderId}:`,
         emailError
       );
     });
 
-    // Redirect to thank you page
+    // Redirect to thank you page with transaction ID (what we actually save and query by)
+    const transactionId = trackingId || orderId;
     return NextResponse.redirect(
-      new URL(`/thank-you?bookingId=${bookingId}`, req.nextUrl.origin)
+      new URL(`/thank-you?transactionId=${transactionId}`, req.nextUrl.origin)
     );
   } catch (error: any) {
     return NextResponse.redirect(
@@ -149,37 +150,52 @@ async function handleCallback(req: NextRequest) {
   }
 }
 
-// Helper function to call email API endpoint (non-blocking)
-async function sendBookingEmailsViaAPI(
-  bookingId: string,
+// Helper function to fetch booking details and send emails
+async function sendBookingEmails(
+  transactionId: string, // Query by payment_transaction_id (what we save in DB)
   paymentAmount: number,
   currency: string,
-  paymentType: string,
-  transactionId: string,
-  origin: string
+  paymentType: string
 ) {
-  console.log(`📧 [EMAIL API] Calling email API for Booking #${bookingId}`);
-  
+  console.log(
+    `📧 [SEND EMAILS] Function called for Transaction ID: ${transactionId}`
+  );
+  console.log(`📧 [SEND EMAILS] Payment Amount: ${paymentAmount} ${currency}`);
+  console.log(
+    `📧 [SEND EMAILS] Payment Type: ${paymentType}, Transaction ID: ${transactionId}`
+  );
+
   try {
-    // Fetch booking details first
+    console.log(
+      `📧 [SEND EMAILS] Fetching booking details from database by transaction ID...`
+    );
+    // Fetch booking by payment_transaction_id (this is what we save in the callback)
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .select('*')
-      .eq('id', bookingId)
+      .eq('payment_transaction_id', transactionId)
       .single();
 
     if (bookingError || !booking) {
       console.error(
-        `❌ [EMAIL API] Failed to fetch booking:`,
+        `❌ [SEND EMAILS] Failed to fetch booking for email:`,
         bookingError
       );
+      console.error(`❌ [SEND EMAILS] Transaction ID: ${transactionId}`);
       return;
     }
 
+    console.log(`✅ [SEND EMAILS] Booking fetched successfully`);
+    console.log(
+      `📧 [SEND EMAILS] Booking ID: ${booking.id}, Status: ${booking.payment_status}, Gateway: ${booking.payment_gateway}`
+    );
+
     // Get passenger data
+    console.log(`📧 [SEND EMAILS] Extracting passenger data...`);
     const passengers = Array.isArray(booking.passengers)
       ? booking.passengers
       : [];
+    console.log(`📧 [SEND EMAILS] Number of passengers: ${passengers.length}`);
     const leadPassenger = passengers[0] || {};
 
     // Get customer info from lead passenger
@@ -189,14 +205,26 @@ async function sendBookingEmailsViaAPI(
     const customerPhone = leadPassenger.phone || '';
     const customerWhatsApp = leadPassenger.whatsapp || '';
 
+    console.log(`📧 [SEND EMAILS] Lead passenger: ${customerName}`);
+    console.log(
+      `📧 [SEND EMAILS] Customer email: ${customerEmail || 'NOT FOUND'}`
+    );
+    console.log(
+      `📧 [SEND EMAILS] Customer phone: ${customerPhone || 'NOT FOUND'}`
+    );
+
     if (!customerEmail) {
       console.error(
-        `❌ [EMAIL API] No customer email found in booking #${bookingId}`
+        `❌ [SEND EMAILS] No customer email found in booking (Transaction ID: ${transactionId})`
+      );
+      console.error(
+        `❌ [SEND EMAILS] Cannot send email without customer email`
       );
       return;
     }
 
-    // Fetch package details
+    // Fetch package details for all packages in booking
+    console.log(`📧 [SEND EMAILS] Fetching package details...`);
     const packageIds = Array.isArray(booking.package_ids)
       ? booking.package_ids
       : [];
@@ -204,6 +232,11 @@ async function sendBookingEmailsViaAPI(
       ? booking.cart_items
       : [];
 
+    console.log(`📧 [SEND EMAILS] Package IDs: ${packageIds.join(', ')}`);
+    console.log(`📧 [SEND EMAILS] Cart items count: ${cartItems.length}`);
+
+    // Fetch package names from database
+    console.log(`📧 [SEND EMAILS] Querying package names from database...`);
     const packageDetails = await Promise.all(
       packageIds.map(async (packageId: string) => {
         const { data: pkg } = await supabaseAdmin
@@ -219,6 +252,7 @@ async function sendBookingEmailsViaAPI(
       })
     );
 
+    // Map cart items with package names
     const packages = cartItems.map((item: any) => {
       const pkgDetail = packageDetails.find(
         p => p.packageId === item.packageId
@@ -234,7 +268,7 @@ async function sendBookingEmailsViaAPI(
       };
     });
 
-    // Prepare email data for API
+    // Prepare email data
     const emailData = {
       bookingId: booking.id,
       customerName: customerName || 'Valued Customer',
@@ -248,7 +282,7 @@ async function sendBookingEmailsViaAPI(
       paymentCurrency: currency,
       paymentType,
       paymentStatus: booking.payment_status || 'completed',
-      paymentTransactionId: transactionId,
+      paymentTransactionId: transactionId, // This is the transaction ID we queried by
       paymentGateway: booking.payment_gateway || 'ccavenue',
       passengers: passengers.map((p: any) => ({
         salutation: p.salutation || '',
@@ -265,36 +299,50 @@ async function sendBookingEmailsViaAPI(
       })),
     };
 
-    // Call email API endpoint
-    const emailApiUrl = `${origin}/api/email/send-booking-confirmation`;
-    console.log(`📧 [EMAIL API] Calling: ${emailApiUrl}`);
-    
-    const response = await fetch(emailApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailData),
+    // Send emails directly (more reliable than API call from server-side)
+    console.log(
+      `📧 [SEND EMAILS] All data prepared, calling sendBookingConfirmationEmail...`
+    );
+    console.log(`📧 [SEND EMAILS] Email data summary:`, {
+      bookingId: emailData.bookingId,
+      customerName: emailData.customerName,
+      customerEmail: emailData.customerEmail,
+      packagesCount: emailData.packages.length,
+      totalAmount: emailData.totalAmount,
+      paymentAmount: emailData.paymentAmount,
     });
 
-    const result = await response.json();
-    
-    if (result.success) {
+    const emailResult = await sendBookingConfirmationEmail(emailData);
+    if (emailResult.success) {
       console.log(
-        `✅ [EMAIL API] Booking confirmation emails sent successfully for Booking #${bookingId}`
+        `✅ [SEND EMAILS] Booking confirmation email sent successfully for Booking #${emailData.bookingId}`
       );
-      console.log(`✅ [EMAIL API] Customer Email ID: ${result.customerEmailId}`);
-      console.log(`✅ [EMAIL API] Internal Email ID: ${result.internalEmailId}`);
+      if ('customerEmailId' in emailResult) {
+        console.log(
+          `✅ [SEND EMAILS] Customer Email ID: ${emailResult.customerEmailId}`
+        );
+      }
+      if ('internalEmailId' in emailResult) {
+        console.log(
+          `✅ [SEND EMAILS] Internal Email ID: ${emailResult.internalEmailId}`
+        );
+      }
     } else {
       console.error(
-        `❌ [EMAIL API] Failed to send emails for Booking #${bookingId}:`,
-        result.error
+        `❌ [SEND EMAILS] Failed to send booking confirmation email for Booking #${emailData.bookingId}`
+      );
+      console.error(
+        `❌ [SEND EMAILS] Error: ${emailResult.error || 'Unknown error'}`
       );
     }
   } catch (error) {
     console.error(
-      `❌ [EMAIL API] Unexpected error for Booking #${bookingId}:`,
+      `❌ [SEND EMAILS] Unexpected error in sendBookingEmails for Transaction ID: ${transactionId}:`,
       error
+    );
+    console.error(
+      `❌ [SEND EMAILS] Error stack:`,
+      error instanceof Error ? error.stack : 'No stack trace'
     );
     // Don't throw - we don't want to block the payment flow
   }

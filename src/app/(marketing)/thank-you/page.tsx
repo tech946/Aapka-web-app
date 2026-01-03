@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
@@ -9,19 +9,52 @@ import './thank-you.css';
 function ThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const bookingId = searchParams.get('bookingId');
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!bookingId) {
-      router.replace('/cart');
-    }
-  }, [bookingId, router]);
+    try {
+      const id = searchParams.get('bookingId');
+      setBookingId(id);
+      setIsLoading(false);
 
-  // Show loading while redirecting or if no bookingId
+      if (!id) {
+        // Redirect after a short delay to allow page to render
+        setTimeout(() => {
+          router.replace('/cart');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error reading booking ID:', error);
+      setIsLoading(false);
+      setTimeout(() => {
+        router.replace('/cart');
+      }, 2000);
+    }
+  }, [searchParams, router]);
+
+  // Show loading while checking bookingId
+  if (isLoading) {
+    return (
+      <div className='thank-you-page'>
+        <div className='thank-you-container'>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no bookingId (will redirect)
   if (!bookingId) {
     return (
       <div className='thank-you-page'>
-        <div className='thank-you-container'>Loading...</div>
+        <div className='thank-you-container'>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>No booking ID found. Redirecting...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -61,7 +94,11 @@ export default function ThankYouPage() {
     <Suspense
       fallback={
         <div className='thank-you-page'>
-          <div className='thank-you-container'>Loading...</div>
+          <div className='thank-you-container'>
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <p>Loading...</p>
+            </div>
+          </div>
         </div>
       }
     >
