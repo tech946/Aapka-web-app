@@ -1,0 +1,135 @@
+.thank-you-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);
+  padding: 40px 20px;
+}
+
+.thank-you-container {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  padding: 60px 40px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.thank-you-icon {
+  color: #22c55e;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.thank-you-container h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.thank-you-message {
+  font-size: 18px;
+  color: #4b5563;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.thank-you-message strong {
+  color: #ea580c;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.thank-you-info {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.thank-you-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.thank-you-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.thank-you-button.primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);
+}
+
+.thank-you-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(249, 115, 22, 0.4);
+}
+
+.thank-you-button.secondary {
+  background: white;
+  color: #ea580c;
+  border: 2px solid #ea580c;
+}
+
+.thank-you-button.secondary:hover {
+  background: #fff7ed;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .thank-you-container {
+    padding: 40px 24px;
+  }
+
+  .thank-you-container h1 {
+    font-size: 24px;
+  }
+
+  .thank-you-message {
+    font-size: 16px;
+  }
+
+  .thank-you-actions {
+    flex-direction: column;
+  }
+
+  .thank-you-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
