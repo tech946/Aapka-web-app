@@ -35,6 +35,7 @@ import {
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
+import { parseDateStringToLocal } from '@/lib/utils';
 import 'react-day-picker/dist/style.css';
 import '../../packages.css';
 import './package-details.css';
@@ -168,7 +169,8 @@ export default function PackageDetailsPage() {
       return pkg.travel_dates
         .map((d: any) => (typeof d === 'string' ? d : d.value))
         .filter((dateStr: string) => {
-          const date = new Date(dateStr);
+          const date = parseDateStringToLocal(dateStr);
+          if (!date) return false;
           date.setHours(0, 0, 0, 0);
           // Only include dates that are more than 6 days from today (for all packages including offer packages)
           return date > sixDaysFromNow;
@@ -205,19 +207,10 @@ export default function PackageDetailsPage() {
         }
       } else {
         // For tours, parse as Date object
-        try {
-          const date = new Date(dateParam);
-          if (!isNaN(date.getTime())) {
-            setSelectedDate(date);
-            setMonth(date);
-          }
-        } catch (e) {
-          // If parsing fails, try to create date from string
-          const date = new Date(dateParam);
-          if (!isNaN(date.getTime())) {
-            setSelectedDate(date);
-            setMonth(date);
-          }
+        const date = parseDateStringToLocal(dateParam);
+        if (date) {
+          setSelectedDate(date);
+          setMonth(date);
         }
       }
     }
@@ -387,7 +380,8 @@ export default function PackageDetailsPage() {
 
   const handleDateStringSelect = (dateString: string) => {
     setSelectedDateString(dateString);
-    setSelectedDate(new Date(dateString));
+    const parsed = parseDateStringToLocal(dateString);
+    setSelectedDate(parsed || undefined);
     setShowDateDropdown(false);
   };
 
@@ -401,7 +395,7 @@ export default function PackageDetailsPage() {
     const dateToUse = isPackageType()
       ? selectedDateString || null
       : selectedDate
-        ? selectedDate.toISOString().split('T')[0]
+        ? format(selectedDate, 'yyyy-MM-dd')
         : null;
 
     // Date is required for non-offer packages
@@ -977,7 +971,12 @@ export default function PackageDetailsPage() {
                       className='mobile-booking-input'
                       value={
                         selectedDateString
-                          ? format(new Date(selectedDateString), 'MMM dd, yyyy')
+                          ? (() => {
+                              const d = parseDateStringToLocal(
+                                selectedDateString
+                              );
+                              return d ? format(d, 'MMM dd, yyyy') : '';
+                            })()
                           : ''
                       }
                       readOnly
@@ -1000,7 +999,10 @@ export default function PackageDetailsPage() {
                               handleDateStringSelect(dateStr);
                             }}
                           >
-                            {format(new Date(dateStr), 'MMM dd, yyyy')}
+                            {(() => {
+                              const d = parseDateStringToLocal(dateStr);
+                              return d ? format(d, 'MMM dd, yyyy') : dateStr;
+                            })()}
                           </div>
                         ))}
                       </div>
@@ -1240,7 +1242,12 @@ export default function PackageDetailsPage() {
                       className='booking-input'
                       value={
                         selectedDateString
-                          ? format(new Date(selectedDateString), 'MMM dd, yyyy')
+                          ? (() => {
+                              const d = parseDateStringToLocal(
+                                selectedDateString
+                              );
+                              return d ? format(d, 'MMM dd, yyyy') : '';
+                            })()
                           : ''
                       }
                       readOnly
@@ -1263,7 +1270,10 @@ export default function PackageDetailsPage() {
                               handleDateStringSelect(dateStr);
                             }}
                           >
-                            {format(new Date(dateStr), 'MMM dd, yyyy')}
+                            {(() => {
+                              const d = parseDateStringToLocal(dateStr);
+                              return d ? format(d, 'MMM dd, yyyy') : dateStr;
+                            })()}
                           </div>
                         ))}
                       </div>

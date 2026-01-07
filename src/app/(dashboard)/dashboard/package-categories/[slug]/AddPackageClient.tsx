@@ -7,6 +7,7 @@ import TipTapEditor from '@/components/ui/TipTapEditor';
 import { toast } from 'sonner';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { usesBookingSlots } from '@/lib/package-config';
+import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import '../../dashboard.css';
 
@@ -258,21 +259,27 @@ export default function AddPackageClient({
                   </div>
                   {travelDates.length > 0 && (
                     <div className='date_chips'>
-                      {travelDates.map(d => (
-                        <span key={d.id} className='date_chip'>
-                          {new Date(d.value).toLocaleDateString()}
-                          <button
-                            type='button'
-                            onClick={() =>
-                              setTravelDates(prev =>
-                                prev.filter(x => x.id !== d.id)
-                              )
-                            }
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                      {travelDates.map(d => {
+                        const parsed = parseDateStringToLocal(d.value);
+                        const display = parsed
+                          ? parsed.toLocaleDateString()
+                          : d.value;
+                        return (
+                          <span key={d.id} className='date_chip'>
+                            {display}
+                            <button
+                              type='button'
+                              onClick={() =>
+                                setTravelDates(prev =>
+                                  prev.filter(x => x.id !== d.id)
+                                )
+                              }
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

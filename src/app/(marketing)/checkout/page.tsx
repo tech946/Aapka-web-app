@@ -21,6 +21,7 @@ import {
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
+import { parseDateStringToLocal } from '@/lib/utils';
 import './checkout.css';
 
 interface PassengerData {
@@ -1097,13 +1098,11 @@ export default function CheckoutPage() {
                         Date:{' '}
                         {item.selectedDate
                           ? (() => {
-                              try {
-                                const date = new Date(item.selectedDate);
-                                if (!isNaN(date.getTime())) {
-                                  return format(date, 'MMM dd, yyyy');
-                                }
-                              } catch (e) {
-                                // Invalid date
+                              const date = parseDateStringToLocal(
+                                item.selectedDate
+                              );
+                              if (date) {
+                                return format(date, 'MMM dd, yyyy');
                               }
                               return 'Not selected';
                             })()

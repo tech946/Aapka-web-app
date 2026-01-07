@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
-import { generateShortSlug } from '@/lib/utils';
+import { generateShortSlug, parseDateStringToLocal } from '@/lib/utils';
 import 'react-day-picker/dist/style.css';
 import './home.css';
 
@@ -227,7 +227,8 @@ export default function BannerSection() {
 
   const handleDateStringSelect = (dateString: string) => {
     setSelectedDateString(dateString);
-    setSelectedDate(new Date(dateString));
+    const parsed = parseDateStringToLocal(dateString);
+    setSelectedDate(parsed || undefined);
     setShowDateDropdown(false);
   };
 
@@ -425,7 +426,12 @@ export default function BannerSection() {
                     className='search_input'
                     value={
                       selectedDateString
-                        ? format(new Date(selectedDateString), 'MMM dd, yyyy')
+                        ? (() => {
+                            const d = parseDateStringToLocal(
+                              selectedDateString
+                            );
+                            return d ? format(d, 'MMM dd, yyyy') : '';
+                          })()
                         : ''
                     }
                     readOnly
@@ -452,7 +458,10 @@ export default function BannerSection() {
                             }}
                           >
                             <div className='dropdown_item_name'>
-                              {format(new Date(dateStr), 'MMM dd, yyyy')}
+                              {(() => {
+                                const d = parseDateStringToLocal(dateStr);
+                                return d ? format(d, 'MMM dd, yyyy') : dateStr;
+                              })()}
                             </div>
                           </div>
                         ))

@@ -6,6 +6,34 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Safely parses a date string to a Date in the user's local timezone.
+ *
+ * - If the string is in plain date format "YYYY-MM-DD" (like HTML date inputs),
+ *   it is treated as a calendar date (year, month, day in local time) to avoid
+ *   timezone shifts that can show the previous/next day for users in other countries.
+ * - For all other strings it falls back to the native Date parser.
+ */
+export function parseDateStringToLocal(
+  dateString: string | null | undefined
+): Date | null {
+  if (!dateString || typeof dateString !== 'string') return null;
+
+  // Plain date (from <input type="date"> or stored as "2025-04-03")
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1; // JS months are 0-based
+    const day = Number(match[3]);
+    const d = new Date(year, month, day);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // Fallback for full ISO strings or other formats
+  const d = new Date(dateString);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Generates a short, unique slug from package name and ID
  * Format: location-days-nights-type-id (e.g., "dubai-4n5d-offer-38930")
  * Max length: 35 characters to keep full URLs under 70 chars

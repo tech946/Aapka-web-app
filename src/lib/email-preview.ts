@@ -1,5 +1,6 @@
 // Email template functions for preview (shared with email.ts)
 // This file exports the template generation functions for use in API routes
+import { parseDateStringToLocal } from '@/lib/utils';
 
 export interface BookingEmailData {
   bookingId: string;
@@ -51,15 +52,14 @@ function formatCurrency(amount: number, currency: string): string {
 export function getCustomerEmailTemplate(data: BookingEmailData): string {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not specified';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
+    const d = parseDateStringToLocal(dateString);
+    return d
+      ? d.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : dateString;
   };
 
   return `
@@ -318,15 +318,14 @@ export function getCustomerEmailTemplate(data: BookingEmailData): string {
 export function getInternalEmailTemplate(data: BookingEmailData): string {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not specified';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
+    const d = parseDateStringToLocal(dateString);
+    return d
+      ? d.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : dateString;
   };
 
   return `

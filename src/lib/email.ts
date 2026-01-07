@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { parseDateStringToLocal } from '@/lib/utils';
 
 // Initialize Resend only if API key is available
 const resend = process.env.RESEND_API_KEY
@@ -55,15 +56,14 @@ interface BookingEmailData {
 function getCustomerEmailTemplate(data: BookingEmailData): string {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not specified';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
+    const d = parseDateStringToLocal(dateString);
+    return d
+      ? d.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : dateString;
   };
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -333,15 +333,14 @@ function getCustomerEmailTemplate(data: BookingEmailData): string {
 function getInternalEmailTemplate(data: BookingEmailData): string {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not specified';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
+    const d = parseDateStringToLocal(dateString);
+    return d
+      ? d.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : dateString;
   };
 
   const formatCurrency = (amount: number, currency: string) => {

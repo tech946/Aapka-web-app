@@ -17,6 +17,7 @@ import {
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
+import { parseDateStringToLocal } from '@/lib/utils';
 import './cart.css';
 
 export default function CartPage() {
@@ -112,15 +113,11 @@ export default function CartPage() {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not selected';
-    try {
-      const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        return format(date, 'MMM dd, yyyy');
-      }
-      return dateString; // Return as-is if it's a string date
-    } catch {
-      return dateString;
+    const date = parseDateStringToLocal(dateString);
+    if (date) {
+      return format(date, 'MMM dd, yyyy');
     }
+    return dateString;
   };
 
   if (cartItems.length === 0) {
