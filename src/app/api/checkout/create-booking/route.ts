@@ -35,7 +35,11 @@ interface BookingRequest {
     packageId: string;
     adults: number;
     children: number;
+    infants: number;
     selectedDate: string | null;
+    isSoloTraveller?: boolean;
+    soloTravellerGender?: 'male' | 'female' | null;
+    soloTravellerShareConsent?: boolean;
   }>;
   passengers: PassengerData[];
   paymentMethod: string;
@@ -194,6 +198,9 @@ export async function POST(req: NextRequest) {
       dbPaymentMethod = paymentMethod;
     }
 
+    const hasSoloTraveller = cartItems.some(item => item.isSoloTraveller);
+    const soloItem = cartItems.find(item => item.isSoloTraveller);
+
     const bookingData: any = {
       package_ids: packageIds,
       total_amount: totalAmount,
@@ -203,6 +210,11 @@ export async function POST(req: NextRequest) {
       passengers: passengerData,
       cart_items: cartItems,
       created_at: new Date().toISOString(),
+      // Solo traveller metadata (optional)
+      is_solo_traveller: hasSoloTraveller || false,
+      solo_traveller_gender: soloItem?.soloTravellerGender || null,
+      solo_traveller_share_consent:
+        soloItem?.soloTravellerShareConsent ?? false,
     };
 
     // Add payment fields if provided

@@ -51,6 +51,8 @@ interface Package {
   adult_price?: number | null;
   child_price?: number | null;
   infant_price?: number | null;
+  solo_traveller_enabled?: boolean | null;
+  solo_traveller_price?: number | null;
   overview?: string | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
@@ -93,6 +95,12 @@ export default function PackageDetailsPage() {
     child: 0,
     infant: 0,
   });
+  const [isSoloTraveller, setIsSoloTraveller] = useState(false);
+  const [soloTravellerGender, setSoloTravellerGender] = useState<
+    'male' | 'female' | null
+  >(null);
+  const [soloTravellerShareConsent, setSoloTravellerShareConsent] =
+    useState(false);
 
   // Initialize minimum adults: 1 for all packages, 2 for offer packages
   useEffect(() => {
@@ -233,6 +241,12 @@ export default function PackageDetailsPage() {
       return;
     }
 
+    // Solo traveller pricing overrides per-person pricing
+    if (isSoloTraveller && pkg.solo_traveller_enabled) {
+      setCalculatedPrice(pkg.solo_traveller_price ?? pkg.package_price);
+      return;
+    }
+
     const totalPrice =
       (persons.adult > 0 && pkg.adult_price
         ? persons.adult * pkg.adult_price
@@ -250,7 +264,7 @@ export default function PackageDetailsPage() {
     } else {
       setCalculatedPrice(totalPrice);
     }
-  }, [pkg, persons.adult, persons.child, persons.infant]);
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
@@ -299,6 +313,7 @@ export default function PackageDetailsPage() {
     type: 'adult' | 'child' | 'infant',
     delta: number
   ) => {
+    if (isSoloTraveller) return prev => prev;
     setPersons(prev => {
       const isOfferPackage = slug === 'offer-packages';
       let newValue = prev[type] + delta;
@@ -329,6 +344,7 @@ export default function PackageDetailsPage() {
   };
 
   const getPersonsDisplayText = () => {
+    if (isSoloTraveller) return 'Solo Traveller';
     const total = getTotalPersons();
     if (total === 0) return 'Persons';
     return `${total} ${total === 1 ? 'Person' : 'Persons'}`;
@@ -404,23 +420,34 @@ export default function PackageDetailsPage() {
       return;
     }
 
-    // Validate that at least one adult is selected
-    if (persons.adult === 0) {
-      toast.error('At least 1 adult is required');
-      return;
-    }
+    if (isSoloTraveller) {
+      if (!soloTravellerGender) {
+        toast.error('Please select gender for solo traveller');
+        return;
+      }
+      if (!soloTravellerShareConsent) {
+        toast.error('Please confirm sharing preference');
+        return;
+      }
+    } else {
+      // Validate that at least one adult is selected
+      if (persons.adult === 0) {
+        toast.error('At least 1 adult is required');
+        return;
+      }
 
-    // Validate total passengers (can't be 0)
-    const totalPassengers = persons.adult + persons.child + persons.infant;
-    if (totalPassengers === 0) {
-      toast.error('Please select at least one passenger');
-      return;
-    }
+      // Validate total passengers (can't be 0)
+      const totalPassengers = persons.adult + persons.child + persons.infant;
+      if (totalPassengers === 0) {
+        toast.error('Please select at least one passenger');
+        return;
+      }
 
-    // Validate minimum 2 adults for offer packages
-    if (isOfferPackage && persons.adult < 2) {
-      toast.error('Offer packages require a minimum of 2 adults');
-      return;
+      // Validate minimum 2 adults for offer packages
+      if (isOfferPackage && persons.adult < 2) {
+        toast.error('Offer packages require a minimum of 2 adults');
+        return;
+      }
     }
 
     // Create cart item (only identifiers, prices will be validated server-side)
@@ -428,10 +455,15 @@ export default function PackageDetailsPage() {
       packageId: pkg.package_id,
       packageSlug: packageSlug,
       categorySlug: slug,
-      adults: persons.adult,
-      children: persons.child,
-      infants: persons.infant,
+      adults: isSoloTraveller ? 1 : persons.adult,
+      children: isSoloTraveller ? 0 : persons.child,
+      infants: isSoloTraveller ? 0 : persons.infant,
       selectedDate: dateToUse || null, // Use null instead of undefined for offer packages
+      isSoloTraveller,
+      soloTravellerGender: isSoloTraveller ? soloTravellerGender : null,
+      soloTravellerShareConsent: isSoloTraveller
+        ? soloTravellerShareConsent
+        : false,
     };
 
     addToCart(cartItem);
@@ -840,6 +872,73 @@ export default function PackageDetailsPage() {
               </button>
             </div>
             <div className='mobile-drawer-content'>
+              {pkg.solo_traveller_enabled && (
+                <div className='solo-traveller-block'>
+                  <label className='solo-checkbox'>
+                    <input
+                      type='checkbox'
+                      checked={isSoloTraveller}
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setIsSoloTraveller(checked);
+                        setSoloTravellerShareConsent(false);
+                        setSoloTravellerGender(null);
+                        if (checked) {
+                          setPersons({ adult: 1, child: 0, infant: 0 });
+                          setShowPersonsDropdown(false);
+                        } else {
+                          setPersons({
+                            adult: slug === 'offer-packages' ? 2 : 1,
+                            child: 0,
+                            infant: 0,
+                          });
+                        }
+                      }}
+                    />
+                    Solo Traveller (AED{' '}
+                    {formatPrice(pkg.solo_traveller_price || pkg.package_price)
+                      .replace('AED ', '')
+                      .trim()}
+                    )
+                  </label>
+
+                  {isSoloTraveller && (
+                    <div className='solo-options'>
+                      <div className='solo-gender-pills'>
+                        <button
+                          className={`solo-pill ${
+                            soloTravellerGender === 'male' ? 'active' : ''
+                          }`}
+                          onClick={() => setSoloTravellerGender('male')}
+                        >
+                          Male
+                        </button>
+                        <button
+                          className={`solo-pill ${
+                            soloTravellerGender === 'female' ? 'active' : ''
+                          }`}
+                          onClick={() => setSoloTravellerGender('female')}
+                        >
+                          Female
+                        </button>
+                      </div>
+                      <label className='solo-consent'>
+                        <input
+                          type='checkbox'
+                          checked={soloTravellerShareConsent}
+                          onChange={e =>
+                            setSoloTravellerShareConsent(e.target.checked)
+                          }
+                        />
+                        {`I am comfortable to share the room with ${
+                          soloTravellerGender === 'female' ? 'female' : 'male'
+                        } passengers`}
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className='mobile-booking-price-section'>
                 <span className='mobile-booking-price-amount'>
                   {formatPrice(
@@ -1120,8 +1219,75 @@ export default function PackageDetailsPage() {
                 <X className='desktop-booking-popover-close-icon' />
               </button>
             </div>
-            <div className='desktop-booking-popover-content'>
-              <div className='booking-price-section'>
+              <div className='desktop-booking-popover-content'>
+                {pkg.solo_traveller_enabled && (
+                  <div className='solo-traveller-block'>
+                    <label className='solo-checkbox'>
+                      <input
+                        type='checkbox'
+                        checked={isSoloTraveller}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setIsSoloTraveller(checked);
+                          setSoloTravellerShareConsent(false);
+                          setSoloTravellerGender(null);
+                          if (checked) {
+                            setPersons({ adult: 1, child: 0, infant: 0 });
+                            setShowPersonsDropdown(false);
+                          } else {
+                            setPersons({
+                              adult: slug === 'offer-packages' ? 2 : 1,
+                              child: 0,
+                              infant: 0,
+                            });
+                          }
+                        }}
+                      />
+                      Solo Traveller (AED{' '}
+                      {formatPrice(pkg.solo_traveller_price || pkg.package_price)
+                        .replace('AED ', '')
+                        .trim()}
+                      )
+                    </label>
+
+                    {isSoloTraveller && (
+                      <div className='solo-options'>
+                        <div className='solo-gender-pills'>
+                          <button
+                            className={`solo-pill ${
+                              soloTravellerGender === 'male' ? 'active' : ''
+                            }`}
+                            onClick={() => setSoloTravellerGender('male')}
+                          >
+                            Male
+                          </button>
+                          <button
+                            className={`solo-pill ${
+                              soloTravellerGender === 'female' ? 'active' : ''
+                            }`}
+                            onClick={() => setSoloTravellerGender('female')}
+                          >
+                            Female
+                          </button>
+                        </div>
+                        <label className='solo-consent'>
+                          <input
+                            type='checkbox'
+                            checked={soloTravellerShareConsent}
+                            onChange={e =>
+                              setSoloTravellerShareConsent(e.target.checked)
+                            }
+                          />
+                          {`I am comfortable to share the room with ${
+                            soloTravellerGender === 'female' ? 'female' : 'male'
+                          } passengers`}
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className='booking-price-section'>
                 <span className='booking-price-amount'>
                   {formatPrice(
                     calculatedPrice !== null
@@ -1146,7 +1312,11 @@ export default function PackageDetailsPage() {
                     className='booking-input'
                     value={getPersonsDisplayText()}
                     readOnly
-                    onClick={() => setShowPersonsDropdown(!showPersonsDropdown)}
+                    disabled={isSoloTraveller}
+                    onClick={() =>
+                      !isSoloTraveller &&
+                      setShowPersonsDropdown(!showPersonsDropdown)
+                    }
                   />
                   <ChevronDown className='booking-dropdown-chevron' />
                   {showPersonsDropdown && (
@@ -1161,9 +1331,11 @@ export default function PackageDetailsPage() {
                             className='counter-button'
                             onClick={() => updatePersonCount('adult', -1)}
                             disabled={
-                              slug === 'offer-packages'
-                                ? persons.adult <= 2
-                                : persons.adult <= 1
+                              isSoloTraveller
+                                ? true
+                                : slug === 'offer-packages'
+                                  ? persons.adult <= 2
+                                  : persons.adult <= 1
                             }
                           >
                             <Minus className='counter-icon' />
@@ -1172,6 +1344,7 @@ export default function PackageDetailsPage() {
                           <button
                             className='counter-button'
                             onClick={() => updatePersonCount('adult', 1)}
+                            disabled={isSoloTraveller}
                           >
                             <Plus className='counter-icon' />
                           </button>
@@ -1186,7 +1359,7 @@ export default function PackageDetailsPage() {
                           <button
                             className='counter-button'
                             onClick={() => updatePersonCount('child', -1)}
-                            disabled={persons.child === 0}
+                            disabled={isSoloTraveller || persons.child === 0}
                           >
                             <Minus className='counter-icon' />
                           </button>
@@ -1194,6 +1367,7 @@ export default function PackageDetailsPage() {
                           <button
                             className='counter-button'
                             onClick={() => updatePersonCount('child', 1)}
+                            disabled={isSoloTraveller}
                           >
                             <Plus className='counter-icon' />
                           </button>
@@ -1208,7 +1382,7 @@ export default function PackageDetailsPage() {
                           <button
                             className='counter-button'
                             onClick={() => updatePersonCount('infant', -1)}
-                            disabled={persons.infant === 0}
+                            disabled={isSoloTraveller || persons.infant === 0}
                           >
                             <Minus className='counter-icon' />
                           </button>
@@ -1218,6 +1392,7 @@ export default function PackageDetailsPage() {
                           <button
                             className='counter-button'
                             onClick={() => updatePersonCount('infant', 1)}
+                            disabled={isSoloTraveller}
                           >
                             <Plus className='counter-icon' />
                           </button>

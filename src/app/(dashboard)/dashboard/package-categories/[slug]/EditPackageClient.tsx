@@ -30,6 +30,8 @@ type Pkg = {
   adult_price?: number | null;
   child_price?: number | null;
   infant_price?: number | null;
+  solo_traveller_enabled?: boolean | null;
+  solo_traveller_price?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -71,6 +73,9 @@ export default function EditPackageClient({
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
+  const [soloTravellerEnabled, setSoloTravellerEnabled] =
+    useState<boolean>(false);
+  const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -105,6 +110,10 @@ export default function EditPackageClient({
     if (pkg.adult_price != null) setAdultPrice(String(pkg.adult_price));
     if (pkg.child_price != null) setChildPrice(String(pkg.child_price));
     if (pkg.infant_price != null) setInfantPrice(String(pkg.infant_price));
+    if (pkg.solo_traveller_enabled != null)
+      setSoloTravellerEnabled(Boolean(pkg.solo_traveller_enabled));
+    if (pkg.solo_traveller_price != null)
+      setSoloTravellerPrice(String(pkg.solo_traveller_price));
     setTermsHtml(pkg.terms_html || '');
     setInclusionHtml(pkg.inclusion_html || '');
     setExclusionHtml(pkg.exclusion_html || '');
@@ -417,6 +426,30 @@ export default function EditPackageClient({
                   placeholder='499'
                 />
               </div>
+
+              <div className='form_row full_width'>
+                <label>
+                  <input
+                    type='checkbox'
+                    checked={soloTravellerEnabled}
+                    onChange={e => setSoloTravellerEnabled(e.target.checked)}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Enable Solo Traveller Option
+                </label>
+              </div>
+
+              {soloTravellerEnabled && (
+                <div className='form_row'>
+                  <label>Solo Traveller Price</label>
+                  <input
+                    type='number'
+                    value={soloTravellerPrice}
+                    onChange={e => setSoloTravellerPrice(e.target.value)}
+                    placeholder='Solo traveller price'
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -615,6 +648,11 @@ export default function EditPackageClient({
                       infant_price: infantPrice
                         ? Number(infantPrice)
                         : undefined,
+                      solo_traveller_enabled: soloTravellerEnabled,
+                      solo_traveller_price:
+                        soloTravellerEnabled && soloTravellerPrice
+                          ? Number(soloTravellerPrice)
+                          : undefined,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,

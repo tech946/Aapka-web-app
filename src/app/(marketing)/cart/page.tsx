@@ -81,6 +81,7 @@ export default function CartPage() {
     type: 'adults' | 'children' | 'infants',
     delta: number
   ) => {
+    if (item.isSoloTraveller) return;
     const currentValue = item[type] || 0;
     let newValue = currentValue + delta;
     const isOfferPackage = item.categorySlug === 'offer-packages';
@@ -197,89 +198,100 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  <div className='cart-item-persons'>
-                    <div className='cart-person-control'>
-                      <label>Adults:</label>
-                      <div className='cart-quantity-control'>
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(item, 'adults', -1)
-                          }
-                          disabled={
-                            item.categorySlug === 'offer-packages'
-                              ? item.adults <= 2
-                              : item.adults <= 1
-                          }
-                          className='cart-quantity-button'
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className='cart-quantity-value'>
-                          {item.adults}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(item, 'adults', 1)
-                          }
-                          className='cart-quantity-button'
-                        >
-                          <Plus size={16} />
-                        </button>
+                  {item.isSoloTraveller ? (
+                    <div className='cart-item-persons solo'>
+                      <div className='cart-solo-label'>
+                        Solo Traveller – {item.soloTravellerGender || 'N/A'}
+                        {item.soloTravellerShareConsent
+                          ? ' (sharing consented)'
+                          : ''}
                       </div>
                     </div>
+                  ) : (
+                    <div className='cart-item-persons'>
+                      <div className='cart-person-control'>
+                        <label>Adults:</label>
+                        <div className='cart-quantity-control'>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(item, 'adults', -1)
+                            }
+                            disabled={
+                              item.categorySlug === 'offer-packages'
+                                ? item.adults <= 2
+                                : item.adults <= 1
+                            }
+                            className='cart-quantity-button'
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className='cart-quantity-value'>
+                            {item.adults}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(item, 'adults', 1)
+                            }
+                            className='cart-quantity-button'
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
 
-                    <div className='cart-person-control'>
-                      <label>Children:</label>
-                      <div className='cart-quantity-control'>
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(item, 'children', -1)
-                          }
-                          disabled={item.children === 0}
-                          className='cart-quantity-button'
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className='cart-quantity-value'>
-                          {item.children}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(item, 'children', 1)
-                          }
-                          className='cart-quantity-button'
-                        >
-                          <Plus size={16} />
-                        </button>
+                      <div className='cart-person-control'>
+                        <label>Children:</label>
+                        <div className='cart-quantity-control'>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(item, 'children', -1)
+                            }
+                            disabled={item.children === 0}
+                            className='cart-quantity-button'
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className='cart-quantity-value'>
+                            {item.children}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(item, 'children', 1)
+                            }
+                            className='cart-quantity-button'
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className='cart-person-control'>
-                      <label>Infants:</label>
-                      <div className='cart-quantity-control'>
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(item, 'infants', -1)
-                          }
-                          disabled={(item.infants || 0) === 0}
-                          className='cart-quantity-button'
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className='cart-quantity-value'>
-                          {item.infants || 0}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleQuantityChange(item, 'infants', 1)
-                          }
-                          className='cart-quantity-button'
-                        >
-                          <Plus size={16} />
-                        </button>
+                      <div className='cart-person-control'>
+                        <label>Infants:</label>
+                        <div className='cart-quantity-control'>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(item, 'infants', -1)
+                            }
+                            disabled={(item.infants || 0) === 0}
+                            className='cart-quantity-button'
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className='cart-quantity-value'>
+                            {item.infants || 0}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(item, 'infants', 1)
+                            }
+                            className='cart-quantity-button'
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className='cart-item-price-section'>

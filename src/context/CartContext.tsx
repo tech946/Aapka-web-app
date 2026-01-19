@@ -17,6 +17,10 @@ export interface CartItemStorage {
   children: number;
   infants: number;
   selectedDate: string | null;
+  // Solo traveller support
+  isSoloTraveller?: boolean;
+  soloTravellerGender?: 'male' | 'female' | null;
+  soloTravellerShareConsent?: boolean;
 }
 
 // Full cart item with validated prices from server
@@ -77,6 +81,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             children: item.children,
             infants: item.infants,
             selectedDate: item.selectedDate,
+            isSoloTraveller: item.isSoloTraveller ?? false,
           }));
 
           const response = await fetch('/api/cart/validate', {
@@ -150,6 +155,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const items: CartItem[] = parsed.map(item => ({
           ...item,
           infants: item.infants || 0, // Handle legacy items without infants
+          isSoloTraveller: item.isSoloTraveller ?? false,
+          soloTravellerGender: item.soloTravellerGender ?? null,
+          soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
           packageName: '',
           thumbnailImage: null,
           price: 0,
@@ -185,6 +193,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           children: item.children,
           infants: item.infants,
           selectedDate: item.selectedDate,
+          isSoloTraveller: item.isSoloTraveller ?? false,
+          soloTravellerGender: item.soloTravellerGender ?? null,
+          soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
       } catch (error) {
@@ -210,6 +221,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           adults: item.adults,
           children: item.children,
           infants: item.infants,
+          isSoloTraveller: item.isSoloTraveller ?? false,
+          soloTravellerGender: item.soloTravellerGender ?? null,
+          soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
           validated: false, // Mark as needing validation
         };
         // Validate after update
@@ -220,6 +234,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const newItem: CartItem = {
           ...item,
           infants: item.infants || 0, // Ensure infants is set
+          isSoloTraveller: item.isSoloTraveller ?? false,
+          soloTravellerGender: item.soloTravellerGender ?? null,
+          soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
           packageName: '',
           thumbnailImage: null,
           price: 0,

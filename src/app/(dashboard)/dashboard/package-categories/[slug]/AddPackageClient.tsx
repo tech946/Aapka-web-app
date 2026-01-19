@@ -39,6 +39,8 @@ export default function AddPackageClient({
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
+  const [soloTravellerEnabled, setSoloTravellerEnabled] = useState<boolean>(false);
+  const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -330,6 +332,30 @@ export default function AddPackageClient({
                   placeholder='499'
                 />
               </div>
+
+              <div className='form_row full_width'>
+                <label>
+                  <input
+                    type='checkbox'
+                    checked={soloTravellerEnabled}
+                    onChange={e => setSoloTravellerEnabled(e.target.checked)}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Enable Solo Traveller Option
+                </label>
+              </div>
+
+              {soloTravellerEnabled && (
+                <div className='form_row'>
+                  <label>Solo Traveller Price</label>
+                  <input
+                    type='number'
+                    value={soloTravellerPrice}
+                    onChange={e => setSoloTravellerPrice(e.target.value)}
+                    placeholder='Solo traveller price'
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -504,6 +530,11 @@ export default function AddPackageClient({
                       infant_price: infantPrice
                         ? Number(infantPrice)
                         : undefined,
+                      solo_traveller_enabled: soloTravellerEnabled,
+                      solo_traveller_price:
+                        soloTravellerEnabled && soloTravellerPrice
+                          ? Number(soloTravellerPrice)
+                          : undefined,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,

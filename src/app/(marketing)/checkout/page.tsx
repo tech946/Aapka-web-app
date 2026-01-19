@@ -70,8 +70,14 @@ export default function CheckoutPage() {
   }, [isTourCheckout, cartItems.length]); // Update when tour status or cart changes
 
   // Calculate total passengers
-  const totalAdults = cartItems.reduce((sum, item) => sum + item.adults, 0);
-  const totalChildren = cartItems.reduce((sum, item) => sum + item.children, 0);
+  const totalAdults = cartItems.reduce(
+    (sum, item) => sum + (item.isSoloTraveller ? 1 : item.adults),
+    0
+  );
+  const totalChildren = cartItems.reduce(
+    (sum, item) => sum + (item.isSoloTraveller ? 0 : item.children),
+    0
+  );
   const totalPassengers = totalAdults + totalChildren;
 
   // Initialize passengers array
@@ -440,6 +446,9 @@ export default function CheckoutPage() {
             children: item.children,
             infants: item.infants || 0,
             selectedDate: item.selectedDate,
+            isSoloTraveller: item.isSoloTraveller ?? false,
+            soloTravellerGender: item.soloTravellerGender ?? null,
+            soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
           })),
           passengers: passengersWithBase64,
           paymentMethod: 'ccavenue', // TEMPORARY: Always use CCAvenue
@@ -1109,9 +1118,19 @@ export default function CheckoutPage() {
                           : 'Not selected'}
                       </p>
                       <p className='package-persons'>
-                        {item.adults} Adult{item.adults !== 1 ? 's' : ''}
-                        {item.children > 0 &&
-                          `, ${item.children} Child${item.children !== 1 ? 'ren' : ''}`}
+                        {item.isSoloTraveller
+                          ? `Solo Traveller – ${
+                              item.soloTravellerGender || 'N/A'
+                            }`
+                          : `${item.adults} Adult${
+                              item.adults !== 1 ? 's' : ''
+                            }${
+                              item.children > 0
+                                ? `, ${item.children} Child${
+                                    item.children !== 1 ? 'ren' : ''
+                                  }`
+                                : ''
+                            }`}
                       </p>
                     </div>
                     <div className='package-price'>

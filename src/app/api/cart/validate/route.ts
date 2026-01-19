@@ -10,6 +10,7 @@ interface CartItemRequest {
   children: number;
   infants: number;
   selectedDate: string | null;
+   isSoloTraveller?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     const { data: packages, error: fetchError } = await supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_price, adult_price, child_price, infant_price, package_nights, package_days, thumbnail_image'
+        'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, package_nights, package_days, thumbnail_image'
       )
       .in('package_id', packageIds);
 
@@ -58,21 +59,30 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      // Calculate price based on adult_price, child_price, and infant_price if available
+      // Calculate price
       let calculatedPrice = 0;
-      if (pkg.adult_price && item.adults > 0) {
-        calculatedPrice += pkg.adult_price * item.adults;
-      }
-      if (pkg.child_price && item.children > 0) {
-        calculatedPrice += pkg.child_price * item.children;
-      }
-      if (pkg.infant_price && item.infants > 0) {
-        calculatedPrice += pkg.infant_price * item.infants;
-      }
+      const isSolo =
+        item.isSoloTraveller && pkg.solo_traveller_enabled && pkg.solo_traveller_price;
 
-      // If no adult/child pricing, use base price
-      if (calculatedPrice === 0) {
-        calculatedPrice = pkg.package_price || 0;
+      if (isSolo) {
+        // Solo traveller pricing overrides per-person logic
+        calculatedPrice = pkg.solo_traveller_price || 0;
+      } else {
+        // Regular pricing based on adult/child/infant counts
+        if (pkg.adult_price && item.adults > 0) {
+          calculatedPrice += pkg.adult_price * item.adults;
+        }
+        if (pkg.child_price && item.children > 0) {
+          calculatedPrice += pkg.child_price * item.children;
+        }
+        if (pkg.infant_price && item.infants > 0) {
+          calculatedPrice += pkg.infant_price * item.infants;
+        }
+
+        // If no adult/child pricing, use base price
+        if (calculatedPrice === 0) {
+          calculatedPrice = pkg.package_price || 0;
+        }
       }
 
       return {

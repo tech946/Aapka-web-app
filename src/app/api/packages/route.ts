@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, booking_slots, adult_price, child_price, infant_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, booking_slots, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -171,6 +171,16 @@ export async function POST(req: NextRequest) {
           ? null
           : Number(body.infant_price)
         : null;
+    const soloTravellerEnabled =
+      body?.solo_traveller_enabled !== undefined
+        ? Boolean(body.solo_traveller_enabled)
+        : false;
+    const soloTravellerPrice =
+      body?.solo_traveller_price !== undefined
+        ? Number.isNaN(Number(body.solo_traveller_price))
+          ? null
+          : Number(body.solo_traveller_price)
+        : null;
     // rich content
     const termsHtml: string | null =
       body?.terms_html !== undefined ? String(body.terms_html) : null;
@@ -214,6 +224,8 @@ export async function POST(req: NextRequest) {
       adult_price: adultPrice,
       child_price: childPrice,
       infant_price: infantPrice,
+      solo_traveller_enabled: soloTravellerEnabled,
+      solo_traveller_price: soloTravellerPrice,
       terms_html: termsHtml,
       inclusion_html: inclusionHtml,
       exclusion_html: exclusionHtml,
@@ -316,6 +328,16 @@ export async function PUT(req: NextRequest) {
           ? null
           : Number(body.infant_price)
         : undefined;
+    const soloTravellerEnabled =
+      body?.solo_traveller_enabled !== undefined
+        ? Boolean(body.solo_traveller_enabled)
+        : undefined;
+    const soloTravellerPrice =
+      body?.solo_traveller_price !== undefined
+        ? Number.isNaN(Number(body.solo_traveller_price))
+          ? null
+          : Number(body.solo_traveller_price)
+        : undefined;
     const termsHtml =
       body?.terms_html !== undefined ? String(body.terms_html) : undefined;
     const inclusionHtml =
@@ -373,6 +395,10 @@ export async function PUT(req: NextRequest) {
     if (adultPrice !== undefined) updates.adult_price = adultPrice;
     if (childPrice !== undefined) updates.child_price = childPrice;
     if (infantPrice !== undefined) updates.infant_price = infantPrice;
+    if (soloTravellerEnabled !== undefined)
+      updates.solo_traveller_enabled = soloTravellerEnabled;
+    if (soloTravellerPrice !== undefined)
+      updates.solo_traveller_price = soloTravellerPrice;
     if (termsHtml !== undefined) updates.terms_html = termsHtml;
     if (inclusionHtml !== undefined) updates.inclusion_html = inclusionHtml;
     if (exclusionHtml !== undefined) updates.exclusion_html = exclusionHtml;
