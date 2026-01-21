@@ -6,9 +6,10 @@ import { createPortal } from 'react-dom';
 import TipTapEditor from '@/components/ui/TipTapEditor';
 import { toast } from 'sonner';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
-import { usesBookingSlots } from '@/lib/package-config';
+import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
+import FlexibleDatePackageDates from './FlexibleDatePackageDates';
 import '../../dashboard.css';
 
 export default function AddPackageClient({
@@ -34,13 +35,30 @@ export default function AddPackageClient({
   const [bookingSlots, setBookingSlots] = useState<
     Array<{ id: string; fromDate: string; toDate: string }>
   >([]);
+  // Flexible Date package dates (date range with per-date pricing and seats)
+  const [flexibleDateDates, setFlexibleDateDates] = useState<
+    Array<{
+      id: string;
+      date: string;
+      adultPrice: number;
+      childPrice: number;
+      infantPrice: number;
+      availableSeats: number;
+      isSoldOut: boolean;
+    }>
+  >([]);
 
   const usesSlots = usesBookingSlots(categorySlug);
+  const usesFlexibleDate = usesFlexibleDatePackages(categorySlug);
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
   const [soloTravellerEnabled, setSoloTravellerEnabled] = useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
+  const [withVisa, setWithVisa] = useState<boolean>(false);
+  const [adultVisaPrice, setAdultVisaPrice] = useState<string>('');
+  const [childVisaPrice, setChildVisaPrice] = useState<string>('');
+  const [infantVisaPrice, setInfantVisaPrice] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -225,6 +243,14 @@ export default function AddPackageClient({
                   bookingSlots={bookingSlots}
                   onBookingSlotsChange={setBookingSlots}
                 />
+              ) : usesFlexibleDate ? (
+                <FlexibleDatePackageDates
+                  dates={flexibleDateDates}
+                  onDatesChange={setFlexibleDateDates}
+                  defaultAdultPrice={adultPrice || price}
+                  defaultChildPrice={childPrice || price}
+                  defaultInfantPrice={infantPrice || price}
+                />
               ) : (
                 <div className='form_row full_width'>
                   <label>Travel Dates</label>
@@ -296,9 +322,15 @@ export default function AddPackageClient({
               <div className='form_row'>
                 <label>Base Price *</label>
                 <input
-                  type='number'
+                  type='text'
+                  inputMode='numeric'
                   value={price}
-                  onChange={e => setPrice(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setPrice(val);
+                    }
+                  }}
                   placeholder='999'
                 />
               </div>
@@ -306,9 +338,15 @@ export default function AddPackageClient({
               <div className='form_row'>
                 <label>Adult Price</label>
                 <input
-                  type='number'
+                  type='text'
+                  inputMode='numeric'
                   value={adultPrice}
-                  onChange={e => setAdultPrice(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setAdultPrice(val);
+                    }
+                  }}
                   placeholder='1299'
                 />
               </div>
@@ -316,9 +354,15 @@ export default function AddPackageClient({
               <div className='form_row'>
                 <label>Child Price</label>
                 <input
-                  type='number'
+                  type='text'
+                  inputMode='numeric'
                   value={childPrice}
-                  onChange={e => setChildPrice(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setChildPrice(val);
+                    }
+                  }}
                   placeholder='899'
                 />
               </div>
@@ -326,9 +370,15 @@ export default function AddPackageClient({
               <div className='form_row'>
                 <label>Infant Price</label>
                 <input
-                  type='number'
+                  type='text'
+                  inputMode='numeric'
                   value={infantPrice}
-                  onChange={e => setInfantPrice(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setInfantPrice(val);
+                    }
+                  }}
                   placeholder='499'
                 />
               </div>
@@ -349,12 +399,129 @@ export default function AddPackageClient({
                 <div className='form_row'>
                   <label>Solo Traveller Price</label>
                   <input
-                    type='number'
+                    type='text'
+                    inputMode='numeric'
                     value={soloTravellerPrice}
-                    onChange={e => setSoloTravellerPrice(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setSoloTravellerPrice(val);
+                      }
+                    }}
                     placeholder='Solo traveller price'
                   />
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Visa Pricing Section */}
+          <div className='form_section'>
+            <h5 className='section_title'>Visa Pricing</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row full_width'>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                  <div style={{ position: 'relative', width: '20px', height: '20px' }}>
+                    <input
+                      type='checkbox'
+                      checked={withVisa}
+                      onChange={e => setWithVisa(e.target.checked)}
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        margin: 0,
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        border: '2px solid #d1d5db',
+                        borderRadius: '4px',
+                        backgroundColor: withVisa ? '#f97316' : '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        borderColor: withVisa ? '#f97316' : '#d1d5db',
+                      }}
+                    >
+                      {withVisa && (
+                        <svg
+                          width='14'
+                          height='14'
+                          viewBox='0 0 14 14'
+                          fill='none'
+                          xmlns='http://www.w3.org/2000/svg'
+                        >
+                          <path
+                            d='M11.6667 3.5L5.25 9.91667L2.33334 7'
+                            stroke='white'
+                            strokeWidth='2'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span>Enable Visa Option</span>
+                </label>
+              </div>
+
+              {withVisa && (
+                <>
+                  <div className='form_row'>
+                    <label>Adult Visa Price (AED) *</label>
+                    <input
+                      type='text'
+                      inputMode='numeric'
+                      value={adultVisaPrice}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setAdultVisaPrice(val);
+                        }
+                      }}
+                      placeholder='500'
+                    />
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Child Visa Price (AED)</label>
+                    <input
+                      type='text'
+                      inputMode='numeric'
+                      value={childVisaPrice}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setChildVisaPrice(val);
+                        }
+                      }}
+                      placeholder='300'
+                    />
+                  </div>
+
+                  <div className='form_row'>
+                    <label>Infant Visa Price (AED)</label>
+                    <input
+                      type='text'
+                      inputMode='numeric'
+                      value={infantVisaPrice}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setInfantVisaPrice(val);
+                        }
+                      }}
+                      placeholder='200'
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -524,7 +691,9 @@ export default function AddPackageClient({
                       nights: nights ? Number(nights) : undefined,
                       ...(usesSlots
                         ? { booking_slots: bookingSlots }
-                        : { travel_dates: travelDates }),
+                        : usesFlexibleDate
+                          ? { flexible_date_dates: flexibleDateDates }
+                          : { travel_dates: travelDates }),
                       adult_price: adultPrice ? Number(adultPrice) : undefined,
                       child_price: childPrice ? Number(childPrice) : undefined,
                       infant_price: infantPrice
@@ -535,6 +704,10 @@ export default function AddPackageClient({
                         soloTravellerEnabled && soloTravellerPrice
                           ? Number(soloTravellerPrice)
                           : undefined,
+                      with_visa: withVisa,
+                      adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
+                      child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,
+                      infant_visa_price: withVisa && infantVisaPrice ? Number(infantVisaPrice) : undefined,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,
@@ -557,6 +730,7 @@ export default function AddPackageClient({
                   setNights('');
                   setTravelDates([]);
                   setBookingSlots([]);
+                  setFlexibleDateDates([]);
                   setAdultPrice('');
                   setChildPrice('');
                   setInfantPrice('');

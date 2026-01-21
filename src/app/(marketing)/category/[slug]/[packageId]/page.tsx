@@ -23,7 +23,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { usesBookingSlots } from '@/lib/package-config';
+import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import useEmblaCarousel from 'embla-carousel-react';
 import {
   Popover,
@@ -116,6 +116,15 @@ export default function PackageDetailsPage() {
   >(new Set());
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  // Flexible date availability data
+  const [flexibleDateAvailability, setFlexibleDateAvailability] = useState<
+    Array<{
+      date: string;
+      price: number;
+      available_seats: number;
+      is_sold_out: boolean;
+    }>
+  >([]);
   const isMobile = useIsMobile();
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
@@ -140,6 +149,28 @@ export default function PackageDetailsPage() {
       fetchCategory();
     }
   }, [pkg?.package_category_id]);
+
+  // Fetch flexible date availability if this is a flexible date package
+  useEffect(() => {
+    if (pkg?.package_id && slug === 'flexible-date-packages') {
+      fetchFlexibleDateAvailability();
+    }
+  }, [pkg?.package_id, slug]);
+
+  const fetchFlexibleDateAvailability = async () => {
+    if (!pkg?.package_id) return;
+    try {
+      const response = await fetch(
+        `/api/package-date-availability?package_id=${pkg.package_id}`
+      );
+      const result = await response.json();
+      if (result.data && Array.isArray(result.data)) {
+        setFlexibleDateAvailability(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch flexible date availability:', error);
+    }
+  };
 
   // Detect user location and initialize exchange rate on mount
   useEffect(() => {
@@ -167,6 +198,23 @@ export default function PackageDetailsPage() {
   }, []);
 
   const getAvailableDates = useCallback((): string[] => {
+    // For flexible date packages, get dates from availability data
+    if (slug === 'flexible-date-packages' && flexibleDateAvailability.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sixDaysFromNow = new Date(today);
+      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
+
+      return flexibleDateAvailability
+        .filter(avail => {
+          const date = parseDateStringToLocal(avail.date);
+          if (!date) return false;
+          date.setHours(0, 0, 0, 0);
+          return date > sixDaysFromNow && !avail.is_sold_out && avail.available_seats > 0;
+        })
+        .map(avail => avail.date);
+    }
+
     if (!pkg?.travel_dates) return [];
     if (Array.isArray(pkg.travel_dates)) {
       const today = new Date();
@@ -185,7 +233,12 @@ export default function PackageDetailsPage() {
         });
     }
     return [];
-  }, [pkg?.travel_dates]);
+  }, [pkg?.travel_dates, slug, flexibleDateAvailability]);
+
+  // Get flexible date availability for a specific date
+  const getFlexibleDateInfo = (dateStr: string) => {
+    return flexibleDateAvailability.find(avail => avail.date === dateStr);
+  };
 
   const isPackageType = (): boolean => {
     return category?.packagetypeid === 1;
@@ -373,13 +426,22 @@ export default function PackageDetailsPage() {
     });
   };
 
-  // Get disabled dates for DayPicker (for UAE Tours)
+  // Get disabled dates for DayPicker (for UAE Tours and Flexible Date Packages)
   const getDisabledDates = (date: Date): boolean => {
     const today = startOfDay(new Date());
     const checkDate = startOfDay(date);
 
     // Disable past dates
     if (checkDate < today) return true;
+
+    // For flexible date packages, check availability
+    if (slug === 'flexible-date-packages') {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const availInfo = getFlexibleDateInfo(dateStr);
+      if (!availInfo) return true; // Disable if not in availability
+      if (availInfo.is_sold_out || availInfo.available_seats <= 0) return true; // Disable if sold out
+      return false;
+    }
 
     // Only check booking slots for UAE tours - use slug from URL params
     if (!slug || !usesBookingSlots(slug)) {
@@ -1506,7 +1568,108 @@ export default function PackageDetailsPage() {
                           className='custom-calendar'
                           modifiersClassNames={{
                             disabled: 'rdp-day_unavailable',
+                            soldOut: 'rdp-day_sold-out',
+                            available: 'rdp-day_available',
                           }}
+                          modifiers={{
+                            soldOut: slug === 'flexible-date-packages' ? flexibleDateAvailability
+                              .filter(avail => avail.is_sold_out || avail.available_seats <= 0)
+                              .map(avail => {
+                                const parsed = parseDateStringToLocal(avail.date);
+                                return parsed ? parsed : null;
+                              })
+                              .filter(Boolean) as Date[] : [],
+                            available: slug === 'flexible-date-packages' ? flexibleDateAvailability
+                              .filter(avail => !avail.is_sold_out && avail.available_seats > 0)
+                              .map(avail => {
+                                const parsed = parseDateStringToLocal(avail.date);
+                                return parsed ? parsed : null;
+                              })
+                              .filter(Boolean) as Date[] : [],
+                          }}
+                          components={
+                            slug === 'flexible-date-packages'
+                              ? {
+                                  Day: (props: any) => {
+                                    const date = props.date as Date;
+                                    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+                                      return <button type='button' {...props} />;
+                                    }
+                                    const dateStr = format(date, 'yyyy-MM-dd');
+                                    const availInfo = getFlexibleDateInfo(dateStr);
+                                    const isDisabled = getDisabledDates(date);
+                                    const isSoldOut = availInfo?.is_sold_out || availInfo?.available_seats <= 0;
+
+                                    return (
+                                      <button
+                                        type='button'
+                                        {...props}
+                                        disabled={isDisabled}
+                                        style={{
+                                          ...props.style,
+                                          position: 'relative',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          padding: '4px',
+                                          minHeight: '40px',
+                                          backgroundColor: availInfo
+                                            ? isSoldOut
+                                              ? '#fee2e2'
+                                              : '#dcfce7'
+                                            : undefined,
+                                          border: availInfo ? '1px solid' : undefined,
+                                          borderColor: isSoldOut ? '#dc2626' : '#16a34a',
+                                        }}
+                                      >
+                                        <div style={{ fontSize: '14px', fontWeight: '500' }}>
+                                          {date.getDate()}
+                                        </div>
+                                        {availInfo && (
+                                          <>
+                                            {isSoldOut ? (
+                                              <div
+                                                style={{
+                                                  fontSize: '9px',
+                                                  color: '#dc2626',
+                                                  fontWeight: '600',
+                                                  marginTop: '2px',
+                                                }}
+                                              >
+                                                Sold Out
+                                              </div>
+                                            ) : (
+                                              <>
+                                                <div
+                                                  style={{
+                                                    fontSize: '9px',
+                                                    color: '#16a34a',
+                                                    fontWeight: '600',
+                                                    marginTop: '2px',
+                                                  }}
+                                                >
+                                                  {availInfo.available_seats} seats
+                                                </div>
+                                                <div
+                                                  style={{
+                                                    fontSize: '8px',
+                                                    color: '#666',
+                                                    marginTop: '1px',
+                                                  }}
+                                                >
+                                                  AED {availInfo.price}
+                                                </div>
+                                              </>
+                                            )}
+                                          </>
+                                        )}
+                                      </button>
+                                    );
+                                  },
+                                }
+                              : undefined
+                          }
                         />
                         <div className='calendar-footer'>
                           <button

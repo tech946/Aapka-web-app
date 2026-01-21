@@ -1,0 +1,131 @@
+/* Flexible Date Calendar Styles */
+.rdp {
+  --rdp-cell-size: 45px;
+  --rdp-accent-color: #f97316;
+  --rdp-background-color: #fef3c7;
+  --rdp-accent-color-dark: #ea580c;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color-dark);
+  margin: 0;
+  font-size: 12px;
+}
+
+.rdp-day {
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.rdp-day:hover {
+  background-color: #f3f4f6;
+}
+
+.rdp-day_configured {
+  background-color: #dcfce7;
+  border: 1px solid #16a34a;
+  font-weight: 600;
+}
+
+.rdp-day_sold-out {
+  background-color: #fee2e2;
+  border: 1px solid #dc2626;
+  text-decoration: line-through;
+}
+
+.rdp-day_configured:hover {
+  background-color: #bbf7d0;
+}
+
+.rdp-day_sold-out:hover {
+  background-color: #fecaca;
+}
+
+.rdp-button:hover:not([disabled]) {
+  background-color: #f3f4f6;
+}
+
+.rdp-months {
+  display: flex;
+  gap: 24px;
+}
+
+.rdp-month {
+  margin: 0;
+}
+
+.rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  font-weight: 600;
+}
+
+.rdp-head_cell {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.rdp-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rdp-button {
+  padding: 0.25rem;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rdp-button:hover:not([disabled]) {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.rdp-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Compact calendar view */
+.rdp-day_range_start,
+.rdp-day_range_end,
+.rdp-day_selected {
+  background-color: var(--rdp-accent-color);
+  color: white;
+}
+
+/* Calendar wrapper */
+.flexible-date-calendar-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+}
+
+.flexible-date-calendar-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.flexible-date-calendar-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.flexible-date-calendar-wrapper::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.flexible-date-calendar-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
