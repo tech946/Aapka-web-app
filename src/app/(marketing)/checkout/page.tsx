@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -68,12 +68,6 @@ export default function CheckoutPage() {
 
   // Check if any cart item has visa selected
   const hasVisaSelected = cartItems.some(item => item.withVisa === true);
-
-  // For flexible date packages: only show documents if visa is selected
-  // For other packages: show documents for India (preserve previous functionality)
-  const shouldShowDocuments = hasFlexibleDatePackage
-    ? hasVisaSelected
-    : passengers[0]?.country === 'India';
 
   // For tours: only full payment. For packages/offer packages: allow half or full
   // Update payment type if cart changes and becomes a tour
@@ -158,6 +152,15 @@ export default function CheckoutPage() {
       router.push('/cart');
     }
   }, [cartItems, router]);
+
+  // For flexible date packages: only show documents if visa is selected
+  // For other packages: show documents for India (preserve previous functionality)
+  // Computed after passengers state is initialized
+  const shouldShowDocuments = useMemo(() => {
+    return hasFlexibleDatePackage
+      ? hasVisaSelected
+      : passengers[0]?.country === 'India';
+  }, [hasFlexibleDatePackage, hasVisaSelected, passengers]);
 
   // Fetch platform fee and detect user location on mount
   useEffect(() => {
