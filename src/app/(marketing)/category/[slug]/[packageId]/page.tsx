@@ -131,14 +131,14 @@ export default function PackageDetailsPage() {
   const [visaForChildren, setVisaForChildren] = useState(0);
   const [visaForInfants, setVisaForInfants] = useState(0);
 
-  // Initialize minimum adults: 1 for all packages, 2 for offer packages
+  // Initialize minimum adults: 1 for all packages, 2 for offer packages and flexible date packages
   useEffect(() => {
-    if (slug === 'offer-packages' && persons.adult < 2) {
+    if ((slug === 'offer-packages' || slug === 'flexible-date-packages') && persons.adult < 2) {
       setPersons(prev => ({ ...prev, adult: 2 }));
     } else if (persons.adult < 1) {
       setPersons(prev => ({ ...prev, adult: 1 }));
     }
-  }, [slug]);
+  }, [slug, persons.adult]);
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [expandedItineraryItems, setExpandedItineraryItems] = useState<
     Set<number>
@@ -624,6 +624,7 @@ export default function PackageDetailsPage() {
     if (isSoloTraveller) return (prev: any) => prev;
     setPersons(prev => {
       const isOfferPackage = slug === 'offer-packages';
+      const isFlexibleDatePackage = slug === 'flexible-date-packages';
       let newValue = prev[type] + delta;
 
       // Prevent negative values for children and infants
@@ -631,10 +632,10 @@ export default function PackageDetailsPage() {
         return prev;
       }
 
-      // For offer packages, ensure minimum 2 adults
-      if (isOfferPackage && type === 'adult') {
+      // For offer packages and flexible date packages, ensure minimum 2 adults
+      if ((isOfferPackage || isFlexibleDatePackage) && type === 'adult') {
         if (newValue < 2) {
-          toast.error('Offer packages require a minimum of 2 adults');
+          toast.error((isOfferPackage ? 'Offer packages' : 'Flexible date packages') + ' require a minimum of 2 adults');
           return prev;
         }
       } else if (type === 'adult' && newValue < 1) {
@@ -779,9 +780,10 @@ export default function PackageDetailsPage() {
         return;
       }
 
-      // Validate minimum 2 adults for offer packages
-      if (isOfferPackage && persons.adult < 2) {
-        toast.error('Offer packages require a minimum of 2 adults');
+      // Validate minimum 2 adults for offer packages and flexible date packages
+      const isFlexibleDatePackage = slug === 'flexible-date-packages';
+      if ((isOfferPackage || isFlexibleDatePackage) && persons.adult < 2) {
+        toast.error((isOfferPackage ? 'Offer packages' : 'Flexible date packages') + ' require a minimum of 2 adults');
         return;
       }
     }
@@ -1553,7 +1555,7 @@ export default function PackageDetailsPage() {
                             className='mobile-counter-button'
                             onClick={() => updatePersonCount('adult', -1)}
                             disabled={
-                              slug === 'offer-packages'
+                              slug === 'offer-packages' || slug === 'flexible-date-packages'
                                 ? persons.adult <= 2
                                 : persons.adult <= 1
                             }
@@ -2105,7 +2107,7 @@ export default function PackageDetailsPage() {
                             disabled={
                               isSoloTraveller
                                 ? true
-                                : slug === 'offer-packages'
+                                : slug === 'offer-packages' || slug === 'flexible-date-packages'
                                   ? persons.adult <= 2
                                   : persons.adult <= 1
                             }

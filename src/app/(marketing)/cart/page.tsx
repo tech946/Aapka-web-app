@@ -85,11 +85,12 @@ export default function CartPage() {
     const currentValue = item[type] || 0;
     let newValue = currentValue + delta;
     const isOfferPackage = item.categorySlug === 'offer-packages';
+    const isFlexibleDatePackage = item.categorySlug === 'flexible-date-packages';
 
     // Prevent adults from going below minimum
     if (type === 'adults') {
-      if (isOfferPackage) {
-        // Offer packages require minimum 2 adults
+      if (isOfferPackage || isFlexibleDatePackage) {
+        // Offer packages and flexible date packages require minimum 2 adults
         if (newValue < 2) {
           newValue = 2;
         }
@@ -217,7 +218,7 @@ export default function CartPage() {
                               handleQuantityChange(item, 'adults', -1)
                             }
                             disabled={
-                              item.categorySlug === 'offer-packages'
+                              item.categorySlug === 'offer-packages' || item.categorySlug === 'flexible-date-packages'
                                 ? item.adults <= 2
                                 : item.adults <= 1
                             }

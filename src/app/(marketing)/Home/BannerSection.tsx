@@ -68,7 +68,7 @@ export default function BannerSection() {
   const [month, setMonth] = useState<Date>(new Date());
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [persons, setPersons] = useState<PersonsCount>({
-    adult: 0,
+    adult: 2, // Default to 2 adults
     child: 0,
     infant: 0,
   });
@@ -291,7 +291,22 @@ export default function BannerSection() {
 
   const updatePersonCount = (type: keyof PersonsCount, delta: number) => {
     setPersons(prev => {
-      const newValue = Math.max(0, prev[type] + delta);
+      const newValue = prev[type] + delta;
+      
+      // For adults, enforce minimum of 2
+      if (type === 'adult') {
+        const minAdults = 2;
+        if (newValue < minAdults) {
+          return prev; // Don't allow going below minimum
+        }
+        return { ...prev, [type]: newValue };
+      }
+      
+      // For children and infants, prevent negative values
+      if (newValue < 0) {
+        return prev;
+      }
+      
       return { ...prev, [type]: newValue };
     });
   };
@@ -613,7 +628,7 @@ export default function BannerSection() {
                         <button
                           className='counter_button'
                           onClick={() => updatePersonCount('adult', -1)}
-                          disabled={persons.adult === 0}
+                          disabled={persons.adult <= 2}
                         >
                           <Minus className='counter_icon' />
                         </button>
