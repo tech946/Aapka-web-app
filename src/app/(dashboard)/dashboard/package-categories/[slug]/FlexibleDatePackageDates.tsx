@@ -13,6 +13,7 @@ export interface DateRange {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  soloTravellerPrice?: number | null;
   isSoldOut: boolean;
 }
 
@@ -36,6 +37,7 @@ export default function FlexibleDatePackageDates({
   const [rangeAdultPrice, setRangeAdultPrice] = useState<string>(defaultAdultPrice || '');
   const [rangeChildPrice, setRangeChildPrice] = useState<string>(defaultChildPrice || '');
   const [rangeInfantPrice, setRangeInfantPrice] = useState<string>(defaultInfantPrice || '');
+  const [rangeSoloTravellerPrice, setRangeSoloTravellerPrice] = useState<string>('');
   
   // Sold out form
   const [soldOutFromDate, setSoldOutFromDate] = useState<string>('');
@@ -50,6 +52,7 @@ export default function FlexibleDatePackageDates({
     adultPrice: string;
     childPrice: string;
     infantPrice: string;
+    soloTravellerPrice: string;
   } | null>(null);
 
   const addDateRange = () => {
@@ -88,6 +91,11 @@ export default function FlexibleDatePackageDates({
       return;
     }
 
+    const soloTravellerPriceNum = rangeSoloTravellerPrice ? Number(rangeSoloTravellerPrice) : null;
+    
+    console.log('rangeSoloTravellerPrice input value:', rangeSoloTravellerPrice);
+    console.log('soloTravellerPriceNum calculated:', soloTravellerPriceNum);
+
     const newRange: DateRange = {
       id: crypto.randomUUID?.() || String(Date.now()),
       fromDate,
@@ -95,9 +103,11 @@ export default function FlexibleDatePackageDates({
       adultPrice: adultPriceNum,
       childPrice: childPriceNum,
       infantPrice: infantPriceNum,
+      soloTravellerPrice: soloTravellerPriceNum,
       isSoldOut: false,
     };
 
+    console.log('Adding new date range:', JSON.stringify(newRange, null, 2));
     onDateRangesChange([...dateRanges, newRange]);
     toast.success('Date range added');
     
@@ -107,6 +117,7 @@ export default function FlexibleDatePackageDates({
     setRangeAdultPrice(defaultAdultPrice || '');
     setRangeChildPrice(defaultChildPrice || '');
     setRangeInfantPrice(defaultInfantPrice || '');
+    setRangeSoloTravellerPrice('');
   };
 
   const markAsSoldOut = () => {
@@ -130,6 +141,7 @@ export default function FlexibleDatePackageDates({
       adultPrice: 0,
       childPrice: 0,
       infantPrice: 0,
+      soloTravellerPrice: null,
       isSoldOut: true,
     };
 
@@ -149,6 +161,7 @@ export default function FlexibleDatePackageDates({
       adultPrice: String(range.adultPrice),
       childPrice: String(range.childPrice),
       infantPrice: String(range.infantPrice),
+      soloTravellerPrice: range.soloTravellerPrice ? String(range.soloTravellerPrice) : '',
     });
     setShowEditModal(true);
   };
@@ -159,6 +172,10 @@ export default function FlexibleDatePackageDates({
     const adultPriceNum = Number(editForm.adultPrice);
     const childPriceNum = editForm.childPrice ? Number(editForm.childPrice) : 0;
     const infantPriceNum = editForm.infantPrice ? Number(editForm.infantPrice) : 0;
+    const soloTravellerPriceNum = editForm.soloTravellerPrice ? Number(editForm.soloTravellerPrice) : null;
+
+    console.log('saveEdit - editForm.soloTravellerPrice:', editForm.soloTravellerPrice);
+    console.log('saveEdit - soloTravellerPriceNum:', soloTravellerPriceNum);
 
     if (!editForm.adultPrice || Number.isNaN(adultPriceNum)) {
       toast.error('Please enter a valid Adult Price');
@@ -200,10 +217,12 @@ export default function FlexibleDatePackageDates({
             adultPrice: adultPriceNum,
             childPrice: childPriceNum,
             infantPrice: infantPriceNum,
+            soloTravellerPrice: soloTravellerPriceNum,
           }
         : r
     );
     
+    console.log('Updating date range:', updated.find(r => r.id === editingRange.id));
     onDateRangesChange(updated);
     toast.success('Date range updated');
     cancelEdit();
@@ -320,6 +339,24 @@ export default function FlexibleDatePackageDates({
             style={{ width: '100%', padding: '6px 8px', fontSize: '14px' }}
           />
         </div>
+        <div style={{ flex: '1', minWidth: '100px' }}>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
+            Solo Traveller Price (AED)
+          </label>
+          <input
+            type='text'
+            inputMode='numeric'
+            value={rangeSoloTravellerPrice}
+            onChange={e => {
+              const val = e.target.value;
+              if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                setRangeSoloTravellerPrice(val);
+              }
+            }}
+            placeholder='Optional'
+            style={{ width: '100%', padding: '6px 8px', fontSize: '14px' }}
+          />
+        </div>
         <div style={{ flex: '0 0 auto' }}>
           <button
             type='button'
@@ -353,6 +390,7 @@ export default function FlexibleDatePackageDates({
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Adult Price</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Child Price</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Infant Price</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Solo Traveller Price</th>
                   <th style={{ padding: '14px 16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Actions</th>
                 </tr>
               </thead>
@@ -385,6 +423,9 @@ export default function FlexibleDatePackageDates({
                       </td>
                       <td style={{ padding: '14px 16px', fontSize: '14px', color: '#059669', fontWeight: '600' }}>
                         AED {range.infantPrice.toLocaleString()}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: '14px', color: range.soloTravellerPrice ? '#059669' : '#9ca3af', fontWeight: '600' }}>
+                        {range.soloTravellerPrice ? `AED ${range.soloTravellerPrice.toLocaleString()}` : '—'}
                       </td>
                       <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -639,7 +680,7 @@ export default function FlexibleDatePackageDates({
                   />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
                     Adult Price (AED) *
@@ -691,6 +732,24 @@ export default function FlexibleDatePackageDates({
                       }
                     }}
                     placeholder='0'
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
+                    Solo Traveller Price (AED)
+                  </label>
+                  <input
+                    type='text'
+                    inputMode='numeric'
+                    value={editForm.soloTravellerPrice}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setEditForm({ ...editForm, soloTravellerPrice: val });
+                      }
+                    }}
+                    placeholder='Optional'
                     style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
                   />
                 </div>

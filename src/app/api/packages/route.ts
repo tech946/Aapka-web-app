@@ -153,10 +153,11 @@ export async function POST(req: NextRequest) {
     if (Array.isArray(body?.booking_slots)) {
       bookingSlots = body.booking_slots;
     }
-    // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, isSoldOut })
+    // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, soloTravellerPrice, isSoldOut })
     let dateRanges: any[] | null = null;
     if (Array.isArray(body?.date_ranges)) {
       dateRanges = body.date_ranges;
+      console.log('POST: Received date_ranges:', JSON.stringify(dateRanges, null, 2));
     }
     const endDate = body?.end_date !== undefined ? String(body.end_date).trim() || null : null;
     const adultPrice =
@@ -373,12 +374,13 @@ export async function PUT(req: NextRequest) {
         ? body.booking_slots
         : undefined;
     }
-    // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, isSoldOut })
+    // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, soloTravellerPrice, isSoldOut })
     let dateRangesUpdate: any[] | undefined = undefined;
     if (body?.date_ranges !== undefined) {
       dateRangesUpdate = Array.isArray(body.date_ranges)
         ? body.date_ranges
         : undefined;
+      console.log('PUT: Received date_ranges:', JSON.stringify(dateRangesUpdate, null, 2));
     }
     const endDate =
       body?.end_date !== undefined ? String(body.end_date).trim() || null : undefined;

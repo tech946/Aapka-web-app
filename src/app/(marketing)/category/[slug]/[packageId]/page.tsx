@@ -48,6 +48,7 @@ interface DateRange {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  soloTravellerPrice?: number | null;
   isSoldOut: boolean;
 }
 
@@ -281,6 +282,7 @@ export default function PackageDetailsPage() {
     adult_price: number;
     child_price: number;
     infant_price: number;
+    solo_traveller_price?: number | null;
     is_sold_out: boolean;
   } | null => {
     const range = findDateRangeForDate(dateStr);
@@ -289,6 +291,7 @@ export default function PackageDetailsPage() {
       adult_price: range.adultPrice,
       child_price: range.childPrice,
       infant_price: range.infantPrice,
+      solo_traveller_price: range.soloTravellerPrice,
       is_sold_out: range.isSoldOut,
     };
   }, [findDateRangeForDate]);
@@ -415,7 +418,7 @@ export default function PackageDetailsPage() {
   }, [pkg, withVisa, visaForAdults, visaForChildren, visaForInfants]);
 
   // Get the minimum prices from all available date ranges (for showing "starting from" price)
-  const getMinPricesFromRanges = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number } | null => {
+  const getMinPricesFromRanges = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } | null => {
     if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges) || pkg.date_ranges.length === 0) {
       return null;
     }
@@ -432,11 +435,12 @@ export default function PackageDetailsPage() {
       adultPrice: minRange.adultPrice || 0,
       childPrice: minRange.childPrice || 0,
       infantPrice: minRange.infantPrice || 0,
+      soloTravellerPrice: minRange.soloTravellerPrice,
     };
   }, [pkg?.date_ranges]);
 
   // Get prices for selected date (for flexible date packages) or package base prices
-  const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number } => {
+  const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } => {
     // For flexible date packages, use date-specific pricing from date_ranges
     if (slug === 'flexible-date-packages') {
       // Check if date is selected (either as string or Date object)
@@ -450,6 +454,7 @@ export default function PackageDetailsPage() {
             adultPrice: dateInfo.adult_price || 0,
             childPrice: dateInfo.child_price || 0,
             infantPrice: dateInfo.infant_price || 0,
+            soloTravellerPrice: dateInfo.solo_traveller_price,
           };
         }
       }
@@ -457,7 +462,12 @@ export default function PackageDetailsPage() {
       // If no date selected, show minimum price from available ranges as "starting from" price
       const minPrices = getMinPricesFromRanges();
       if (minPrices) {
-        return minPrices;
+        return {
+          adultPrice: minPrices.adultPrice,
+          childPrice: minPrices.childPrice,
+          infantPrice: minPrices.infantPrice,
+          soloTravellerPrice: minPrices.soloTravellerPrice,
+        };
       }
       
       // Fallback to 0 if no ranges available
@@ -465,6 +475,7 @@ export default function PackageDetailsPage() {
         adultPrice: 0,
         childPrice: 0,
         infantPrice: 0,
+        soloTravellerPrice: null,
       };
     }
     
@@ -480,7 +491,13 @@ export default function PackageDetailsPage() {
   const getOriginalPrice = useCallback((): number | null => {
     if (!pkg) return null;
     if (isSoloTraveller && pkg.solo_traveller_enabled) {
-      // Solo traveller price + visa price if selected
+      // For flexible date packages, get solo traveller price from date ranges
+      if (slug === 'flexible-date-packages') {
+        const prices = getPricesForDate();
+        const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice;
+        return soloPrice ? soloPrice + getVisaPrice() : null;
+      }
+      // For non-flexible packages, use package-level solo traveller price
       const soloPrice = pkg.solo_traveller_price ?? pkg.package_price;
       return soloPrice ? soloPrice + getVisaPrice() : null;
     }
@@ -491,7 +508,7 @@ export default function PackageDetailsPage() {
       (persons.infant > 0 ? persons.infant * prices.infantPrice : 0);
     const basePrice = totalPrice === 0 ? (pkg.package_price || 0) : totalPrice;
     return basePrice ? basePrice + getVisaPrice() : null;
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, getVisaPrice, getPricesForDate]);
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, getVisaPrice, getPricesForDate, slug]);
 
   // Calculate price based on persons and selected date
   useEffect(() => {
@@ -502,7 +519,15 @@ export default function PackageDetailsPage() {
 
     // Solo traveller pricing overrides per-person pricing
     if (isSoloTraveller && pkg.solo_traveller_enabled) {
-      // Solo traveller price + visa price if selected
+      // For flexible date packages, get solo traveller price from date ranges
+      if (slug === 'flexible-date-packages') {
+        const prices = getPricesForDate();
+        const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
+        const visaPrice = getVisaPrice();
+        setCalculatedPrice(soloPrice + visaPrice);
+        return;
+      }
+      // For non-flexible packages, use package-level solo traveller price
       const soloPrice = pkg.solo_traveller_price ?? pkg.package_price ?? 0;
       const visaPrice = getVisaPrice();
       setCalculatedPrice(soloPrice + visaPrice);
@@ -909,30 +934,34 @@ export default function PackageDetailsPage() {
 
   // Click outside handlers for dropdowns
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
       if (
         datePickerRef.current &&
-        !datePickerRef.current.contains(event.target as Node)
+        !datePickerRef.current.contains(target)
       ) {
         setShowDatePicker(false);
       }
       if (
         dateDropdownRef.current &&
-        !dateDropdownRef.current.contains(event.target as Node)
+        !dateDropdownRef.current.contains(target)
       ) {
         setShowDateDropdown(false);
       }
       if (
         personsDropdownRef.current &&
-        !personsDropdownRef.current.contains(event.target as Node)
+        !personsDropdownRef.current.contains(target)
       ) {
         setShowPersonsDropdown(false);
       }
     };
 
+    // Use mousedown for desktop and touchstart for mobile
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
 
@@ -1250,9 +1279,14 @@ export default function PackageDetailsPage() {
                       }}
                     />
                     Solo Traveller (AED{' '}
-                    {formatPrice(pkg.solo_traveller_price || pkg.package_price)
-                      .replace('AED ', '')
-                      .trim()}
+                    {(() => {
+                      if (slug === 'flexible-date-packages') {
+                        const prices = getPricesForDate();
+                        const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? pkg.package_price;
+                        return formatPrice(soloPrice).replace('AED ', '').trim();
+                      }
+                      return formatPrice(pkg.solo_traveller_price || pkg.package_price).replace('AED ', '').trim();
+                    })()}
                     )
                   </label>
 
@@ -1662,7 +1696,11 @@ export default function PackageDetailsPage() {
                       onClick={() => setShowDatePicker(!showDatePicker)}
                     />
                     {showDatePicker && (
-                      <div className='mobile-booking-calendar-dropdown'>
+                      <div 
+                        className='mobile-booking-calendar-dropdown'
+                        onClick={e => e.stopPropagation()}
+                        onTouchStart={e => e.stopPropagation()}
+                      >
                         {slug === 'flexible-date-packages' ? (
                           <FlexibleDateCalendar
                             packageId={pkg?.package_id || ''}
@@ -2203,7 +2241,11 @@ export default function PackageDetailsPage() {
                       onClick={() => setShowDatePicker(!showDatePicker)}
                     />
                     {showDatePicker && (
-                      <div className='booking-calendar-dropdown'>
+                      <div 
+                        className='booking-calendar-dropdown'
+                        onClick={e => e.stopPropagation()}
+                        onTouchStart={e => e.stopPropagation()}
+                      >
                         {slug === 'flexible-date-packages' ? (
                           <FlexibleDateCalendar
                             packageId={pkg?.package_id || ''}

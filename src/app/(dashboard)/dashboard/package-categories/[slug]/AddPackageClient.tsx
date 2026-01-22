@@ -44,6 +44,7 @@ export default function AddPackageClient({
       adultPrice: number;
       childPrice: number;
       infantPrice: number;
+      soloTravellerPrice?: number | null;
       isSoldOut: boolean;
     }>
   >([]);
@@ -252,7 +253,10 @@ export default function AddPackageClient({
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
                   dateRanges={dateRanges}
-                  onDateRangesChange={setDateRanges}
+                  onDateRangesChange={(newRanges) => {
+                    console.log('AddPackageClient received dateRanges update:', JSON.stringify(newRanges, null, 2));
+                    setDateRanges(newRanges);
+                  }}
                   defaultAdultPrice={adultPrice || price}
                   defaultChildPrice={childPrice || price}
                   defaultInfantPrice={infantPrice || price}
@@ -439,24 +443,6 @@ export default function AddPackageClient({
                   Enable Solo Traveller Option
                 </label>
               </div>
-
-              {soloTravellerEnabled && (
-                <div className='form_row'>
-                  <label>Solo Traveller Price (AED)</label>
-                  <input
-                    type='text'
-                    inputMode='numeric'
-                    value={soloTravellerPrice}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                        setSoloTravellerPrice(val);
-                      }
-                    }}
-                    placeholder='1400'
-                  />
-                </div>
-              )}
             </div>
           </div>
           )}
@@ -824,8 +810,11 @@ export default function AddPackageClient({
                     adultPrice: d.adultPrice,
                     childPrice: d.childPrice,
                     infantPrice: d.infantPrice,
+                    soloTravellerPrice: d.soloTravellerPrice ?? null,
                     isSoldOut: d.isSoldOut,
                   })) : [];
+                  console.log('AddPackage: dateRanges state:', dateRanges);
+                  console.log('AddPackage: dateRangesPayload:', dateRangesPayload);
 
                   const payload: any = {
                     name: name.trim(),

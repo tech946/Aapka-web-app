@@ -97,6 +97,7 @@ export default function EditPackageClient({
       adultPrice: number;
       childPrice: number;
       infantPrice: number;
+      soloTravellerPrice?: number | null;
       isSoldOut: boolean;
     }>
   >([]);
@@ -199,6 +200,7 @@ export default function EditPackageClient({
           adultPrice: d.adultPrice || 0,
           childPrice: d.childPrice || 0,
           infantPrice: d.infantPrice || 0,
+          soloTravellerPrice: d.soloTravellerPrice ?? null,
           isSoldOut: d.isSoldOut || false,
         }));
         setDateRanges(normalized);
@@ -391,7 +393,10 @@ export default function EditPackageClient({
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
                   dateRanges={dateRanges}
-                  onDateRangesChange={setDateRanges}
+                  onDateRangesChange={(newRanges) => {
+                    console.log('EditPackageClient received dateRanges update:', JSON.stringify(newRanges, null, 2));
+                    setDateRanges(newRanges);
+                  }}
                   defaultAdultPrice={adultPrice || price}
                   defaultChildPrice={childPrice || price}
                   defaultInfantPrice={infantPrice || price}
@@ -578,24 +583,6 @@ export default function EditPackageClient({
                   Enable Solo Traveller Option
                 </label>
               </div>
-
-              {soloTravellerEnabled && (
-                <div className='form_row'>
-                  <label>Solo Traveller Price (AED)</label>
-                  <input
-                    type='text'
-                    inputMode='numeric'
-                    value={soloTravellerPrice}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                        setSoloTravellerPrice(val);
-                      }
-                    }}
-                    placeholder='1400'
-                  />
-                </div>
-              )}
             </div>
           </div>
           )}
@@ -992,18 +979,24 @@ export default function EditPackageClient({
                       ...(usesSlots
                         ? { booking_slots: bookingSlots }
                         : usesFlexibleDate
-                          ? { 
-                              date_ranges: dateRanges.map((d: any) => ({
+                          ? (() => {
+                              const mappedRanges = dateRanges.map((d: any) => ({
                                 id: d.id,
                                 fromDate: d.fromDate,
                                 toDate: d.toDate,
                                 adultPrice: d.adultPrice,
                                 childPrice: d.childPrice,
                                 infantPrice: d.infantPrice,
+                                soloTravellerPrice: d.soloTravellerPrice ?? null,
                                 isSoldOut: d.isSoldOut,
-                              })), 
-                              end_date: endDate || undefined 
-                            }
+                              }));
+                              console.log('EditPackage: dateRanges state:', dateRanges);
+                              console.log('EditPackage: mapped date_ranges:', mappedRanges);
+                              return { 
+                                date_ranges: mappedRanges, 
+                                end_date: endDate || undefined 
+                              };
+                            })()
                           : { travel_dates: travelDates }),
                       adult_price: adultPrice ? Number(adultPrice) : undefined,
                       child_price: childPrice ? Number(childPrice) : undefined,

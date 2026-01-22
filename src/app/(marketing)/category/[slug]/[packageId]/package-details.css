@@ -1121,6 +1121,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .booking-calendar-dropdown .flexible-date-calendar-wrapper {
   overflow: visible !important;
+  max-width: 100%;
 }
 
 .calendar-header-nav {
@@ -1874,6 +1875,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     box-shadow:
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
     z-index: 2010;
     padding: 20px;
     margin: 0 -20px;
@@ -1894,6 +1897,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
   .mobile-booking-calendar-dropdown .flexible-date-calendar-wrapper {
     overflow: visible !important;
+    max-width: 100%;
   }
 
   .mobile-calendar-header-nav {

@@ -36,6 +36,7 @@ interface DateRange {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  soloTravellerPrice?: number | null;
   isSoldOut: boolean;
 }
 

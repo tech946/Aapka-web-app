@@ -11,6 +11,7 @@ interface DateRange {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  soloTravellerPrice?: number | null;
   isSoldOut: boolean;
 }
 
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
       let adultPrice = 0;
       let childPrice = 0;
       let infantPrice = 0;
+      let soloTravellerPrice: number | null = null;
       
       if (item.selectedDate) {
         // For flexible date packages, get pricing from the date range that contains the selected date
@@ -122,6 +124,7 @@ export async function POST(req: NextRequest) {
           adultPrice = dateRange.adultPrice || 0;
           childPrice = dateRange.childPrice || 0;
           infantPrice = dateRange.infantPrice || 0;
+          soloTravellerPrice = dateRange.soloTravellerPrice ?? null;
         }
         // If no date range found, prices remain 0 (flexible date packages require valid date range)
       } else {
@@ -129,17 +132,19 @@ export async function POST(req: NextRequest) {
         adultPrice = pkg.adult_price || 0;
         childPrice = pkg.child_price || 0;
         infantPrice = pkg.infant_price || 0;
+        soloTravellerPrice = pkg.solo_traveller_price ?? null;
       }
 
       // Calculate price with discount applied
       let calculatedPrice = 0;
       let originalPrice = 0;
       const isSolo =
-        item.isSoloTraveller && pkg.solo_traveller_enabled && pkg.solo_traveller_price;
+        item.isSoloTraveller && pkg.solo_traveller_enabled;
 
       if (isSolo) {
         // Solo traveller pricing overrides per-person logic (no discount on solo)
-        calculatedPrice = pkg.solo_traveller_price || 0;
+        // Use solo traveller price from date range if available, otherwise from package
+        calculatedPrice = soloTravellerPrice ?? pkg.solo_traveller_price ?? 0;
         originalPrice = calculatedPrice;
       } else {
         // Regular pricing based on adult/child/infant counts

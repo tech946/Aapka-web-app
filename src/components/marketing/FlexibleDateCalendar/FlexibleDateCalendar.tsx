@@ -15,6 +15,7 @@ interface DateRange {
   adultPrice: number;
   childPrice: number;
   infantPrice: number;
+  soloTravellerPrice?: number | null;
   isSoldOut: boolean;
 }
 
@@ -188,6 +189,9 @@ export default function FlexibleDateCalendar({
     [endDate, findDateRangeForDate]
   );
 
+  // Check if device is touch-enabled (for hiding hover tooltips on mobile)
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
   // Custom DayButton to show price or status with tooltip
   const CustomDayButton = ({ day, modifiers, ...buttonProps }: any) => {
     const date = day.date;
@@ -197,9 +201,10 @@ export default function FlexibleDateCalendar({
     const isSelected = modifiers.selected;
     const isSoldOut = dateRange?.isSoldOut;
     const availableSeats = !isDisabled && !isSoldOut ? getAvailableSeats(dateStr) : 0;
-    const isHovered = hoveredDate === dateStr;
 
+    // Only show tooltip on non-touch devices (desktop with mouse)
     const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (isTouchDevice) return; // Skip tooltip on touch devices
       if (!isDisabled && !isSoldOut && dateRange) {
         setHoveredDate(dateStr);
         const rect = e.currentTarget.getBoundingClientRect();
@@ -217,26 +222,39 @@ export default function FlexibleDateCalendar({
       setTooltipPosition(null);
     };
 
+    // Extract onClick from buttonProps to ensure it's properly called
+    const { onClick: originalOnClick, ...restButtonProps } = buttonProps;
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      // Clear any tooltip on click (for hybrid devices)
+      setHoveredDate(null);
+      setTooltipPosition(null);
+      // Call original onClick from DayPicker
+      if (originalOnClick) {
+        originalOnClick(e);
+      }
+    };
+
     return (
-      <>
-        <button
-          {...buttonProps}
-          className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          <span className="flexible-day-number">{date.getDate()}</span>
-          {isDisabled ? (
-            <span className="flexible-day-na">N/A</span>
-          ) : dateRange && !isSoldOut ? (
-            <span className="flexible-day-price">
-              {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
-            </span>
-          ) : dateRange && isSoldOut ? (
-            <span className="flexible-day-soldout">Sold Out</span>
-          ) : null}
-        </button>
-      </>
+      <button
+        {...restButtonProps}
+        onClick={handleClick}
+        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{ touchAction: 'manipulation' }}
+      >
+        <span className="flexible-day-number">{date.getDate()}</span>
+        {isDisabled ? (
+          <span className="flexible-day-na">N/A</span>
+        ) : dateRange && !isSoldOut ? (
+          <span className="flexible-day-price">
+            {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
+          </span>
+        ) : dateRange && isSoldOut ? (
+          <span className="flexible-day-soldout">Sold Out</span>
+        ) : null}
+      </button>
     );
   };
 

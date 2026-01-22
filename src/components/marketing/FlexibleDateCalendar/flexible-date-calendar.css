@@ -403,3 +403,60 @@
   overflow: visible !important;
   position: relative;
 }
+
+/* Mobile Touch Improvements */
+@media (max-width: 768px) {
+  .flexible-day-button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    min-height: 44px; /* Apple's recommended touch target size */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Hide tooltips on touch devices */
+  .flexible-day-tooltip {
+    display: none !important;
+  }
+  
+  /* Larger touch targets on mobile */
+  .flexible-date-calendar td {
+    min-width: 40px;
+    min-height: 48px;
+  }
+  
+  .flexible-date-calendar-wrapper {
+    touch-action: pan-y;
+  }
+  
+  .flexible-date-calendar {
+    touch-action: pan-y;
+  }
+  
+  /* Remove hover effects on touch */
+  .flexible-day-button:hover {
+    transform: none;
+    background: transparent;
+  }
+  
+  /* Better active state for touch feedback */
+  .flexible-day-button:active:not(.disabled) {
+    transform: scale(0.95);
+    background: #f0fdf4;
+  }
+  
+  /* Ensure nav buttons are touchable */
+  .flexible-calendar-nav-button {
+    min-width: 40px;
+    min-height: 40px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Clear dates button touch target */
+  .flexible-clear-dates-button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+}
