@@ -1860,7 +1860,7 @@ export default function PackageDetailsPage() {
                         }
                         }}
                       />
-                      With Visa
+                      With Visa (Indian passport Holder)
                     </label>
 
                     {withVisa && (
