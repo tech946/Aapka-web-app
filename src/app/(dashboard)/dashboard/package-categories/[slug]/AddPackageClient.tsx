@@ -423,6 +423,44 @@ export default function AddPackageClient({
           </div>
           )}
 
+          {/* Solo Traveller Option for Flexible Date Packages */}
+          {usesFlexibleDate && (
+          <div className='form_section'>
+            <h5 className='section_title'>Solo Traveller Option</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row full_width'>
+                <label>
+                  <input
+                    type='checkbox'
+                    checked={soloTravellerEnabled}
+                    onChange={e => setSoloTravellerEnabled(e.target.checked)}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Enable Solo Traveller Option
+                </label>
+              </div>
+
+              {soloTravellerEnabled && (
+                <div className='form_row'>
+                  <label>Solo Traveller Price (AED)</label>
+                  <input
+                    type='text'
+                    inputMode='numeric'
+                    value={soloTravellerPrice}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setSoloTravellerPrice(val);
+                      }
+                    }}
+                    placeholder='1400'
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          )}
+
           {/* End Date for Flexible Date Packages */}
           {usesFlexibleDate && (
           <div className='form_section'>

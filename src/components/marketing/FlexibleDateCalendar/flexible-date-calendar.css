@@ -4,6 +4,8 @@
   position: relative;
   width: 100%;
   max-width: 280px;
+  overflow: visible !important;
+  min-height: 300px;
 }
 
 .flexible-date-calendar-loading {
@@ -66,6 +68,8 @@
   --rdp-accent-color: #ff4d00;
   --rdp-background-color: #fef3e2;
   margin: 0 !important;
+  overflow: visible !important;
+  width: 100%;
 }
 
 .flexible-date-calendar .rdp-month_caption {
@@ -74,10 +78,13 @@
 
 .flexible-date-calendar .rdp-months {
   display: flex;
+  overflow: visible !important;
 }
 
 .flexible-date-calendar .rdp-month {
   width: 100%;
+  overflow: visible !important;
+  min-width: 0;
 }
 
 .flexible-date-calendar .rdp-caption {
@@ -123,6 +130,8 @@
   border-radius: 4px;
   transition: all 0.2s;
   font-family: inherit;
+  overflow: visible !important;
+  position: relative;
 }
 
 .flexible-day-button:hover:not(.disabled) {
@@ -269,9 +278,128 @@
 .flexible-date-calendar table {
   width: 100%;
   border-collapse: collapse;
+  overflow: visible !important;
+  table-layout: fixed;
+}
+
+.flexible-date-calendar .rdp-table {
+  overflow: visible !important;
+  width: 100%;
 }
 
 .flexible-date-calendar td {
   text-align: center;
   padding: 1px;
+  overflow: visible !important;
+  position: relative;
+}
+
+.flexible-date-calendar .rdp-day {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Tooltip Styles */
+.flexible-day-tooltip {
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+  position: fixed !important;
+  z-index: 10000 !important;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.flexible-day-tooltip-content {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.flexible-day-tooltip-seats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flexible-day-tooltip-arrow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #1f2937;
+}
+
+/* Calendar Overflow Fix - Comprehensive */
+.flexible-date-calendar-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  overflow: visible !important;
+  z-index: 1;
+}
+
+.flexible-date-calendar {
+  overflow: visible !important;
+  width: 100%;
+  position: relative;
+}
+
+.flexible-date-calendar .rdp {
+  overflow: visible !important;
+}
+
+.flexible-date-calendar .rdp-months {
+  overflow: visible !important;
+}
+
+.flexible-date-calendar .rdp-month {
+  overflow: visible !important;
+  position: relative;
+}
+
+.flexible-date-calendar .rdp-table {
+  overflow: visible !important;
+  width: 100%;
+}
+
+.flexible-date-calendar .rdp-tbody {
+  overflow: visible !important;
+}
+
+.flexible-date-calendar .rdp-tbody tr {
+  overflow: visible !important;
+}
+
+.flexible-date-calendar .rdp-tbody td {
+  overflow: visible !important;
+  position: relative;
+}
+
+.flexible-date-calendar .rdp-day {
+  overflow: visible !important;
+  position: relative;
+}
+
+.flexible-date-calendar .rdp-day button {
+  overflow: visible !important;
+  position: relative;
 }

@@ -1465,11 +1465,6 @@ export default function PackageDetailsPage() {
                             </div>
                           </div>
                         )}
-                        {withVisa && (
-                          <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px', fontWeight: 500 }}>
-                            Visa Total: {formatPrice(getVisaPrice())}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
@@ -2013,11 +2008,6 @@ export default function PackageDetailsPage() {
                                   <Plus size={14} style={{ color: '#1e40af' }} />
                                 </button>
                               </div>
-                            </div>
-                          )}
-                          {withVisa && (
-                            <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px', fontWeight: 500 }}>
-                              Visa Total: {formatPrice(getVisaPrice())}
                             </div>
                           )}
                         </div>

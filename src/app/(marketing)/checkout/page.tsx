@@ -60,6 +60,21 @@ export default function CheckoutPage() {
     return categorySlug.includes('tour');
   });
 
+  // Check if any cart item is a flexible date package
+  const hasFlexibleDatePackage = cartItems.some(item => {
+    const categorySlug = item.categorySlug?.toLowerCase() || '';
+    return categorySlug === 'flexible-date-packages';
+  });
+
+  // Check if any cart item has visa selected
+  const hasVisaSelected = cartItems.some(item => item.withVisa === true);
+
+  // For flexible date packages: only show documents if visa is selected
+  // For other packages: show documents for India (preserve previous functionality)
+  const shouldShowDocuments = hasFlexibleDatePackage
+    ? hasVisaSelected
+    : passengers[0]?.country === 'India';
+
   // For tours: only full payment. For packages/offer packages: allow half or full
   // Update payment type if cart changes and becomes a tour
   useEffect(() => {
@@ -305,8 +320,14 @@ export default function CheckoutPage() {
         }
       }
 
-      // Required documents only for India (not for "Other" country)
-      if (!isOtherCountry) {
+      // Required documents logic:
+      // - For flexible date packages: only if visa is selected and not "Other" country
+      // - For other packages: if India (preserve previous functionality)
+      const requiresDocuments = hasFlexibleDatePackage
+        ? hasVisaSelected && !isOtherCountry
+        : !isOtherCountry;
+
+      if (requiresDocuments) {
         if (!passenger.applicantPhoto) {
           newErrors[`passenger_${actualIndex}_applicantPhoto`] =
             'Applicant photo is required';
@@ -982,8 +1003,10 @@ export default function CheckoutPage() {
                         </div>
                       )}
 
-                      {/* Documents Section - Only show for India */}
-                      {passengers[0]?.country === 'India' && (
+                      {/* Documents Section */}
+                      {/* For flexible date packages: only show if visa is selected */}
+                      {/* For other packages: show for India (preserve previous functionality) */}
+                      {shouldShowDocuments && (
                         <div className='documents-section'>
                           <h3 className='documents-title'>
                             {index === 0

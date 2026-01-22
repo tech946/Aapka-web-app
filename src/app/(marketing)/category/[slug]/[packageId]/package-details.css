@@ -538,7 +538,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   min-width: 400px;
   max-width: 440px;
   animation: popoverFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .desktop-booking-popover-header {
@@ -548,6 +548,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   padding: 20px 24px;
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   position: relative;
+  border-radius: 24px 0 24px 0;
 }
 
 .desktop-booking-popover-header::after {
@@ -1104,6 +1105,22 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   z-index: 1002;
   padding: 20px;
   min-width: 350px;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.booking-calendar-dropdown .rdp,
+.booking-calendar-dropdown .rdp-months,
+.booking-calendar-dropdown .rdp-month,
+.booking-calendar-dropdown .rdp-table,
+.booking-calendar-dropdown .rdp-tbody,
+.booking-calendar-dropdown .rdp-tbody tr,
+.booking-calendar-dropdown .rdp-tbody td {
+  overflow: visible !important;
+}
+
+.booking-calendar-dropdown .flexible-date-calendar-wrapper {
+  overflow: visible !important;
 }
 
 .calendar-header-nav {
@@ -1861,6 +1878,22 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     padding: 20px;
     margin: 0 -20px;
     width: calc(100% + 40px);
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .mobile-booking-calendar-dropdown .rdp,
+  .mobile-booking-calendar-dropdown .rdp-months,
+  .mobile-booking-calendar-dropdown .rdp-month,
+  .mobile-booking-calendar-dropdown .rdp-table,
+  .mobile-booking-calendar-dropdown .rdp-tbody,
+  .mobile-booking-calendar-dropdown .rdp-tbody tr,
+  .mobile-booking-calendar-dropdown .rdp-tbody td {
+    overflow: visible !important;
+  }
+
+  .mobile-booking-calendar-dropdown .flexible-date-calendar-wrapper {
+    overflow: visible !important;
   }
 
   .mobile-calendar-header-nav {

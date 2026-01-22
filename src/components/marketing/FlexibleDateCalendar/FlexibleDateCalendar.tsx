@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { DayPicker } from 'react-day-picker';
 import { format, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { parseDateStringToLocal } from '@/lib/utils';
@@ -36,6 +37,33 @@ export default function FlexibleDateCalendar({
   month,
   onMonthChange,
 }: FlexibleDateCalendarProps) {
+  const [seatAvailability, setSeatAvailability] = useState<Record<string, number>>({});
+  const [defaultSeats, setDefaultSeats] = useState<number>(45);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Fetch seat availability
+  useEffect(() => {
+    if (!packageId) return;
+
+    const fetchSeatAvailability = async () => {
+      try {
+        const response = await fetch(
+          `/api/package-seat-availability?package_id=${packageId}`
+        );
+        const result = await response.json();
+        if (result.success && result.data) {
+          setSeatAvailability(result.data);
+          setDefaultSeats(result.defaultSeats || 45);
+        }
+      } catch (error) {
+        console.error('Failed to fetch seat availability:', error);
+      }
+    };
+
+    fetchSeatAvailability();
+  }, [packageId]);
+
   // Find the date range that contains a specific date
   const findDateRangeForDate = useCallback(
     (dateStr: string): DateRange | null => {
@@ -56,6 +84,18 @@ export default function FlexibleDateCalendar({
       return null;
     },
     [dateRanges]
+  );
+
+  // Get available seats for a date
+  const getAvailableSeats = useCallback(
+    (dateStr: string): number => {
+      // If date has specific availability, use it; otherwise use default
+      if (seatAvailability[dateStr] !== undefined) {
+        return seatAvailability[dateStr];
+      }
+      return defaultSeats;
+    },
+    [seatAvailability, defaultSeats]
   );
 
   // Calculate the last available date from date ranges
@@ -148,7 +188,7 @@ export default function FlexibleDateCalendar({
     [endDate, findDateRangeForDate]
   );
 
-  // Custom DayButton to show price or status
+  // Custom DayButton to show price or status with tooltip
   const CustomDayButton = ({ day, modifiers, ...buttonProps }: any) => {
     const date = day.date;
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -156,23 +196,47 @@ export default function FlexibleDateCalendar({
     const isDisabled = modifiers.disabled;
     const isSelected = modifiers.selected;
     const isSoldOut = dateRange?.isSoldOut;
+    const availableSeats = !isDisabled && !isSoldOut ? getAvailableSeats(dateStr) : 0;
+    const isHovered = hoveredDate === dateStr;
+
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!isDisabled && !isSoldOut && dateRange) {
+        setHoveredDate(dateStr);
+        const rect = e.currentTarget.getBoundingClientRect();
+        const scrollX = window.scrollX || window.pageXOffset;
+        const scrollY = window.scrollY || window.pageYOffset;
+        setTooltipPosition({
+          x: rect.left + rect.width / 2 + scrollX,
+          y: rect.top - 10 + scrollY,
+        });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      setHoveredDate(null);
+      setTooltipPosition(null);
+    };
 
     return (
-      <button
-        {...buttonProps}
-        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-      >
-        <span className="flexible-day-number">{date.getDate()}</span>
-        {isDisabled ? (
-          <span className="flexible-day-na">N/A</span>
-        ) : dateRange && !isSoldOut ? (
-          <span className="flexible-day-price">
-            {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
-          </span>
-        ) : dateRange && isSoldOut ? (
-          <span className="flexible-day-soldout">Sold Out</span>
-        ) : null}
-      </button>
+      <>
+        <button
+          {...buttonProps}
+          className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <span className="flexible-day-number">{date.getDate()}</span>
+          {isDisabled ? (
+            <span className="flexible-day-na">N/A</span>
+          ) : dateRange && !isSoldOut ? (
+            <span className="flexible-day-price">
+              {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
+            </span>
+          ) : dateRange && isSoldOut ? (
+            <span className="flexible-day-soldout">Sold Out</span>
+          ) : null}
+        </button>
+      </>
     );
   };
 
@@ -303,6 +367,28 @@ export default function FlexibleDateCalendar({
           Clear dates
         </button>
       </div>
+      {/* Tooltip rendered via portal */}
+      {hoveredDate && tooltipPosition && typeof window !== 'undefined' && createPortal(
+        <div
+          className="flexible-day-tooltip"
+          style={{
+            position: 'fixed',
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translate(-50%, -100%)',
+            zIndex: 10000,
+            pointerEvents: 'none',
+          }}
+        >
+          <div className="flexible-day-tooltip-content">
+            <div className="flexible-day-tooltip-seats">
+              {getAvailableSeats(hoveredDate)} seats left
+            </div>
+          </div>
+          <div className="flexible-day-tooltip-arrow"></div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

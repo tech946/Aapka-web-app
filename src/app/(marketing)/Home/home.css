@@ -178,6 +178,22 @@
   z-index: 1000;
   padding: 20px;
   min-width: 320px;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.date_picker_dropdown .rdp,
+.date_picker_dropdown .rdp-months,
+.date_picker_dropdown .rdp-month,
+.date_picker_dropdown .rdp-table,
+.date_picker_dropdown .rdp-tbody,
+.date_picker_dropdown .rdp-tbody tr,
+.date_picker_dropdown .rdp-tbody td {
+  overflow: visible !important;
+}
+
+.date_picker_dropdown .flexible-date-calendar-wrapper {
+  overflow: visible !important;
 }
 
 /* Small Date Picker Dropdown for Flexible Dates */
