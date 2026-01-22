@@ -1110,4 +1110,12 @@
     background: transparent;
     backdrop-filter: blur(0px);
   }
+  .search_form_container{
+    padding-inline: 12px;
+  }
+
+  .search_tab{
+    padding-inline:10px;
+    font-size: 12px;
+  }
 }
