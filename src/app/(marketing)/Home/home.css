@@ -177,7 +177,13 @@
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   padding: 20px;
-  min-width: 700px;
+  min-width: 320px;
+}
+
+/* Small Date Picker Dropdown for Flexible Dates */
+.date_picker_dropdown_small {
+  min-width: 280px;
+  max-width: 320px;
 }
 
 .calendar_header_nav {
@@ -303,6 +309,37 @@
   color: #d1d5db;
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Unavailable dates - shows N/A automatically via CSS */
+.date_picker_dropdown .rdp-day_unavailable {
+  position: relative;
+  color: #d1d5db !important;
+  cursor: not-allowed !important;
+  background: #f9fafb !important;
+  opacity: 1;
+}
+
+.date_picker_dropdown .rdp-day_unavailable button {
+  padding-bottom: 14px;
+}
+
+.date_picker_dropdown .rdp-day_unavailable::after {
+  content: 'N/A';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.date_picker_dropdown .rdp-day_unavailable:hover {
+  background: #f3f4f6 !important;
 }
 
 .date_picker_dropdown .rdp-day_outside {
@@ -468,9 +505,15 @@
   .date_picker_dropdown {
     min-width: unset;
     width: 100%;
+    max-width: 100%;
     padding: 16px;
     left: 0;
     right: 0;
+  }
+
+  .date_picker_dropdown_small {
+    min-width: unset;
+    max-width: 100%;
   }
 
   .date_picker_dropdown .rdp-months {

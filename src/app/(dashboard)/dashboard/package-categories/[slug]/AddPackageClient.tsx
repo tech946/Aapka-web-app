@@ -45,6 +45,11 @@ export default function AddPackageClient({
       infantPrice: number;
       availableSeats: number;
       isSoldOut: boolean;
+      adultDiscountAmount?: number;
+      childDiscountAmount?: number;
+      infantDiscountAmount?: number;
+      discountStartDate?: string;
+      discountEndDate?: string;
     }>
   >([]);
 
@@ -53,12 +58,18 @@ export default function AddPackageClient({
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [soloTravellerEnabled, setSoloTravellerEnabled] = useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
   const [withVisa, setWithVisa] = useState<boolean>(false);
   const [adultVisaPrice, setAdultVisaPrice] = useState<string>('');
   const [childVisaPrice, setChildVisaPrice] = useState<string>('');
   const [infantVisaPrice, setInfantVisaPrice] = useState<string>('');
+  const [adultDiscountAmount, setAdultDiscountAmount] = useState<string>('');
+  const [childDiscountAmount, setChildDiscountAmount] = useState<string>('');
+  const [infantDiscountAmount, setInfantDiscountAmount] = useState<string>('');
+  const [discountStartDate, setDiscountStartDate] = useState<string>('');
+  const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -315,7 +326,8 @@ export default function AddPackageClient({
             </div>
           </div>
 
-          {/* Pricing Section */}
+          {/* Pricing Section - Hidden for flexible date packages */}
+          {!usesFlexibleDate && (
           <div className='form_section'>
             <h5 className='section_title'>Pricing</h5>
             <div className='form_grid pricing_grid'>
@@ -414,6 +426,98 @@ export default function AddPackageClient({
               )}
             </div>
           </div>
+          )}
+
+          {/* End Date for Flexible Date Packages */}
+          {usesFlexibleDate && (
+          <div className='form_section'>
+            <h5 className='section_title'>Package End Date</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>End Date *</label>
+                <input
+                  type='date'
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          )}
+
+          {/* Discount Section */}
+          {usesFlexibleDate && (
+          <div className='form_section'>
+            <h5 className='section_title'>Discount Amount (Optional)</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Adult Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={adultDiscountAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setAdultDiscountAmount(val);
+                    }
+                  }}
+                  placeholder='100'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Child Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={childDiscountAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setChildDiscountAmount(val);
+                    }
+                  }}
+                  placeholder='50'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Infant Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={infantDiscountAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setInfantDiscountAmount(val);
+                    }
+                  }}
+                  placeholder='25'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Discount Start Date</label>
+                <input
+                  type='date'
+                  value={discountStartDate}
+                  onChange={e => setDiscountStartDate(e.target.value)}
+                />
+              </div>
+              <div className='form_row'>
+                <label>Discount End Date</label>
+                <input
+                  type='date'
+                  value={discountEndDate}
+                  onChange={e => setDiscountEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <p style={{ fontSize: '12px', color: '#9a3412', marginTop: '8px', marginBottom: 0 }}>
+              Set discount amounts (AED) and date range to show a countdown timer on the website.
+            </p>
+          </div>
+          )}
 
           {/* Visa Pricing Section */}
           <div className='form_section'>
@@ -679,43 +783,81 @@ export default function AddPackageClient({
                     toast.error('Valid price is required');
                     return;
                   }
+                  // Prepare flexible date dates with all fields explicitly included
+                  const flexibleDatesPayload = usesFlexibleDate ? flexibleDateDates.map((d: any) => ({
+                    id: d.id,
+                    date: d.date,
+                    adultPrice: d.adultPrice,
+                    childPrice: d.childPrice,
+                    infantPrice: d.infantPrice,
+                    availableSeats: d.availableSeats,
+                    isSoldOut: d.isSoldOut,
+                    adultDiscountAmount: d.adultDiscountAmount !== undefined ? d.adultDiscountAmount : null,
+                    childDiscountAmount: d.childDiscountAmount !== undefined ? d.childDiscountAmount : null,
+                    infantDiscountAmount: d.infantDiscountAmount !== undefined ? d.infantDiscountAmount : null,
+                    discountStartDate: d.discountStartDate || null,
+                    discountEndDate: d.discountEndDate || null,
+                  })) : [];
+
+                  const payload: any = {
+                    name: name.trim(),
+                    description: description.trim() || undefined,
+                    price: Number(price),
+                    category_id: categoryId,
+                    days: days ? Number(days) : undefined,
+                    nights: nights ? Number(nights) : undefined,
+                    adult_price: adultPrice ? Number(adultPrice) : undefined,
+                    child_price: childPrice ? Number(childPrice) : undefined,
+                    infant_price: infantPrice
+                      ? Number(infantPrice)
+                      : undefined,
+                    solo_traveller_enabled: soloTravellerEnabled,
+                    solo_traveller_price:
+                      soloTravellerEnabled && soloTravellerPrice
+                        ? Number(soloTravellerPrice)
+                        : undefined,
+                    with_visa: withVisa,
+                    adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
+                    child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,
+                    infant_visa_price: withVisa && infantVisaPrice ? Number(infantVisaPrice) : undefined,
+                    adult_discount_amount: adultDiscountAmount && adultDiscountAmount.trim() !== '' && !Number.isNaN(Number(adultDiscountAmount)) ? Number(adultDiscountAmount) : null,
+                    child_discount_amount: childDiscountAmount && childDiscountAmount.trim() !== '' && !Number.isNaN(Number(childDiscountAmount)) ? Number(childDiscountAmount) : null,
+                    infant_discount_amount: infantDiscountAmount && infantDiscountAmount.trim() !== '' && !Number.isNaN(Number(infantDiscountAmount)) ? Number(infantDiscountAmount) : null,
+                    discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
+                    discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
+                    terms_html: termsHtml || undefined,
+                    inclusion_html: inclusionHtml || undefined,
+                    exclusion_html: exclusionHtml || undefined,
+                    overview: overview || undefined,
+                    holiday_description_html: holidayDescHtml || undefined,
+                    itinerary: itinerary,
+                    thumbnail_image: thumbnailImageUrl || undefined,
+                  };
+
+                  // Add date-related fields based on package type
+                  if (usesSlots) {
+                    payload.booking_slots = bookingSlots;
+                  } else if (usesFlexibleDate) {
+                    payload.flexible_date_dates = flexibleDatesPayload;
+                    payload.end_date = endDate || undefined;
+                  } else {
+                    payload.travel_dates = travelDates;
+                  }
+
+                  console.log('Sending payload with discount fields:', {
+                    adult_discount_amount: payload.adult_discount_amount,
+                    child_discount_amount: payload.child_discount_amount,
+                    infant_discount_amount: payload.infant_discount_amount,
+                    discount_start_date: payload.discount_start_date,
+                    discount_end_date: payload.discount_end_date,
+                    hasFlexibleDates: usesFlexibleDate,
+                    flexibleDatesCount: flexibleDatesPayload.length,
+                  });
+
                   const res = await fetch('/api/packages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      name: name.trim(),
-                      description: description.trim() || undefined,
-                      price: Number(price),
-                      category_id: categoryId,
-                      days: days ? Number(days) : undefined,
-                      nights: nights ? Number(nights) : undefined,
-                      ...(usesSlots
-                        ? { booking_slots: bookingSlots }
-                        : usesFlexibleDate
-                          ? { flexible_date_dates: flexibleDateDates }
-                          : { travel_dates: travelDates }),
-                      adult_price: adultPrice ? Number(adultPrice) : undefined,
-                      child_price: childPrice ? Number(childPrice) : undefined,
-                      infant_price: infantPrice
-                        ? Number(infantPrice)
-                        : undefined,
-                      solo_traveller_enabled: soloTravellerEnabled,
-                      solo_traveller_price:
-                        soloTravellerEnabled && soloTravellerPrice
-                          ? Number(soloTravellerPrice)
-                          : undefined,
-                      with_visa: withVisa,
-                      adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
-                      child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,
-                      infant_visa_price: withVisa && infantVisaPrice ? Number(infantVisaPrice) : undefined,
-                      terms_html: termsHtml || undefined,
-                      inclusion_html: inclusionHtml || undefined,
-                      exclusion_html: exclusionHtml || undefined,
-                      overview: overview || undefined,
-                      holiday_description_html: holidayDescHtml || undefined,
-                      itinerary: itinerary,
-                      thumbnail_image: thumbnailImageUrl || undefined,
-                    }),
+                    body: JSON.stringify(payload),
                   });
                   if (!res.ok) {
                     const j = await res.json().catch(() => ({}));

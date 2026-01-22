@@ -155,6 +155,7 @@ export default function FlexibleDatePackageDates({
     setEditingDate(range.from);
     setEditingDateList(range.dates.map(d => d.date));
     setEditingRangeMeta({ from: range.from, to: range.to });
+    const firstDate = range.dates[0];
     setEditForm({
       adultPrice: String(range.adultPrice),
       childPrice: String(range.childPrice),
@@ -520,6 +521,7 @@ export default function FlexibleDatePackageDates({
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Adult Price (AED)</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Child Price (AED)</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Infant Price (AED)</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Discount</th>
                   <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151' }}>No. of Dates</th>
                   <th style={{ padding: '14px 16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151' }}>Actions</th>
                 </tr>
@@ -531,6 +533,10 @@ export default function FlexibleDatePackageDates({
                   const fromDisplay = fromDateObj ? format(fromDateObj, 'MMM dd, yyyy') : range.from;
                   const toDisplay = toDateObj ? format(toDateObj, 'MMM dd, yyyy') : range.to;
                   const isSingleDate = range.from === range.to;
+                  const firstDate = range.dates[0];
+                  const hasDiscount = (firstDate?.adultDiscountAmount && firstDate.adultDiscountAmount > 0) ||
+                                    (firstDate?.childDiscountAmount && firstDate.childDiscountAmount > 0) ||
+                                    (firstDate?.infantDiscountAmount && firstDate.infantDiscountAmount > 0);
 
                   return (
                     <tr 
@@ -565,6 +571,9 @@ export default function FlexibleDatePackageDates({
                       </td>
                       <td style={{ padding: '14px 16px', fontSize: '14px', color: '#059669', fontWeight: '600' }}>
                         AED {range.infantPrice.toLocaleString()}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: '13px', color: '#9ca3af' }}>
+                        —
                       </td>
                       <td style={{ padding: '14px 16px', fontSize: '14px', color: '#6b7280' }}>
                         <span style={{
@@ -624,10 +633,10 @@ export default function FlexibleDatePackageDates({
       )}
 
        {/* Mark Dates as Sold Out Section */}
-      <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '14px', fontWeight: '600', color: '#dc2626' }}>
-          Mark Dates as Sold Out
-        </label>
+      <h5 className='section_title' style={{ marginTop: '24px', marginBottom: '16px' }}>
+        Mark Dates as Sold Out
+      </h5>
+      <div style={{ marginBottom: '24px', padding: '20px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '1', minWidth: '150px' }}>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>

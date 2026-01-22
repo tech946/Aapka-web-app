@@ -25,6 +25,7 @@ import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import useEmblaCarousel from 'embla-carousel-react';
+import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import {
   Popover,
   PopoverTrigger,
@@ -65,6 +66,7 @@ interface Package {
     fromDate: string;
     toDate: string;
   }> | null;
+  end_date?: string | null;
   thumbnail_image?: string | null;
   created_at?: string | null;
 }
@@ -120,7 +122,9 @@ export default function PackageDetailsPage() {
   const [flexibleDateAvailability, setFlexibleDateAvailability] = useState<
     Array<{
       date: string;
-      price: number;
+      adult_price: number;
+      child_price: number;
+      infant_price: number;
       available_seats: number;
       is_sold_out: boolean;
     }>
@@ -434,8 +438,14 @@ export default function PackageDetailsPage() {
     // Disable past dates
     if (checkDate < today) return true;
 
-    // For flexible date packages, check availability
+    // For flexible date packages, check availability and end_date
     if (slug === 'flexible-date-packages') {
+      // Disable dates after package end_date
+      if (pkg?.end_date) {
+        const endDate = startOfDay(parseDateStringToLocal(pkg.end_date) || new Date(pkg.end_date));
+        if (checkDate > endDate) return true;
+      }
+
       const dateStr = format(date, 'yyyy-MM-dd');
       const availInfo = getFlexibleDateInfo(dateStr);
       if (!availInfo) return true; // Disable if not in availability
@@ -1188,55 +1198,68 @@ export default function PackageDetailsPage() {
                     />
                     {showDatePicker && (
                       <div className='mobile-booking-calendar-dropdown'>
-                        <div className='mobile-calendar-header-nav'>
-                          <button
-                            className='mobile-calendar-nav-button'
-                            onClick={e => {
-                              e.stopPropagation();
-                              const newMonth = new Date(month);
-                              newMonth.setMonth(newMonth.getMonth() - 1);
-                              setMonth(newMonth);
-                            }}
-                          >
-                            ‹
-                          </button>
-                          <button
-                            className='mobile-calendar-nav-button'
-                            onClick={e => {
-                              e.stopPropagation();
-                              const newMonth = new Date(month);
-                              newMonth.setMonth(newMonth.getMonth() + 1);
-                              setMonth(newMonth);
-                            }}
-                          >
-                            ›
-                          </button>
-                        </div>
-                        <DayPicker
-                          mode='single'
-                          selected={selectedDate}
-                          onSelect={handleDateSelect}
-                          disabled={getDisabledDates}
-                          numberOfMonths={1}
-                          showOutsideDays={true}
-                          month={month}
-                          onMonthChange={setMonth}
-                          className='mobile-custom-calendar'
-                          modifiersClassNames={{
-                            disabled: 'rdp-day_unavailable',
-                          }}
-                        />
-                        <div className='mobile-calendar-footer'>
-                          <button
-                            className='mobile-clear-dates-button'
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedDate(undefined);
-                            }}
-                          >
-                            Clear dates
-                          </button>
-                        </div>
+                        {slug === 'flexible-date-packages' ? (
+                          <FlexibleDateCalendar
+                            packageId={pkg?.package_id || ''}
+                            endDate={pkg?.end_date}
+                            selectedDate={selectedDate}
+                            onDateSelect={handleDateSelect}
+                            month={month}
+                            onMonthChange={setMonth}
+                          />
+                        ) : (
+                          <>
+                            <div className='mobile-calendar-header-nav'>
+                              <button
+                                className='mobile-calendar-nav-button'
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  const newMonth = new Date(month);
+                                  newMonth.setMonth(newMonth.getMonth() - 1);
+                                  setMonth(newMonth);
+                                }}
+                              >
+                                ‹
+                              </button>
+                              <button
+                                className='mobile-calendar-nav-button'
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  const newMonth = new Date(month);
+                                  newMonth.setMonth(newMonth.getMonth() + 1);
+                                  setMonth(newMonth);
+                                }}
+                              >
+                                ›
+                              </button>
+                            </div>
+                            <DayPicker
+                              mode='single'
+                              selected={selectedDate}
+                              onSelect={handleDateSelect}
+                              disabled={getDisabledDates}
+                              numberOfMonths={1}
+                              showOutsideDays={true}
+                              month={month}
+                              onMonthChange={setMonth}
+                              className='mobile-custom-calendar'
+                              modifiersClassNames={{
+                                disabled: 'rdp-day_unavailable',
+                              }}
+                            />
+                            <div className='mobile-calendar-footer'>
+                              <button
+                                className='mobile-clear-dates-button'
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setSelectedDate(undefined);
+                                }}
+                              >
+                                Clear dates
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1532,156 +1555,68 @@ export default function PackageDetailsPage() {
                     />
                     {showDatePicker && (
                       <div className='booking-calendar-dropdown'>
-                        <div className='calendar-header-nav'>
-                          <button
-                            className='calendar-nav-button'
-                            onClick={e => {
-                              e.stopPropagation();
-                              const newMonth = new Date(month);
-                              newMonth.setMonth(newMonth.getMonth() - 1);
-                              setMonth(newMonth);
-                            }}
-                          >
-                            ‹
-                          </button>
-                          <button
-                            className='calendar-nav-button'
-                            onClick={e => {
-                              e.stopPropagation();
-                              const newMonth = new Date(month);
-                              newMonth.setMonth(newMonth.getMonth() + 1);
-                              setMonth(newMonth);
-                            }}
-                          >
-                            ›
-                          </button>
-                        </div>
-                        <DayPicker
-                          mode='single'
-                          selected={selectedDate}
-                          onSelect={handleDateSelect}
-                          disabled={getDisabledDates}
-                          numberOfMonths={1}
-                          showOutsideDays={true}
-                          month={month}
-                          onMonthChange={setMonth}
-                          className='custom-calendar'
-                          modifiersClassNames={{
-                            disabled: 'rdp-day_unavailable',
-                            soldOut: 'rdp-day_sold-out',
-                            available: 'rdp-day_available',
-                          }}
-                          modifiers={{
-                            soldOut: slug === 'flexible-date-packages' ? flexibleDateAvailability
-                              .filter(avail => avail.is_sold_out || avail.available_seats <= 0)
-                              .map(avail => {
-                                const parsed = parseDateStringToLocal(avail.date);
-                                return parsed ? parsed : null;
-                              })
-                              .filter(Boolean) as Date[] : [],
-                            available: slug === 'flexible-date-packages' ? flexibleDateAvailability
-                              .filter(avail => !avail.is_sold_out && avail.available_seats > 0)
-                              .map(avail => {
-                                const parsed = parseDateStringToLocal(avail.date);
-                                return parsed ? parsed : null;
-                              })
-                              .filter(Boolean) as Date[] : [],
-                          }}
-                          components={
-                            slug === 'flexible-date-packages'
-                              ? {
-                                  Day: (props: any) => {
-                                    const date = props.date as Date;
-                                    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-                                      return <button type='button' {...props} />;
-                                    }
-                                    const dateStr = format(date, 'yyyy-MM-dd');
-                                    const availInfo = getFlexibleDateInfo(dateStr);
-                                    const isDisabled = getDisabledDates(date);
-                                    const isSoldOut = availInfo?.is_sold_out || availInfo?.available_seats <= 0;
-
-                                    return (
-                                      <button
-                                        type='button'
-                                        {...props}
-                                        disabled={isDisabled}
-                                        style={{
-                                          ...props.style,
-                                          position: 'relative',
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          padding: '4px',
-                                          minHeight: '40px',
-                                          backgroundColor: availInfo
-                                            ? isSoldOut
-                                              ? '#fee2e2'
-                                              : '#dcfce7'
-                                            : undefined,
-                                          border: availInfo ? '1px solid' : undefined,
-                                          borderColor: isSoldOut ? '#dc2626' : '#16a34a',
-                                        }}
-                                      >
-                                        <div style={{ fontSize: '14px', fontWeight: '500' }}>
-                                          {date.getDate()}
-                                        </div>
-                                        {availInfo && (
-                                          <>
-                                            {isSoldOut ? (
-                                              <div
-                                                style={{
-                                                  fontSize: '9px',
-                                                  color: '#dc2626',
-                                                  fontWeight: '600',
-                                                  marginTop: '2px',
-                                                }}
-                                              >
-                                                Sold Out
-                                              </div>
-                                            ) : (
-                                              <>
-                                                <div
-                                                  style={{
-                                                    fontSize: '9px',
-                                                    color: '#16a34a',
-                                                    fontWeight: '600',
-                                                    marginTop: '2px',
-                                                  }}
-                                                >
-                                                  {availInfo.available_seats} seats
-                                                </div>
-                                                <div
-                                                  style={{
-                                                    fontSize: '8px',
-                                                    color: '#666',
-                                                    marginTop: '1px',
-                                                  }}
-                                                >
-                                                  AED {availInfo.price}
-                                                </div>
-                                              </>
-                                            )}
-                                          </>
-                                        )}
-                                      </button>
-                                    );
-                                  },
-                                }
-                              : undefined
-                          }
-                        />
-                        <div className='calendar-footer'>
-                          <button
-                            className='clear-dates-button'
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedDate(undefined);
-                            }}
-                          >
-                            Clear dates
-                          </button>
-                        </div>
+                        {slug === 'flexible-date-packages' ? (
+                          <FlexibleDateCalendar
+                            packageId={pkg?.package_id || ''}
+                            endDate={pkg?.end_date}
+                            selectedDate={selectedDate}
+                            onDateSelect={handleDateSelect}
+                            month={month}
+                            onMonthChange={setMonth}
+                          />
+                        ) : (
+                          <>
+                            <div className='calendar-header-nav'>
+                              <button
+                                className='calendar-nav-button'
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  const newMonth = new Date(month);
+                                  newMonth.setMonth(newMonth.getMonth() - 1);
+                                  setMonth(newMonth);
+                                }}
+                              >
+                                ‹
+                              </button>
+                              <button
+                                className='calendar-nav-button'
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  const newMonth = new Date(month);
+                                  newMonth.setMonth(newMonth.getMonth() + 1);
+                                  setMonth(newMonth);
+                                }}
+                              >
+                                ›
+                              </button>
+                            </div>
+                            <DayPicker
+                              mode='single'
+                              selected={selectedDate}
+                              onSelect={handleDateSelect}
+                              disabled={getDisabledDates}
+                              numberOfMonths={1}
+                              showOutsideDays={true}
+                              month={month}
+                              onMonthChange={setMonth}
+                              className='custom-calendar'
+                              modifiersClassNames={{
+                                disabled: 'rdp-day_unavailable',
+                              }}
+                            />
+                            <div className='calendar-footer'>
+                              <button
+                                className='clear-dates-button'
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setSelectedDate(undefined);
+                                }}
+                              >
+                                Clear dates
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

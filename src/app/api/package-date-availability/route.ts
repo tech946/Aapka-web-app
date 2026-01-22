@@ -4,7 +4,54 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET: Fetch date availability for a package
+// Helper function to calculate occupied seats from bookings
+async function getOccupiedSeatsForPackageDates(
+  packageId: string
+): Promise<Map<string, number>> {
+  const occupiedSeatsMap = new Map<string, number>();
+
+  try {
+    // Fetch all completed bookings
+    // payment_status = 'completed' means successful payment
+    const { data: bookings, error } = await supabaseAdmin
+      .from('bookings')
+      .select('cart_items')
+      .eq('payment_status', 'completed');
+
+    if (error || !bookings) {
+      console.error('Error fetching bookings for seat calculation:', error);
+      return occupiedSeatsMap;
+    }
+
+    // Process each booking to count occupied seats per date
+    for (const booking of bookings) {
+      const cartItems = booking.cart_items;
+      if (!Array.isArray(cartItems)) continue;
+
+      for (const item of cartItems) {
+        // Check if this cart item is for the requested package
+        if (item.packageId === packageId && item.selectedDate) {
+          // Normalize the date to YYYY-MM-DD format
+          const dateStr = item.selectedDate.split('T')[0];
+          const adults = Number(item.adults) || 0;
+          const children = Number(item.children) || 0;
+          const infants = Number(item.infants) || 0;
+          // For solo traveller, count as 1 seat
+          const totalPersons = item.isSoloTraveller ? 1 : adults + children + infants;
+
+          const currentOccupied = occupiedSeatsMap.get(dateStr) || 0;
+          occupiedSeatsMap.set(dateStr, currentOccupied + totalPersons);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error calculating occupied seats:', e);
+  }
+
+  return occupiedSeatsMap;
+}
+
+// GET: Fetch date availability for a package (with dynamic seat calculation)
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -38,6 +85,28 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // If packageId is provided, calculate dynamic seat availability
+    if (packageId && data && data.length > 0) {
+      const occupiedSeatsMap = await getOccupiedSeatsForPackageDates(packageId);
+
+      // Update each date's available_seats based on bookings
+      const dataWithDynamicSeats = data.map(dateAvail => {
+        const dateStr = dateAvail.date?.split('T')[0] || dateAvail.date;
+        const baseSeats = 45; // Always start with 45 seats per day
+        const occupiedSeats = occupiedSeatsMap.get(dateStr) || 0;
+        const dynamicAvailableSeats = Math.max(0, baseSeats - occupiedSeats);
+
+        return {
+          ...dateAvail,
+          available_seats: dynamicAvailableSeats,
+          // If all seats are occupied, mark as sold out
+          is_sold_out: dateAvail.is_sold_out || dynamicAvailableSeats <= 0,
+        };
+      });
+
+      return NextResponse.json({ data: dataWithDynamicSeats });
     }
 
     return NextResponse.json({ data: data ?? [] });

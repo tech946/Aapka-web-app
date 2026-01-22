@@ -22,6 +22,7 @@ type Pkg = {
   package_price: number | null;
   package_days?: number | null;
   package_nights?: number | null;
+  end_date?: string | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   booking_slots?: Array<{
     id: string;
@@ -37,6 +38,11 @@ type Pkg = {
   adult_visa_price?: number | null;
   child_visa_price?: number | null;
   infant_visa_price?: number | null;
+  adult_discount_amount?: number | null;
+  child_discount_amount?: number | null;
+  infant_discount_amount?: number | null;
+  discount_start_date?: string | null;
+  discount_end_date?: string | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -91,6 +97,7 @@ export default function EditPackageClient({
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [soloTravellerEnabled, setSoloTravellerEnabled] =
     useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
@@ -98,6 +105,11 @@ export default function EditPackageClient({
   const [adultVisaPrice, setAdultVisaPrice] = useState<string>('');
   const [childVisaPrice, setChildVisaPrice] = useState<string>('');
   const [infantVisaPrice, setInfantVisaPrice] = useState<string>('');
+  const [adultDiscountAmount, setAdultDiscountAmount] = useState<string>('');
+  const [childDiscountAmount, setChildDiscountAmount] = useState<string>('');
+  const [infantDiscountAmount, setInfantDiscountAmount] = useState<string>('');
+  const [discountStartDate, setDiscountStartDate] = useState<string>('');
+  const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -129,6 +141,7 @@ export default function EditPackageClient({
     if (!open) return;
     if (pkg.package_days != null) setDays(String(pkg.package_days));
     if (pkg.package_nights != null) setNights(String(pkg.package_nights));
+    if (pkg.end_date != null) setEndDate(pkg.end_date);
     if (pkg.adult_price != null) setAdultPrice(String(pkg.adult_price));
     if (pkg.child_price != null) setChildPrice(String(pkg.child_price));
     if (pkg.infant_price != null) setInfantPrice(String(pkg.infant_price));
@@ -140,6 +153,11 @@ export default function EditPackageClient({
     if (pkg.adult_visa_price != null) setAdultVisaPrice(String(pkg.adult_visa_price));
     if (pkg.child_visa_price != null) setChildVisaPrice(String(pkg.child_visa_price));
     if (pkg.infant_visa_price != null) setInfantVisaPrice(String(pkg.infant_visa_price));
+    if (pkg.adult_discount_amount != null) setAdultDiscountAmount(String(pkg.adult_discount_amount));
+    if (pkg.child_discount_amount != null) setChildDiscountAmount(String(pkg.child_discount_amount));
+    if (pkg.infant_discount_amount != null) setInfantDiscountAmount(String(pkg.infant_discount_amount));
+    if (pkg.discount_start_date != null) setDiscountStartDate(pkg.discount_start_date);
+    if (pkg.discount_end_date != null) setDiscountEndDate(pkg.discount_end_date);
     setTermsHtml(pkg.terms_html || '');
     setInclusionHtml(pkg.inclusion_html || '');
     setExclusionHtml(pkg.exclusion_html || '');
@@ -441,7 +459,8 @@ export default function EditPackageClient({
             </div>
           </div>
 
-          {/* Pricing Section */}
+          {/* Pricing Section - Hidden for flexible date packages */}
+          {!usesFlexibleDate && (
           <div className='form_section'>
             <h5 className='section_title'>Pricing</h5>
             <div className='form_grid pricing_grid'>
@@ -540,6 +559,98 @@ export default function EditPackageClient({
               )}
             </div>
           </div>
+          )}
+
+          {/* End Date for Flexible Date Packages */}
+          {usesFlexibleDate && (
+          <div className='form_section'>
+            <h5 className='section_title'>Package End Date</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>End Date *</label>
+                <input
+                  type='date'
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          )}
+
+          {/* Discount Section */}
+          {usesFlexibleDate && (
+          <div className='form_section'>
+            <h5 className='section_title'>Discount Amount (Optional)</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Adult Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={adultDiscountAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setAdultDiscountAmount(val);
+                    }
+                  }}
+                  placeholder='100'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Child Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={childDiscountAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setChildDiscountAmount(val);
+                    }
+                  }}
+                  placeholder='50'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Infant Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={infantDiscountAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setInfantDiscountAmount(val);
+                    }
+                  }}
+                  placeholder='25'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Discount Start Date</label>
+                <input
+                  type='date'
+                  value={discountStartDate}
+                  onChange={e => setDiscountStartDate(e.target.value)}
+                />
+              </div>
+              <div className='form_row'>
+                <label>Discount End Date</label>
+                <input
+                  type='date'
+                  value={discountEndDate}
+                  onChange={e => setDiscountEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <p style={{ fontSize: '12px', color: '#9a3412', marginTop: '8px', marginBottom: 0 }}>
+              Set discount amounts (AED) and date range to show a countdown timer on the website.
+            </p>
+          </div>
+          )}
 
           {/* Visa Pricing Section */}
           <div className='form_section'>
@@ -842,7 +953,23 @@ export default function EditPackageClient({
                       ...(usesSlots
                         ? { booking_slots: bookingSlots }
                         : usesFlexibleDate
-                          ? { flexible_date_dates: flexibleDateDates }
+                          ? { 
+                              flexible_date_dates: flexibleDateDates.map((d: any) => ({
+                                id: d.id,
+                                date: d.date,
+                                adultPrice: d.adultPrice,
+                                childPrice: d.childPrice,
+                                infantPrice: d.infantPrice,
+                                availableSeats: d.availableSeats,
+                                isSoldOut: d.isSoldOut,
+                                adultDiscountAmount: d.adultDiscountAmount !== undefined ? d.adultDiscountAmount : null,
+                                childDiscountAmount: d.childDiscountAmount !== undefined ? d.childDiscountAmount : null,
+                                infantDiscountAmount: d.infantDiscountAmount !== undefined ? d.infantDiscountAmount : null,
+                                discountStartDate: d.discountStartDate || null,
+                                discountEndDate: d.discountEndDate || null,
+                              })), 
+                              end_date: endDate || undefined 
+                            }
                           : { travel_dates: travelDates }),
                       adult_price: adultPrice ? Number(adultPrice) : undefined,
                       child_price: childPrice ? Number(childPrice) : undefined,
@@ -858,6 +985,11 @@ export default function EditPackageClient({
                       adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
                       child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,
                       infant_visa_price: withVisa && infantVisaPrice ? Number(infantVisaPrice) : undefined,
+                      adult_discount_amount: adultDiscountAmount && adultDiscountAmount.trim() !== '' && !Number.isNaN(Number(adultDiscountAmount)) ? Number(adultDiscountAmount) : null,
+                      child_discount_amount: childDiscountAmount && childDiscountAmount.trim() !== '' && !Number.isNaN(Number(childDiscountAmount)) ? Number(childDiscountAmount) : null,
+                      infant_discount_amount: infantDiscountAmount && infantDiscountAmount.trim() !== '' && !Number.isNaN(Number(infantDiscountAmount)) ? Number(infantDiscountAmount) : null,
+                      discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
+                      discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,

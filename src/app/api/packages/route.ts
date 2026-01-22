@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, booking_slots, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -153,11 +153,16 @@ export async function POST(req: NextRequest) {
     if (Array.isArray(body?.booking_slots)) {
       bookingSlots = body.booking_slots;
     }
-    // flexible date dates array support (expects array of objects { id, date, price, availableSeats, isSoldOut })
+    // flexible date dates array support (expects array of objects { id, date, adultPrice, childPrice, infantPrice, availableSeats, isSoldOut, adultDiscountAmount, childDiscountAmount, infantDiscountAmount, discountStartDate, discountEndDate })
     let flexibleDateDates: any[] | null = null;
     if (Array.isArray(body?.flexible_date_dates)) {
       flexibleDateDates = body.flexible_date_dates;
+      // Log for debugging - remove in production
+      if (flexibleDateDates.length > 0) {
+        console.log('Flexible date dates received:', JSON.stringify(flexibleDateDates[0], null, 2));
+      }
     }
+    const endDate = body?.end_date !== undefined ? String(body.end_date).trim() || null : null;
     const adultPrice =
       body?.adult_price !== undefined
         ? Number.isNaN(Number(body.adult_price))
@@ -241,6 +246,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Extract discount fields from body
+    const adultDiscountAmount = body?.adult_discount_amount !== undefined && body?.adult_discount_amount !== null && body?.adult_discount_amount !== '' && !Number.isNaN(Number(body.adult_discount_amount)) ? Number(body.adult_discount_amount) : null;
+    const childDiscountAmount = body?.child_discount_amount !== undefined && body?.child_discount_amount !== null && body?.child_discount_amount !== '' && !Number.isNaN(Number(body.child_discount_amount)) ? Number(body.child_discount_amount) : null;
+    const infantDiscountAmount = body?.infant_discount_amount !== undefined && body?.infant_discount_amount !== null && body?.infant_discount_amount !== '' && !Number.isNaN(Number(body.infant_discount_amount)) ? Number(body.infant_discount_amount) : null;
+    const discountStartDate = body?.discount_start_date && String(body.discount_start_date).trim() !== '' ? String(body.discount_start_date).trim() : null;
+    const discountEndDate = body?.discount_end_date && String(body.discount_end_date).trim() !== '' ? String(body.discount_end_date).trim() : null;
+
+    console.log('POST - Discount fields received:', {
+      adult_discount_amount: adultDiscountAmount,
+      child_discount_amount: childDiscountAmount,
+      infant_discount_amount: infantDiscountAmount,
+      discount_start_date: discountStartDate,
+      discount_end_date: discountEndDate,
+      raw_body: {
+        adult_discount_amount: body?.adult_discount_amount,
+        child_discount_amount: body?.child_discount_amount,
+        infant_discount_amount: body?.infant_discount_amount,
+        discount_start_date: body?.discount_start_date,
+        discount_end_date: body?.discount_end_date,
+      }
+    });
+
     const insertData: Record<string, any> = {
       package_name: name,
       package_description: description,
@@ -248,6 +275,7 @@ export async function POST(req: NextRequest) {
       package_category_id: categoryId,
       package_days: days,
       package_nights: nights,
+      end_date: endDate,
       adult_price: adultPrice,
       child_price: childPrice,
       infant_price: infantPrice,
@@ -257,6 +285,11 @@ export async function POST(req: NextRequest) {
       adult_visa_price: adultVisaPrice,
       child_visa_price: childVisaPrice,
       infant_visa_price: infantVisaPrice,
+      adult_discount_amount: adultDiscountAmount,
+      child_discount_amount: childDiscountAmount,
+      infant_discount_amount: infantDiscountAmount,
+      discount_start_date: discountStartDate,
+      discount_end_date: discountEndDate,
       terms_html: termsHtml,
       inclusion_html: inclusionHtml,
       exclusion_html: exclusionHtml,
@@ -379,6 +412,8 @@ export async function PUT(req: NextRequest) {
         ? body.flexible_date_dates
         : undefined;
     }
+    const endDate =
+      body?.end_date !== undefined ? String(body.end_date).trim() || null : undefined;
     const adultPrice =
       body?.adult_price !== undefined
         ? Number.isNaN(Number(body.adult_price))
@@ -470,6 +505,7 @@ export async function PUT(req: NextRequest) {
     if (categoryId !== undefined) updates.package_category_id = categoryId;
     if (days !== undefined) updates.package_days = days;
     if (nights !== undefined) updates.package_nights = nights;
+    if (endDate !== undefined) updates.end_date = endDate;
     if (bookingSlotsUpdate !== undefined) {
       updates.booking_slots = bookingSlotsUpdate;
       // Clear travel_dates and flexible date dates if booking_slots is being set
@@ -499,6 +535,21 @@ export async function PUT(req: NextRequest) {
     if (adultVisaPrice !== undefined) updates.adult_visa_price = adultVisaPrice;
     if (childVisaPrice !== undefined) updates.child_visa_price = childVisaPrice;
     if (infantVisaPrice !== undefined) updates.infant_visa_price = infantVisaPrice;
+    if (body?.adult_discount_amount !== undefined) {
+      updates.adult_discount_amount = body.adult_discount_amount !== null && body.adult_discount_amount !== '' ? Number(body.adult_discount_amount) : null;
+    }
+    if (body?.child_discount_amount !== undefined) {
+      updates.child_discount_amount = body.child_discount_amount !== null && body.child_discount_amount !== '' ? Number(body.child_discount_amount) : null;
+    }
+    if (body?.infant_discount_amount !== undefined) {
+      updates.infant_discount_amount = body.infant_discount_amount !== null && body.infant_discount_amount !== '' ? Number(body.infant_discount_amount) : null;
+    }
+    if (body?.discount_start_date !== undefined) {
+      updates.discount_start_date = body.discount_start_date && String(body.discount_start_date).trim() !== '' ? String(body.discount_start_date).trim() : null;
+    }
+    if (body?.discount_end_date !== undefined) {
+      updates.discount_end_date = body.discount_end_date && String(body.discount_end_date).trim() !== '' ? String(body.discount_end_date).trim() : null;
+    }
     if (termsHtml !== undefined) updates.terms_html = termsHtml;
     if (inclusionHtml !== undefined) updates.inclusion_html = inclusionHtml;
     if (exclusionHtml !== undefined) updates.exclusion_html = exclusionHtml;

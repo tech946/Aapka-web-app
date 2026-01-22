@@ -1,0 +1,264 @@
+/* Flexible Date Calendar Component Styles */
+
+.flexible-date-calendar-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+}
+
+.flexible-date-calendar-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 16px;
+  gap: 10px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.flexible-date-calendar-loading .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #ff4d00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Calendar Navigation */
+.flexible-calendar-header-nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px 8px 4px;
+}
+
+.flexible-calendar-nav-button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1f2937;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.flexible-calendar-nav-button:hover {
+  background: #374151;
+}
+
+/* Calendar Base Styles */
+.flexible-date-calendar {
+  --rdp-cell-size: 34px;
+  --rdp-accent-color: #ff4d00;
+  --rdp-background-color: #fef3e2;
+  margin: 0 !important;
+}
+
+.flexible-date-calendar .rdp-month_caption {
+  justify-content: center;
+}
+
+.flexible-date-calendar .rdp-months {
+  display: flex;
+}
+
+.flexible-date-calendar .rdp-month {
+  width: 100%;
+}
+
+.flexible-date-calendar .rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 8px 0;
+  margin-bottom: 4px;
+}
+
+.flexible-date-calendar .rdp-caption_label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.flexible-date-calendar .rdp-nav {
+  display: none;
+}
+
+.flexible-date-calendar .rdp-head_cell {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  padding: 4px 0;
+  width: var(--rdp-cell-size);
+}
+
+/* Custom Day Button Styles */
+.flexible-day-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2px 1px;
+  min-height: 40px;
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.flexible-day-button:hover:not(.disabled) {
+  background: #f3f4f6;
+}
+
+.flexible-day-button.selected {
+  background: #ff4d00 !important;
+  color: #fff !important;
+}
+
+.flexible-day-button.selected .flexible-day-number {
+  color: #fff;
+}
+
+.flexible-day-button.selected .flexible-day-seats {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.flexible-day-button.disabled {
+  cursor: not-allowed;
+  background: #f9fafb;
+}
+
+.flexible-day-button.disabled .flexible-day-number {
+  color: #d1d5db;
+}
+
+.flexible-day-number {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.flexible-day-seats {
+  font-size: 8px;
+  font-weight: 500;
+  color: #16a34a;
+  line-height: 1;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+.flexible-day-soldout {
+  font-size: 8px;
+  font-weight: 500;
+  color: #ef4444;
+  line-height: 1;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+.flexible-day-na {
+  font-size: 8px;
+  font-weight: 500;
+  color: #ef4444;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* Outside days */
+.flexible-date-calendar .rdp-day_outside .flexible-day-button {
+  opacity: 0.5;
+}
+
+.flexible-date-calendar .rdp-day_outside .flexible-day-number {
+  color: #9ca3af;
+}
+
+/* Calendar Footer */
+.flexible-calendar-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.flexible-clear-dates-button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.flexible-clear-dates-button:hover {
+  color: #6b7280;
+}
+
+/* No dates message */
+.flexible-calendar-no-dates {
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+  color: #ef4444;
+  background: #fef2f2;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+/* Unavailable day styles for when no data */
+.flexible-date-calendar .rdp-day_unavailable {
+  position: relative;
+}
+
+.flexible-date-calendar .rdp-day_unavailable button {
+  color: #d1d5db !important;
+  cursor: not-allowed !important;
+  background: #f9fafb !important;
+}
+
+.flexible-date-calendar .rdp-day_unavailable::after {
+  content: 'N/A';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ef4444;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Table Layout Fix */
+.flexible-date-calendar table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.flexible-date-calendar td {
+  text-align: center;
+  padding: 1px;
+}

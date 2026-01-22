@@ -41,6 +41,14 @@ export default function Header() {
                 </Link>
               </li>
               <li>
+                <Link
+                  href='/category/flexible-date-packages'
+                  className='header-nav-link'
+                >
+                  Flexible Date Packages
+                </Link>
+              </li>
+              <li>
                 <Link href='/About' className='header-nav-link'>
                   About
                 </Link>
@@ -142,6 +150,14 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Tours
+            </Link>
+
+            <Link
+              href='/category/flexible-date-packages'
+              className='mobile-sidebar-link'
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Flexible Date Packages
             </Link>
 
             <Link

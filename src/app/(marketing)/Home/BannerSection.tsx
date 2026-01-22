@@ -14,6 +14,8 @@ import {
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { generateShortSlug, parseDateStringToLocal } from '@/lib/utils';
+import { usesFlexibleDatePackagesByName } from '@/lib/package-config';
+import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import 'react-day-picker/dist/style.css';
 import './home.css';
 
@@ -34,6 +36,7 @@ interface Package {
   package_days?: number | null;
   package_nights?: number | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
+  end_date?: string | null;
 }
 
 interface PersonsCount {
@@ -62,6 +65,15 @@ export default function BannerSection() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
+  // Flexible date availability data
+  const [flexibleDateAvailability, setFlexibleDateAvailability] = useState<
+    Array<{
+      date: string;
+      price: number;
+      available_seats: number;
+      is_sold_out: boolean;
+    }>
+  >([]);
 
   const packageDropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -216,6 +228,36 @@ export default function BannerSection() {
     // Reset date selection when package changes
     setSelectedDate(undefined);
     setSelectedDateString('');
+    // Fetch flexible date availability if this is a flexible date package
+    const activeCategory = categories.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    );
+    if (activeCategory && usesFlexibleDatePackagesByName(activeCategory.name)) {
+      fetchFlexibleDateAvailability(pkg.package_id);
+    } else {
+      setFlexibleDateAvailability([]);
+    }
+  };
+
+  const fetchFlexibleDateAvailability = async (packageId: string) => {
+    if (!packageId) return;
+    try {
+      const response = await fetch(
+        `/api/package-date-availability?package_id=${packageId}`
+      );
+      const result = await response.json();
+      if (result.data && Array.isArray(result.data)) {
+        setFlexibleDateAvailability(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch flexible date availability:', error);
+      setFlexibleDateAvailability([]);
+    }
+  };
+
+  // Get flexible date availability for a specific date
+  const getFlexibleDateInfo = (dateStr: string) => {
+    return flexibleDateAvailability.find(avail => avail.date === dateStr);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -239,6 +281,54 @@ export default function BannerSection() {
       cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
     );
     return activeCategory?.packagetypeid ?? null;
+  };
+
+  // Check if active category uses flexible date packages
+  const isFlexibleDatePackage = (): boolean => {
+    if (!activeCategoryId) return false;
+    const activeCategory = categories.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    );
+    return activeCategory ? usesFlexibleDatePackagesByName(activeCategory.name) : false;
+  };
+
+  // Get disabled dates for DayPicker (for Flexible Date Packages)
+  const getDisabledDates = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+
+    // Disable past dates
+    if (checkDate < today) return true;
+
+    // For flexible date packages, check availability and end_date
+    if (isFlexibleDatePackage() && selectedPackage) {
+      // Disable dates after package end_date
+      if (selectedPackage.end_date) {
+        const endDate = parseDateStringToLocal(selectedPackage.end_date);
+        if (endDate) {
+          endDate.setHours(0, 0, 0, 0);
+          if (checkDate > endDate) return true;
+        }
+      }
+
+      // Check availability (only if data is loaded)
+      if (flexibleDateAvailability.length > 0) {
+        const dateStr = format(checkDate, 'yyyy-MM-dd');
+        const availInfo = getFlexibleDateInfo(dateStr);
+        if (!availInfo) return true; // Disable if not in availability
+        if (availInfo.is_sold_out || availInfo.available_seats <= 0) return true; // Disable if sold out
+        return false;
+      }
+    }
+
+    // If flexible date package but no package selected yet, only disable past dates
+    if (isFlexibleDatePackage() && !selectedPackage) {
+      return false; // Allow future dates, but they won't show seat info
+    }
+
+    return false;
   };
 
   // Get available dates from selected package
@@ -476,7 +566,7 @@ export default function BannerSection() {
                   )}
                 </div>
               ) : (
-                // Tour type: Show calendar as is
+                // Tour type or Flexible Date Packages: Show calendar
                 <div className='search_input_wrapper' ref={datePickerRef}>
                   <Calendar className='search_input_icon' />
                   <input
@@ -490,53 +580,66 @@ export default function BannerSection() {
                     onClick={() => setShowDatePicker(!showDatePicker)}
                   />
                   {showDatePicker && (
-                    <div className='date_picker_dropdown'>
-                      <div className='calendar_header_nav'>
-                        <button
-                          className='calendar_nav_button'
-                          onClick={e => {
-                            e.stopPropagation();
-                            const newMonth = new Date(month);
-                            newMonth.setMonth(newMonth.getMonth() - 1);
-                            setMonth(newMonth);
-                          }}
-                        >
-                          ‹
-                        </button>
-                        <button
-                          className='calendar_nav_button'
-                          onClick={e => {
-                            e.stopPropagation();
-                            const newMonth = new Date(month);
-                            newMonth.setMonth(newMonth.getMonth() + 1);
-                            setMonth(newMonth);
-                          }}
-                        >
-                          ›
-                        </button>
-                      </div>
-                      <DayPicker
-                        mode='single'
-                        selected={selectedDate}
-                        onSelect={handleDateSelect}
-                        disabled={{ before: new Date() }}
-                        numberOfMonths={2}
-                        showOutsideDays={true}
-                        month={month}
-                        onMonthChange={setMonth}
-                        className='custom_calendar'
-                      />
-                      <div className='calendar_footer'>
-                        <button
-                          className='clear_dates_button'
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedDate(undefined);
-                          }}
-                        >
-                          Clear dates
-                        </button>
-                      </div>
+                    <div className={`date_picker_dropdown ${isFlexibleDatePackage() ? 'date_picker_dropdown_small' : ''}`}>
+                      {isFlexibleDatePackage() && selectedPackage ? (
+                        <FlexibleDateCalendar
+                          packageId={selectedPackage.package_id || ''}
+                          endDate={selectedPackage.end_date}
+                          selectedDate={selectedDate}
+                          onDateSelect={handleDateSelect}
+                          month={month}
+                          onMonthChange={setMonth}
+                        />
+                      ) : (
+                        <>
+                          <div className='calendar_header_nav'>
+                            <button
+                              className='calendar_nav_button'
+                              onClick={e => {
+                                e.stopPropagation();
+                                const newMonth = new Date(month);
+                                newMonth.setMonth(newMonth.getMonth() - 1);
+                                setMonth(newMonth);
+                              }}
+                            >
+                              ‹
+                            </button>
+                            <button
+                              className='calendar_nav_button'
+                              onClick={e => {
+                                e.stopPropagation();
+                                const newMonth = new Date(month);
+                                newMonth.setMonth(newMonth.getMonth() + 1);
+                                setMonth(newMonth);
+                              }}
+                            >
+                              ›
+                            </button>
+                          </div>
+                          <DayPicker
+                            mode='single'
+                            selected={selectedDate}
+                            onSelect={handleDateSelect}
+                            disabled={{ before: new Date() }}
+                            numberOfMonths={1}
+                            showOutsideDays={true}
+                            month={month}
+                            onMonthChange={setMonth}
+                            className='custom_calendar'
+                          />
+                          <div className='calendar_footer'>
+                            <button
+                              className='clear_dates_button'
+                              onClick={e => {
+                                e.stopPropagation();
+                                setSelectedDate(undefined);
+                              }}
+                            >
+                              Clear dates
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
