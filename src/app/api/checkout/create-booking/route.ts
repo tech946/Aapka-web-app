@@ -27,6 +27,7 @@ interface PassengerData {
   applicantPhoto: string | null; // base64 string
   passportMainCopy: string | null; // base64 string
   passportLastPage: string | null; // base64 string
+  passportCover: string | null; // base64 string
   nationalIdCard: string | null; // base64 string
 }
 
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
       applicantPhoto?: string;
       passportMainCopy?: string;
       passportLastPage?: string;
+      passportCover?: string;
       nationalIdCard?: string;
     }> = [];
 
@@ -136,6 +138,14 @@ export async function POST(req: NextRequest) {
         if (passenger.passportLastPage) {
           passengerDocs.passportLastPage = await uploadBase64ToCloudinary(
             passenger.passportLastPage,
+            'bookings/documents'
+          );
+        }
+
+        // Upload Passport Cover
+        if (passenger.passportCover) {
+          passengerDocs.passportCover = await uploadBase64ToCloudinary(
+            passenger.passportCover,
             'bookings/documents'
           );
         }
@@ -178,6 +188,7 @@ export async function POST(req: NextRequest) {
           applicantPhoto: docs?.applicantPhoto || null,
           passportMainCopy: docs?.passportMainCopy || null,
           passportLastPage: docs?.passportLastPage || null,
+          passportCover: docs?.passportCover || null,
           nationalIdCard: docs?.nationalIdCard || null,
         },
       };

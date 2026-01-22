@@ -40,6 +40,7 @@ interface PassengerData {
   applicantPhoto: File | null;
   passportMainCopy: File | null;
   passportLastPage: File | null;
+  passportCover: File | null;
   nationalIdCard: File | null;
 }
 
@@ -108,6 +109,7 @@ export default function CheckoutPage() {
         applicantPhoto: null,
         passportMainCopy: null,
         passportLastPage: null,
+        passportCover: null,
         nationalIdCard: null,
       });
     }
@@ -139,6 +141,7 @@ export default function CheckoutPage() {
           applicantPhoto: passengers[i]?.applicantPhoto || null,
           passportMainCopy: passengers[i]?.passportMainCopy || null,
           passportLastPage: passengers[i]?.passportLastPage || null,
+          passportCover: passengers[i]?.passportCover || null,
           nationalIdCard: passengers[i]?.nationalIdCard || null,
         });
       }
@@ -252,6 +255,7 @@ export default function CheckoutPage() {
       | 'applicantPhoto'
       | 'passportMainCopy'
       | 'passportLastPage'
+      | 'passportCover'
       | 'nationalIdCard',
     file: File | null
   ) => {
@@ -432,6 +436,9 @@ export default function CheckoutPage() {
             : null,
           passportLastPage: passenger.passportLastPage
             ? await fileToBase64(passenger.passportLastPage)
+            : null,
+          passportCover: passenger.passportCover
+            ? await fileToBase64(passenger.passportCover)
             : null,
           nationalIdCard: passenger.nationalIdCard
             ? await fileToBase64(passenger.nationalIdCard)
@@ -1043,7 +1050,7 @@ export default function CheckoutPage() {
                             {/* Passport Main Copy */}
                             <div className='document-upload-group'>
                               <label>
-                                Passport Main Copy{' '}
+                                Passport Main Copy [ Indian passport ]{' '}
                                 <span className='required'>*</span>
                               </label>
                               <FileUpload
@@ -1064,7 +1071,7 @@ export default function CheckoutPage() {
 
                             {/* Passport Last Page */}
                             <div className='document-upload-group'>
-                              <label>Passport Last Page</label>
+                              <label>Passport Last Page [ Indian passport ]</label>
                               <FileUpload
                                 file={passenger.passportLastPage}
                                 onFileChange={file =>
@@ -1078,6 +1085,25 @@ export default function CheckoutPage() {
                                   errors[`passenger_${index}_passportLastPage`]
                                 }
                                 fieldKey={`passenger_${index}_passportLastPage`}
+                              />
+                            </div>
+
+                            {/* Passport Cover */}
+                            <div className='document-upload-group'>
+                              <label>Passport Cover</label>
+                              <FileUpload
+                                file={passenger.passportCover}
+                                onFileChange={file =>
+                                  handleFileUpload(
+                                    index,
+                                    'passportCover',
+                                    file
+                                  )
+                                }
+                                error={
+                                  errors[`passenger_${index}_passportCover`]
+                                }
+                                fieldKey={`passenger_${index}_passportCover`}
                               />
                             </div>
 

@@ -132,13 +132,25 @@ export default function PackageDetailsPage() {
   const [visaForInfants, setVisaForInfants] = useState(0);
 
   // Initialize minimum adults: 1 for all packages, 2 for offer packages and flexible date packages
+  // Skip this if solo traveller is selected (solo traveller should have 1 adult)
   useEffect(() => {
+    if (isSoloTraveller) return; // Don't override solo traveller's 1 adult
     if ((slug === 'offer-packages' || slug === 'flexible-date-packages') && persons.adult < 2) {
       setPersons(prev => ({ ...prev, adult: 2 }));
     } else if (persons.adult < 1) {
       setPersons(prev => ({ ...prev, adult: 1 }));
     }
-  }, [slug, persons.adult]);
+  }, [slug, persons.adult, isSoloTraveller]);
+
+  // Sync visaForAdults to 1 when solo traveller is selected
+  useEffect(() => {
+    if (isSoloTraveller && withVisa && visaForAdults !== 1) {
+      setVisaForAdults(1);
+      setVisaForChildren(0);
+      setVisaForInfants(0);
+    }
+  }, [isSoloTraveller, withVisa, visaForAdults]);
+
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [expandedItineraryItems, setExpandedItineraryItems] = useState<
     Set<number>
@@ -666,7 +678,7 @@ export default function PackageDetailsPage() {
   };
 
   const getPersonsDisplayText = () => {
-    if (isSoloTraveller) return 'Solo Traveller';
+    if (isSoloTraveller) return '1 Traveller';
     const total = getTotalPersons();
     if (total === 0) return 'Persons';
     return `${total} ${total === 1 ? 'Person' : 'Persons'}`;
@@ -1261,22 +1273,39 @@ export default function PackageDetailsPage() {
                       checked={isSoloTraveller}
                       onChange={e => {
                         const checked = e.target.checked;
+                        const wasVisaSelected = withVisa;
                         setIsSoloTraveller(checked);
-                          setSoloTravellerShareConsent(false);
-                          setSoloTravellerGender(null);
-                          setWithVisa(false);
-                          setVisaForAdults(0);
-                          setVisaForChildren(0);
-                          setVisaForInfants(0);
+                        setSoloTravellerShareConsent(false);
+                        setSoloTravellerGender(null);
                         if (checked) {
                           setPersons({ adult: 1, child: 0, infant: 0 });
                           setShowPersonsDropdown(false);
+                          // If visa was selected, keep it selected but set to 1 adult
+                          if (wasVisaSelected) {
+                            setVisaForAdults(1);
+                            setVisaForChildren(0);
+                            setVisaForInfants(0);
+                          } else {
+                            setWithVisa(false);
+                            setVisaForAdults(0);
+                            setVisaForChildren(0);
+                            setVisaForInfants(0);
+                          }
                         } else {
+                          const isOfferPackage = slug === 'offer-packages';
+                          const isFlexibleDatePackage = slug === 'flexible-date-packages';
+                          const newAdultCount = (isOfferPackage || isFlexibleDatePackage) ? 2 : 1;
                           setPersons({
-                            adult: slug === 'offer-packages' ? 2 : 1,
+                            adult: newAdultCount,
                             child: 0,
                             infant: 0,
                           });
+                          // If visa was selected, update visa counts based on new adult count
+                          if (wasVisaSelected) {
+                            setVisaForAdults(newAdultCount);
+                            setVisaForChildren(0);
+                            setVisaForInfants(0);
+                          }
                         }
                       }}
                     />
@@ -1338,16 +1367,22 @@ export default function PackageDetailsPage() {
                       checked={withVisa}
                       onChange={e => {
                         const checked = e.target.checked;
-                          setWithVisa(checked);
+                        setWithVisa(checked);
                         if (!checked) {
                           setVisaForAdults(0);
                           setVisaForChildren(0);
                           setVisaForInfants(0);
                         } else {
-                          // Initialize with current adult/child/infant counts
-                          setVisaForAdults(persons.adult);
-                          setVisaForChildren(persons.child);
-                          setVisaForInfants(persons.infant);
+                          // If solo traveller is selected, set visa for 1 adult, otherwise use current counts
+                          if (isSoloTraveller) {
+                            setVisaForAdults(1);
+                            setVisaForChildren(0);
+                            setVisaForInfants(0);
+                          } else {
+                            setVisaForAdults(persons.adult);
+                            setVisaForChildren(persons.child);
+                            setVisaForInfants(persons.infant);
+                          }
                         }
                       }}
                     />
@@ -1357,10 +1392,10 @@ export default function PackageDetailsPage() {
                   {withVisa && (
                     <div className='solo-options'>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {persons.adult > 0 && (
+                        {(isSoloTraveller ? 1 : persons.adult) > 0 && (
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
-                              Visa for Adults ({persons.adult})
+                              Visa for Adults ({isSoloTraveller ? 1 : persons.adult})
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <button
@@ -1376,8 +1411,11 @@ export default function PackageDetailsPage() {
                                   justifyContent: 'center',
                                   padding: 0,
                                 }}
-                                onClick={() => setVisaForAdults(Math.max(0, visaForAdults - 1))}
-                                disabled={visaForAdults === 0}
+                                onClick={() => {
+                                  if (isSoloTraveller) return; // Can't decrease below 1 for solo traveller
+                                  setVisaForAdults(Math.max(0, visaForAdults - 1));
+                                }}
+                                disabled={visaForAdults === 0 || (isSoloTraveller && visaForAdults === 1)}
                               >
                                 <Minus size={14} style={{ color: '#1e40af' }} />
                               </button>
@@ -1397,8 +1435,11 @@ export default function PackageDetailsPage() {
                                   justifyContent: 'center',
                                   padding: 0,
                                 }}
-                                onClick={() => setVisaForAdults(Math.min(persons.adult, visaForAdults + 1))}
-                                disabled={visaForAdults >= persons.adult}
+                                onClick={() => {
+                                  if (isSoloTraveller) return; // Can't increase above 1 for solo traveller
+                                  setVisaForAdults(Math.min(persons.adult, visaForAdults + 1));
+                                }}
+                                disabled={visaForAdults >= (isSoloTraveller ? 1 : persons.adult)}
                               >
                                 <Plus size={14} style={{ color: '#1e40af' }} />
                               </button>
@@ -1819,18 +1860,39 @@ export default function PackageDetailsPage() {
                         checked={isSoloTraveller}
                         onChange={e => {
                           const checked = e.target.checked;
+                          const wasVisaSelected = withVisa;
                           setIsSoloTraveller(checked);
                           setSoloTravellerShareConsent(false);
                           setSoloTravellerGender(null);
                           if (checked) {
                             setPersons({ adult: 1, child: 0, infant: 0 });
                             setShowPersonsDropdown(false);
+                            // If visa was selected, keep it selected but set to 1 adult
+                            if (wasVisaSelected) {
+                              setVisaForAdults(1);
+                              setVisaForChildren(0);
+                              setVisaForInfants(0);
+                            } else {
+                              setWithVisa(false);
+                              setVisaForAdults(0);
+                              setVisaForChildren(0);
+                              setVisaForInfants(0);
+                            }
                           } else {
+                            const isOfferPackage = slug === 'offer-packages';
+                            const isFlexibleDatePackage = slug === 'flexible-date-packages';
+                            const newAdultCount = (isOfferPackage || isFlexibleDatePackage) ? 2 : 1;
                             setPersons({
-                              adult: slug === 'offer-packages' ? 2 : 1,
+                              adult: newAdultCount,
                               child: 0,
                               infant: 0,
                             });
+                            // If visa was selected, update visa counts based on new adult count
+                            if (wasVisaSelected) {
+                              setVisaForAdults(newAdultCount);
+                              setVisaForChildren(0);
+                              setVisaForInfants(0);
+                            }
                           }
                         }}
                       />
@@ -1893,10 +1955,16 @@ export default function PackageDetailsPage() {
                           setVisaForChildren(0);
                           setVisaForInfants(0);
                         } else {
-                          // Initialize with current adult/child/infant counts
-                          setVisaForAdults(persons.adult);
-                          setVisaForChildren(persons.child);
-                          setVisaForInfants(persons.infant);
+                          // If solo traveller is selected, set visa for 1 adult, otherwise use current counts
+                          if (isSoloTraveller) {
+                            setVisaForAdults(1);
+                            setVisaForChildren(0);
+                            setVisaForInfants(0);
+                          } else {
+                            setVisaForAdults(persons.adult);
+                            setVisaForChildren(persons.child);
+                            setVisaForInfants(persons.infant);
+                          }
                         }
                         }}
                       />
@@ -1906,10 +1974,10 @@ export default function PackageDetailsPage() {
                     {withVisa && (
                       <div className='solo-options'>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {persons.adult > 0 && (
+                          {(isSoloTraveller ? 1 : persons.adult) > 0 && (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
-                                Visa for Adults ({persons.adult})
+                                Visa for Adults ({isSoloTraveller ? 1 : persons.adult})
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <button
@@ -1925,8 +1993,11 @@ export default function PackageDetailsPage() {
                                     justifyContent: 'center',
                                     padding: 0,
                                   }}
-                                  onClick={() => setVisaForAdults(Math.max(0, visaForAdults - 1))}
-                                  disabled={visaForAdults === 0}
+                                  onClick={() => {
+                                    if (isSoloTraveller) return; // Can't decrease below 1 for solo traveller
+                                    setVisaForAdults(Math.max(0, visaForAdults - 1));
+                                  }}
+                                  disabled={visaForAdults === 0 || (isSoloTraveller && visaForAdults === 1)}
                                 >
                                   <Minus size={14} style={{ color: '#1e40af' }} />
                                 </button>
@@ -1946,8 +2017,11 @@ export default function PackageDetailsPage() {
                                     justifyContent: 'center',
                                     padding: 0,
                                   }}
-                                  onClick={() => setVisaForAdults(Math.min(persons.adult, visaForAdults + 1))}
-                                  disabled={visaForAdults >= persons.adult}
+                                  onClick={() => {
+                                    if (isSoloTraveller) return; // Can't increase above 1 for solo traveller
+                                    setVisaForAdults(Math.min(persons.adult, visaForAdults + 1));
+                                  }}
+                                  disabled={visaForAdults >= (isSoloTraveller ? 1 : persons.adult)}
                                 >
                                   <Plus size={14} style={{ color: '#1e40af' }} />
                                 </button>
