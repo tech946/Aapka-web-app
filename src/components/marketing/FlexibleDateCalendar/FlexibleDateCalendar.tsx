@@ -189,10 +189,10 @@ export default function FlexibleDateCalendar({
     [endDate, findDateRangeForDate]
   );
 
-  // Check if device is touch-enabled (for hiding hover tooltips on mobile)
+  // Check if device is touch-enabled (for disabling tooltips on mobile)
   const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-  // Custom DayButton to show price or status with tooltip
+  // Custom DayButton to show price or status with tooltip (desktop only)
   const CustomDayButton = ({ day, modifiers, ...buttonProps }: any) => {
     const date = day.date;
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -200,11 +200,10 @@ export default function FlexibleDateCalendar({
     const isDisabled = modifiers.disabled;
     const isSelected = modifiers.selected;
     const isSoldOut = dateRange?.isSoldOut;
-    const availableSeats = !isDisabled && !isSoldOut ? getAvailableSeats(dateStr) : 0;
 
-    // Only show tooltip on non-touch devices (desktop with mouse)
+    // Desktop only: Show tooltip on hover
     const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (isTouchDevice) return; // Skip tooltip on touch devices
+      if (isTouchDevice) return; // No tooltip on touch devices
       if (!isDisabled && !isSoldOut && dateRange) {
         setHoveredDate(dateStr);
         const rect = e.currentTarget.getBoundingClientRect();
@@ -218,31 +217,17 @@ export default function FlexibleDateCalendar({
     };
 
     const handleMouseLeave = () => {
+      if (isTouchDevice) return;
       setHoveredDate(null);
       setTooltipPosition(null);
-    };
-
-    // Extract onClick from buttonProps to ensure it's properly called
-    const { onClick: originalOnClick, ...restButtonProps } = buttonProps;
-
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      // Clear any tooltip on click (for hybrid devices)
-      setHoveredDate(null);
-      setTooltipPosition(null);
-      // Call original onClick from DayPicker
-      if (originalOnClick) {
-        originalOnClick(e);
-      }
     };
 
     return (
       <button
-        {...restButtonProps}
-        onClick={handleClick}
+        {...buttonProps}
         className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        style={{ touchAction: 'manipulation' }}
       >
         <span className="flexible-day-number">{date.getDate()}</span>
         {isDisabled ? (

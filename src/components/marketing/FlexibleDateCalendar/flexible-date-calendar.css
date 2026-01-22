@@ -415,7 +415,7 @@
     -webkit-user-select: none;
   }
   
-  /* Hide tooltips on touch devices */
+  /* Hide tooltips on mobile - no hover on touch devices */
   .flexible-day-tooltip {
     display: none !important;
   }
