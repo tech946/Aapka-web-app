@@ -1132,9 +1132,19 @@ export default function CheckoutPage() {
                                 : ''
                             }`}
                       </p>
+                      {item.isDiscountActive && (
+                        <span className='checkout-discount-badge'>Limited Offer Applied</span>
+                      )}
                     </div>
                     <div className='package-price'>
-                      {formatPrice(item.price)}
+                      {item.isDiscountActive && item.originalPrice && item.originalPrice > item.price && (
+                        <span className='checkout-original-price'>
+                          {formatPrice(item.originalPrice)}
+                        </span>
+                      )}
+                      <span className={item.isDiscountActive ? 'checkout-discounted-price' : ''}>
+                        {formatPrice(item.price)}
+                      </span>
                     </div>
                   </div>
                 ))}

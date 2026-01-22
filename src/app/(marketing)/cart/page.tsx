@@ -297,7 +297,19 @@ export default function CartPage() {
                 <div className='cart-item-price-section'>
                   <div className='cart-item-price'>
                     {item.validated ? (
-                      <>{formatPrice(item.price)}</>
+                      <>
+                        {item.isDiscountActive && item.originalPrice && item.originalPrice > item.price && (
+                          <span className='cart-item-original-price'>
+                            {formatPrice(item.originalPrice)}
+                          </span>
+                        )}
+                        <span className={item.isDiscountActive ? 'cart-item-discounted-price' : ''}>
+                          {formatPrice(item.price)}
+                        </span>
+                        {item.isDiscountActive && (
+                          <span className='cart-item-discount-badge'>OFFER</span>
+                        )}
+                      </>
                     ) : (
                       <div className='cart-price-loading'>
                         <Loader2 size={16} className='spinning' />

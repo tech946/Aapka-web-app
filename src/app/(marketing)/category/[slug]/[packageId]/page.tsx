@@ -54,6 +54,12 @@ interface Package {
   infant_price?: number | null;
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
+  // Discount fields
+  adult_discount_amount?: number | null;
+  child_discount_amount?: number | null;
+  infant_discount_amount?: number | null;
+  discount_start_date?: string | null;
+  discount_end_date?: string | null;
   overview?: string | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
@@ -129,6 +135,10 @@ export default function PackageDetailsPage() {
       is_sold_out: boolean;
     }>
   >([]);
+  
+  // Discount state
+  const [isDiscountActive, setIsDiscountActive] = useState(false);
+  const [discountTimeLeft, setDiscountTimeLeft] = useState<string>('');
   const isMobile = useIsMobile();
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
@@ -175,6 +185,66 @@ export default function PackageDetailsPage() {
       console.error('Failed to fetch flexible date availability:', error);
     }
   };
+
+  // Check if discount is active and calculate time left
+  useEffect(() => {
+    if (!pkg?.discount_start_date || !pkg?.discount_end_date) {
+      setIsDiscountActive(false);
+      setDiscountTimeLeft('');
+      return;
+    }
+
+    // Check if any discount amount is set
+    const hasDiscount = (pkg.adult_discount_amount && pkg.adult_discount_amount > 0) ||
+      (pkg.child_discount_amount && pkg.child_discount_amount > 0) ||
+      (pkg.infant_discount_amount && pkg.infant_discount_amount > 0);
+
+    if (!hasDiscount) {
+      setIsDiscountActive(false);
+      setDiscountTimeLeft('');
+      return;
+    }
+
+    const checkDiscount = () => {
+      const now = new Date();
+      const startDate = parseDateStringToLocal(pkg.discount_start_date!);
+      const endDate = parseDateStringToLocal(pkg.discount_end_date!);
+
+      if (!startDate || !endDate) {
+        setIsDiscountActive(false);
+        return;
+      }
+
+      // Set end date to end of day
+      endDate.setHours(23, 59, 59, 999);
+
+      const isActive = now >= startDate && now <= endDate;
+      setIsDiscountActive(isActive);
+
+      if (isActive) {
+        // Calculate time left
+        const diff = endDate.getTime() - now.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        if (days > 0) {
+          setDiscountTimeLeft(`${days}d ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setDiscountTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+        } else {
+          setDiscountTimeLeft(`${minutes}m ${seconds}s`);
+        }
+      } else {
+        setDiscountTimeLeft('');
+      }
+    };
+
+    checkDiscount();
+    const interval = setInterval(checkDiscount, 1000);
+    return () => clearInterval(interval);
+  }, [pkg?.discount_start_date, pkg?.discount_end_date, pkg?.adult_discount_amount, pkg?.child_discount_amount, pkg?.infant_discount_amount]);
 
   // Detect user location and initialize exchange rate on mount
   useEffect(() => {
@@ -291,6 +361,26 @@ export default function PackageDetailsPage() {
     }
   }, [searchParams, pkg, category, getAvailableDates]);
 
+  // Helper to get discounted price for a person type
+  const getDiscountedPrice = useCallback((basePrice: number | null | undefined, discountAmount: number | null | undefined): number => {
+    if (!basePrice) return 0;
+    if (!isDiscountActive || !discountAmount) return basePrice;
+    return Math.max(0, basePrice - discountAmount);
+  }, [isDiscountActive]);
+
+  // Calculate original price (without discount)
+  const getOriginalPrice = useCallback((): number | null => {
+    if (!pkg) return null;
+    if (isSoloTraveller && pkg.solo_traveller_enabled) {
+      return pkg.solo_traveller_price ?? pkg.package_price;
+    }
+    const totalPrice =
+      (persons.adult > 0 && pkg.adult_price ? persons.adult * pkg.adult_price : 0) +
+      (persons.child > 0 && pkg.child_price ? persons.child * pkg.child_price : 0) +
+      (persons.infant > 0 && pkg.infant_price ? persons.infant * pkg.infant_price : 0);
+    return totalPrice === 0 ? pkg.package_price : totalPrice;
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller]);
+
   // Calculate price based on persons
   useEffect(() => {
     if (!pkg) {
@@ -304,16 +394,21 @@ export default function PackageDetailsPage() {
       return;
     }
 
+    // Apply discount if active
+    const adultPrice = isDiscountActive && pkg.adult_discount_amount
+      ? getDiscountedPrice(pkg.adult_price, pkg.adult_discount_amount)
+      : (pkg.adult_price || 0);
+    const childPrice = isDiscountActive && pkg.child_discount_amount
+      ? getDiscountedPrice(pkg.child_price, pkg.child_discount_amount)
+      : (pkg.child_price || 0);
+    const infantPrice = isDiscountActive && pkg.infant_discount_amount
+      ? getDiscountedPrice(pkg.infant_price, pkg.infant_discount_amount)
+      : (pkg.infant_price || 0);
+
     const totalPrice =
-      (persons.adult > 0 && pkg.adult_price
-        ? persons.adult * pkg.adult_price
-        : 0) +
-      (persons.child > 0 && pkg.child_price
-        ? persons.child * pkg.child_price
-        : 0) +
-      (persons.infant > 0 && pkg.infant_price
-        ? persons.infant * pkg.infant_price
-        : 0);
+      (persons.adult > 0 ? persons.adult * adultPrice : 0) +
+      (persons.child > 0 ? persons.child * childPrice : 0) +
+      (persons.infant > 0 ? persons.infant * infantPrice : 0);
 
     // If no persons selected or no adult/child prices, use base price
     if (totalPrice === 0) {
@@ -321,7 +416,7 @@ export default function PackageDetailsPage() {
     } else {
       setCalculatedPrice(totalPrice);
     }
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller]);
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
@@ -753,6 +848,41 @@ export default function PackageDetailsPage() {
         <h1>{pkg.package_name}</h1>
       </div>
 
+      {/* Discount Banner */}
+      {isDiscountActive && (
+        <div className='discount-banner'>
+          <div className='discount-banner-content'>
+            <div className='discount-badge'>
+              <img src='/images/disocunt-ignite.svg' alt='Discount' className='discount-icon' />
+              <span className='discount-label'>Limited Time Offer!</span>
+            </div>
+            <div className='discount-details'>
+              <div className='discount-amounts'>
+                {pkg.adult_discount_amount && pkg.adult_discount_amount > 0 && (
+                  <span className='discount-item'>
+                    Adult: <strong>AED {pkg.adult_discount_amount} OFF</strong>
+                  </span>
+                )}
+                {pkg.child_discount_amount && pkg.child_discount_amount > 0 && (
+                  <span className='discount-item'>
+                    Child: <strong>AED {pkg.child_discount_amount} OFF</strong>
+                  </span>
+                )}
+                {pkg.infant_discount_amount && pkg.infant_discount_amount > 0 && (
+                  <span className='discount-item'>
+                    Infant: <strong>AED {pkg.infant_discount_amount} OFF</strong>
+                  </span>
+                )}
+              </div>
+              <div className='discount-timer'>
+                <span className='timer-label'>Ends in:</span>
+                <span className='timer-value'>{discountTimeLeft}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Add to Cart Button - Center */}
       {isMobile && (
         <div className='mobile-add-to-cart-button-container'>
@@ -1012,7 +1142,12 @@ export default function PackageDetailsPage() {
               )}
 
               <div className='mobile-booking-price-section'>
-                <span className='mobile-booking-price-amount'>
+                {isDiscountActive && getOriginalPrice() !== calculatedPrice && (
+                  <span className='mobile-booking-price-original'>
+                    {formatPrice(getOriginalPrice())}
+                  </span>
+                )}
+                <span className={`mobile-booking-price-amount ${isDiscountActive ? 'discounted' : ''}`}>
                   {formatPrice(
                     calculatedPrice !== null
                       ? calculatedPrice
@@ -1373,7 +1508,12 @@ export default function PackageDetailsPage() {
                 )}
 
                 <div className='booking-price-section'>
-                <span className='booking-price-amount'>
+                {isDiscountActive && getOriginalPrice() !== calculatedPrice && (
+                  <span className='booking-price-original'>
+                    {formatPrice(getOriginalPrice())}
+                  </span>
+                )}
+                <span className={`booking-price-amount ${isDiscountActive ? 'discounted' : ''}`}>
                   {formatPrice(
                     calculatedPrice !== null
                       ? calculatedPrice

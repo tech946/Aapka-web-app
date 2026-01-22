@@ -28,6 +28,7 @@ export interface CartItem extends CartItemStorage {
   packageName: string;
   thumbnailImage: string | null;
   price: number;
+  originalPrice?: number | null; // Original price before discount
   adultPrice: number | null;
   childPrice: number | null;
   infantPrice: number | null;
@@ -36,6 +37,11 @@ export interface CartItem extends CartItemStorage {
   nights?: number | null;
   days?: number | null;
   validated?: boolean; // Flag to indicate if price is validated
+  // Discount info
+  isDiscountActive?: boolean;
+  adultDiscountAmount?: number | null;
+  childDiscountAmount?: number | null;
+  infantDiscountAmount?: number | null;
 }
 
 interface CartContextType {
@@ -108,7 +114,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Update cart items with validated prices
+          // Update cart items with validated prices (including discounts)
           setCartItems(prev =>
             prev.map(item => {
               const validated = result.items.find(
@@ -119,6 +125,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   ...item,
                   packageName: validated.packageName,
                   price: validated.price,
+                  originalPrice: validated.originalPrice,
                   adultPrice: validated.adultPrice,
                   childPrice: validated.childPrice,
                   infantPrice: validated.infantPrice,
@@ -127,6 +134,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   days: validated.days,
                   thumbnailImage: validated.thumbnailImage,
                   validated: true,
+                  // Discount info
+                  isDiscountActive: validated.isDiscountActive,
+                  adultDiscountAmount: validated.adultDiscountAmount,
+                  childDiscountAmount: validated.childDiscountAmount,
+                  infantDiscountAmount: validated.infantDiscountAmount,
                 };
               }
               return item;
