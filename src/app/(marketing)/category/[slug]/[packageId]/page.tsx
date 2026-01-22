@@ -41,6 +41,16 @@ import 'react-day-picker/dist/style.css';
 import '../../packages.css';
 import './package-details.css';
 
+interface DateRange {
+  id: string;
+  fromDate: string;
+  toDate: string;
+  adultPrice: number;
+  childPrice: number;
+  infantPrice: number;
+  isSoldOut: boolean;
+}
+
 interface Package {
   package_id: string;
   package_name: string;
@@ -54,6 +64,10 @@ interface Package {
   infant_price?: number | null;
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
+  with_visa?: boolean | null;
+  adult_visa_price?: number | null;
+  child_visa_price?: number | null;
+  infant_visa_price?: number | null;
   // Discount fields
   adult_discount_amount?: number | null;
   child_discount_amount?: number | null;
@@ -72,6 +86,8 @@ interface Package {
     fromDate: string;
     toDate: string;
   }> | null;
+  // Date ranges for flexible date packages (stored as JSONB in packages table)
+  date_ranges?: DateRange[] | null;
   end_date?: string | null;
   thumbnail_image?: string | null;
   created_at?: string | null;
@@ -109,6 +125,10 @@ export default function PackageDetailsPage() {
   >(null);
   const [soloTravellerShareConsent, setSoloTravellerShareConsent] =
     useState(false);
+  const [withVisa, setWithVisa] = useState(false);
+  const [visaForAdults, setVisaForAdults] = useState(0);
+  const [visaForChildren, setVisaForChildren] = useState(0);
+  const [visaForInfants, setVisaForInfants] = useState(0);
 
   // Initialize minimum adults: 1 for all packages, 2 for offer packages
   useEffect(() => {
@@ -124,17 +144,7 @@ export default function PackageDetailsPage() {
   >(new Set());
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  // Flexible date availability data
-  const [flexibleDateAvailability, setFlexibleDateAvailability] = useState<
-    Array<{
-      date: string;
-      adult_price: number;
-      child_price: number;
-      infant_price: number;
-      available_seats: number;
-      is_sold_out: boolean;
-    }>
-  >([]);
+  // Note: Date ranges are now stored in pkg.date_ranges directly (no separate state needed)
   
   // Discount state
   const [isDiscountActive, setIsDiscountActive] = useState(false);
@@ -164,27 +174,22 @@ export default function PackageDetailsPage() {
     }
   }, [pkg?.package_category_id]);
 
-  // Fetch flexible date availability if this is a flexible date package
-  useEffect(() => {
-    if (pkg?.package_id && slug === 'flexible-date-packages') {
-      fetchFlexibleDateAvailability();
-    }
-  }, [pkg?.package_id, slug]);
-
-  const fetchFlexibleDateAvailability = async () => {
-    if (!pkg?.package_id) return;
-    try {
-      const response = await fetch(
-        `/api/package-date-availability?package_id=${pkg.package_id}`
-      );
-      const result = await response.json();
-      if (result.data && Array.isArray(result.data)) {
-        setFlexibleDateAvailability(result.data);
+  // Helper function to find the date range that contains a given date
+  const findDateRangeForDate = useCallback((dateStr: string): DateRange | null => {
+    if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges)) return null;
+    const targetDate = new Date(dateStr);
+    for (const range of pkg.date_ranges) {
+      const fromDate = new Date(range.fromDate);
+      const toDate = new Date(range.toDate);
+      if (targetDate >= fromDate && targetDate <= toDate) {
+        return range;
       }
-    } catch (error) {
-      console.error('Failed to fetch flexible date availability:', error);
     }
-  };
+    return null;
+  }, [pkg?.date_ranges]);
+
+  // Note: Flexible date data now comes from pkg.date_ranges (JSONB column in packages table)
+  // No separate API fetch needed
 
   // Check if discount is active and calculate time left
   useEffect(() => {
@@ -230,7 +235,7 @@ export default function PackageDetailsPage() {
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
         if (days > 0) {
-          setDiscountTimeLeft(`${days}d ${hours}h ${minutes}m`);
+          setDiscountTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
         } else if (hours > 0) {
           setDiscountTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
         } else {
@@ -271,22 +276,52 @@ export default function PackageDetailsPage() {
     initialize();
   }, []);
 
+  // Get flexible date info from date_ranges - finds the range that contains the given date
+  const getFlexibleDateInfo = useCallback((dateStr: string): {
+    adult_price: number;
+    child_price: number;
+    infant_price: number;
+    is_sold_out: boolean;
+  } | null => {
+    const range = findDateRangeForDate(dateStr);
+    if (!range) return null;
+    return {
+      adult_price: range.adultPrice,
+      child_price: range.childPrice,
+      infant_price: range.infantPrice,
+      is_sold_out: range.isSoldOut,
+    };
+  }, [findDateRangeForDate]);
+
   const getAvailableDates = useCallback((): string[] => {
-    // For flexible date packages, get dates from availability data
-    if (slug === 'flexible-date-packages' && flexibleDateAvailability.length > 0) {
+    // For flexible date packages, generate all dates within the configured date ranges
+    if (slug === 'flexible-date-packages' && pkg?.date_ranges && pkg.date_ranges.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const sixDaysFromNow = new Date(today);
       sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
 
-      return flexibleDateAvailability
-        .filter(avail => {
-          const date = parseDateStringToLocal(avail.date);
-          if (!date) return false;
-          date.setHours(0, 0, 0, 0);
-          return date > sixDaysFromNow && !avail.is_sold_out && avail.available_seats > 0;
-        })
-        .map(avail => avail.date);
+      const availableDates: string[] = [];
+      
+      for (const range of pkg.date_ranges) {
+        if (range.isSoldOut) continue; // Skip sold out ranges
+        
+        const fromDate = new Date(range.fromDate);
+        const toDate = new Date(range.toDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+        
+        // Generate all dates in this range
+        const currentDate = new Date(fromDate);
+        while (currentDate <= toDate) {
+          if (currentDate > sixDaysFromNow) {
+            availableDates.push(format(currentDate, 'yyyy-MM-dd'));
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+      
+      return [...new Set(availableDates)].sort(); // Remove duplicates and sort
     }
 
     if (!pkg?.travel_dates) return [];
@@ -307,12 +342,7 @@ export default function PackageDetailsPage() {
         });
     }
     return [];
-  }, [pkg?.travel_dates, slug, flexibleDateAvailability]);
-
-  // Get flexible date availability for a specific date
-  const getFlexibleDateInfo = (dateStr: string) => {
-    return flexibleDateAvailability.find(avail => avail.date === dateStr);
-  };
+  }, [pkg?.travel_dates, slug, pkg?.date_ranges]);
 
   const isPackageType = (): boolean => {
     return category?.packagetypeid === 1;
@@ -368,20 +398,102 @@ export default function PackageDetailsPage() {
     return Math.max(0, basePrice - discountAmount);
   }, [isDiscountActive]);
 
+  // Calculate visa price
+  const getVisaPrice = useCallback((): number => {
+    if (!pkg || !withVisa) return 0;
+    let visaTotal = 0;
+    if (pkg.adult_visa_price && visaForAdults > 0) {
+      visaTotal += pkg.adult_visa_price * visaForAdults;
+    }
+    if (pkg.child_visa_price && visaForChildren > 0) {
+      visaTotal += pkg.child_visa_price * visaForChildren;
+    }
+    if (pkg.infant_visa_price && visaForInfants > 0) {
+      visaTotal += pkg.infant_visa_price * visaForInfants;
+    }
+    return visaTotal;
+  }, [pkg, withVisa, visaForAdults, visaForChildren, visaForInfants]);
+
+  // Get the minimum prices from all available date ranges (for showing "starting from" price)
+  const getMinPricesFromRanges = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number } | null => {
+    if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges) || pkg.date_ranges.length === 0) {
+      return null;
+    }
+    // Find the minimum adult price from non-sold-out ranges
+    const availableRanges = pkg.date_ranges.filter(r => !r.isSoldOut);
+    if (availableRanges.length === 0) return null;
+    
+    // Get the range with minimum adult price
+    const minRange = availableRanges.reduce((min, range) => 
+      (range.adultPrice < min.adultPrice) ? range : min
+    , availableRanges[0]);
+    
+    return {
+      adultPrice: minRange.adultPrice || 0,
+      childPrice: minRange.childPrice || 0,
+      infantPrice: minRange.infantPrice || 0,
+    };
+  }, [pkg?.date_ranges]);
+
+  // Get prices for selected date (for flexible date packages) or package base prices
+  const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number } => {
+    // For flexible date packages, use date-specific pricing from date_ranges
+    if (slug === 'flexible-date-packages') {
+      // Check if date is selected (either as string or Date object)
+      const dateToCheck = selectedDateString || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null);
+      
+      if (dateToCheck) {
+        const dateInfo = getFlexibleDateInfo(dateToCheck);
+        if (dateInfo) {
+          // Use prices from the date range that contains this date
+          return {
+            adultPrice: dateInfo.adult_price || 0,
+            childPrice: dateInfo.child_price || 0,
+            infantPrice: dateInfo.infant_price || 0,
+          };
+        }
+      }
+      
+      // If no date selected, show minimum price from available ranges as "starting from" price
+      const minPrices = getMinPricesFromRanges();
+      if (minPrices) {
+        return minPrices;
+      }
+      
+      // Fallback to 0 if no ranges available
+      return {
+        adultPrice: 0,
+        childPrice: 0,
+        infantPrice: 0,
+      };
+    }
+    
+    // For non-flexible date packages, use package base prices
+    return {
+      adultPrice: pkg?.adult_price || 0,
+      childPrice: pkg?.child_price || 0,
+      infantPrice: pkg?.infant_price || 0,
+    };
+  }, [slug, selectedDateString, selectedDate, pkg, getFlexibleDateInfo, getMinPricesFromRanges]);
+
   // Calculate original price (without discount)
   const getOriginalPrice = useCallback((): number | null => {
     if (!pkg) return null;
     if (isSoloTraveller && pkg.solo_traveller_enabled) {
-      return pkg.solo_traveller_price ?? pkg.package_price;
+      // Solo traveller price + visa price if selected
+      const soloPrice = pkg.solo_traveller_price ?? pkg.package_price;
+      return soloPrice ? soloPrice + getVisaPrice() : null;
     }
+    const prices = getPricesForDate();
     const totalPrice =
-      (persons.adult > 0 && pkg.adult_price ? persons.adult * pkg.adult_price : 0) +
-      (persons.child > 0 && pkg.child_price ? persons.child * pkg.child_price : 0) +
-      (persons.infant > 0 && pkg.infant_price ? persons.infant * pkg.infant_price : 0);
-    return totalPrice === 0 ? pkg.package_price : totalPrice;
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller]);
+      (persons.adult > 0 ? persons.adult * prices.adultPrice : 0) +
+      (persons.child > 0 ? persons.child * prices.childPrice : 0) +
+      (persons.infant > 0 ? persons.infant * prices.infantPrice : 0);
+    const basePrice = totalPrice === 0 ? (pkg.package_price || 0) : totalPrice;
+    return basePrice ? basePrice + getVisaPrice() : null;
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, getVisaPrice, getPricesForDate]);
 
-  // Calculate price based on persons
+  // Calculate price based on persons and selected date
   useEffect(() => {
     if (!pkg) {
       setCalculatedPrice(null);
@@ -390,37 +502,56 @@ export default function PackageDetailsPage() {
 
     // Solo traveller pricing overrides per-person pricing
     if (isSoloTraveller && pkg.solo_traveller_enabled) {
-      setCalculatedPrice(pkg.solo_traveller_price ?? pkg.package_price);
+      // Solo traveller price + visa price if selected
+      const soloPrice = pkg.solo_traveller_price ?? pkg.package_price ?? 0;
+      const visaPrice = getVisaPrice();
+      setCalculatedPrice(soloPrice + visaPrice);
       return;
     }
 
-    // Apply discount if active
-    const adultPrice = isDiscountActive && pkg.adult_discount_amount
-      ? getDiscountedPrice(pkg.adult_price, pkg.adult_discount_amount)
-      : (pkg.adult_price || 0);
-    const childPrice = isDiscountActive && pkg.child_discount_amount
-      ? getDiscountedPrice(pkg.child_price, pkg.child_discount_amount)
-      : (pkg.child_price || 0);
-    const infantPrice = isDiscountActive && pkg.infant_discount_amount
-      ? getDiscountedPrice(pkg.infant_price, pkg.infant_discount_amount)
-      : (pkg.infant_price || 0);
+    // Get prices for selected date (for flexible date packages) or package base prices
+    const prices = getPricesForDate();
+    
+    // Apply discount if active (discounts apply to package-level prices, not date-specific)
+    // For flexible date packages, we use date-specific prices without discount
+    // For regular packages, apply discount to base prices
+    let adultPrice = prices.adultPrice;
+    let childPrice = prices.childPrice;
+    let infantPrice = prices.infantPrice;
+
+    // Only apply discount if not using date-specific pricing (i.e., regular packages)
+    if (slug !== 'flexible-date-packages' && isDiscountActive) {
+      adultPrice = pkg.adult_discount_amount
+        ? getDiscountedPrice(prices.adultPrice, pkg.adult_discount_amount)
+        : prices.adultPrice;
+      childPrice = pkg.child_discount_amount
+        ? getDiscountedPrice(prices.childPrice, pkg.child_discount_amount)
+        : prices.childPrice;
+      infantPrice = pkg.infant_discount_amount
+        ? getDiscountedPrice(prices.infantPrice, pkg.infant_discount_amount)
+        : prices.infantPrice;
+    }
 
     const totalPrice =
       (persons.adult > 0 ? persons.adult * adultPrice : 0) +
       (persons.child > 0 ? persons.child * childPrice : 0) +
       (persons.infant > 0 ? persons.infant * infantPrice : 0);
 
-    // If no persons selected or no adult/child prices, use base price
-    if (totalPrice === 0) {
-      setCalculatedPrice(pkg.package_price);
-    } else {
-      setCalculatedPrice(totalPrice);
-    }
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice]);
+    // For flexible date packages, don't fall back to package base price
+    // Only use the calculated price from date-specific pricing
+    // For other packages, fall back to base price if no person pricing
+    const basePrice = slug === 'flexible-date-packages' 
+      ? totalPrice 
+      : (totalPrice === 0 ? (pkg.package_price || 0) : totalPrice);
+    
+    // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
+    const visaPrice = getVisaPrice();
+    setCalculatedPrice(basePrice + visaPrice);
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
-    if (!price) return 'N/A';
+    if (price === null || price === undefined) return 'N/A';
     return `AED ${price.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -465,7 +596,7 @@ export default function PackageDetailsPage() {
     type: 'adult' | 'child' | 'infant',
     delta: number
   ) => {
-    if (isSoloTraveller) return prev => prev;
+    if (isSoloTraveller) return (prev: any) => prev;
     setPersons(prev => {
       const isOfferPackage = slug === 'offer-packages';
       let newValue = prev[type] + delta;
@@ -487,7 +618,20 @@ export default function PackageDetailsPage() {
         return prev;
       }
 
-      return { ...prev, [type]: newValue };
+      const updated = { ...prev, [type]: newValue };
+      
+      // Update visa counts if they exceed new person counts
+      if (withVisa) {
+        if (type === 'adult' && visaForAdults > newValue) {
+          setVisaForAdults(newValue);
+        } else if (type === 'child' && visaForChildren > newValue) {
+          setVisaForChildren(newValue);
+        } else if (type === 'infant' && visaForInfants > newValue) {
+          setVisaForInfants(newValue);
+        }
+      }
+
+      return updated;
     });
   };
 
@@ -533,7 +677,7 @@ export default function PackageDetailsPage() {
     // Disable past dates
     if (checkDate < today) return true;
 
-    // For flexible date packages, check availability and end_date
+    // For flexible date packages, check if date falls within a valid date range
     if (slug === 'flexible-date-packages') {
       // Disable dates after package end_date
       if (pkg?.end_date) {
@@ -542,9 +686,9 @@ export default function PackageDetailsPage() {
       }
 
       const dateStr = format(date, 'yyyy-MM-dd');
-      const availInfo = getFlexibleDateInfo(dateStr);
-      if (!availInfo) return true; // Disable if not in availability
-      if (availInfo.is_sold_out || availInfo.available_seats <= 0) return true; // Disable if sold out
+      const dateInfo = getFlexibleDateInfo(dateStr);
+      if (!dateInfo) return true; // Disable if date is not within any date range
+      if (dateInfo.is_sold_out) return true; // Disable if the range is sold out
       return false;
     }
 
@@ -631,6 +775,10 @@ export default function PackageDetailsPage() {
       soloTravellerShareConsent: isSoloTraveller
         ? soloTravellerShareConsent
         : false,
+      withVisa: withVisa ? true : false,
+      visaForAdults: withVisa ? visaForAdults : 0,
+      visaForChildren: withVisa ? visaForChildren : 0,
+      visaForInfants: withVisa ? visaForInfants : 0,
     };
 
     addToCart(cartItem);
@@ -1083,8 +1231,12 @@ export default function PackageDetailsPage() {
                       onChange={e => {
                         const checked = e.target.checked;
                         setIsSoloTraveller(checked);
-                        setSoloTravellerShareConsent(false);
-                        setSoloTravellerGender(null);
+                          setSoloTravellerShareConsent(false);
+                          setSoloTravellerGender(null);
+                          setWithVisa(false);
+                          setVisaForAdults(0);
+                          setVisaForChildren(0);
+                          setVisaForInfants(0);
                         if (checked) {
                           setPersons({ adult: 1, child: 0, infant: 0 });
                           setShowPersonsDropdown(false);
@@ -1136,6 +1288,189 @@ export default function PackageDetailsPage() {
                           soloTravellerGender === 'female' ? 'female' : 'male'
                         } passengers`}
                       </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Visa Option - Only for flexible date packages */}
+              {slug === 'flexible-date-packages' && (
+                <div className='solo-traveller-block' style={{ borderColor: '#3b82f6', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%)' }}>
+                  <label className='solo-checkbox' style={{ color: '#1e40af' }}>
+                    <input
+                      type='checkbox'
+                      checked={withVisa}
+                      onChange={e => {
+                        const checked = e.target.checked;
+                          setWithVisa(checked);
+                        if (!checked) {
+                          setVisaForAdults(0);
+                          setVisaForChildren(0);
+                          setVisaForInfants(0);
+                        } else {
+                          // Initialize with current adult/child/infant counts
+                          setVisaForAdults(persons.adult);
+                          setVisaForChildren(persons.child);
+                          setVisaForInfants(persons.infant);
+                        }
+                      }}
+                    />
+                    With Visa
+                  </label>
+
+                  {withVisa && (
+                    <div className='solo-options'>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {persons.adult > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                              Visa for Adults ({persons.adult})
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '6px',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                }}
+                                onClick={() => setVisaForAdults(Math.max(0, visaForAdults - 1))}
+                                disabled={visaForAdults === 0}
+                              >
+                                <Minus size={14} style={{ color: '#1e40af' }} />
+                              </button>
+                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                {visaForAdults}
+                              </span>
+                              <button
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '6px',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                }}
+                                onClick={() => setVisaForAdults(Math.min(persons.adult, visaForAdults + 1))}
+                                disabled={visaForAdults >= persons.adult}
+                              >
+                                <Plus size={14} style={{ color: '#1e40af' }} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {persons.child > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                              Visa for Children ({persons.child})
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '6px',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                }}
+                                onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
+                                disabled={visaForChildren === 0}
+                              >
+                                <Minus size={14} style={{ color: '#1e40af' }} />
+                              </button>
+                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                {visaForChildren}
+                              </span>
+                              <button
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '6px',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                }}
+                                onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
+                                disabled={visaForChildren >= persons.child}
+                              >
+                                <Plus size={14} style={{ color: '#1e40af' }} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {persons.infant > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                              Visa for Infants ({persons.infant})
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '6px',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                }}
+                                onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
+                                disabled={visaForInfants === 0}
+                              >
+                                <Minus size={14} style={{ color: '#1e40af' }} />
+                              </button>
+                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                {visaForInfants}
+                              </span>
+                              <button
+                                style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '6px',
+                                  background: '#fff',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                }}
+                                onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
+                                disabled={visaForInfants >= persons.infant}
+                              >
+                                <Plus size={14} style={{ color: '#1e40af' }} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {withVisa && (
+                          <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px', fontWeight: 500 }}>
+                            Visa Total: {formatPrice(getVisaPrice())}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1337,6 +1672,7 @@ export default function PackageDetailsPage() {
                           <FlexibleDateCalendar
                             packageId={pkg?.package_id || ''}
                             endDate={pkg?.end_date}
+                            dateRanges={pkg?.date_ranges}
                             selectedDate={selectedDate}
                             onDateSelect={handleDateSelect}
                             month={month}
@@ -1502,6 +1838,189 @@ export default function PackageDetailsPage() {
                             soloTravellerGender === 'female' ? 'female' : 'male'
                           } passengers`}
                         </label>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Visa Option - Only for flexible date packages */}
+                {slug === 'flexible-date-packages' && (
+                  <div className='solo-traveller-block' style={{ borderColor: '#3b82f6', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%)' }}>
+                    <label className='solo-checkbox' style={{ color: '#1e40af' }}>
+                      <input
+                        type='checkbox'
+                        checked={withVisa}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setWithVisa(checked);
+                        if (!checked) {
+                          setVisaForAdults(0);
+                          setVisaForChildren(0);
+                          setVisaForInfants(0);
+                        } else {
+                          // Initialize with current adult/child/infant counts
+                          setVisaForAdults(persons.adult);
+                          setVisaForChildren(persons.child);
+                          setVisaForInfants(persons.infant);
+                        }
+                        }}
+                      />
+                      With Visa
+                    </label>
+
+                    {withVisa && (
+                      <div className='solo-options'>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {persons.adult > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                Visa for Adults ({persons.adult})
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                  style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    border: '1px solid #93c5fd',
+                                    borderRadius: '6px',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                  }}
+                                  onClick={() => setVisaForAdults(Math.max(0, visaForAdults - 1))}
+                                  disabled={visaForAdults === 0}
+                                >
+                                  <Minus size={14} style={{ color: '#1e40af' }} />
+                                </button>
+                                <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                  {visaForAdults}
+                                </span>
+                                <button
+                                  style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    border: '1px solid #93c5fd',
+                                    borderRadius: '6px',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                  }}
+                                  onClick={() => setVisaForAdults(Math.min(persons.adult, visaForAdults + 1))}
+                                  disabled={visaForAdults >= persons.adult}
+                                >
+                                  <Plus size={14} style={{ color: '#1e40af' }} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {persons.child > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                Visa for Children ({persons.child})
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                  style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    border: '1px solid #93c5fd',
+                                    borderRadius: '6px',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                  }}
+                                  onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
+                                  disabled={visaForChildren === 0}
+                                >
+                                  <Minus size={14} style={{ color: '#1e40af' }} />
+                                </button>
+                                <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                  {visaForChildren}
+                                </span>
+                                <button
+                                  style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    border: '1px solid #93c5fd',
+                                    borderRadius: '6px',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                  }}
+                                  onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
+                                  disabled={visaForChildren >= persons.child}
+                                >
+                                  <Plus size={14} style={{ color: '#1e40af' }} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {persons.infant > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                Visa for Infants ({persons.infant})
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                  style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    border: '1px solid #93c5fd',
+                                    borderRadius: '6px',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                  }}
+                                  onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
+                                  disabled={visaForInfants === 0}
+                                >
+                                  <Minus size={14} style={{ color: '#1e40af' }} />
+                                </button>
+                                <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                                  {visaForInfants}
+                                </span>
+                                <button
+                                  style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    border: '1px solid #93c5fd',
+                                    borderRadius: '6px',
+                                    background: '#fff',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                  }}
+                                  onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
+                                  disabled={visaForInfants >= persons.infant}
+                                >
+                                  <Plus size={14} style={{ color: '#1e40af' }} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {withVisa && (
+                            <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '4px', fontWeight: 500 }}>
+                              Visa Total: {formatPrice(getVisaPrice())}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1699,6 +2218,7 @@ export default function PackageDetailsPage() {
                           <FlexibleDateCalendar
                             packageId={pkg?.package_id || ''}
                             endDate={pkg?.end_date}
+                            dateRanges={pkg?.date_ranges}
                             selectedDate={selectedDate}
                             onDateSelect={handleDateSelect}
                             month={month}

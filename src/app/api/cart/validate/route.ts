@@ -4,13 +4,27 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+interface DateRange {
+  id: string;
+  fromDate: string;
+  toDate: string;
+  adultPrice: number;
+  childPrice: number;
+  infantPrice: number;
+  isSoldOut: boolean;
+}
+
 interface CartItemRequest {
   packageId: string;
   adults: number;
   children: number;
   infants: number;
   selectedDate: string | null;
-   isSoloTraveller?: boolean;
+  isSoloTraveller?: boolean;
+  withVisa?: boolean;
+  visaForAdults?: number;
+  visaForChildren?: number;
+  visaForInfants?: number;
 }
 
 // Helper function to check if discount is active
@@ -31,6 +45,20 @@ function isDiscountActive(pkg: any): boolean {
   return now >= startDate && now <= endDate;
 }
 
+// Helper function to find the date range that contains a given date
+function findDateRangeForDate(dateRanges: DateRange[] | null | undefined, dateStr: string): DateRange | null {
+  if (!dateRanges || !Array.isArray(dateRanges)) return null;
+  const targetDate = new Date(dateStr);
+  for (const range of dateRanges) {
+    const fromDate = new Date(range.fromDate);
+    const toDate = new Date(range.toDate);
+    if (targetDate >= fromDate && targetDate <= toDate) {
+      return range;
+    }
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -43,12 +71,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch all packages at once (including discount fields)
+    // Fetch all packages at once (including date_ranges for flexible date pricing)
     const packageIds = items.map(item => item.packageId);
     const { data: packages, error: fetchError } = await supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, package_nights, package_days, thumbnail_image, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date'
+        'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date'
       )
       .in('package_id', packageIds);
 
@@ -57,7 +85,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate and calculate prices for each cart item
-    const validatedItems = items.map(item => {
+    const validatedItems = await Promise.all(items.map(async item => {
       const pkg = packages?.find(p => p.package_id === item.packageId);
 
       if (!pkg) {
@@ -77,8 +105,31 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      // Check if discount is active
+      // Check if discount is active (only for non-flexible date packages)
       const discountActive = isDiscountActive(pkg);
+
+      // Get date-specific pricing from date_ranges if a date is selected
+      let adultPrice = 0;
+      let childPrice = 0;
+      let infantPrice = 0;
+      
+      if (item.selectedDate) {
+        // For flexible date packages, get pricing from the date range that contains the selected date
+        const dateStr = item.selectedDate.split('T')[0];
+        const dateRange = findDateRangeForDate(pkg.date_ranges, dateStr);
+        if (dateRange) {
+          // Use pricing from the date range
+          adultPrice = dateRange.adultPrice || 0;
+          childPrice = dateRange.childPrice || 0;
+          infantPrice = dateRange.infantPrice || 0;
+        }
+        // If no date range found, prices remain 0 (flexible date packages require valid date range)
+      } else {
+        // If no date selected, use package base prices (for non-flexible date packages)
+        adultPrice = pkg.adult_price || 0;
+        childPrice = pkg.child_price || 0;
+        infantPrice = pkg.infant_price || 0;
+      }
 
       // Calculate price with discount applied
       let calculatedPrice = 0;
@@ -93,21 +144,21 @@ export async function POST(req: NextRequest) {
       } else {
         // Regular pricing based on adult/child/infant counts
         // Calculate original price first
-        if (pkg.adult_price && item.adults > 0) {
-          originalPrice += pkg.adult_price * item.adults;
+        if (adultPrice > 0 && item.adults > 0) {
+          originalPrice += adultPrice * item.adults;
         }
-        if (pkg.child_price && item.children > 0) {
-          originalPrice += pkg.child_price * item.children;
+        if (childPrice > 0 && item.children > 0) {
+          originalPrice += childPrice * item.children;
         }
-        if (pkg.infant_price && item.infants > 0) {
-          originalPrice += pkg.infant_price * item.infants;
+        if (infantPrice > 0 && item.infants > 0) {
+          originalPrice += infantPrice * item.infants;
         }
 
-        // Calculate discounted price
-        if (discountActive) {
-          const discountedAdultPrice = Math.max(0, (pkg.adult_price || 0) - (pkg.adult_discount_amount || 0));
-          const discountedChildPrice = Math.max(0, (pkg.child_price || 0) - (pkg.child_discount_amount || 0));
-          const discountedInfantPrice = Math.max(0, (pkg.infant_price || 0) - (pkg.infant_discount_amount || 0));
+        // Calculate discounted price (only for non-flexible date packages)
+        if (discountActive && !item.selectedDate) {
+          const discountedAdultPrice = Math.max(0, adultPrice - (pkg.adult_discount_amount || 0));
+          const discountedChildPrice = Math.max(0, childPrice - (pkg.child_discount_amount || 0));
+          const discountedInfantPrice = Math.max(0, infantPrice - (pkg.infant_discount_amount || 0));
 
           if (item.adults > 0) {
             calculatedPrice += discountedAdultPrice * item.adults;
@@ -122,12 +173,29 @@ export async function POST(req: NextRequest) {
           calculatedPrice = originalPrice;
         }
 
-        // If no adult/child pricing, use base price
-        if (originalPrice === 0) {
+        // If no adult/child pricing, use base price (only for non-flexible date packages)
+        // For flexible date packages with selectedDate, don't fall back to package base price
+        if (originalPrice === 0 && !item.selectedDate) {
           calculatedPrice = pkg.package_price || 0;
           originalPrice = calculatedPrice;
         }
       }
+
+      // Add visa pricing if enabled
+      let visaPrice = 0;
+      if (item.withVisa && pkg.with_visa) {
+        if (pkg.adult_visa_price && item.visaForAdults && item.visaForAdults > 0) {
+          visaPrice += pkg.adult_visa_price * item.visaForAdults;
+        }
+        if (pkg.child_visa_price && item.visaForChildren && item.visaForChildren > 0) {
+          visaPrice += pkg.child_visa_price * item.visaForChildren;
+        }
+        if (pkg.infant_visa_price && item.visaForInfants && item.visaForInfants > 0) {
+          visaPrice += pkg.infant_visa_price * item.visaForInfants;
+        }
+      }
+      calculatedPrice += visaPrice;
+      originalPrice += visaPrice;
 
       return {
         packageId: item.packageId,
@@ -135,9 +203,9 @@ export async function POST(req: NextRequest) {
         packageName: pkg.package_name,
         price: calculatedPrice,
         originalPrice: discountActive && originalPrice !== calculatedPrice ? originalPrice : null,
-        adultPrice: discountActive ? Math.max(0, (pkg.adult_price || 0) - (pkg.adult_discount_amount || 0)) : pkg.adult_price,
-        childPrice: discountActive ? Math.max(0, (pkg.child_price || 0) - (pkg.child_discount_amount || 0)) : pkg.child_price,
-        infantPrice: discountActive ? Math.max(0, (pkg.infant_price || 0) - (pkg.infant_discount_amount || 0)) : pkg.infant_price,
+        adultPrice: discountActive && !item.selectedDate ? Math.max(0, adultPrice - (pkg.adult_discount_amount || 0)) : adultPrice,
+        childPrice: discountActive && !item.selectedDate ? Math.max(0, childPrice - (pkg.child_discount_amount || 0)) : childPrice,
+        infantPrice: discountActive && !item.selectedDate ? Math.max(0, infantPrice - (pkg.infant_discount_amount || 0)) : infantPrice,
         basePrice: pkg.package_price,
         nights: pkg.package_nights,
         days: pkg.package_days,
@@ -147,8 +215,13 @@ export async function POST(req: NextRequest) {
         adultDiscountAmount: discountActive ? pkg.adult_discount_amount : null,
         childDiscountAmount: discountActive ? pkg.child_discount_amount : null,
         infantDiscountAmount: discountActive ? pkg.infant_discount_amount : null,
+        // Visa info
+        visaPrice: visaPrice,
+        adultVisaPrice: pkg.adult_visa_price,
+        childVisaPrice: pkg.child_visa_price,
+        infantVisaPrice: pkg.infant_visa_price,
       };
-    });
+    }));
 
     // Check if any items are invalid
     const invalidItems = validatedItems.filter(item => !item.valid);

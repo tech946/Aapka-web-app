@@ -35,21 +35,16 @@ export default function AddPackageClient({
   const [bookingSlots, setBookingSlots] = useState<
     Array<{ id: string; fromDate: string; toDate: string }>
   >([]);
-  // Flexible Date package dates (date range with per-date pricing and seats)
-  const [flexibleDateDates, setFlexibleDateDates] = useState<
+  // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
+  const [dateRanges, setDateRanges] = useState<
     Array<{
       id: string;
-      date: string;
+      fromDate: string;
+      toDate: string;
       adultPrice: number;
       childPrice: number;
       infantPrice: number;
-      availableSeats: number;
       isSoldOut: boolean;
-      adultDiscountAmount?: number;
-      childDiscountAmount?: number;
-      infantDiscountAmount?: number;
-      discountStartDate?: string;
-      discountEndDate?: string;
     }>
   >([]);
 
@@ -256,8 +251,8 @@ export default function AddPackageClient({
                 />
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
-                  dates={flexibleDateDates}
-                  onDatesChange={setFlexibleDateDates}
+                  dateRanges={dateRanges}
+                  onDateRangesChange={setDateRanges}
                   defaultAdultPrice={adultPrice || price}
                   defaultChildPrice={childPrice || price}
                   defaultInfantPrice={infantPrice || price}
@@ -783,20 +778,15 @@ export default function AddPackageClient({
                     toast.error('Valid price is required');
                     return;
                   }
-                  // Prepare flexible date dates with all fields explicitly included
-                  const flexibleDatesPayload = usesFlexibleDate ? flexibleDateDates.map((d: any) => ({
+                  // Prepare date ranges payload for flexible date packages
+                  const dateRangesPayload = usesFlexibleDate ? dateRanges.map((d: any) => ({
                     id: d.id,
-                    date: d.date,
+                    fromDate: d.fromDate,
+                    toDate: d.toDate,
                     adultPrice: d.adultPrice,
                     childPrice: d.childPrice,
                     infantPrice: d.infantPrice,
-                    availableSeats: d.availableSeats,
                     isSoldOut: d.isSoldOut,
-                    adultDiscountAmount: d.adultDiscountAmount !== undefined ? d.adultDiscountAmount : null,
-                    childDiscountAmount: d.childDiscountAmount !== undefined ? d.childDiscountAmount : null,
-                    infantDiscountAmount: d.infantDiscountAmount !== undefined ? d.infantDiscountAmount : null,
-                    discountStartDate: d.discountStartDate || null,
-                    discountEndDate: d.discountEndDate || null,
                   })) : [];
 
                   const payload: any = {
@@ -838,7 +828,7 @@ export default function AddPackageClient({
                   if (usesSlots) {
                     payload.booking_slots = bookingSlots;
                   } else if (usesFlexibleDate) {
-                    payload.flexible_date_dates = flexibleDatesPayload;
+                    payload.date_ranges = dateRangesPayload;
                     payload.end_date = endDate || undefined;
                   } else {
                     payload.travel_dates = travelDates;

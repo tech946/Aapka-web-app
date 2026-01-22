@@ -292,6 +292,30 @@ export default function CartPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Visa Information */}
+                  {item.withVisa && (item.visaForAdults > 0 || item.visaForChildren > 0 || item.visaForInfants > 0) && (
+                    <div className='cart-item-persons' style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af', marginBottom: '4px' }}>
+                        Visa Included:
+                      </div>
+                      {item.visaForAdults > 0 && (
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {item.visaForAdults} Adult{item.visaForAdults > 1 ? 's' : ''}
+                        </div>
+                      )}
+                      {item.visaForChildren > 0 && (
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {item.visaForChildren} Child{item.visaForChildren > 1 ? 'ren' : ''}
+                        </div>
+                      )}
+                      {item.visaForInfants > 0 && (
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {item.visaForInfants} Infant{item.visaForInfants > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className='cart-item-price-section'>

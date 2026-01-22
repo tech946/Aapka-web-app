@@ -29,6 +29,16 @@ interface PackageCategory {
   [key: string]: any; // Allow for other fields
 }
 
+interface DateRange {
+  id: string;
+  fromDate: string;
+  toDate: string;
+  adultPrice: number;
+  childPrice: number;
+  infantPrice: number;
+  isSoldOut: boolean;
+}
+
 interface Package {
   package_id: string;
   package_name: string;
@@ -36,6 +46,7 @@ interface Package {
   package_days?: number | null;
   package_nights?: number | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
+  date_ranges?: DateRange[] | null;
   end_date?: string | null;
 }
 
@@ -65,15 +76,6 @@ export default function BannerSection() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
-  // Flexible date availability data
-  const [flexibleDateAvailability, setFlexibleDateAvailability] = useState<
-    Array<{
-      date: string;
-      price: number;
-      available_seats: number;
-      is_sold_out: boolean;
-    }>
-  >([]);
 
   const packageDropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -228,36 +230,6 @@ export default function BannerSection() {
     // Reset date selection when package changes
     setSelectedDate(undefined);
     setSelectedDateString('');
-    // Fetch flexible date availability if this is a flexible date package
-    const activeCategory = categories.find(
-      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-    );
-    if (activeCategory && usesFlexibleDatePackagesByName(activeCategory.name)) {
-      fetchFlexibleDateAvailability(pkg.package_id);
-    } else {
-      setFlexibleDateAvailability([]);
-    }
-  };
-
-  const fetchFlexibleDateAvailability = async (packageId: string) => {
-    if (!packageId) return;
-    try {
-      const response = await fetch(
-        `/api/package-date-availability?package_id=${packageId}`
-      );
-      const result = await response.json();
-      if (result.data && Array.isArray(result.data)) {
-        setFlexibleDateAvailability(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch flexible date availability:', error);
-      setFlexibleDateAvailability([]);
-    }
-  };
-
-  // Get flexible date availability for a specific date
-  const getFlexibleDateInfo = (dateStr: string) => {
-    return flexibleDateAvailability.find(avail => avail.date === dateStr);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -292,7 +264,7 @@ export default function BannerSection() {
     return activeCategory ? usesFlexibleDatePackagesByName(activeCategory.name) : false;
   };
 
-  // Get disabled dates for DayPicker (for Flexible Date Packages)
+  // Get disabled dates for DayPicker (for non-flexible packages)
   const getDisabledDates = (date: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -301,32 +273,6 @@ export default function BannerSection() {
 
     // Disable past dates
     if (checkDate < today) return true;
-
-    // For flexible date packages, check availability and end_date
-    if (isFlexibleDatePackage() && selectedPackage) {
-      // Disable dates after package end_date
-      if (selectedPackage.end_date) {
-        const endDate = parseDateStringToLocal(selectedPackage.end_date);
-        if (endDate) {
-          endDate.setHours(0, 0, 0, 0);
-          if (checkDate > endDate) return true;
-        }
-      }
-
-      // Check availability (only if data is loaded)
-      if (flexibleDateAvailability.length > 0) {
-        const dateStr = format(checkDate, 'yyyy-MM-dd');
-        const availInfo = getFlexibleDateInfo(dateStr);
-        if (!availInfo) return true; // Disable if not in availability
-        if (availInfo.is_sold_out || availInfo.available_seats <= 0) return true; // Disable if sold out
-        return false;
-      }
-    }
-
-    // If flexible date package but no package selected yet, only disable past dates
-    if (isFlexibleDatePackage() && !selectedPackage) {
-      return false; // Allow future dates, but they won't show seat info
-    }
 
     return false;
   };
@@ -585,6 +531,7 @@ export default function BannerSection() {
                         <FlexibleDateCalendar
                           packageId={selectedPackage.package_id || ''}
                           endDate={selectedPackage.end_date}
+                          dateRanges={selectedPackage.date_ranges}
                           selectedDate={selectedDate}
                           onDateSelect={handleDateSelect}
                           month={month}

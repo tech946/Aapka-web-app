@@ -167,6 +167,19 @@
   white-space: nowrap;
 }
 
+.flexible-day-price {
+  font-size: 8px;
+  font-weight: 600;
+  color: #16a34a;
+  line-height: 1;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+
+.flexible-day-button.selected .flexible-day-price {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .flexible-day-soldout {
   font-size: 8px;
   font-weight: 500;

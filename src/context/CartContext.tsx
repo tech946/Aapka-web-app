@@ -21,6 +21,11 @@ export interface CartItemStorage {
   isSoloTraveller?: boolean;
   soloTravellerGender?: 'male' | 'female' | null;
   soloTravellerShareConsent?: boolean;
+  // Visa support
+  withVisa?: boolean;
+  visaForAdults?: number;
+  visaForChildren?: number;
+  visaForInfants?: number;
 }
 
 // Full cart item with validated prices from server
@@ -88,6 +93,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             infants: item.infants,
             selectedDate: item.selectedDate,
             isSoloTraveller: item.isSoloTraveller ?? false,
+            withVisa: item.withVisa ?? false,
+            visaForAdults: item.visaForAdults ?? 0,
+            visaForChildren: item.visaForChildren ?? 0,
+            visaForInfants: item.visaForInfants ?? 0,
           }));
 
           const response = await fetch('/api/cart/validate', {
@@ -170,6 +179,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           isSoloTraveller: item.isSoloTraveller ?? false,
           soloTravellerGender: item.soloTravellerGender ?? null,
           soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
+          withVisa: item.withVisa ?? false,
+          visaForAdults: item.visaForAdults ?? 0,
+          visaForChildren: item.visaForChildren ?? 0,
           packageName: '',
           thumbnailImage: null,
           price: 0,
@@ -208,6 +220,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           isSoloTraveller: item.isSoloTraveller ?? false,
           soloTravellerGender: item.soloTravellerGender ?? null,
           soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
+          withVisa: item.withVisa ?? false,
+          visaForAdults: item.visaForAdults ?? 0,
+          visaForChildren: item.visaForChildren ?? 0,
+          visaForInfants: item.visaForInfants ?? 0,
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
       } catch (error) {
@@ -236,6 +252,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           isSoloTraveller: item.isSoloTraveller ?? false,
           soloTravellerGender: item.soloTravellerGender ?? null,
           soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
+          withVisa: item.withVisa ?? false,
+          visaForAdults: item.visaForAdults ?? 0,
+          visaForChildren: item.visaForChildren ?? 0,
           validated: false, // Mark as needing validation
         };
         // Validate after update
@@ -249,6 +268,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           isSoloTraveller: item.isSoloTraveller ?? false,
           soloTravellerGender: item.soloTravellerGender ?? null,
           soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
+          withVisa: item.withVisa ?? false,
+          visaForAdults: item.visaForAdults ?? 0,
+          visaForChildren: item.visaForChildren ?? 0,
           packageName: '',
           thumbnailImage: null,
           price: 0,

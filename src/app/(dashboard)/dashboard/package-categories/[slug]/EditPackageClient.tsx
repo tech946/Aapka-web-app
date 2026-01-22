@@ -29,6 +29,15 @@ type Pkg = {
     fromDate: string;
     toDate: string;
   }> | null;
+  date_ranges?: Array<{
+    id: string;
+    fromDate: string;
+    toDate: string;
+    adultPrice: number;
+    childPrice: number;
+    infantPrice: number;
+    isSoldOut: boolean;
+  }> | null;
   adult_price?: number | null;
   child_price?: number | null;
   infant_price?: number | null;
@@ -79,15 +88,15 @@ export default function EditPackageClient({
   const [bookingSlots, setBookingSlots] = useState<
     Array<{ id: string; fromDate: string; toDate: string }>
   >([]);
-  // Flexible Date package dates (date range with per-date pricing and seats)
-  const [flexibleDateDates, setFlexibleDateDates] = useState<
+  // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
+  const [dateRanges, setDateRanges] = useState<
     Array<{
       id: string;
-      date: string;
+      fromDate: string;
+      toDate: string;
       adultPrice: number;
       childPrice: number;
       infantPrice: number;
-      availableSeats: number;
       isSoldOut: boolean;
     }>
   >([]);
@@ -181,29 +190,21 @@ export default function EditPackageClient({
         setBookingSlots([]);
       }
     } else if (usesFlexibleDate) {
-      // Load flexible date dates from API
-      fetch(`/api/package-date-availability?package_id=${pkg.package_id}`)
-        .then(res => res.json())
-        .then(result => {
-          if (result.data && Array.isArray(result.data)) {
-            const normalized = result.data.map((d: any) => ({
-              id: d.id || crypto.randomUUID?.() || String(Date.now()),
-              date: d.date,
-              adultPrice: d.adult_price || d.price || 0, // Fallback to price for backward compatibility
-              childPrice: d.child_price || 0,
-              infantPrice: d.infant_price || 0,
-              availableSeats: d.available_seats || 45,
-              isSoldOut: d.is_sold_out || false,
-            }));
-            setFlexibleDateDates(normalized);
-          } else {
-            setFlexibleDateDates([]);
-          }
-        })
-        .catch(err => {
-          console.error('Failed to load flexible date dates:', err);
-          setFlexibleDateDates([]);
-        });
+      // Load date ranges from pkg.date_ranges (stored in packages table as JSONB)
+      if (Array.isArray(pkg.date_ranges)) {
+        const normalized = pkg.date_ranges.map((d: any) => ({
+          id: d.id || crypto.randomUUID?.() || String(Date.now()),
+          fromDate: d.fromDate,
+          toDate: d.toDate,
+          adultPrice: d.adultPrice || 0,
+          childPrice: d.childPrice || 0,
+          infantPrice: d.infantPrice || 0,
+          isSoldOut: d.isSoldOut || false,
+        }));
+        setDateRanges(normalized);
+      } else {
+        setDateRanges([]);
+      }
     } else {
       // Load travel dates for other categories
       if (Array.isArray(pkg.travel_dates)) {
@@ -389,8 +390,8 @@ export default function EditPackageClient({
                 />
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
-                  dates={flexibleDateDates}
-                  onDatesChange={setFlexibleDateDates}
+                  dateRanges={dateRanges}
+                  onDateRangesChange={setDateRanges}
                   defaultAdultPrice={adultPrice || price}
                   defaultChildPrice={childPrice || price}
                   defaultInfantPrice={infantPrice || price}
@@ -954,19 +955,14 @@ export default function EditPackageClient({
                         ? { booking_slots: bookingSlots }
                         : usesFlexibleDate
                           ? { 
-                              flexible_date_dates: flexibleDateDates.map((d: any) => ({
+                              date_ranges: dateRanges.map((d: any) => ({
                                 id: d.id,
-                                date: d.date,
+                                fromDate: d.fromDate,
+                                toDate: d.toDate,
                                 adultPrice: d.adultPrice,
                                 childPrice: d.childPrice,
                                 infantPrice: d.infantPrice,
-                                availableSeats: d.availableSeats,
                                 isSoldOut: d.isSoldOut,
-                                adultDiscountAmount: d.adultDiscountAmount !== undefined ? d.adultDiscountAmount : null,
-                                childDiscountAmount: d.childDiscountAmount !== undefined ? d.childDiscountAmount : null,
-                                infantDiscountAmount: d.infantDiscountAmount !== undefined ? d.infantDiscountAmount : null,
-                                discountStartDate: d.discountStartDate || null,
-                                discountEndDate: d.discountEndDate || null,
                               })), 
                               end_date: endDate || undefined 
                             }
