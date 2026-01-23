@@ -109,29 +109,58 @@ export async function POST(req: NextRequest) {
       // Check if discount is active (only for non-flexible date packages)
       const discountActive = isDiscountActive(pkg);
 
-      // Get date-specific pricing from date_ranges if a date is selected
+      // Get date-specific pricing from date_ranges if a date is selected (for flexible date packages)
+      // For tours/offer packages, even if selectedDate exists (from travel_dates), use columns
       let adultPrice = 0;
       let childPrice = 0;
       let infantPrice = 0;
       let soloTravellerPrice: number | null = null;
+      let usePackagePriceAsFlatRate = false; // Flag to use package_price directly
+      let isFlexibleDatePackage = false; // Flag to identify flexible date packages
       
       if (item.selectedDate) {
-        // For flexible date packages, get pricing from the date range that contains the selected date
+        // Check if this is a flexible date package by looking for the date in date_ranges
         const dateStr = item.selectedDate.split('T')[0];
         const dateRange = findDateRangeForDate(pkg.date_ranges, dateStr);
+        
         if (dateRange) {
-          // Use pricing from the date range
+          // This is a flexible date package - use pricing from the date range
+          isFlexibleDatePackage = true;
           adultPrice = dateRange.adultPrice || 0;
           childPrice = dateRange.childPrice || 0;
           infantPrice = dateRange.infantPrice || 0;
           soloTravellerPrice = dateRange.soloTravellerPrice ?? null;
+        } else {
+          // No date range found - this is a tour/offer package with selectedDate from travel_dates
+          // Use package base prices from columns (for tours and offer packages)
+          isFlexibleDatePackage = false;
+          const hasPerPersonPricing = pkg.adult_price != null || pkg.child_price != null || pkg.infant_price != null;
+          
+          if (hasPerPersonPricing) {
+            // Use per-person pricing from columns
+            adultPrice = pkg.adult_price ?? 0;
+            childPrice = pkg.child_price ?? 0;
+            infantPrice = pkg.infant_price ?? 0;
+          } else {
+            // No per-person pricing set, will use package_price as flat rate
+            usePackagePriceAsFlatRate = true;
+          }
+          soloTravellerPrice = pkg.solo_traveller_price ?? null;
         }
-        // If no date range found, prices remain 0 (flexible date packages require valid date range)
       } else {
-        // If no date selected, use package base prices (for non-flexible date packages)
-        adultPrice = pkg.adult_price || 0;
-        childPrice = pkg.child_price || 0;
-        infantPrice = pkg.infant_price || 0;
+        // If no date selected, use package base prices (for tours and offer packages)
+        // Check if per-person prices are set (not null)
+        const hasPerPersonPricing = pkg.adult_price != null || pkg.child_price != null || pkg.infant_price != null;
+        
+        if (hasPerPersonPricing) {
+          // Use per-person pricing from columns
+          adultPrice = pkg.adult_price ?? 0;
+          childPrice = pkg.child_price ?? 0;
+          infantPrice = pkg.infant_price ?? 0;
+        } else {
+          // No per-person pricing set, will use package_price as flat rate
+          usePackagePriceAsFlatRate = true;
+        }
         soloTravellerPrice = pkg.solo_traveller_price ?? null;
       }
 
@@ -144,45 +173,58 @@ export async function POST(req: NextRequest) {
       if (isSolo) {
         // Solo traveller pricing overrides per-person logic (no discount on solo)
         // Use solo traveller price from date range if available, otherwise from package
-        calculatedPrice = soloTravellerPrice ?? pkg.solo_traveller_price ?? 0;
+        // For tours/offer packages, if solo_traveller_price is not set, fall back to package_price
+        calculatedPrice = soloTravellerPrice ?? pkg.solo_traveller_price ?? (isFlexibleDatePackage ? 0 : (pkg.package_price ?? 0));
         originalPrice = calculatedPrice;
       } else {
-        // Regular pricing based on adult/child/infant counts
-        // Calculate original price first
-        if (adultPrice > 0 && item.adults > 0) {
-          originalPrice += adultPrice * item.adults;
-        }
-        if (childPrice > 0 && item.children > 0) {
-          originalPrice += childPrice * item.children;
-        }
-        if (infantPrice > 0 && item.infants > 0) {
-          originalPrice += infantPrice * item.infants;
-        }
-
-        // Calculate discounted price (only for non-flexible date packages)
-        if (discountActive && !item.selectedDate) {
-          const discountedAdultPrice = Math.max(0, adultPrice - (pkg.adult_discount_amount || 0));
-          const discountedChildPrice = Math.max(0, childPrice - (pkg.child_discount_amount || 0));
-          const discountedInfantPrice = Math.max(0, infantPrice - (pkg.infant_discount_amount || 0));
-
-          if (item.adults > 0) {
-            calculatedPrice += discountedAdultPrice * item.adults;
-          }
-          if (item.children > 0) {
-            calculatedPrice += discountedChildPrice * item.children;
-          }
-          if (item.infants > 0) {
-            calculatedPrice += discountedInfantPrice * item.infants;
-          }
-        } else {
-          calculatedPrice = originalPrice;
-        }
-
-        // If no adult/child pricing, use base price (only for non-flexible date packages)
-        // For flexible date packages with selectedDate, don't fall back to package base price
-        if (originalPrice === 0 && !item.selectedDate) {
-          calculatedPrice = pkg.package_price || 0;
+        if (usePackagePriceAsFlatRate) {
+          // No per-person pricing set, use package_price as flat rate (for tours and offer packages)
+          calculatedPrice = pkg.package_price ?? 0;
           originalPrice = calculatedPrice;
+        } else {
+          // Regular pricing based on adult/child/infant counts from columns
+          // Calculate original price first
+          if (adultPrice > 0 && item.adults > 0) {
+            originalPrice += adultPrice * item.adults;
+          }
+          if (childPrice > 0 && item.children > 0) {
+            originalPrice += childPrice * item.children;
+          }
+          if (infantPrice > 0 && item.infants > 0) {
+            originalPrice += infantPrice * item.infants;
+          }
+
+          // Calculate discounted price (only for non-flexible date packages)
+          if (discountActive && !isFlexibleDatePackage) {
+            const discountedAdultPrice = Math.max(0, adultPrice - (pkg.adult_discount_amount || 0));
+            const discountedChildPrice = Math.max(0, childPrice - (pkg.child_discount_amount || 0));
+            const discountedInfantPrice = Math.max(0, infantPrice - (pkg.infant_discount_amount || 0));
+
+            if (item.adults > 0) {
+              calculatedPrice += discountedAdultPrice * item.adults;
+            }
+            if (item.children > 0) {
+              calculatedPrice += discountedChildPrice * item.children;
+            }
+            if (item.infants > 0) {
+              calculatedPrice += discountedInfantPrice * item.infants;
+            }
+          } else {
+            calculatedPrice = originalPrice;
+          }
+
+          // Fallback: If calculated price is still 0 and we have package_price, use it
+          // This handles cases where:
+          // 1. adult_price/child_price/infant_price are explicitly set to 0
+          // 2. No adults/children/infants selected
+          // 3. All prices are 0 but package_price exists
+          // Only apply fallback for non-flexible date packages
+          if (calculatedPrice === 0 && originalPrice === 0 && !isFlexibleDatePackage) {
+            if (pkg.package_price && pkg.package_price > 0) {
+              calculatedPrice = pkg.package_price;
+              originalPrice = pkg.package_price;
+            }
+          }
         }
       }
 
@@ -208,9 +250,9 @@ export async function POST(req: NextRequest) {
         packageName: pkg.package_name,
         price: calculatedPrice,
         originalPrice: discountActive && originalPrice !== calculatedPrice ? originalPrice : null,
-        adultPrice: discountActive && !item.selectedDate ? Math.max(0, adultPrice - (pkg.adult_discount_amount || 0)) : adultPrice,
-        childPrice: discountActive && !item.selectedDate ? Math.max(0, childPrice - (pkg.child_discount_amount || 0)) : childPrice,
-        infantPrice: discountActive && !item.selectedDate ? Math.max(0, infantPrice - (pkg.infant_discount_amount || 0)) : infantPrice,
+        adultPrice: discountActive && !isFlexibleDatePackage ? Math.max(0, adultPrice - (pkg.adult_discount_amount || 0)) : adultPrice,
+        childPrice: discountActive && !isFlexibleDatePackage ? Math.max(0, childPrice - (pkg.child_discount_amount || 0)) : childPrice,
+        infantPrice: discountActive && !isFlexibleDatePackage ? Math.max(0, infantPrice - (pkg.infant_discount_amount || 0)) : infantPrice,
         basePrice: pkg.package_price,
         nights: pkg.package_nights,
         days: pkg.package_days,

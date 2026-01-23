@@ -394,34 +394,39 @@ export default function AddPackageClient({
                 />
               </div>
 
-              <div className='form_row full_width'>
-                <label>
-                  <input
-                    type='checkbox'
-                    checked={soloTravellerEnabled}
-                    onChange={e => setSoloTravellerEnabled(e.target.checked)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  Enable Solo Traveller Option
-                </label>
-              </div>
+              {/* Solo Traveller Option - Only for Offer Packages */}
+              {categorySlug === 'offer-packages' && (
+                <>
+                  <div className='form_row full_width'>
+                    <label>
+                      <input
+                        type='checkbox'
+                        checked={soloTravellerEnabled}
+                        onChange={e => setSoloTravellerEnabled(e.target.checked)}
+                        style={{ marginRight: '8px' }}
+                      />
+                      Enable Solo Traveller Option
+                    </label>
+                  </div>
 
-              {soloTravellerEnabled && (
-                <div className='form_row'>
-                  <label>Solo Traveller Price</label>
-                  <input
-                    type='text'
-                    inputMode='numeric'
-                    value={soloTravellerPrice}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                        setSoloTravellerPrice(val);
-                      }
-                    }}
-                    placeholder='Solo traveller price'
-                  />
-                </div>
+                  {soloTravellerEnabled && (
+                    <div className='form_row'>
+                      <label>Solo Traveller Price</label>
+                      <input
+                        type='text'
+                        inputMode='numeric'
+                        value={soloTravellerPrice}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                            setSoloTravellerPrice(val);
+                          }
+                        }}
+                        placeholder='Solo traveller price'
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -868,7 +873,7 @@ export default function AddPackageClient({
                     discount_start_date: payload.discount_start_date,
                     discount_end_date: payload.discount_end_date,
                     hasFlexibleDates: usesFlexibleDate,
-                    flexibleDatesCount: flexibleDatesPayload.length,
+                    flexibleDatesCount: dateRangesPayload.length,
                   });
 
                   const res = await fetch('/api/packages', {
@@ -889,7 +894,7 @@ export default function AddPackageClient({
                   setNights('');
                   setTravelDates([]);
                   setBookingSlots([]);
-                  setFlexibleDateDates([]);
+                  setDateRanges([]);
                   setAdultPrice('');
                   setChildPrice('');
                   setInfantPrice('');

@@ -1897,9 +1897,14 @@ export default function PackageDetailsPage() {
                         }}
                       />
                       Solo Traveller (AED{' '}
-                      {formatPrice(pkg.solo_traveller_price || pkg.package_price)
-                        .replace('AED ', '')
-                        .trim()}
+                      {(() => {
+                        if (slug === 'flexible-date-packages') {
+                          const prices = getPricesForDate();
+                          const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? pkg.package_price;
+                          return formatPrice(soloPrice).replace('AED ', '').trim();
+                        }
+                        return formatPrice(pkg.solo_traveller_price || pkg.package_price).replace('AED ', '').trim();
+                      })()}
                       )
                     </label>
 
