@@ -1,4 +1,5 @@
 import type React from 'react';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Poppins } from 'next/font/google';
@@ -54,7 +55,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <CartProvider>
-          <GTMPageViewTracker />
+          <Suspense fallback={null}>
+            <GTMPageViewTracker />
+          </Suspense>
           <ConditionalHeader />
           <Toaster position='top-right' /> {/* Required */}
           {children}

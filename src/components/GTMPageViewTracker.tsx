@@ -15,12 +15,20 @@ export default function GTMPageViewTracker() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.dataLayer) {
-      window.dataLayer.push({
-        event: 'page_view',
-        page_path: pathname + (searchParams.toString() ? `?${searchParams.toString()}` : ''),
-        page_title: document.title,
-        page_location: window.location.href,
-      });
+      try {
+        const searchString = searchParams?.toString() || '';
+        const fullPath = pathname + (searchString ? `?${searchString}` : '');
+        
+        window.dataLayer.push({
+          event: 'page_view',
+          page_path: fullPath,
+          page_title: document.title || '',
+          page_location: window.location.href,
+        });
+      } catch (error) {
+        // Silently handle any errors during tracking
+        console.warn('GTM tracking error:', error);
+      }
     }
   }, [pathname, searchParams]);
 
