@@ -74,6 +74,7 @@
     "embla-carousel-react": "latest",
     "framer-motion": "latest",
     "google-trends-api": "^4.9.2",
+    "gsap": "^3.14.2",
     "input-otp": "latest",
     "lucide-react": "^0.454.0",
     "next": "^15.5.7",

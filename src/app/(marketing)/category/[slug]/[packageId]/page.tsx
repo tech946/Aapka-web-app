@@ -36,7 +36,7 @@ import {
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
-import { parseDateStringToLocal } from '@/lib/utils';
+import { parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
 import 'react-day-picker/dist/style.css';
 import '../../packages.css';
 import './package-details.css';
@@ -186,6 +186,14 @@ export default function PackageDetailsPage() {
       fetchCategory();
     }
   }, [pkg?.package_category_id]);
+
+  // Set month to earliest available date when flexible date package loads
+  useEffect(() => {
+    if (slug === 'flexible-date-packages' && pkg?.date_ranges) {
+      const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
+      setMonth(earliestMonth);
+    }
+  }, [slug, pkg?.date_ranges]);
 
   // Helper function to find the date range that contains a given date
   const findDateRangeForDate = useCallback((dateStr: string): DateRange | null => {

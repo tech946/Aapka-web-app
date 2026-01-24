@@ -545,7 +545,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   position: relative;
   border-radius: 24px 0 24px 0;
@@ -628,10 +628,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .desktop-booking-popover-content .booking-price-section {
-  padding: 16px;
-  background: linear-gradient(135deg, #fef3e2 0%, #fff7ed 100%);
-  border-radius: 14px;
-  border: 1px solid #fed7aa;
+  padding: 6px 12px;
+  border-radius: 6px;
   text-align: center;
 }
 
@@ -734,10 +732,10 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 /* Solo Traveller Block */
 .solo-traveller-block {
-  border-radius: 14px;
+  border-radius: 6px;
   border: 1px solid rgba(249, 115, 22, 0.3);
   background: linear-gradient(135deg, #fffbf5 0%, #fff7ed 50%, #fef3e2 100%);
-  padding: 14px 16px;
+  padding: 8px 12px;
   margin-bottom: 4px;
   display: flex;
   flex-direction: column;

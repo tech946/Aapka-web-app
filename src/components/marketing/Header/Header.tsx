@@ -1,15 +1,72 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ShoppingCart, Menu, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { gsap } from 'gsap';
 import './header.css';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
+  const pathname = usePathname();
+  const navRef = useRef<HTMLUListElement>(null);
+  const underlineRef = useRef<HTMLDivElement>(null);
+  const linkRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
+
+  // Animate underline on pathname change
+  useEffect(() => {
+    if (!underlineRef.current || !navRef.current) return;
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      // Check again inside setTimeout as refs might have changed
+      if (!underlineRef.current || !navRef.current) return;
+
+      const activeLink = Object.keys(linkRefs.current).find(key => {
+        if (key === pathname) return true;
+        // Handle category pages that start with the path
+        if (pathname.startsWith(key) && key !== '/') return true;
+        return false;
+      });
+
+      if (!activeLink || !linkRefs.current[activeLink]) {
+        // Hide underline if no active link
+        if (underlineRef.current) {
+          gsap.to(underlineRef.current, {
+            opacity: 0,
+            duration: 0.2,
+          });
+        }
+        return;
+      }
+
+      const activeLinkElement = linkRefs.current[activeLink];
+      if (!activeLinkElement || !navRef.current) return;
+
+      const linkRect = activeLinkElement.getBoundingClientRect();
+      const navRect = navRef.current.getBoundingClientRect();
+
+      const left = linkRect.left - navRect.left;
+      const width = linkRect.width;
+
+      // Show and animate underline
+      if (underlineRef.current) {
+        gsap.to(underlineRef.current, {
+          left: `${left}px`,
+          width: `${width}px`,
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [pathname]);
 
   return (
     <>
@@ -21,40 +78,105 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className='navbar desktop-nav'>
-            <ul>
-              <li>
-                <Link href='/' className='header-nav-link'>
+            <ul ref={navRef}>
+              <div ref={underlineRef} className='nav-underline' />
+              <li
+                ref={el => {
+                  linkRefs.current['/'] = el;
+                }}
+                className={pathname === '/' ? 'active' : ''}
+              >
+                <Link
+                  href='/'
+                  className={`header-nav-link ${
+                    pathname === '/' ? 'active' : ''
+                  }`}
+                >
                   Home
                 </Link>
               </li>
-              <li>
+              <li
+                ref={el => {
+                  linkRefs.current['/category/offer-packages'] = el;
+                }}
+                className={
+                  pathname === '/category/offer-packages' ? 'active' : ''
+                }
+              >
                 <Link
                   href='/category/offer-packages'
-                  className='header-nav-link'
+                  className={`header-nav-link ${
+                    pathname === '/category/offer-packages' ? 'active' : ''
+                  }`}
                 >
                   Offer Packages
                 </Link>
               </li>
-              <li>
-                <Link href='/category/uae-tours' className='header-nav-link'>
-                  Tours
-                </Link>
-              </li>
-              <li>
+              <li
+                ref={el => {
+                  linkRefs.current['/category/flexible-date-packages'] = el;
+                }}
+                className={`header-nav-link-with-badge ${
+                  pathname === '/category/flexible-date-packages'
+                    ? 'active'
+                    : ''
+                }`}
+              >
+                <span className='header-nav-badge'>NEW</span>
                 <Link
                   href='/category/flexible-date-packages'
-                  className='header-nav-link'
+                  className={`header-nav-link ${
+                    pathname === '/category/flexible-date-packages'
+                      ? 'active'
+                      : ''
+                  }`}
                 >
                   Flexible Date Packages
                 </Link>
               </li>
-              <li>
-                <Link href='/About' className='header-nav-link'>
+              <li
+                ref={el => {
+                  linkRefs.current['/category/uae-tours'] = el;
+                }}
+                className={pathname === '/category/uae-tours' ? 'active' : ''}
+              >
+                <Link
+                  href='/category/uae-tours'
+                  className={`header-nav-link ${
+                    pathname === '/category/uae-tours' ? 'active' : ''
+                  }`}
+                >
+                  Tours
+                </Link>
+              </li>
+
+              <li
+                ref={el => {
+                  linkRefs.current['/About'] = el;
+                }}
+                className={pathname === '/About' ? 'active' : ''}
+              >
+                <Link
+                  href='/About'
+                  className={`header-nav-link ${
+                    pathname === '/About' ? 'active' : ''
+                  }`}
+                >
                   About
                 </Link>
               </li>
-              <li>
-                <Link href='/contact' className='header-nav-link'>
+              <li
+                ref={el => {
+                  linkRefs.current['/contact'] = el;
+                }}
+                className={pathname === '/contact' ? 'active' : ''}
+              >
+                <Link
+                  href='/contact'
+                  className={`header-nav-link ${
+                    pathname === '/contact' ? 'active' : ''
+                  }`}
+                >
                   Contact Us
                 </Link>
               </li>
@@ -130,7 +252,9 @@ export default function Header() {
           <nav className='mobile-sidebar-nav'>
             <Link
               href='/'
-              className='mobile-sidebar-link'
+              className={`mobile-sidebar-link ${
+                pathname === '/' ? 'active' : ''
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Home
@@ -138,7 +262,9 @@ export default function Header() {
 
             <Link
               href='/category/offer-packages'
-              className='mobile-sidebar-link'
+              className={`mobile-sidebar-link ${
+                pathname === '/category/offer-packages' ? 'active' : ''
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Offer Packages
@@ -146,7 +272,9 @@ export default function Header() {
 
             <Link
               href='/category/uae-tours'
-              className='mobile-sidebar-link'
+              className={`mobile-sidebar-link ${
+                pathname === '/category/uae-tours' ? 'active' : ''
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Tours
@@ -154,15 +282,20 @@ export default function Header() {
 
             <Link
               href='/category/flexible-date-packages'
-              className='mobile-sidebar-link'
+              className={`mobile-sidebar-link mobile-sidebar-link-with-badge ${
+                pathname === '/category/flexible-date-packages' ? 'active' : ''
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
+              <span className='mobile-sidebar-badge'>NEW</span>
               Flexible Date Packages
             </Link>
 
             <Link
               href='/About'
-              className='mobile-sidebar-link'
+              className={`mobile-sidebar-link ${
+                pathname === '/About' ? 'active' : ''
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               About
@@ -170,7 +303,9 @@ export default function Header() {
 
             <Link
               href='/contact'
-              className='mobile-sidebar-link'
+              className={`mobile-sidebar-link ${
+                pathname === '/contact' ? 'active' : ''
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Contact Us

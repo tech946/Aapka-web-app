@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
-import { generateShortSlug, parseDateStringToLocal } from '@/lib/utils';
+import { generateShortSlug, parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
 import { usesFlexibleDatePackagesByName } from '@/lib/package-config';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import 'react-day-picker/dist/style.css';
@@ -231,6 +231,11 @@ export default function BannerSection() {
     // Reset date selection when package changes
     setSelectedDate(undefined);
     setSelectedDateString('');
+    // If this is a flexible date package, set month to earliest available date
+    if (isFlexibleDatePackage() && pkg.date_ranges) {
+      const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
+      setMonth(earliestMonth);
+    }
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -392,14 +397,20 @@ export default function BannerSection() {
                   category.category_id ||
                   (category as any).id ||
                   (category as any).categoryId;
+                const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
                 return (
                   <button
                     key={categoryId || category.name}
-                    className={`search_tab ${activeCategoryId === categoryId ? 'active' : ''}`}
+                    className={`search_tab ${activeCategoryId === categoryId ? 'active' : ''} ${
+                      isFlexibleDatePackages ? 'search_tab_with_badge' : ''
+                    }`}
                     onClick={() => {
                       handleCategoryClick(categoryId);
                     }}
                   >
+                    {isFlexibleDatePackages && (
+                      <span className='banner_tab_badge'>NEW</span>
+                    )}
                     {category.name}
                   </button>
                 );

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DayPicker } from 'react-day-picker';
 import { format, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
-import { parseDateStringToLocal } from '@/lib/utils';
+import { parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
 import 'react-day-picker/dist/style.css';
 import './flexible-date-calendar.css';
 
@@ -114,6 +114,15 @@ export default function FlexibleDateCalendar({
     return maxDate;
   }, [dateRanges]);
 
+  // Calculate min month for navigation (earliest available date month)
+  const minNavigationMonth = useMemo(() => {
+    if (!dateRanges || dateRanges.length === 0) {
+      // If no date ranges, use current month
+      return startOfMonth(new Date());
+    }
+    return getEarliestAvailableDateMonth(dateRanges);
+  }, [dateRanges]);
+
   // Calculate max month for navigation (use end_date or last date from ranges)
   const maxNavigationMonth = useMemo(() => {
     let maxDate: Date | null = null;
@@ -143,13 +152,11 @@ export default function FlexibleDateCalendar({
     return nextMonthStart <= maxNavigationMonth;
   }, [month, maxNavigationMonth]);
 
-  // Check if can navigate to previous month (not before current month)
+  // Check if can navigate to previous month (not before earliest available date month)
   const canNavigatePrev = useMemo(() => {
-    const today = new Date();
-    const currentMonthStart = startOfMonth(today);
     const prevMonthStart = startOfMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1));
-    return prevMonthStart >= currentMonthStart;
-  }, [month]);
+    return prevMonthStart >= minNavigationMonth;
+  }, [month, minNavigationMonth]);
 
   // Check if a date should be disabled
   const getDisabledDates = useCallback(
@@ -222,6 +229,24 @@ export default function FlexibleDateCalendar({
       setTooltipPosition(null);
     };
 
+    // Determine what to show below the date
+    // Priority: Sold Out > Available (price) > N/A
+    let statusDisplay: React.ReactNode = null;
+    if (dateRange && isSoldOut) {
+      // Show "Sold Out" if date is in a sold-out range
+      statusDisplay = <span className="flexible-day-soldout">Sold Out</span>;
+    } else if (dateRange && !isSoldOut && !isDisabled) {
+      // Show price if date is available and not disabled
+      statusDisplay = (
+        <span className="flexible-day-price">
+          {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
+        </span>
+      );
+    } else if (isDisabled) {
+      // Show "N/A" for dates that are disabled for other reasons (not in range, past, etc.)
+      statusDisplay = <span className="flexible-day-na">N/A</span>;
+    }
+
     return (
       <button
         {...buttonProps}
@@ -230,15 +255,7 @@ export default function FlexibleDateCalendar({
         onMouseLeave={handleMouseLeave}
       >
         <span className="flexible-day-number">{date.getDate()}</span>
-        {isDisabled ? (
-          <span className="flexible-day-na">N/A</span>
-        ) : dateRange && !isSoldOut ? (
-          <span className="flexible-day-price">
-            {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
-          </span>
-        ) : dateRange && isSoldOut ? (
-          <span className="flexible-day-soldout">Sold Out</span>
-        ) : null}
+        {statusDisplay}
       </button>
     );
   };
@@ -250,15 +267,11 @@ export default function FlexibleDateCalendar({
         <div className='flexible-calendar-header-nav'>
           <button
             className='flexible-calendar-nav-button'
-            disabled={!canNavigatePrev}
+            disabled={true}
             onClick={e => {
               e.stopPropagation();
-              if (canNavigatePrev) {
-                const newMonth = new Date(month);
-                newMonth.setMonth(newMonth.getMonth() - 1);
-                onMonthChange(newMonth);
-              }
             }}
+            style={{ opacity: 0.3, cursor: 'not-allowed' }}
           >
             ‹
           </button>
@@ -273,6 +286,7 @@ export default function FlexibleDateCalendar({
                 onMonthChange(newMonth);
               }
             }}
+            style={{ opacity: canNavigateNext ? 1 : 0.3, cursor: canNavigateNext ? 'pointer' : 'not-allowed' }}
           >
             ›
           </button>
@@ -286,6 +300,8 @@ export default function FlexibleDateCalendar({
           showOutsideDays={true}
           month={month}
           onMonthChange={onMonthChange}
+          fromMonth={minNavigationMonth}
+          toMonth={maxNavigationMonth || undefined}
           className='flexible-date-calendar'
           modifiersClassNames={{
             disabled: 'rdp-day_unavailable',
@@ -352,7 +368,7 @@ export default function FlexibleDateCalendar({
         showOutsideDays={true}
         month={month}
         onMonthChange={onMonthChange}
-        fromMonth={startOfMonth(new Date())}
+        fromMonth={minNavigationMonth}
         toMonth={maxNavigationMonth || undefined}
         className='flexible-date-calendar'
         components={{

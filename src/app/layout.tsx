@@ -8,6 +8,7 @@ import 'antd/dist/reset.css';
 import ConditionalHeader from '@/components/marketing/Header/ConditionalHeader';
 import ConditionalFooter from '@/components/marketing/Footer/ConditionalFooter';
 import ConditionalWhatsAppButton from '@/components/marketing/WhatsAppButton/ConditionalWhatsAppButton';
+import GTMPageViewTracker from '@/components/GTMPageViewTracker';
 import { CartProvider } from '@/context/CartContext';
 
 const poppins = Poppins({
@@ -53,6 +54,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <CartProvider>
+          <GTMPageViewTracker />
           <ConditionalHeader />
           <Toaster position='top-right' /> {/* Required */}
           {children}

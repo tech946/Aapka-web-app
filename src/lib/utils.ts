@@ -132,3 +132,65 @@ export function generateShortSlug(
 
   return fullSlug;
 }
+
+/**
+ * Gets the earliest available date month from date ranges for flexible date packages.
+ * Considers the 6-day minimum booking rule and returns the month that should be shown first.
+ * 
+ * @param dateRanges - Array of date ranges with fromDate and toDate
+ * @returns Date object representing the first month with available dates, or current month if no ranges
+ */
+export function getEarliestAvailableDateMonth(
+  dateRanges?: Array<{ fromDate: string; toDate: string; isSoldOut?: boolean }> | null
+): Date {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const sixDaysFromNow = new Date(today);
+  sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
+
+  // If no date ranges, return current month
+  if (!dateRanges || dateRanges.length === 0) {
+    return new Date();
+  }
+
+  let earliestDate: Date | null = null;
+
+  // Find the earliest fromDate from all non-sold-out ranges
+  // Only consider dates that are at least 6 days from today
+  for (const range of dateRanges) {
+    if (range.isSoldOut) continue; // Skip sold out ranges
+    
+    const fromDate = parseDateStringToLocal(range.fromDate);
+    if (!fromDate) continue;
+    
+    fromDate.setHours(0, 0, 0, 0);
+    
+    // Only consider dates that are at least 6 days from today
+    // If the range starts before the 6-day window, check if the range extends beyond it
+    if (fromDate <= sixDaysFromNow) {
+      // Check if the range extends beyond the 6-day window
+      const toDate = parseDateStringToLocal(range.toDate);
+      if (toDate && toDate > sixDaysFromNow) {
+        // Range extends beyond 6 days, so the first available date is 6 days from now
+        const availableFromDate = sixDaysFromNow;
+        if (!earliestDate || availableFromDate < earliestDate) {
+          earliestDate = availableFromDate;
+        }
+      }
+      // If range doesn't extend beyond 6 days, skip it
+    } else {
+      // Range starts after 6 days, so use the fromDate
+      if (!earliestDate || fromDate < earliestDate) {
+        earliestDate = fromDate;
+      }
+    }
+  }
+
+  // If we found an earliest date, return its month (first day of that month)
+  if (earliestDate) {
+    return new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+  }
+
+  // Fallback to current month
+  return new Date();
+}
