@@ -36,6 +36,47 @@ export default function ContactQueriesClient() {
     [total, limit]
   );
 
+  // Generate page numbers with ellipses
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 7; // Show max 7 page numbers
+
+    if (totalPages <= maxVisible) {
+      // Show all pages if total is less than max visible
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (page <= 4) {
+        // Near the start: 1 2 3 4 5 ... last
+        for (let i = 2; i <= 5; i++) {
+          pages.push(i);
+        }
+        pages.push('ellipsis');
+        pages.push(totalPages);
+      } else if (page >= totalPages - 3) {
+        // Near the end: 1 ... (last-4) (last-3) (last-2) (last-1) last
+        pages.push('ellipsis');
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // In the middle: 1 ... (page-1) page (page+1) ... last
+        pages.push('ellipsis');
+        pages.push(page - 1);
+        pages.push(page);
+        pages.push(page + 1);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
@@ -210,27 +251,60 @@ export default function ContactQueriesClient() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className='pagination'>
+      <div className='table_pagination'>
+        <div className='pagination_info'>
+          Page {page} of {totalPages} • {total} total
+        </div>
+        <div className='pagination_controls'>
           <button
+            disabled={page <= 1}
             onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className='pagination_button'
           >
             Previous
           </button>
-          <span className='pagination_info'>
-            Page {page} of {totalPages} ({total} total)
-          </span>
+          <div className='pagination_numbers'>
+            {getPageNumbers().map((pageNum, idx) => {
+              if (pageNum === 'ellipsis') {
+                return (
+                  <span key={`ellipsis-${idx}`} className='pagination_ellipsis'>
+                    ...
+                  </span>
+                );
+              }
+              const pageNumber = pageNum as number;
+              return (
+                <button
+                  key={pageNumber}
+                  onClick={() => setPage(pageNumber)}
+                  className={`pagination_number ${
+                    page === pageNumber ? 'active' : ''
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+          </div>
           <button
+            disabled={page >= totalPages}
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className='pagination_button'
           >
             Next
           </button>
+          <select
+            value={limit}
+            onChange={e => {
+              setPage(1);
+              setLimit(parseInt(e.target.value, 10));
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
         </div>
-      )}
+      </div>
 
       {/* Details Modal */}
       {modalOpen && selectedQuery && (
