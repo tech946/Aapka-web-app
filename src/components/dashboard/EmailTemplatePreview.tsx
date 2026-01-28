@@ -15,8 +15,8 @@ export function EmailTemplatePreview() {
     bookingId: 'BK-2024-001234',
     customerName: 'John Doe',
     customerEmail: 'john.doe@example.com',
-    customerPhone: '+971 50 123 4567',
-    customerWhatsApp: '+971 50 123 4567',
+    customerPhone: '+971567809460',
+    customerWhatsApp: '+971567809460',
     bookingDate: new Date().toISOString(),
     packages: [
       {
@@ -55,8 +55,8 @@ export function EmailTemplatePreview() {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
-        phone: '+971 50 123 4567',
-        whatsapp: '+971 50 123 4567',
+        phone: '+971567809460',
+        whatsapp: '+971567809460',
         country: 'UAE',
         pickupLocation: 'Dubai Marina Hotel',
         permanentAddress: '123 Main Street, Dubai, UAE',

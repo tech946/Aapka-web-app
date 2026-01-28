@@ -189,7 +189,7 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <a href='tel:+971501234567' className='header-call-button'>
+                <a href='tel:+971567809460' className='header-call-button'>
                   Call Us
                 </a>
               </li>
@@ -327,7 +327,7 @@ export default function Header() {
           {/* Sidebar Action Buttons */}
           <div className='mobile-sidebar-actions'>
             <a
-              href='tel:+971501234567'
+              href='tel:+971567809460'
               className='mobile-sidebar-button mobile-sidebar-button-secondary'
               onClick={() => setIsMobileMenuOpen(false)}
             >

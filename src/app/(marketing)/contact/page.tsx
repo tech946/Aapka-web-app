@@ -115,9 +115,9 @@ export default function ContactPage() {
               <Mail size={20} />
               <span>Contact sales</span>
             </a>
-            <a href='tel:+971501234567' className='contact-option'>
+            <a href='tel:+971567809460' className='contact-option'>
               <Phone size={20} />
-              <span>+971 50 123 4567</span>
+              <span>+971567809460</span>
             </a>
             <a
               href='https://maps.google.com/?q=Office+%2310118%2C+CBD+Bank+Building%2C+Near+Sharaf+DG+Metro+Exit+1%2C+Al+Mankhool%2C+Bur+Dubai%2C+UAE'
