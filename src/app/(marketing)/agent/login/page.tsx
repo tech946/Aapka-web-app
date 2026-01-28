@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { Suspense, useState, FormEvent, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Shield, Users, Star, Lock } from 'lucide-react';
@@ -9,7 +9,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Image from 'next/image';
 import './auth.css';
 
-export default function AgentLoginPage() {
+function AgentLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -136,7 +136,6 @@ export default function AgentLoginPage() {
           <span>Exclusive access for subscribed agents only</span>
         </div>
 
-
         {/* Agent Benefits Preview */}
         <div className='agent-benefits-preview'>
           <div className='benefit-item'>
@@ -152,6 +151,7 @@ export default function AgentLoginPage() {
             <span>Agent Dashboard</span>
           </div>
         </div>
+
         {/* Form */}
         <form onSubmit={handleSubmit} className='auth-form'>
           {error && <div className='auth-error'>{error}</div>}
@@ -205,9 +205,16 @@ export default function AgentLoginPage() {
               Become an Agent
             </Link>
           </p>
-        
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AgentLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AgentLoginContent />
+    </Suspense>
   );
 }
