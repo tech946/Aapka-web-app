@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { FileText, User, Calendar } from 'lucide-react';
 import './dashboard.css';
 
 interface Subscription {
@@ -25,13 +26,17 @@ interface Agent {
   full_name: string;
   resident_country: string;
   mobile_number: string;
+  document_image_url: string | null;
   is_active: boolean;
   created_at: string;
 }
 
+type TabType = 'invoice' | 'personal' | 'bookings';
+
 export default function AgentDashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('invoice');
   const [agent, setAgent] = useState<Agent | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
@@ -111,155 +116,163 @@ export default function AgentDashboardPage() {
           </button>
         </div>
 
-        <div className='dashboard-content'>
-          {/* Agent Information Card */}
-          <div className='dashboard-card'>
-            <h2 className='card-title'>Agent Information</h2>
-            <div className='info-grid'>
-              <div className='info-item'>
-                <label className='info-label'>Full Name</label>
-                <p className='info-value'>{agent?.full_name || 'N/A'}</p>
-              </div>
-              <div className='info-item'>
-                <label className='info-label'>Email</label>
-                <p className='info-value'>{agent?.email || 'N/A'}</p>
-              </div>
-              <div className='info-item'>
-                <label className='info-label'>Mobile Number</label>
-                <p className='info-value'>{agent?.mobile_number || 'N/A'}</p>
-              </div>
-              <div className='info-item'>
-                <label className='info-label'>Resident Country</label>
-                <p className='info-value'>{agent?.resident_country || 'N/A'}</p>
-              </div>
-              <div className='info-item'>
-                <label className='info-label'>Status</label>
-                <p className={`info-value status ${agent?.is_active ? 'active' : 'inactive'}`}>
-                  {agent?.is_active ? 'Active' : 'Inactive'}
-                </p>
-              </div>
-              <div className='info-item'>
-                <label className='info-label'>Member Since</label>
-                <p className='info-value'>
-                  {agent?.created_at
-                    ? format(new Date(agent.created_at), 'MMM dd, yyyy')
-                    : 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className='agent-dashboard-layout'>
+          {/* Sidebar */}
+          <aside className='agent-dashboard-sidebar'>
+            <nav className='sidebar-nav'>
+              <button
+                className={`sidebar-nav-item ${activeTab === 'invoice' ? 'active' : ''}`}
+                onClick={() => setActiveTab('invoice')}
+              >
+                <FileText size={20} />
+                <span>Invoice</span>
+              </button>
+              <button
+                className={`sidebar-nav-item ${activeTab === 'personal' ? 'active' : ''}`}
+                onClick={() => setActiveTab('personal')}
+              >
+                <User size={20} />
+                <span>Personal Info</span>
+              </button>
+              <button
+                className={`sidebar-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('bookings')}
+              >
+                <Calendar size={20} />
+                <span>My Booking</span>
+              </button>
+            </nav>
+          </aside>
 
-          {/* Subscription Information Card */}
-          {subscription && (
-            <div className='dashboard-card'>
-              <h2 className='card-title'>Subscription Details</h2>
-              <div className='info-grid'>
-                <div className='info-item'>
-                  <label className='info-label'>Subscription Status</label>
-                  <p className={`info-value status ${subscription.is_active ? 'active' : 'inactive'}`}>
-                    {subscription.is_active ? 'Active' : 'Inactive'}
-                  </p>
-                </div>
-                <div className='info-item'>
-                  <label className='info-label'>Payment Status</label>
-                  <p className={`info-value status ${subscription.payment_status === 'completed' ? 'active' : 'pending'}`}>
-                    {subscription.payment_status === 'completed' ? 'Completed' : 'Pending'}
-                  </p>
-                </div>
-                <div className='info-item'>
-                  <label className='info-label'>Amount Paid</label>
-                  <p className='info-value'>
-                    {subscription.amount_paid} {subscription.currency}
-                  </p>
-                </div>
-                <div className='info-item'>
-                  <label className='info-label'>Expiry Date</label>
-                  <p className='info-value'>
-                    {format(new Date(subscription.end_date), 'MMM dd, yyyy')}
-                  </p>
-                </div>
-                <div className='info-item'>
-                  <label className='info-label'>Transaction ID</label>
-                  <p className='info-value'>
-                    {subscription.payment_transaction_id || 'N/A'}
-                  </p>
-                </div>
-                <div className='info-item'>
-                  <label className='info-label'>Payment Gateway</label>
-                  <p className='info-value'>
-                    {subscription.payment_gateway?.toUpperCase() || 'N/A'}
-                  </p>
-                </div>
-                <div className='info-item'>
-                  <label className='info-label'>Subscription Date</label>
-                  <p className='info-value'>
-                    {format(new Date(subscription.created_at), 'MMM dd, yyyy')}
-                  </p>
-                </div>
+          {/* Main Content */}
+          <main className='agent-dashboard-main'>
+            {activeTab === 'invoice' && subscription && (
+              <div className='dashboard-card'>
+                <h2 className='card-title'>Invoice Details</h2>
+                {subscription.payment_status === 'completed' ? (
+                  <div className='invoice-details'>
+                    <div className='invoice-header'>
+                      <div>
+                        <p className='invoice-label'>Invoice Number</p>
+                        <p className='invoice-value'>
+                          INV-{subscription.id.slice(0, 8).toUpperCase()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className='invoice-label'>Date</p>
+                        <p className='invoice-value'>
+                          {format(new Date(subscription.created_at), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='invoice-body'>
+                      <table className='invoice-table'>
+                        <thead>
+                          <tr>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Agent Premium Subscription (1 Year)</td>
+                            <td>1</td>
+                            <td>
+                              {subscription.amount_paid} {subscription.currency}
+                            </td>
+                          </tr>
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan={2} className='invoice-total-label'>
+                              Total
+                            </td>
+                            <td className='invoice-total-amount'>
+                              {subscription.amount_paid} {subscription.currency}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                    <div className='invoice-footer'>
+                      <p className='invoice-note'>
+                        Payment Method: {subscription.payment_gateway?.toUpperCase() || 'N/A'}
+                      </p>
+                      <p className='invoice-note'>
+                        Transaction ID: {subscription.payment_transaction_id || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className='invoice-pending'>Payment is pending. Invoice will be available after payment completion.</p>
+                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Invoice Information Card */}
-          {subscription && subscription.payment_status === 'completed' && (
-            <div className='dashboard-card'>
-              <h2 className='card-title'>Invoice Details</h2>
-              <div className='invoice-details'>
-                <div className='invoice-header'>
-                  <div>
-                    <p className='invoice-label'>Invoice Number</p>
-                    <p className='invoice-value'>
-                      INV-{subscription.id.slice(0, 8).toUpperCase()}
+            {activeTab === 'personal' && (
+              <div className='dashboard-card'>
+                <h2 className='card-title'>Personal Information</h2>
+                <div className='info-grid'>
+                  <div className='info-item'>
+                    <label className='info-label'>Full Name</label>
+                    <p className='info-value'>{agent?.full_name || 'N/A'}</p>
+                  </div>
+                  <div className='info-item'>
+                    <label className='info-label'>Email</label>
+                    <p className='info-value'>{agent?.email || 'N/A'}</p>
+                  </div>
+                  <div className='info-item'>
+                    <label className='info-label'>Mobile Number</label>
+                    <p className='info-value'>{agent?.mobile_number || 'N/A'}</p>
+                  </div>
+                  <div className='info-item'>
+                    <label className='info-label'>Resident Country</label>
+                    <p className='info-value'>{agent?.resident_country || 'N/A'}</p>
+                  </div>
+                  <div className='info-item'>
+                    <label className='info-label'>Status</label>
+                    <p className={`info-value status ${agent?.is_active ? 'active' : 'inactive'}`}>
+                      {agent?.is_active ? 'Active' : 'Inactive'}
                     </p>
                   </div>
-                  <div>
-                    <p className='invoice-label'>Date</p>
-                    <p className='invoice-value'>
-                      {format(new Date(subscription.created_at), 'MMM dd, yyyy')}
+                  <div className='info-item'>
+                    <label className='info-label'>Member Since</label>
+                    <p className='info-value'>
+                      {agent?.created_at
+                        ? format(new Date(agent.created_at), 'MMM dd, yyyy')
+                        : 'N/A'}
                     </p>
                   </div>
-                </div>
-                <div className='invoice-body'>
-                  <table className='invoice-table'>
-                    <thead>
-                      <tr>
-                        <th>Description</th>
-                        <th>Quantity</th>
-                        <th>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Agent Premium Subscription (1 Year)</td>
-                        <td>1</td>
-                        <td>
-                          {subscription.amount_paid} {subscription.currency}
-                        </td>
-                      </tr>
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <td colSpan={2} className='invoice-total-label'>
-                          Total
-                        </td>
-                        <td className='invoice-total-amount'>
-                          {subscription.amount_paid} {subscription.currency}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-                <div className='invoice-footer'>
-                  <p className='invoice-note'>
-                    Payment Method: {subscription.payment_gateway?.toUpperCase() || 'N/A'}
-                  </p>
-                  <p className='invoice-note'>
-                    Transaction ID: {subscription.payment_transaction_id || 'N/A'}
-                  </p>
+                  {subscription && (
+                    <>
+                      <div className='info-item'>
+                        <label className='info-label'>Subscription Status</label>
+                        <p className={`info-value status ${subscription.is_active ? 'active' : 'inactive'}`}>
+                          {subscription.is_active ? 'Active' : 'Inactive'}
+                        </p>
+                      </div>
+                      <div className='info-item'>
+                        <label className='info-label'>Expiry Date</label>
+                        <p className='info-value'>
+                          {format(new Date(subscription.end_date), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {activeTab === 'bookings' && (
+              <div className='dashboard-card'>
+                <h2 className='card-title'>My Bookings</h2>
+                <div className='bookings-empty'>
+                  <p>No bookings yet. Your bookings will appear here.</p>
+                </div>
+              </div>
+            )}
+          </main>
         </div>
       </div>
     </div>

@@ -2,19 +2,27 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Plus, Settings, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { gsap } from 'gsap';
 import './header.css';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isAgent, setIsAgent] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
   const pathname = usePathname();
+  const router = useRouter();
   const navRef = useRef<HTMLUListElement>(null);
   const underlineRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
   // Animate underline on pathname change
@@ -67,6 +75,90 @@ export default function Header() {
 
     return () => clearTimeout(timer);
   }, [pathname]);
+
+  // Check agent status and login status
+  useEffect(() => {
+    const checkAgentStatus = async () => {
+      try {
+        const supabase = createClientComponentClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          setIsLoggedIn(true);
+          setUserEmail(session.user.email || '');
+          
+          // Get user name from metadata or email
+          const name = session.user.user_metadata?.full_name || 
+                      session.user.user_metadata?.name ||
+                      session.user.email?.split('@')[0] || 
+                      'User';
+          setUserName(name);
+          
+          // Check if user is an agent
+          const response = await fetch('/api/agent-subscription/check-agent-status');
+          const data = await response.json();
+          setIsAgent(data.hasActiveSubscription || false);
+        } else {
+          setIsLoggedIn(false);
+          setIsAgent(false);
+          setUserName('');
+          setUserEmail('');
+        }
+      } catch (error) {
+        console.error('Error checking agent status:', error);
+        setIsLoggedIn(false);
+        setIsAgent(false);
+        setUserName('');
+        setUserEmail('');
+      }
+    };
+
+    checkAgentStatus();
+    
+    // Listen for auth state changes
+    const supabase = createClientComponentClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAgentStatus();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    if (showUserDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClientComponentClient();
+      await supabase.auth.signOut();
+      setIsLoggedIn(false);
+      setIsAgent(false);
+      setShowUserDropdown(false);
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <>
@@ -188,10 +280,103 @@ export default function Header() {
                   )}
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <a href='tel:+971567809460' className='header-call-button'>
                   Call Us
                 </a>
+              </li> */}
+              <li>
+                <div className='header-user-dropdown' ref={userDropdownRef}>
+                  <button
+                    className='header-user-button'
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    aria-label='User menu'
+                  >
+                    {isLoggedIn && userName ? (
+                      <div className='header-user-avatar-wrapper'>
+                        <div className='header-user-avatar'>
+                          {userName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className='header-user-status-dot'></span>
+                      </div>
+                    ) : (
+                      <User size={20} />
+                    )}
+                  </button>
+                  {showUserDropdown && (
+                    <div className='header-user-dropdown-menu'>
+                      {!isLoggedIn ? (
+                        <>
+                          <Link
+                            href='/agent/login'
+                            className='header-user-dropdown-item'
+                            onClick={() => setShowUserDropdown(false)}
+                          >
+                            <span>Login</span>
+                          </Link>
+                          <Link
+                            href='/become-agent'
+                            className='header-user-dropdown-item'
+                            onClick={() => setShowUserDropdown(false)}
+                          >
+                            <span>Become an Agent</span>
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          {/* User Info Header - Highlighted */}
+                          <div className='header-user-dropdown-header-active'>
+                            <div className='header-user-dropdown-icon-square'>
+                              {userName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className='header-user-dropdown-user-info'>
+                              <div className='header-user-dropdown-name'>{userName}</div>
+                            </div>
+                            <span className='header-user-dropdown-notification-dot'></span>
+                          </div>
+                          
+                          {/* Menu Items */}
+                          {isAgent && (
+                            <Link
+                              href='/agent/dashboard'
+                              className='header-user-dropdown-item'
+                              onClick={() => setShowUserDropdown(false)}
+                            >
+                              <LayoutDashboard size={16} className='header-user-dropdown-item-icon' />
+                              <span>Dashboard</span>
+                            </Link>
+                          )}
+                          <Link
+                            href='/become-agent'
+                            className='header-user-dropdown-item'
+                            onClick={() => setShowUserDropdown(false)}
+                          >
+                            <Plus size={16} className='header-user-dropdown-item-icon' />
+                            <span>Become an Agent</span>
+                          </Link>
+                          <Link
+                            href='#'
+                            className='header-user-dropdown-item'
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setShowUserDropdown(false);
+                            }}
+                          >
+                            <Settings size={16} className='header-user-dropdown-item-icon' />
+                            <span>Settings</span>
+                          </Link>
+                          <button
+                            className='header-user-dropdown-item header-user-dropdown-item-logout'
+                            onClick={handleLogout}
+                          >
+                            <span>Sign Out</span>
+                            <ChevronRight size={16} className='header-user-dropdown-chevron' />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </li>
             </ul>
           </div>

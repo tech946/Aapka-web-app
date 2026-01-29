@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
       isAgent: true,
       hasActiveSubscription: isActive,
       agentId: agent.id,
-      subscriptionId: activeSubscription.id,
+      subscriptionId: subscription.id,
     });
   } catch (error: any) {
     console.error('Error checking agent status:', error);

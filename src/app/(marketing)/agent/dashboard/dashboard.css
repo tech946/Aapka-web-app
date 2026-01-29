@@ -209,6 +209,82 @@
   margin: 0.5rem 0;
 }
 
+/* Dashboard Layout with Sidebar */
+.agent-dashboard-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.agent-dashboard-sidebar {
+  flex-shrink: 0;
+  width: 250px;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 2rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  font-family: Calibre, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  background: #f9fafb;
+  color: #fd6b06;
+}
+
+.sidebar-nav-item.active {
+  background: rgba(253, 107, 6, 0.1);
+  color: #fd6b06;
+  font-weight: 600;
+}
+
+.sidebar-nav-item svg {
+  flex-shrink: 0;
+}
+
+.agent-dashboard-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.invoice-pending {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.bookings-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
 @media (max-width: 768px) {
   .agent-dashboard-page {
     padding: 1rem 0;
@@ -222,6 +298,27 @@
 
   .dashboard-title {
     font-size: 2rem;
+  }
+
+  .agent-dashboard-layout {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .agent-dashboard-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .sidebar-nav-item {
+    white-space: nowrap;
+    min-width: fit-content;
   }
 
   .dashboard-card {
