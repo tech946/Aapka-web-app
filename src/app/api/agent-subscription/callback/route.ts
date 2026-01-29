@@ -230,15 +230,19 @@ async function handleCallback(req: NextRequest) {
       // Continue anyway - user can still login
     }
 
-    // Update profile status to active
+    // Update profile (only update fields that exist in the schema)
+    // Note: account_details column may not exist, so we'll just update basic fields
     const { error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
       .update({
-        account_details: {
-          phone: userDetails.mobileNumber,
-          country: userDetails.residentCountry,
-          status: 'active',
-        },
+        email_address: userDetails.email,
+        full_name: userDetails.fullName,
+        // Only update account_details if column exists (will be ignored if it doesn't)
+        // account_details: {
+        //   phone: userDetails.mobileNumber,
+        //   country: userDetails.residentCountry,
+        //   status: 'active',
+        // },
       })
       .eq('id', userId);
 

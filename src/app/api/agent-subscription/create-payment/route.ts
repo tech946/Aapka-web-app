@@ -106,17 +106,13 @@ export async function POST(req: NextRequest) {
     console.log('[CREATE PAYMENT] User account created successfully:', userId);
 
     // Create profile for the user (inactive/pending)
+    // Note: profiles table structure - only insert fields that exist
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
         id: userId,
         email_address: email,
         full_name: fullName,
-        account_details: {
-          phone: mobileNumber,
-          country: residentCountry,
-          status: 'pending_payment',
-        },
       });
 
     if (profileError) {
