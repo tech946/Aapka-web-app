@@ -129,19 +129,37 @@ async function handleCallback(req: NextRequest) {
     };
 
     try {
+      if (!encodedUserDetails || encodedUserDetails.trim() === '') {
+        console.error('[AGENT CALLBACK] Empty encodedUserDetails in merchant_param3');
+        return NextResponse.redirect(
+          new URL('/become-agent/subscribe?error=invalid_payment_data&reason=missing_user_data', req.nextUrl.origin),
+          { status: 303 }
+        );
+      }
+      
+      console.log('[AGENT CALLBACK] Encoded user details length:', encodedUserDetails.length);
       const decoded = Buffer.from(encodedUserDetails, 'base64').toString('utf-8');
+      console.log('[AGENT CALLBACK] Decoded user details:', decoded);
       userDetails = JSON.parse(decoded);
-    } catch (decodeError) {
-      console.error('Error decoding user details:', decodeError);
+      console.log('[AGENT CALLBACK] Parsed user details:', userDetails);
+    } catch (decodeError: any) {
+      console.error('[AGENT CALLBACK] Error decoding user details:', decodeError);
+      console.error('[AGENT CALLBACK] Encoded value received:', encodedUserDetails?.substring(0, 100));
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=invalid_payment_data', req.nextUrl.origin),
+        new URL('/become-agent/subscribe?error=invalid_payment_data&reason=decode_failed', req.nextUrl.origin),
         { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
     // Verify user details are present
     if (!userDetails.email || !userDetails.fullName || !userDetails.residentCountry || !userDetails.mobileNumber) {
-      console.error('Missing user details in payment callback');
+      console.error('[AGENT CALLBACK] Missing user details in payment callback:', {
+        hasEmail: !!userDetails.email,
+        hasFullName: !!userDetails.fullName,
+        hasResidentCountry: !!userDetails.residentCountry,
+        hasMobileNumber: !!userDetails.mobileNumber,
+        userDetails,
+      });
       return NextResponse.redirect(
         new URL('/become-agent/subscribe?error=missing_user_data', req.nextUrl.origin),
         { status: 303 } // Use 303 See Other to force GET redirect
@@ -185,12 +203,15 @@ async function handleCallback(req: NextRequest) {
       .single();
 
     if (subscriptionError || !subscription) {
-      console.error('Error creating subscription:', subscriptionError);
+      console.error('[AGENT CALLBACK] Error creating subscription:', subscriptionError);
+      console.error('[AGENT CALLBACK] Subscription error details:', JSON.stringify(subscriptionError, null, 2));
       return NextResponse.redirect(
         new URL('/become-agent/subscribe?error=subscription_creation_failed', req.nextUrl.origin),
         { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
+    
+    console.log('[AGENT CALLBACK] Subscription created successfully:', subscription.id);
 
     // Create user account in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -204,7 +225,8 @@ async function handleCallback(req: NextRequest) {
     });
 
     if (authError || !authData.user) {
-      console.error('Error creating user account:', authError);
+      console.error('[AGENT CALLBACK] Error creating user account:', authError);
+      console.error('[AGENT CALLBACK] Auth error details:', JSON.stringify(authError, null, 2));
       // Rollback subscription if user creation fails
       await supabaseAdmin
         .from('subscriptions')
@@ -218,6 +240,7 @@ async function handleCallback(req: NextRequest) {
     }
 
     const userId = authData.user.id;
+    console.log('[AGENT CALLBACK] User account created successfully:', userId);
 
     // Create user profile
     const { error: profileError } = await supabaseAdmin
@@ -267,7 +290,8 @@ async function handleCallback(req: NextRequest) {
       .single();
 
     if (agentError || !agent) {
-      console.error('Error creating agent:', agentError);
+      console.error('[AGENT CALLBACK] Error creating agent:', agentError);
+      console.error('[AGENT CALLBACK] Agent error details:', JSON.stringify(agentError, null, 2));
       // Rollback subscription and user if agent creation fails
       await supabaseAdmin
         .from('subscriptions')
@@ -280,6 +304,9 @@ async function handleCallback(req: NextRequest) {
         { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
+
+    console.log('[AGENT CALLBACK] Agent created successfully:', agent.id);
+    console.log('[AGENT CALLBACK] All records created successfully. Redirecting to login...');
 
     // Redirect to login page with success message
     return NextResponse.redirect(

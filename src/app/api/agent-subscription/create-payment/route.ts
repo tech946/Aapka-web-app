@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // DO NOT create subscription or agent records yet
     // Only create them AFTER payment is successful in the callback
     // Store user details in merchant params to retrieve after payment
-    const subscriptionAmount = 0.01;
+    const subscriptionAmount = 110.00; // Correct amount: 110 AED
     const currency = 'AED';
 
     // CCAvenue credentials
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       // Merchant parameters to identify agent subscription
       merchant_param1: orderId, // Order ID for tracking
       merchant_param2: 'agent_subscription', // Payment type identifier
-      merchant_param3: encodedUserDetails.substring(0, 100), // Encoded user details (will create records after payment)
+      merchant_param3: encodedUserDetails, // Encoded user details (will create records after payment) - DO NOT truncate
     };
 
     // Create encrypted data
