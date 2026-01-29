@@ -59,7 +59,7 @@ function AgentLoginContent() {
       const statusData = await statusResponse.json();
 
       if (!statusData.hasSubscription || !statusData.isActive) {
-        throw new Error('You do not have an active agent subscription. Please subscribe first.');
+        throw new Error('You do not have an active partner subscription. Please subscribe first.');
       }
 
       // Try to login
@@ -115,7 +115,7 @@ function AgentLoginContent() {
         {/* Agent Portal Badge */}
         <div className='agent-portal-badge'>
           <Shield size={20} className='agent-badge-icon' />
-          <span>AGENT PORTAL</span>
+          <span>AAPKA PARTNER PORTAL</span>
         </div>
 
         {/* Logo */}
@@ -130,13 +130,13 @@ function AgentLoginContent() {
           </div>
         </div>
 
-        {/* Agent Only Notice */}
+        {/* Partner Only Notice */}
         <div className='agent-exclusive-notice'>
           <Lock size={16} />
-          <span>Exclusive access for subscribed agents only</span>
+          <span>Exclusive access for subscribed partners only</span>
         </div>
 
-        {/* Agent Benefits Preview */}
+        {/* Partner Benefits Preview */}
         <div className='agent-benefits-preview'>
           <div className='benefit-item'>
             <Star size={14} />
@@ -148,7 +148,7 @@ function AgentLoginContent() {
           </div>
           <div className='benefit-item'>
             <Star size={14} />
-            <span>Agent Dashboard</span>
+            <span>Partner Dashboard</span>
           </div>
         </div>
 
@@ -200,9 +200,9 @@ function AgentLoginContent() {
 
           {/* Footer */}
           <p className='auth-footer'>
-            Don't have an agent account?{' '}
+            Don't have an partner account?{' '}
             <Link href='/become-agent' className='auth-footer-link'>
-              Become an Agent
+              Become a Aapka Partner
             </Link>
           </p>
         </form>

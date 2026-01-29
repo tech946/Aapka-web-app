@@ -334,11 +334,11 @@ export default function Header() {
                             <span>Login</span>
                           </Link>
                           <Link
-                            href='/become-agent'
+                            href='/become-partner'
                             className='header-user-dropdown-item'
                             onClick={() => setShowUserDropdown(false)}
                           >
-                            <span>Become an Agent</span>
+                            <span>Become a Aapka Partner</span>
                           </Link>
                         </>
                       ) : (
@@ -366,12 +366,12 @@ export default function Header() {
                             </Link>
                           )}
                           <Link
-                            href='/become-agent'
+                            href='/become-partner'
                             className='header-user-dropdown-item'
                             onClick={() => setShowUserDropdown(false)}
                           >
                             <Plus size={16} className='header-user-dropdown-item-icon' />
-                            <span>Become an Agent</span>
+                            <span>Become a Aapka Partner</span>
                           </Link>
                           <Link
                             href='#'

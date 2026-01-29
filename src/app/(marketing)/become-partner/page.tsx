@@ -13,9 +13,9 @@ export default function BecomeAgentPage() {
   };
 
   const features = [
-    { icon: TrendingUp, text: 'Access to exclusive agent discounts on all packages' },
+    { icon: TrendingUp, text: 'Access to exclusive partner discounts on all packages' },
     { icon: Zap, text: 'Priority customer support' },
-    { icon: Shield, text: 'Dedicated agent dashboard' },
+    { icon: Shield, text: 'Dedicated partner dashboard' },
     { icon: Users, text: 'Real-time booking management' },
     { icon: Award, text: 'Commission tracking and invoicing' },
     { icon: Star, text: 'Marketing materials and resources' },
@@ -35,7 +35,7 @@ export default function BecomeAgentPage() {
             Become AAPKA <span className='title-highlight'>Partner</span>
           </h1>
           <p className='become-agent-subtitle'>
-            Join our network of travel agents and unlock exclusive benefits
+            Join our network of Aapka travel partners and unlock exclusive benefits
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export default function BecomeAgentPage() {
             <div className='pricing-card-header'>
               <div className='pricing-card-title-wrapper'>
                 <Shield size={24} className='title-icon' />
-                <h2 className='pricing-card-title'>Agent Premium</h2>
+                <h2 className='pricing-card-title'>Aapka Partner Premium</h2>
               </div>
               <div className='pricing-card-price'>
                 <span className='price-amount'>110</span>
@@ -58,7 +58,7 @@ export default function BecomeAgentPage() {
               </div>
               <p className='pricing-card-period'>per year</p>
               <div className='price-savings'>
-                <span>Best value for travel professionals</span>
+                <span>Best value for Aapka travel partners</span>
               </div>
             </div>
 
