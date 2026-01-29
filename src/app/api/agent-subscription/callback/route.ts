@@ -17,11 +17,18 @@ export async function GET(req: NextRequest) {
 
 async function handleCallback(req: NextRequest) {
   try {
+    console.log('📥 [AGENT CALLBACK] Received callback:', {
+      method: req.method,
+      url: req.nextUrl.toString(),
+    });
+
     let encryptedResponse = '';
 
     if (req.method === 'POST') {
       try {
         const bodyText = await req.text();
+        console.log('[AGENT CALLBACK] POST body (first 200 chars):', bodyText.substring(0, 200));
+        
         const params = new URLSearchParams(bodyText);
         encryptedResponse = params.get('encResp') || '';
 
@@ -31,17 +38,22 @@ async function handleCallback(req: NextRequest) {
             encryptedResponse = decodeURIComponent(match[1]);
           }
         }
-      } catch (e) {
-        // Error parsing POST data
+        
+        console.log('[AGENT CALLBACK] Extracted encResp length:', encryptedResponse?.length || 0);
+      } catch (e: any) {
+        console.error('[AGENT CALLBACK] Error parsing POST data:', e);
       }
     } else {
       const searchParams = req.nextUrl.searchParams;
       encryptedResponse = searchParams.get('encResp') || '';
+      console.log('[AGENT CALLBACK] GET encResp length:', encryptedResponse?.length || 0);
     }
 
     if (!encryptedResponse) {
+      console.error('[AGENT CALLBACK] No encrypted response found');
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=payment_failed', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=payment_failed&reason=no_response', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -49,12 +61,24 @@ async function handleCallback(req: NextRequest) {
 
     if (!workingKey) {
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=payment_processing_failed', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=payment_processing_failed', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
     // Decrypt and parse response
-    const data = redirectResponseToJson(encryptedResponse, workingKey);
+    let data: Record<string, string>;
+    try {
+      data = redirectResponseToJson(encryptedResponse, workingKey);
+      console.log('[AGENT CALLBACK] Decrypted response data:', JSON.stringify(data, null, 2));
+    } catch (decryptError: any) {
+      console.error('[AGENT CALLBACK] Error decrypting response:', decryptError);
+      console.error('[AGENT CALLBACK] Encrypted response length:', encryptedResponse?.length || 0);
+      return NextResponse.redirect(
+        new URL('/become-agent/subscribe?error=payment_processing_failed', req.nextUrl.origin),
+        { status: 303 }
+      );
+    }
 
     const orderStatus = data.order_status;
     const orderId = data.order_id;
@@ -65,10 +89,31 @@ async function handleCallback(req: NextRequest) {
     const encodedUserDetails = data.merchant_param3 || '';
     const trackingId = data.tracking_id || '';
 
-    if (orderStatus !== 'Success') {
-      // Payment failed - no records to clean up since we don't create them before payment
+    console.log('[AGENT CALLBACK] Payment details:', {
+      orderStatus,
+      orderId,
+      amount,
+      currency,
+      paymentOrderId,
+      paymentType,
+      trackingId,
+      hasUserDetails: !!encodedUserDetails,
+    });
+
+    // Check order status (case-insensitive to handle variations)
+    const normalizedOrderStatus = orderStatus?.toLowerCase() || '';
+    console.log('📊 [AGENT CALLBACK] Normalized order status:', normalizedOrderStatus);
+    
+    if (normalizedOrderStatus !== 'success') {
+      // Payment failed - log the reason
+      console.error('[AGENT CALLBACK] Payment failed. Order status:', orderStatus);
+      console.error('[AGENT CALLBACK] Full response data:', JSON.stringify(data, null, 2));
+      
+      // Include the actual failure reason in the error
+      const failureReason = data.failure_message || data.status_message || data.order_status || 'Unknown reason';
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=payment_failed', req.nextUrl.origin)
+        new URL(`/become-agent/subscribe?error=payment_failed&reason=${encodeURIComponent(failureReason)}`, req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -89,7 +134,8 @@ async function handleCallback(req: NextRequest) {
     } catch (decodeError) {
       console.error('Error decoding user details:', decodeError);
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=invalid_payment_data', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=invalid_payment_data', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -97,7 +143,8 @@ async function handleCallback(req: NextRequest) {
     if (!userDetails.email || !userDetails.fullName || !userDetails.residentCountry || !userDetails.mobileNumber) {
       console.error('Missing user details in payment callback');
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=missing_user_data', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=missing_user_data', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -111,7 +158,8 @@ async function handleCallback(req: NextRequest) {
     if (existingAgent && existingAgent.user_id) {
       // Agent already exists and has account - redirect to login
       return NextResponse.redirect(
-        new URL('/agent/login?error=already_registered&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin)
+        new URL('/agent/login?error=already_registered&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -139,7 +187,8 @@ async function handleCallback(req: NextRequest) {
     if (subscriptionError || !subscription) {
       console.error('Error creating subscription:', subscriptionError);
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=subscription_creation_failed', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=subscription_creation_failed', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -163,7 +212,8 @@ async function handleCallback(req: NextRequest) {
         .eq('id', subscription.id);
 
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=user_creation_failed', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=user_creation_failed', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
@@ -226,18 +276,21 @@ async function handleCallback(req: NextRequest) {
       
       // Note: We can't easily delete the user account, but subscription is cleaned up
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=agent_creation_failed', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=agent_creation_failed', req.nextUrl.origin),
+        { status: 303 } // Use 303 See Other to force GET redirect
       );
     }
 
     // Redirect to login page with success message
     return NextResponse.redirect(
-      new URL('/agent/login?success=subscription_completed&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin)
+      new URL('/agent/login?success=subscription_completed&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin),
+      { status: 303 } // Use 303 See Other to force GET redirect
     );
   } catch (error: any) {
     console.error('Error processing agent subscription callback:', error);
     return NextResponse.redirect(
-      new URL('/become-agent/subscribe?error=payment_processing_failed', req.nextUrl.origin)
+      new URL('/become-agent/subscribe?error=payment_processing_failed', req.nextUrl.origin),
+      { status: 303 } // Use 303 See Other to force GET redirect
     );
   }
 }

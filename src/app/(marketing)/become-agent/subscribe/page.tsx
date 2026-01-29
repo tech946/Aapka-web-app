@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, FormEvent, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { CountrySelect } from '@/components/ui/country-select';
 import './subscribe.css';
 
-export default function SubscribePage() {
+function SubscribePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -19,7 +21,52 @@ export default function SubscribePage() {
     fullName?: string;
     residentCountry?: string;
     mobileNumber?: string;
+    general?: string;
   }>({});
+
+  // Check for error messages from URL params (from payment callback)
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    const reasonParam = searchParams.get('reason');
+    
+    if (errorParam) {
+      let errorMessage = 'Payment processing failed. Please try again.';
+      
+      switch (errorParam) {
+        case 'payment_failed':
+          errorMessage = reasonParam 
+            ? `Payment was not successful: ${decodeURIComponent(reasonParam)}. Please try again or contact support.`
+            : 'Payment was not successful. Please try again or contact support.';
+          break;
+        case 'payment_cancelled':
+          errorMessage = 'Payment was cancelled. You can try again when ready.';
+          break;
+        case 'payment_processing_failed':
+          errorMessage = 'Payment processing failed. Please contact support.';
+          break;
+        case 'invalid_payment_data':
+          errorMessage = 'Invalid payment data received. Please contact support.';
+          break;
+        case 'missing_user_data':
+          errorMessage = 'User data missing. Please contact support.';
+          break;
+        case 'subscription_creation_failed':
+          errorMessage = 'Subscription creation failed. Please contact support.';
+          break;
+        case 'user_creation_failed':
+          errorMessage = 'Account creation failed. Please contact support.';
+          break;
+        case 'agent_creation_failed':
+          errorMessage = 'Agent registration failed. Please contact support.';
+          break;
+        default:
+          errorMessage = 'An error occurred. Please try again or contact support.';
+      }
+      
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage);
+    }
+  }, [searchParams]);
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -137,6 +184,20 @@ export default function SubscribePage() {
         </div>
 
         <form onSubmit={handleSubmit} className='subscribe-form'>
+          {errors.general && (
+            <div className='subscribe-error-general' style={{
+              padding: '12px 16px',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              color: '#dc2626',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              {errors.general}
+            </div>
+          )}
           <div className='subscribe-form-group'>
             <label htmlFor='email' className='subscribe-label'>
               Email Address <span className='required'>*</span>
@@ -177,14 +238,12 @@ export default function SubscribePage() {
             <label htmlFor='residentCountry' className='subscribe-label'>
               Resident Country <span className='required'>*</span>
             </label>
-            <input
-              type='text'
-              id='residentCountry'
+            <CountrySelect
               value={formData.residentCountry}
-              onChange={e => handleInputChange('residentCountry', e.target.value)}
-              className={`subscribe-input ${errors.residentCountry ? 'error' : ''}`}
-              placeholder='United Arab Emirates'
+              onChange={value => handleInputChange('residentCountry', value)}
+              placeholder='Select country'
               disabled={isSubmitting}
+              error={!!errors.residentCountry}
             />
             {errors.residentCountry && (
               <p className='subscribe-error'>{errors.residentCountry}</p>
@@ -221,5 +280,22 @@ export default function SubscribePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function SubscribePage() {
+  return (
+    <Suspense fallback={
+      <div className='subscribe-page'>
+        <div className='subscribe-container'>
+          <div className='subscribe-header'>
+            <h1 className='subscribe-title'>Agent Registration</h1>
+            <p className='subscribe-subtitle'>Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <SubscribePageContent />
+    </Suspense>
   );
 }
