@@ -1696,7 +1696,7 @@ export default function PackageDetailsPage() {
                               const d = parseDateStringToLocal(
                                 selectedDateString
                               );
-                              return d ? format(d, 'MMM dd, yyyy') : '';
+                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : '';
                             })()
                           : ''
                       }
@@ -1722,7 +1722,7 @@ export default function PackageDetailsPage() {
                           >
                             {(() => {
                               const d = parseDateStringToLocal(dateStr);
-                              return d ? format(d, 'MMM dd, yyyy') : dateStr;
+                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
                             })()}
                           </div>
                         ))}
@@ -1741,7 +1741,7 @@ export default function PackageDetailsPage() {
                       placeholder='Add dates'
                       className='mobile-booking-input'
                       value={
-                        selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''
+                        selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''
                       }
                       readOnly
                       onClick={() => setShowDatePicker(!showDatePicker)}
@@ -2282,7 +2282,7 @@ export default function PackageDetailsPage() {
                               const d = parseDateStringToLocal(
                                 selectedDateString
                               );
-                              return d ? format(d, 'MMM dd, yyyy') : '';
+                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : '';
                             })()
                           : ''
                       }
@@ -2308,7 +2308,7 @@ export default function PackageDetailsPage() {
                           >
                             {(() => {
                               const d = parseDateStringToLocal(dateStr);
-                              return d ? format(d, 'MMM dd, yyyy') : dateStr;
+                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
                             })()}
                           </div>
                         ))}
@@ -2324,7 +2324,7 @@ export default function PackageDetailsPage() {
                       placeholder='Add dates'
                       className='booking-input'
                       value={
-                        selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''
+                        selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''
                       }
                       readOnly
                       onClick={() => setShowDatePicker(!showDatePicker)}

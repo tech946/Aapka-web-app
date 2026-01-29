@@ -32,6 +32,19 @@ export default function FlexibleDatePackageDates({
   defaultChildPrice = '',
   defaultInfantPrice = '',
 }: FlexibleDatePackageDatesProps) {
+  // Helper to convert date string to datetime-local format
+  const toDateTimeLocal = (dateStr: string): string => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr; // Invalid date, return as is
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [rangeAdultPrice, setRangeAdultPrice] = useState<string>(defaultAdultPrice || '');
@@ -155,9 +168,28 @@ export default function FlexibleDatePackageDates({
 
   const startEditing = (range: DateRange) => {
     setEditingRange(range);
+    // Convert date strings to datetime-local format (YYYY-MM-DDTHH:mm)
+    // If the date doesn't have time, default to 00:00
+    const formatForDateTimeLocal = (dateStr: string) => {
+      if (!dateStr) return '';
+      // If already in datetime format (has T), return as is
+      if (dateStr.includes('T')) {
+        // Extract date and time part (remove seconds/milliseconds if present)
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
+      // If just date, add default time 00:00
+      return `${dateStr}T00:00`;
+    };
+    
     setEditForm({
-      fromDate: range.fromDate,
-      toDate: range.toDate,
+      fromDate: formatForDateTimeLocal(range.fromDate),
+      toDate: formatForDateTimeLocal(range.toDate),
       adultPrice: String(range.adultPrice),
       childPrice: String(range.childPrice),
       infantPrice: String(range.infantPrice),
@@ -249,7 +281,7 @@ export default function FlexibleDatePackageDates({
 
   const formatDateDisplay = (dateStr: string) => {
     const dateObj = parseDateStringToLocal(dateStr);
-    return dateObj ? format(dateObj, 'MMM dd, yyyy') : dateStr;
+    return dateObj ? format(dateObj, 'MMM dd, yyyy hh:mm a') : dateStr;
   };
 
   return (
@@ -263,23 +295,23 @@ export default function FlexibleDatePackageDates({
 
       {/* Add Date Range Form */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: '1', minWidth: '120px' }}>
+        <div style={{ flex: '1', minWidth: '180px' }}>
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
-            From Date *
+            From Date & Time *
           </label>
           <input
-            type='date'
+            type='datetime-local'
             value={fromDate}
             onChange={e => setFromDate(e.target.value)}
             style={{ width: '100%', padding: '6px 8px', fontSize: '14px' }}
           />
         </div>
-        <div style={{ flex: '1', minWidth: '120px' }}>
+        <div style={{ flex: '1', minWidth: '180px' }}>
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
-            To Date *
+            To Date & Time *
           </label>
           <input
-            type='date'
+            type='datetime-local'
             value={toDate}
             onChange={e => setToDate(e.target.value)}
             style={{ width: '100%', padding: '6px 8px', fontSize: '14px' }}
@@ -484,24 +516,24 @@ export default function FlexibleDatePackageDates({
         Mark Dates as Sold Out
       </h5>
       <div style={{ marginBottom: '24px', padding: '20px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ flex: '1', minWidth: '150px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: '1', minWidth: '180px' }}>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
-              From Date *
+              From Date & Time *
             </label>
             <input
-              type='date'
+              type='datetime-local'
               value={soldOutFromDate}
               onChange={e => setSoldOutFromDate(e.target.value)}
               style={{ width: '100%', padding: '6px 8px', fontSize: '14px', border: '1px solid #dc2626' }}
             />
           </div>
-          <div style={{ flex: '1', minWidth: '150px' }}>
+          <div style={{ flex: '1', minWidth: '180px' }}>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
-              To Date *
+              To Date & Time *
             </label>
             <input
-              type='date'
+              type='datetime-local'
               value={soldOutToDate}
               onChange={e => setSoldOutToDate(e.target.value)}
               style={{ width: '100%', padding: '6px 8px', fontSize: '14px', border: '1px solid #dc2626' }}
@@ -659,10 +691,10 @@ export default function FlexibleDatePackageDates({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
-                    From Date *
+                    From Date & Time *
                   </label>
                   <input
-                    type='date'
+                    type='datetime-local'
                     value={editForm.fromDate}
                     onChange={e => setEditForm({ ...editForm, fromDate: e.target.value })}
                     style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
@@ -670,10 +702,10 @@ export default function FlexibleDatePackageDates({
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
-                    To Date *
+                    To Date & Time *
                   </label>
                   <input
-                    type='date'
+                    type='datetime-local'
                     value={editForm.toDate}
                     onChange={e => setEditForm({ ...editForm, toDate: e.target.value })}
                     style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}

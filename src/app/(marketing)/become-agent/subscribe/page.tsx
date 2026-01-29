@@ -65,21 +65,28 @@ export default function SubscribePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
-          fullName: formData.fullName,
-          residentCountry: formData.residentCountry,
-          mobileNumber: formData.mobileNumber,
+          email: formData.email.trim(),
+          fullName: formData.fullName.trim(),
+          residentCountry: formData.residentCountry.trim(),
+          mobileNumber: formData.mobileNumber.trim(),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create payment');
+        // Show specific error message from API
+        const errorMessage = data.error || 'Failed to create payment';
+        const errorDetails = data.details ? ` (${data.details})` : '';
+        console.error('API Error:', { status: response.status, error: data });
+        toast.error(`${errorMessage}${errorDetails}`);
+        setIsSubmitting(false);
+        return;
       }
 
       // Redirect to CCAvenue payment page
       if (data.redirectUrl && data.encRequest && data.accessCode) {
+        toast.success('Redirecting to payment gateway...');
         // Create a form and submit it to CCAvenue
         const form = document.createElement('form');
         form.method = 'POST';
@@ -100,11 +107,14 @@ export default function SubscribePage() {
         document.body.appendChild(form);
         form.submit();
       } else {
-        throw new Error('Invalid payment response');
+        console.error('Invalid payment response:', data);
+        toast.error('Invalid payment response. Please try again or contact support.');
+        setIsSubmitting(false);
       }
     } catch (error: any) {
       console.error('Subscription error:', error);
-      toast.error(error.message || 'Failed to process subscription. Please try again.');
+      const errorMessage = error.message || 'Failed to process subscription. Please try again.';
+      toast.error(errorMessage);
       setIsSubmitting(false);
     }
   };

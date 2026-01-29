@@ -1163,7 +1163,8 @@ export default function CheckoutPage() {
                                 item.selectedDate
                               );
                               if (date) {
-                                return format(date, 'MMM dd, yyyy');
+                                const isFlexibleDate = item.categorySlug === 'flexible-date-packages';
+                                return format(date, isFlexibleDate ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy');
                               }
                               return 'Not selected';
                             })()

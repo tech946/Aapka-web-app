@@ -34,15 +34,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if agent already exists with this email
-    const { data: existingAgent } = await supabaseAdmin
+    const { data: existingAgent, error: checkError } = await supabaseAdmin
       .from('agents')
       .select('id')
       .eq('email', email)
-      .single();
+      .maybeSingle();
+
+    // If there's an error checking (not just "not found"), log it but continue
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing agent:', checkError);
+      // Continue anyway - might be a temporary DB issue
+    }
 
     if (existingAgent) {
       return NextResponse.json(
-        { error: 'An agent with this email already exists' },
+        { error: 'An agent with this email already exists. Please use a different email or contact support.' },
         { status: 400 }
       );
     }
@@ -71,7 +77,10 @@ export async function POST(req: NextRequest) {
     if (subscriptionError || !subscription) {
       console.error('Error creating subscription:', subscriptionError);
       return NextResponse.json(
-        { error: 'Failed to create subscription record' },
+        { 
+          error: 'Failed to create subscription record',
+          details: subscriptionError?.message || 'Database error occurred'
+        },
         { status: 500 }
       );
     }
@@ -99,7 +108,10 @@ export async function POST(req: NextRequest) {
 
       console.error('Error creating agent:', agentError);
       return NextResponse.json(
-        { error: 'Failed to create agent record' },
+        { 
+          error: 'Failed to create agent record',
+          details: agentError?.message || 'Database error occurred'
+        },
         { status: 500 }
       );
     }
