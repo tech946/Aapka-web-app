@@ -146,6 +146,7 @@ async function handleCallback(req: NextRequest) {
       fullName: string;
       residentCountry: string;
       mobileNumber: string;
+      documentImageUrl?: string; // Document image URL from Cloudinary
     };
 
     try {
@@ -301,6 +302,7 @@ async function handleCallback(req: NextRequest) {
         resident_country: userDetails.residentCountry,
         mobile_number: userDetails.mobileNumber,
         subscription_id: subscription.id,
+        document_image_url: userDetails.documentImageUrl || null, // Document image URL from Cloudinary
         is_active: true, // Active since payment is completed
       })
       .select()

@@ -11,17 +11,26 @@ interface CreateAgentSubscriptionPaymentRequest {
   residentCountry: string;
   mobileNumber: string;
   password: string;
+  documentImageUrl?: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: CreateAgentSubscriptionPaymentRequest = await req.json();
-    const { email, fullName, residentCountry, mobileNumber, password } = body;
+    const { email, fullName, residentCountry, mobileNumber, password, documentImageUrl } = body;
 
     // Validation
     if (!email || !fullName || !residentCountry || !mobileNumber || !password) {
       return NextResponse.json(
         { error: 'All fields are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate document image URL if provided
+    if (!documentImageUrl || !documentImageUrl.trim()) {
+      return NextResponse.json(
+        { error: 'Passport/PAN Card/Resident ID document is required' },
         { status: 400 }
       );
     }
@@ -151,6 +160,7 @@ export async function POST(req: NextRequest) {
       fullName,
       residentCountry,
       mobileNumber,
+      documentImageUrl: documentImageUrl || '', // Document image URL from Cloudinary
     };
     // Base64 encode user details (safe for URL)
     const encodedUserDetails = Buffer.from(JSON.stringify(userDetails)).toString('base64');

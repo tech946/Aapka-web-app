@@ -1,15 +1,22 @@
 'use client';
 
-import { useState, FormEvent, useEffect, Suspense } from 'react';
+import { useState, FormEvent, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { CountrySelect } from '@/components/ui/country-select';
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { Upload, X, Loader2, Info } from 'lucide-react';
 import './subscribe.css';
 
 function SubscribePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [documentImageUrl, setDocumentImageUrl] = useState<string>('');
+  const [documentPreview, setDocumentPreview] = useState<string>('');
+  const [showDocumentExamples, setShowDocumentExamples] = useState(false);
+  const documentInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     email: '',
     fullName: '',
@@ -25,6 +32,7 @@ function SubscribePageContent() {
     mobileNumber?: string;
     password?: string;
     confirmPassword?: string;
+    documentImage?: string;
     general?: string;
   }>({});
 
@@ -107,6 +115,10 @@ function SubscribePageContent() {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    if (!documentImageUrl.trim()) {
+      newErrors.documentImage = 'Passport/PAN Card/Resident ID is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -133,6 +145,7 @@ function SubscribePageContent() {
           residentCountry: formData.residentCountry.trim(),
           mobileNumber: formData.mobileNumber.trim(),
           password: formData.password,
+          documentImageUrl: documentImageUrl,
         }),
       });
 
@@ -188,6 +201,70 @@ function SubscribePageContent() {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (JPEG, PNG, or WebP)');
+      if (documentInputRef.current) {
+        documentInputRef.current.value = '';
+      }
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      if (documentInputRef.current) {
+        documentInputRef.current.value = '';
+      }
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setDocumentPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    setIsUploadingDocument(true);
+    try {
+      const url = await uploadImageToCloudinary(file, 'agents');
+      setDocumentImageUrl(url);
+      toast.success('Document uploaded successfully');
+      if (errors.documentImage) {
+        setErrors(prev => ({ ...prev, documentImage: undefined }));
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload document'
+      );
+      setDocumentPreview('');
+      if (documentInputRef.current) {
+        documentInputRef.current.value = '';
+      }
+    } finally {
+      setIsUploadingDocument(false);
+    }
+  };
+
+  const handleRemoveDocument = () => {
+    setDocumentImageUrl('');
+    setDocumentPreview('');
+    if (documentInputRef.current) {
+      documentInputRef.current.value = '';
+    }
+    setErrors(prev => ({ ...prev, documentImage: undefined }));
   };
 
   return (
@@ -321,6 +398,79 @@ function SubscribePageContent() {
             )}
           </div>
 
+          <div className='subscribe-form-group'>
+            <label htmlFor='documentImage' className='subscribe-label'>
+              Passport/PAN Card/Resident ID <span className='required'>*</span>
+              <button
+                type='button'
+                onClick={() => setShowDocumentExamples(true)}
+                className='document-examples-btn'
+                title='View document examples'
+                disabled={isSubmitting}
+              >
+                <Info size={16} />
+              </button>
+            </label>
+            <div className='document-upload-container'>
+              {!documentPreview ? (
+                <label
+                  htmlFor='documentImage'
+                  className={`document-upload-area ${errors.documentImage ? 'error' : ''} ${isUploadingDocument ? 'uploading' : ''}`}
+                >
+                  <input
+                    ref={documentInputRef}
+                    type='file'
+                    id='documentImage'
+                    accept='image/jpeg,image/jpg,image/png,image/webp'
+                    onChange={handleDocumentUpload}
+                    disabled={isSubmitting || isUploadingDocument}
+                    className='document-upload-input'
+                  />
+                  {isUploadingDocument ? (
+                    <>
+                      <Loader2 className='document-upload-icon' size={32} />
+                      <span className='document-upload-text'>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className='document-upload-icon' size={32} />
+                      <span className='document-upload-text'>
+                        Click to upload or drag and drop
+                      </span>
+                      <span className='document-upload-hint'>
+                        PNG, JPG, WEBP up to 5MB
+                      </span>
+                    </>
+                  )}
+                </label>
+              ) : (
+                <div className='document-preview-container'>
+                  <div className='document-preview-wrapper'>
+                    <img
+                      src={documentPreview}
+                      alt='Document preview'
+                      className='document-preview-image'
+                    />
+                    <button
+                      type='button'
+                      onClick={handleRemoveDocument}
+                      className='document-remove-btn'
+                      disabled={isSubmitting || isUploadingDocument}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <p className='document-preview-success'>
+                    Document uploaded successfully
+                  </p>
+                </div>
+              )}
+            </div>
+            {errors.documentImage && (
+              <p className='subscribe-error'>{errors.documentImage}</p>
+            )}
+          </div>
+
           <div className='subscribe-form-actions'>
             <button
               type='submit'
@@ -332,6 +482,83 @@ function SubscribePageContent() {
           </div>
         </form>
       </div>
+
+      {/* Document Examples Modal */}
+      {showDocumentExamples && (
+        <div className='document-examples-modal-overlay' onClick={() => setShowDocumentExamples(false)}>
+          <div className='document-examples-modal' onClick={(e) => e.stopPropagation()}>
+            <div className='document-examples-modal-header'>
+              <h2 className='document-examples-modal-title'>Document Examples</h2>
+              <button
+                type='button'
+                onClick={() => setShowDocumentExamples(false)}
+                className='document-examples-modal-close'
+                aria-label='Close modal'
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className='document-examples-modal-content'>
+              <p className='document-examples-modal-description'>
+                Please upload a clear image of one of the following documents:
+              </p>
+              <div className='document-examples-grid'>
+                <div className='document-example-item'>
+                  <h3 className='document-example-title'>PAN Card</h3>
+                  <div className='document-example-image-wrapper'>
+                    <img
+                      src='/images/pan-card-sample.jpg'
+                      alt='PAN Card example'
+                      className='document-example-image'
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="document-example-placeholder">Image not found</div>';
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className='document-example-item'>
+                  <h3 className='document-example-title'>Aadhar Card</h3>
+                  <div className='document-example-image-wrapper'>
+                    <img
+                      src='/images/aadhar-card-sample.jpg'
+                      alt='Aadhar Card example'
+                      className='document-example-image'
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="document-example-placeholder">Image not found</div>';
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className='document-example-item'>
+                  <h3 className='document-example-title'>Resident ID</h3>
+                  <div className='document-example-image-wrapper'>
+                    <img
+                      src='/images/resident-id-sample.jpg'
+                      alt='Resident ID example'
+                      className='document-example-image'
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="document-example-placeholder">Image not found</div>';
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
