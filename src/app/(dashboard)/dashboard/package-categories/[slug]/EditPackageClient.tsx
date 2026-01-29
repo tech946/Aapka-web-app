@@ -52,6 +52,7 @@ type Pkg = {
   infant_discount_amount?: number | null;
   discount_start_date?: string | null;
   discount_end_date?: string | null;
+  agent_discount?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -120,6 +121,7 @@ export default function EditPackageClient({
   const [infantDiscountAmount, setInfantDiscountAmount] = useState<string>('');
   const [discountStartDate, setDiscountStartDate] = useState<string>('');
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
+  const [agentDiscount, setAgentDiscount] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -166,8 +168,34 @@ export default function EditPackageClient({
     if (pkg.adult_discount_amount != null) setAdultDiscountAmount(String(pkg.adult_discount_amount));
     if (pkg.child_discount_amount != null) setChildDiscountAmount(String(pkg.child_discount_amount));
     if (pkg.infant_discount_amount != null) setInfantDiscountAmount(String(pkg.infant_discount_amount));
-    if (pkg.discount_start_date != null) setDiscountStartDate(pkg.discount_start_date);
-    if (pkg.discount_end_date != null) setDiscountEndDate(pkg.discount_end_date);
+    if (pkg.agent_discount != null) setAgentDiscount(String(pkg.agent_discount));
+    // Convert date strings to datetime-local format (YYYY-MM-DDTHH:mm)
+    if (pkg.discount_start_date != null) {
+      const startDate = new Date(pkg.discount_start_date);
+      if (!isNaN(startDate.getTime())) {
+        const year = startDate.getFullYear();
+        const month = String(startDate.getMonth() + 1).padStart(2, '0');
+        const day = String(startDate.getDate()).padStart(2, '0');
+        const hours = String(startDate.getHours()).padStart(2, '0');
+        const minutes = String(startDate.getMinutes()).padStart(2, '0');
+        setDiscountStartDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+      } else {
+        setDiscountStartDate(pkg.discount_start_date);
+      }
+    }
+    if (pkg.discount_end_date != null) {
+      const endDate = new Date(pkg.discount_end_date);
+      if (!isNaN(endDate.getTime())) {
+        const year = endDate.getFullYear();
+        const month = String(endDate.getMonth() + 1).padStart(2, '0');
+        const day = String(endDate.getDate()).padStart(2, '0');
+        const hours = String(endDate.getHours()).padStart(2, '0');
+        const minutes = String(endDate.getMinutes()).padStart(2, '0');
+        setDiscountEndDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+      } else {
+        setDiscountEndDate(pkg.discount_end_date);
+      }
+    }
     setTermsHtml(pkg.terms_html || '');
     setInclusionHtml(pkg.inclusion_html || '');
     setExclusionHtml(pkg.exclusion_html || '');
@@ -661,17 +689,17 @@ export default function EditPackageClient({
                 />
               </div>
               <div className='form_row'>
-                <label>Discount Start Date</label>
+                <label>Discount Start Date & Time</label>
                 <input
-                  type='date'
+                  type='datetime-local'
                   value={discountStartDate}
                   onChange={e => setDiscountStartDate(e.target.value)}
                 />
               </div>
               <div className='form_row'>
-                <label>Discount End Date</label>
+                <label>Discount End Date & Time</label>
                 <input
-                  type='date'
+                  type='datetime-local'
                   value={discountEndDate}
                   onChange={e => setDiscountEndDate(e.target.value)}
                 />
@@ -682,6 +710,31 @@ export default function EditPackageClient({
             </p>
           </div>
           )}
+
+          {/* Agent Discount Section - Show for all package types */}
+          <div className='form_section'>
+            <h5 className='section_title'>Agent Discount (Optional)</h5>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '16px' }}>
+              Exclusive discount for agents with active subscriptions. This discount will be applied to the total price (total price - agent discount).
+            </p>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Agent Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={agentDiscount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setAgentDiscount(val);
+                    }
+                  }}
+                  placeholder='100'
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Visa Pricing Section */}
           <div className='form_section'>
@@ -1022,6 +1075,7 @@ export default function EditPackageClient({
                       infant_discount_amount: infantDiscountAmount && infantDiscountAmount.trim() !== '' && !Number.isNaN(Number(infantDiscountAmount)) ? Number(infantDiscountAmount) : null,
                       discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
                       discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
+                      agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,

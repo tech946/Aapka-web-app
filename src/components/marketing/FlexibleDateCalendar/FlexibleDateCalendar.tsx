@@ -66,13 +66,29 @@ export default function FlexibleDateCalendar({
   }, [packageId]);
 
   // Find the date range that contains a specific date
+  // Priority: Sold out ranges take precedence (if a date is in both a sold out range and a regular range, it's sold out)
   const findDateRangeForDate = useCallback(
     (dateStr: string): DateRange | null => {
       if (!dateRanges || !Array.isArray(dateRanges)) return null;
       const targetDate = new Date(dateStr);
       targetDate.setHours(0, 0, 0, 0);
       
+      // First check for sold out ranges (they take priority)
       for (const range of dateRanges) {
+        if (!range.isSoldOut) continue;
+        const fromDate = new Date(range.fromDate);
+        const toDate = new Date(range.toDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+        
+        if (targetDate >= fromDate && targetDate <= toDate) {
+          return range; // Return sold out range immediately
+        }
+      }
+      
+      // Then check for regular (non-sold-out) ranges
+      for (const range of dateRanges) {
+        if (range.isSoldOut) continue; // Skip sold out ranges (already checked)
         const fromDate = new Date(range.fromDate);
         const toDate = new Date(range.toDate);
         fromDate.setHours(0, 0, 0, 0);
@@ -250,9 +266,10 @@ export default function FlexibleDateCalendar({
     return (
       <button
         {...buttonProps}
-        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled || isSoldOut ? 'disabled' : ''} ${isSoldOut ? 'sold-out' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        disabled={isDisabled || isSoldOut}
       >
         <span className="flexible-day-number">{date.getDate()}</span>
         {statusDisplay}

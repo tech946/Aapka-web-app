@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -249,6 +249,7 @@ export async function POST(req: NextRequest) {
     const infantDiscountAmount = body?.infant_discount_amount !== undefined && body?.infant_discount_amount !== null && body?.infant_discount_amount !== '' && !Number.isNaN(Number(body.infant_discount_amount)) ? Number(body.infant_discount_amount) : null;
     const discountStartDate = body?.discount_start_date && String(body.discount_start_date).trim() !== '' ? String(body.discount_start_date).trim() : null;
     const discountEndDate = body?.discount_end_date && String(body.discount_end_date).trim() !== '' ? String(body.discount_end_date).trim() : null;
+    const agentDiscount = body?.agent_discount !== undefined && body?.agent_discount !== null && body?.agent_discount !== '' && !Number.isNaN(Number(body.agent_discount)) ? Number(body.agent_discount) : null;
 
     console.log('POST - Discount fields received:', {
       adult_discount_amount: adultDiscountAmount,
@@ -287,6 +288,7 @@ export async function POST(req: NextRequest) {
       infant_discount_amount: infantDiscountAmount,
       discount_start_date: discountStartDate,
       discount_end_date: discountEndDate,
+      agent_discount: agentDiscount,
       terms_html: termsHtml,
       inclusion_html: inclusionHtml,
       exclusion_html: exclusionHtml,
@@ -297,15 +299,20 @@ export async function POST(req: NextRequest) {
     };
 
     // Add travel_dates, booking_slots, or date_ranges based on what's provided
+    // Include arrays even if empty (database JSONB columns can handle empty arrays)
     if (bookingSlots !== null) {
       insertData.booking_slots = bookingSlots;
-    } else if (dateRanges !== null) {
+    }
+    if (dateRanges !== null) {
       // Store date ranges directly in packages table as JSONB
       insertData.date_ranges = dateRanges;
-    } else if (travelDates !== null) {
+    }
+    if (travelDates !== null) {
       insertData.travel_dates = travelDates;
     }
 
+    console.log('POST /api/packages: Inserting package with data:', JSON.stringify(insertData, null, 2));
+    
     const { data, error } = await supabaseAdmin
       .from('packages')
       .insert([insertData])
@@ -313,11 +320,19 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
+      console.error('POST /api/packages: Database error:', error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    if (!data) {
+      console.error('POST /api/packages: No data returned from insert');
+      return NextResponse.json({ error: 'Package was not created. No data returned.' }, { status: 500 });
+    }
+
+    console.log('POST /api/packages: Package created successfully:', data.package_id);
     return NextResponse.json({ data }, { status: 201 });
   } catch (e: any) {
+    console.error('POST /api/packages: Unexpected error:', e);
     return NextResponse.json(
       { error: e?.message ?? 'Unexpected error' },
       { status: 500 }
@@ -522,6 +537,9 @@ export async function PUT(req: NextRequest) {
     }
     if (body?.discount_end_date !== undefined) {
       updates.discount_end_date = body.discount_end_date && String(body.discount_end_date).trim() !== '' ? String(body.discount_end_date).trim() : null;
+    }
+    if (body?.agent_discount !== undefined) {
+      updates.agent_discount = body.agent_discount !== null && body.agent_discount !== '' && !Number.isNaN(Number(body.agent_discount)) ? Number(body.agent_discount) : null;
     }
     if (termsHtml !== undefined) updates.terms_html = termsHtml;
     if (inclusionHtml !== undefined) updates.inclusion_html = inclusionHtml;

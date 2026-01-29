@@ -66,6 +66,7 @@ export default function AddPackageClient({
   const [infantDiscountAmount, setInfantDiscountAmount] = useState<string>('');
   const [discountStartDate, setDiscountStartDate] = useState<string>('');
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
+  const [agentDiscount, setAgentDiscount] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -521,17 +522,17 @@ export default function AddPackageClient({
                 />
               </div>
               <div className='form_row'>
-                <label>Discount Start Date</label>
+                <label>Discount Start Date & Time</label>
                 <input
-                  type='date'
+                  type='datetime-local'
                   value={discountStartDate}
                   onChange={e => setDiscountStartDate(e.target.value)}
                 />
               </div>
               <div className='form_row'>
-                <label>Discount End Date</label>
+                <label>Discount End Date & Time</label>
                 <input
-                  type='date'
+                  type='datetime-local'
                   value={discountEndDate}
                   onChange={e => setDiscountEndDate(e.target.value)}
                 />
@@ -542,6 +543,31 @@ export default function AddPackageClient({
             </p>
           </div>
           )}
+
+          {/* Agent Discount Section - Show for all package types */}
+          <div className='form_section'>
+            <h5 className='section_title'>Agent Discount (Optional)</h5>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '16px' }}>
+              Exclusive discount for agents with active subscriptions. This discount will be applied to the total price (total price - agent discount).
+            </p>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Agent Discount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={agentDiscount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setAgentDiscount(val);
+                    }
+                  }}
+                  placeholder='100'
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Visa Pricing Section */}
           <div className='form_section'>
@@ -792,11 +818,15 @@ export default function AddPackageClient({
             Cancel
           </button>
           <button
+            type='button'
             className='btn_primary'
             disabled={
               !name.trim() || !price || Number.isNaN(Number(price)) || isPending
             }
-            onClick={() =>
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Save button clicked!', { name, price, isPending, usesFlexibleDate, dateRangesLength: dateRanges.length });
               startTransition(async () => {
                 try {
                   if (!name.trim()) {
@@ -807,6 +837,13 @@ export default function AddPackageClient({
                     toast.error('Valid price is required');
                     return;
                   }
+                  
+                  // Validate flexible date packages have at least one date range
+                  if (usesFlexibleDate && (!dateRanges || dateRanges.length === 0)) {
+                    toast.error('At least one date range is required for flexible date packages');
+                    return;
+                  }
+                  
                   // Prepare date ranges payload for flexible date packages
                   const dateRangesPayload = usesFlexibleDate ? dateRanges.map((d: any) => ({
                     id: d.id,
@@ -847,6 +884,7 @@ export default function AddPackageClient({
                     infant_discount_amount: infantDiscountAmount && infantDiscountAmount.trim() !== '' && !Number.isNaN(Number(infantDiscountAmount)) ? Number(infantDiscountAmount) : null,
                     discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
                     discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
+                    agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
                     terms_html: termsHtml || undefined,
                     inclusion_html: inclusionHtml || undefined,
                     exclusion_html: exclusionHtml || undefined,
@@ -858,12 +896,13 @@ export default function AddPackageClient({
 
                   // Add date-related fields based on package type
                   if (usesSlots) {
-                    payload.booking_slots = bookingSlots;
+                    payload.booking_slots = bookingSlots.length > 0 ? bookingSlots : [];
                   } else if (usesFlexibleDate) {
+                    // Always include date_ranges for flexible date packages (even if empty, validation will catch it)
                     payload.date_ranges = dateRangesPayload;
                     payload.end_date = endDate || undefined;
                   } else {
-                    payload.travel_dates = travelDates;
+                    payload.travel_dates = travelDates.length > 0 ? travelDates : [];
                   }
 
                   console.log('Sending payload with discount fields:', {
@@ -876,14 +915,23 @@ export default function AddPackageClient({
                     flexibleDatesCount: dateRangesPayload.length,
                   });
 
+                  console.log('AddPackage: Full payload being sent:', JSON.stringify(payload, null, 2));
+                  
                   const res = await fetch('/api/packages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                   });
+                  
+                  const responseData = await res.json().catch(() => ({}));
+                  console.log('AddPackage: API response:', res.status, responseData);
+                  
                   if (!res.ok) {
-                    const j = await res.json().catch(() => ({}));
-                    throw new Error(j?.error ?? 'Failed to add package');
+                    throw new Error(responseData?.error ?? 'Failed to add package');
+                  }
+                  
+                  if (!responseData.data) {
+                    throw new Error('Package was not created. Please check the console for details.');
                   }
                   setOpen(false);
                   // Reset form
@@ -925,13 +973,13 @@ export default function AddPackageClient({
                   } catch {}
                   toast.success('Package added');
                 } catch (e) {
-                  console.error(e);
+                  console.error('Error adding package:', e);
                   toast.error(
                     e instanceof Error ? e.message : 'Failed to add package'
                   );
                 }
-              })
-            }
+              });
+            }}
           >
             {isPending ? 'Saving...' : 'Save'}
           </button>

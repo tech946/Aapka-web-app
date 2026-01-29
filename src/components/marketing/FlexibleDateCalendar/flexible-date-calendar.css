@@ -191,11 +191,25 @@
 
 .flexible-day-soldout {
   font-size: 8px;
-  font-weight: 500;
+  font-weight: 600;
   color: #ef4444;
   line-height: 1;
   margin-top: 1px;
   white-space: nowrap;
+}
+
+.flexible-day-button.sold-out {
+  background: #fef2f2 !important;
+  cursor: not-allowed !important;
+}
+
+.flexible-day-button.sold-out .flexible-day-number {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.flexible-day-button.sold-out:hover {
+  background: #fee2e2 !important;
 }
 
 .flexible-day-na {

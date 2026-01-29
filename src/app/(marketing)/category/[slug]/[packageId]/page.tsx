@@ -75,6 +75,7 @@ interface Package {
   infant_discount_amount?: number | null;
   discount_start_date?: string | null;
   discount_end_date?: string | null;
+  agent_discount?: number | null;
   overview?: string | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
@@ -130,6 +131,8 @@ export default function PackageDetailsPage() {
   const [visaForAdults, setVisaForAdults] = useState(0);
   const [visaForChildren, setVisaForChildren] = useState(0);
   const [visaForInfants, setVisaForInfants] = useState(0);
+  const [isAgent, setIsAgent] = useState(false);
+  const [hasActiveAgentSubscription, setHasActiveAgentSubscription] = useState(false);
 
   // Initialize minimum adults: 1 for all packages, 2 for offer packages and flexible date packages
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -178,6 +181,7 @@ export default function PackageDetailsPage() {
   useEffect(() => {
     if (packageSlug) {
       fetchPackage();
+      checkAgentStatus();
     }
   }, [packageSlug]);
 
@@ -318,33 +322,34 @@ export default function PackageDetailsPage() {
 
   const getAvailableDates = useCallback((): string[] => {
     // For flexible date packages, generate all dates within the configured date ranges
+    // Include ALL dates (both available and sold out) - the calendar will handle showing sold out status
     if (slug === 'flexible-date-packages' && pkg?.date_ranges && pkg.date_ranges.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const sixDaysFromNow = new Date(today);
       sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
 
-      const availableDates: string[] = [];
+      const allDates: string[] = [];
       
+      // Include ALL date ranges (both available and sold out)
+      // The calendar component will handle showing sold out status
       for (const range of pkg.date_ranges) {
-        if (range.isSoldOut) continue; // Skip sold out ranges
-        
         const fromDate = new Date(range.fromDate);
         const toDate = new Date(range.toDate);
         fromDate.setHours(0, 0, 0, 0);
         toDate.setHours(0, 0, 0, 0);
         
-        // Generate all dates in this range
+        // Generate all dates in this range (including sold out ranges)
         const currentDate = new Date(fromDate);
         while (currentDate <= toDate) {
           if (currentDate > sixDaysFromNow) {
-            availableDates.push(format(currentDate, 'yyyy-MM-dd'));
+            allDates.push(format(currentDate, 'yyyy-MM-dd'));
           }
           currentDate.setDate(currentDate.getDate() + 1);
         }
       }
       
-      return [...new Set(availableDates)].sort(); // Remove duplicates and sort
+      return [...new Set(allDates)].sort(); // Remove duplicates and sort
     }
 
     if (!pkg?.travel_dates) return [];
@@ -591,8 +596,15 @@ export default function PackageDetailsPage() {
     
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
-    setCalculatedPrice(basePrice + visaPrice);
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate]);
+    let finalPrice = basePrice + visaPrice;
+    
+    // Apply agent discount if user is an agent with active subscription
+    if (hasActiveAgentSubscription && pkg?.agent_discount && pkg.agent_discount > 0) {
+      finalPrice = Math.max(0, finalPrice - pkg.agent_discount);
+    }
+    
+    setCalculatedPrice(finalPrice);
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate, hasActiveAgentSubscription]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
@@ -601,6 +613,20 @@ export default function PackageDetailsPage() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
+  };
+
+  // Check if user is an agent
+  const checkAgentStatus = async () => {
+    try {
+      const response = await fetch('/api/agent-subscription/check-agent-status');
+      const result = await response.json();
+      setIsAgent(result.isAgent || false);
+      setHasActiveAgentSubscription(result.hasActiveSubscription || false);
+    } catch (error) {
+      console.error('Error checking agent status:', error);
+      setIsAgent(false);
+      setHasActiveAgentSubscription(false);
+    }
   };
 
   const fetchPackage = async () => {
