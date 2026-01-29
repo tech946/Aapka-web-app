@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
     // DO NOT create subscription or agent records yet
     // Only create them AFTER payment is successful in the callback
     // Store user_id in merchant params to retrieve after payment
-    const subscriptionAmount = 110.00; // Correct amount: 110 AED
+    const subscriptionAmount = 0.01; // Correct amount: 110 AED
     const currency = 'AED';
 
     // CCAvenue credentials
