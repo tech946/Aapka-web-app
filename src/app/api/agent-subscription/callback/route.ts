@@ -60,83 +60,110 @@ async function handleCallback(req: NextRequest) {
     const orderId = data.order_id;
     const amount = data.amount;
     const currency = data.currency || 'AED';
-    const subscriptionId = data.merchant_param1 || '';
+    const paymentOrderId = data.merchant_param1 || '';
     const paymentType = data.merchant_param2 || 'agent_subscription';
-    const agentId = data.merchant_param3 || '';
+    const encodedUserDetails = data.merchant_param3 || '';
     const trackingId = data.tracking_id || '';
 
     if (orderStatus !== 'Success') {
-      // Payment failed - delete pending records
-      if (subscriptionId) {
-        await supabaseAdmin
-          .from('subscriptions')
-          .delete()
-          .eq('id', subscriptionId);
-      }
-      if (agentId) {
-        await supabaseAdmin
-          .from('agents')
-          .delete()
-          .eq('id', agentId);
-      }
-
+      // Payment failed - no records to clean up since we don't create them before payment
       return NextResponse.redirect(
         new URL('/become-agent/subscribe?error=payment_failed', req.nextUrl.origin)
       );
     }
 
-    // Payment successful - update subscription and create user account
+    // Payment successful - NOW create all records
     const paymentAmount = parseFloat(amount || '0');
 
-    // Get agent details
-    const { data: agent, error: agentError } = await supabaseAdmin
+    // Decode user details from merchant param
+    let userDetails: {
+      email: string;
+      fullName: string;
+      residentCountry: string;
+      mobileNumber: string;
+    };
+
+    try {
+      const decoded = Buffer.from(encodedUserDetails, 'base64').toString('utf-8');
+      userDetails = JSON.parse(decoded);
+    } catch (decodeError) {
+      console.error('Error decoding user details:', decodeError);
+      return NextResponse.redirect(
+        new URL('/become-agent/subscribe?error=invalid_payment_data', req.nextUrl.origin)
+      );
+    }
+
+    // Verify user details are present
+    if (!userDetails.email || !userDetails.fullName || !userDetails.residentCountry || !userDetails.mobileNumber) {
+      console.error('Missing user details in payment callback');
+      return NextResponse.redirect(
+        new URL('/become-agent/subscribe?error=missing_user_data', req.nextUrl.origin)
+      );
+    }
+
+    // Check if agent already exists (double-check in case of duplicate payment)
+    const { data: existingAgent } = await supabaseAdmin
       .from('agents')
-      .select('*')
-      .eq('id', agentId)
+      .select('id, user_id')
+      .eq('email', userDetails.email)
+      .maybeSingle();
+
+    if (existingAgent && existingAgent.user_id) {
+      // Agent already exists and has account - redirect to login
+      return NextResponse.redirect(
+        new URL('/agent/login?error=already_registered&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin)
+      );
+    }
+
+    // NOW create subscription record with completed status
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 1); // 1 year from now
+
+    const { data: subscription, error: subscriptionError } = await supabaseAdmin
+      .from('subscriptions')
+      .insert({
+        subscription_type: 'agent_premium',
+        amount_paid: paymentAmount,
+        currency: currency,
+        payment_status: 'completed', // Payment is already successful
+        payment_transaction_id: trackingId || orderId,
+        payment_gateway: 'ccavenue',
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        is_active: true, // Active since payment is completed
+      })
+      .select()
       .single();
 
-    if (agentError || !agent) {
+    if (subscriptionError || !subscription) {
+      console.error('Error creating subscription:', subscriptionError);
       return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=agent_not_found', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=subscription_creation_failed', req.nextUrl.origin)
       );
     }
 
     // Create user account in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: agent.email,
+      email: userDetails.email,
       email_confirm: true, // Auto-confirm email
       password: `temp_${Date.now()}`, // Temporary password - user will need to reset
       user_metadata: {
-        full_name: agent.full_name,
-        phone: agent.mobile_number,
+        full_name: userDetails.fullName,
+        phone: userDetails.mobileNumber,
       },
     });
 
     if (authError || !authData.user) {
       console.error('Error creating user account:', authError);
-      // Still update subscription but mark for manual user creation
+      // Rollback subscription if user creation fails
       await supabaseAdmin
         .from('subscriptions')
-        .update({
-          payment_status: 'completed',
-          payment_transaction_id: trackingId || orderId,
-          payment_amount: paymentAmount,
-          payment_gateway: 'ccavenue',
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', subscriptionId);
-
-      await supabaseAdmin
-        .from('agents')
-        .update({
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', agentId);
+        .delete()
+        .eq('id', subscription.id);
 
       return NextResponse.redirect(
-        new URL('/agent/login?error=user_creation_failed&payment=success', req.nextUrl.origin)
+        new URL('/become-agent/subscribe?error=user_creation_failed', req.nextUrl.origin)
       );
     }
 
@@ -147,11 +174,11 @@ async function handleCallback(req: NextRequest) {
       .from('profiles')
       .insert({
         id: userId,
-        email_address: agent.email,
-        full_name: agent.full_name,
+        email_address: userDetails.email,
+        full_name: userDetails.fullName,
         account_details: {
-          phone: agent.mobile_number,
-          country: agent.resident_country,
+          phone: userDetails.mobileNumber,
+          country: userDetails.residentCountry,
         },
       });
 
@@ -160,45 +187,52 @@ async function handleCallback(req: NextRequest) {
       // Continue anyway - profile might already exist
     }
 
-    // Update subscription with user_id and payment details
+    // Update subscription with user_id
     const { error: subscriptionUpdateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         user_id: userId,
-        payment_status: 'completed',
-        payment_transaction_id: trackingId || orderId,
-        payment_amount: paymentAmount,
-        payment_gateway: 'ccavenue',
-        is_active: true,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', subscriptionId);
+      .eq('id', subscription.id);
 
     if (subscriptionUpdateError) {
-      console.error('Error updating subscription:', subscriptionUpdateError);
-      return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=subscription_update_failed', req.nextUrl.origin)
-      );
+      console.error('Error updating subscription with user_id:', subscriptionUpdateError);
+      // Non-critical, continue
     }
 
-    // Update agent with user_id
-    const { error: agentUpdateError } = await supabaseAdmin
+    // NOW create agent record with all details
+    const { data: agent, error: agentError } = await supabaseAdmin
       .from('agents')
-      .update({
+      .insert({
         user_id: userId,
-        is_active: true,
-        updated_at: new Date().toISOString(),
+        email: userDetails.email,
+        full_name: userDetails.fullName,
+        resident_country: userDetails.residentCountry,
+        mobile_number: userDetails.mobileNumber,
+        subscription_id: subscription.id,
+        is_active: true, // Active since payment is completed
       })
-      .eq('id', agentId);
+      .select()
+      .single();
 
-    if (agentUpdateError) {
-      console.error('Error updating agent:', agentUpdateError);
-      // Non-critical error, continue
+    if (agentError || !agent) {
+      console.error('Error creating agent:', agentError);
+      // Rollback subscription and user if agent creation fails
+      await supabaseAdmin
+        .from('subscriptions')
+        .delete()
+        .eq('id', subscription.id);
+      
+      // Note: We can't easily delete the user account, but subscription is cleaned up
+      return NextResponse.redirect(
+        new URL('/become-agent/subscribe?error=agent_creation_failed', req.nextUrl.origin)
+      );
     }
 
     // Redirect to login page with success message
     return NextResponse.redirect(
-      new URL('/agent/login?success=subscription_completed&email=' + encodeURIComponent(agent.email), req.nextUrl.origin)
+      new URL('/agent/login?success=subscription_completed&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin)
     );
   } catch (error: any) {
     console.error('Error processing agent subscription callback:', error);

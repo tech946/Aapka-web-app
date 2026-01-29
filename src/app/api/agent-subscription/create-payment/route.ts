@@ -53,78 +53,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create subscription record with pending status
+    // DO NOT create subscription or agent records yet
+    // Only create them AFTER payment is successful in the callback
+    // Store user details in merchant params to retrieve after payment
     const subscriptionAmount = 110.00;
     const currency = 'AED';
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setFullYear(endDate.getFullYear() + 1); // 1 year from now
-
-    const { data: subscription, error: subscriptionError } = await supabaseAdmin
-      .from('subscriptions')
-      .insert({
-        subscription_type: 'agent_premium',
-        amount_paid: subscriptionAmount,
-        currency: currency,
-        payment_status: 'pending',
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        is_active: false,
-      })
-      .select()
-      .single();
-
-    if (subscriptionError || !subscription) {
-      console.error('Error creating subscription:', subscriptionError);
-      return NextResponse.json(
-        { 
-          error: 'Failed to create subscription record',
-          details: subscriptionError?.message || 'Database error occurred'
-        },
-        { status: 500 }
-      );
-    }
-
-    // Create temporary agent record (will be updated after payment)
-    const { data: agent, error: agentError } = await supabaseAdmin
-      .from('agents')
-      .insert({
-        email: email,
-        full_name: fullName,
-        resident_country: residentCountry,
-        mobile_number: mobileNumber,
-        subscription_id: subscription.id,
-        is_active: false, // Will be activated after payment
-      })
-      .select()
-      .single();
-
-    if (agentError || !agent) {
-      // Rollback subscription if agent creation fails
-      await supabaseAdmin
-        .from('subscriptions')
-        .delete()
-        .eq('id', subscription.id);
-
-      console.error('Error creating agent:', agentError);
-      return NextResponse.json(
-        { 
-          error: 'Failed to create agent record',
-          details: agentError?.message || 'Database error occurred'
-        },
-        { status: 500 }
-      );
-    }
 
     // CCAvenue credentials
     const merchantId = '54983';
     const accessCode = 'AVLG05MJ58AS49GLSA';
     const workingKey = '5E25D58B6BF1633A1525984EB4E2E944';
 
-    // Create order ID for agent subscription
-    const subscriptionIdShort = subscription.id.slice(-12).replace(/-/g, '');
+    // Create order ID for agent subscription (using timestamp)
     const timestampShort = Date.now().toString().slice(-6);
-    const orderId = `AG${subscriptionIdShort}${timestampShort}`.substring(0, 30);
+    const orderId = `AG${timestampShort}${Math.random().toString(36).substring(2, 8).toUpperCase()}`.substring(0, 30);
+    
+    // Encode user details to pass via merchant params (will be used to create records after payment)
+    const userDetails = {
+      email,
+      fullName,
+      residentCountry,
+      mobileNumber,
+    };
+    // Base64 encode user details (safe for URL)
+    const encodedUserDetails = Buffer.from(JSON.stringify(userDetails)).toString('base64');
 
     // Prepare payment parameters
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
@@ -153,9 +105,9 @@ export async function POST(req: NextRequest) {
       delivery_country: 'AE',
       delivery_tel: mobileNumber.substring(0, 20),
       // Merchant parameters to identify agent subscription
-      merchant_param1: subscription.id.substring(0, 100), // Subscription ID
+      merchant_param1: orderId, // Order ID for tracking
       merchant_param2: 'agent_subscription', // Payment type identifier
-      merchant_param3: agent.id.substring(0, 100), // Agent ID
+      merchant_param3: encodedUserDetails.substring(0, 100), // Encoded user details (will create records after payment)
     };
 
     // Create encrypted data
@@ -191,7 +143,6 @@ export async function POST(req: NextRequest) {
       encRequest: encryptedData,
       accessCode,
       orderId,
-      subscriptionId: subscription.id,
     });
   } catch (error: any) {
     console.error('Error creating agent subscription payment:', error);
