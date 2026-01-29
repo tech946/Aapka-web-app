@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { CountrySelect } from '@/components/ui/country-select';
 import './leads.css';
 
 interface LeadFormData {
@@ -481,30 +482,19 @@ export default function SubmitLeadPage() {
 
               <div className='lead-form-group'>
                 <Label>Nationality</Label>
-                <input
-                  type='text'
+                <CountrySelect
                   value={formData.nationality}
-                  onChange={e =>
-                    handleInputChange('nationality', e.target.value)
-                  }
-                  placeholder='Enter nationality'
-                  className='lead-input'
+                  onChange={value => handleInputChange('nationality', value)}
+                  placeholder='Select nationality'
                 />
               </div>
 
               <div className='lead-form-group full-width'>
                 <Label>City / Country of Departure</Label>
-                <input
-                  type='text'
+                <CountrySelect
                   value={formData.city_country_of_departure}
-                  onChange={e =>
-                    handleInputChange(
-                      'city_country_of_departure',
-                      e.target.value
-                    )
-                  }
-                  placeholder='Enter city/country of departure'
-                  className='lead-input'
+                  onChange={value => handleInputChange('city_country_of_departure', value)}
+                  placeholder='Select country of departure'
                 />
               </div>
             </div>

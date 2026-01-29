@@ -259,6 +259,21 @@ export default function Header() {
               </li>
               <li
                 ref={el => {
+                  linkRefs.current['/travel-enquiry'] = el;
+                }}
+                className={pathname === '/travel-enquiry' ? 'active' : ''}
+              >
+                <Link
+                  href='/travel-enquiry'
+                  className={`header-nav-link ${
+                    pathname === '/travel-enquiry' ? 'active' : ''
+                  }`}
+                >
+                  Submit your enquiry
+                </Link>
+              </li>
+              {/* <li
+                ref={el => {
                   linkRefs.current['/contact'] = el;
                 }}
                 className={pathname === '/contact' ? 'active' : ''}
@@ -271,7 +286,7 @@ export default function Header() {
                 >
                   Contact Us
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href='/cart' className='header-cart-link'>
                   <ShoppingCart size={20} />
@@ -300,7 +315,11 @@ export default function Header() {
                         <span className='header-user-status-dot'></span>
                       </div>
                     ) : (
-                      <User size={20} />
+                      <div className='header-user-avatar-wrapper'>
+                        <div className='header-user-avatar header-user-avatar-icon'>
+                          <User size={20} />
+                        </div>
+                      </div>
                     )}
                   </button>
                   {showUserDropdown && (
@@ -487,6 +506,16 @@ export default function Header() {
             </Link>
 
             <Link
+              href='/travel-enquiry'
+              className={`mobile-sidebar-link ${
+                pathname === '/travel-enquiry' ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Submit your enquiry
+            </Link>
+
+            {/* <Link
               href='/contact'
               className={`mobile-sidebar-link ${
                 pathname === '/contact' ? 'active' : ''
@@ -494,7 +523,7 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Contact Us
-            </Link>
+            </Link> */}
 
             <Link
               href='/cart'
