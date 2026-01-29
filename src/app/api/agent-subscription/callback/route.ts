@@ -109,6 +109,25 @@ async function handleCallback(req: NextRequest) {
       console.error('[AGENT CALLBACK] Payment failed. Order status:', orderStatus);
       console.error('[AGENT CALLBACK] Full response data:', JSON.stringify(data, null, 2));
       
+      // Try to get user_id from merchant params to clean up
+      try {
+        if (encodedUserDetails) {
+          const decoded = Buffer.from(encodedUserDetails, 'base64').toString('utf-8');
+          const userDetails = JSON.parse(decoded);
+          if (userDetails.userId && typeof userDetails.userId === 'string') {
+            const userIdToCleanup = userDetails.userId;
+            // Delete the pending user account since payment failed
+            console.log('[AGENT CALLBACK] Cleaning up pending user account:', userIdToCleanup);
+            await supabaseAdmin.auth.admin.deleteUser(userIdToCleanup);
+            // Also delete profile
+            await supabaseAdmin.from('profiles').delete().eq('id', userIdToCleanup);
+          }
+        }
+      } catch (cleanupError) {
+        console.error('[AGENT CALLBACK] Error during cleanup:', cleanupError);
+        // Continue with redirect even if cleanup fails
+      }
+      
       // Include the actual failure reason in the error
       const failureReason = data.failure_message || data.status_message || data.order_status || 'Unknown reason';
       return NextResponse.redirect(
@@ -122,6 +141,7 @@ async function handleCallback(req: NextRequest) {
 
     // Decode user details from merchant param
     let userDetails: {
+      userId: string; // User ID from pre-created account
       email: string;
       fullName: string;
       residentCountry: string;
@@ -152,8 +172,9 @@ async function handleCallback(req: NextRequest) {
     }
 
     // Verify user details are present
-    if (!userDetails.email || !userDetails.fullName || !userDetails.residentCountry || !userDetails.mobileNumber) {
+    if (!userDetails.userId || !userDetails.email || !userDetails.fullName || !userDetails.residentCountry || !userDetails.mobileNumber) {
       console.error('[AGENT CALLBACK] Missing user details in payment callback:', {
+        hasUserId: !!userDetails.userId,
         hasEmail: !!userDetails.email,
         hasFullName: !!userDetails.fullName,
         hasResidentCountry: !!userDetails.residentCountry,
@@ -166,19 +187,64 @@ async function handleCallback(req: NextRequest) {
       );
     }
 
+    const userId = userDetails.userId;
+
+    // Verify the user account exists
+    const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (userCheckError || !existingUser?.user) {
+      console.error('[AGENT CALLBACK] User account not found:', userId, userCheckError);
+      return NextResponse.redirect(
+        new URL('/become-agent/subscribe?error=user_account_not_found', req.nextUrl.origin),
+        { status: 303 }
+      );
+    }
+
     // Check if agent already exists (double-check in case of duplicate payment)
     const { data: existingAgent } = await supabaseAdmin
       .from('agents')
       .select('id, user_id')
-      .eq('email', userDetails.email)
+      .eq('user_id', userId)
       .maybeSingle();
 
-    if (existingAgent && existingAgent.user_id) {
-      // Agent already exists and has account - redirect to login
+    if (existingAgent) {
+      // Agent already exists - redirect to login
+      console.log('[AGENT CALLBACK] Agent already exists for user:', userId);
       return NextResponse.redirect(
         new URL('/agent/login?error=already_registered&email=' + encodeURIComponent(userDetails.email), req.nextUrl.origin),
         { status: 303 } // Use 303 See Other to force GET redirect
       );
+    }
+
+    // Activate the user account (confirm email and update status)
+    console.log('[AGENT CALLBACK] Activating user account:', userId);
+    const { error: activateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      email_confirm: true, // Confirm email
+      user_metadata: {
+        ...existingUser.user.user_metadata,
+        account_status: 'active', // Update status from pending_payment to active
+      },
+    });
+
+    if (activateError) {
+      console.error('[AGENT CALLBACK] Error activating user account:', activateError);
+      // Continue anyway - user can still login
+    }
+
+    // Update profile status to active
+    const { error: profileUpdateError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        account_details: {
+          phone: userDetails.mobileNumber,
+          country: userDetails.residentCountry,
+          status: 'active',
+        },
+      })
+      .eq('id', userId);
+
+    if (profileUpdateError) {
+      console.error('[AGENT CALLBACK] Error updating profile:', profileUpdateError);
+      // Continue anyway - profile exists
     }
 
     // NOW create subscription record with completed status
@@ -189,6 +255,7 @@ async function handleCallback(req: NextRequest) {
     const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from('subscriptions')
       .insert({
+        user_id: userId, // Link to existing user
         subscription_type: 'agent_premium',
         amount_paid: paymentAmount,
         currency: currency,
@@ -205,6 +272,12 @@ async function handleCallback(req: NextRequest) {
     if (subscriptionError || !subscription) {
       console.error('[AGENT CALLBACK] Error creating subscription:', subscriptionError);
       console.error('[AGENT CALLBACK] Subscription error details:', JSON.stringify(subscriptionError, null, 2));
+      // Rollback: deactivate user account
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: {
+          account_status: 'payment_failed',
+        },
+      });
       return NextResponse.redirect(
         new URL('/become-agent/subscribe?error=subscription_creation_failed', req.nextUrl.origin),
         { status: 303 } // Use 303 See Other to force GET redirect
@@ -213,66 +286,6 @@ async function handleCallback(req: NextRequest) {
     
     console.log('[AGENT CALLBACK] Subscription created successfully:', subscription.id);
 
-    // Create user account in Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: userDetails.email,
-      email_confirm: true, // Auto-confirm email
-      password: `temp_${Date.now()}`, // Temporary password - user will need to reset
-      user_metadata: {
-        full_name: userDetails.fullName,
-        phone: userDetails.mobileNumber,
-      },
-    });
-
-    if (authError || !authData.user) {
-      console.error('[AGENT CALLBACK] Error creating user account:', authError);
-      console.error('[AGENT CALLBACK] Auth error details:', JSON.stringify(authError, null, 2));
-      // Rollback subscription if user creation fails
-      await supabaseAdmin
-        .from('subscriptions')
-        .delete()
-        .eq('id', subscription.id);
-
-      return NextResponse.redirect(
-        new URL('/become-agent/subscribe?error=user_creation_failed', req.nextUrl.origin),
-        { status: 303 } // Use 303 See Other to force GET redirect
-      );
-    }
-
-    const userId = authData.user.id;
-    console.log('[AGENT CALLBACK] User account created successfully:', userId);
-
-    // Create user profile
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .insert({
-        id: userId,
-        email_address: userDetails.email,
-        full_name: userDetails.fullName,
-        account_details: {
-          phone: userDetails.mobileNumber,
-          country: userDetails.residentCountry,
-        },
-      });
-
-    if (profileError) {
-      console.error('Error creating profile:', profileError);
-      // Continue anyway - profile might already exist
-    }
-
-    // Update subscription with user_id
-    const { error: subscriptionUpdateError } = await supabaseAdmin
-      .from('subscriptions')
-      .update({
-        user_id: userId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', subscription.id);
-
-    if (subscriptionUpdateError) {
-      console.error('Error updating subscription with user_id:', subscriptionUpdateError);
-      // Non-critical, continue
-    }
 
     // NOW create agent record with all details
     const { data: agent, error: agentError } = await supabaseAdmin
@@ -292,13 +305,18 @@ async function handleCallback(req: NextRequest) {
     if (agentError || !agent) {
       console.error('[AGENT CALLBACK] Error creating agent:', agentError);
       console.error('[AGENT CALLBACK] Agent error details:', JSON.stringify(agentError, null, 2));
-      // Rollback subscription and user if agent creation fails
+      // Rollback subscription and deactivate user if agent creation fails
       await supabaseAdmin
         .from('subscriptions')
         .delete()
         .eq('id', subscription.id);
       
-      // Note: We can't easily delete the user account, but subscription is cleaned up
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: {
+          account_status: 'agent_creation_failed',
+        },
+      });
+      
       return NextResponse.redirect(
         new URL('/become-agent/subscribe?error=agent_creation_failed', req.nextUrl.origin),
         { status: 303 } // Use 303 See Other to force GET redirect

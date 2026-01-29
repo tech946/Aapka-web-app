@@ -233,9 +233,21 @@ export async function POST(req: NextRequest) {
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
-    if (price === null || Number.isNaN(price)) {
+    
+    // For flexible date packages, validate that date_ranges is provided and not empty
+    const isFlexibleDatePackage = dateRanges !== null && Array.isArray(dateRanges) && dateRanges.length > 0;
+    if (isFlexibleDatePackage && (!dateRanges || dateRanges.length === 0)) {
+      return NextResponse.json(
+        { error: 'At least one date range is required for flexible date packages' },
+        { status: 400 }
+      );
+    }
+    
+    // For non-flexible date packages, price is required
+    if (!isFlexibleDatePackage && (price === null || Number.isNaN(price))) {
       return NextResponse.json({ error: 'price is required' }, { status: 400 });
     }
+    
     if (!categoryId) {
       return NextResponse.json(
         { error: 'category_id is required' },
@@ -269,7 +281,9 @@ export async function POST(req: NextRequest) {
     const insertData: Record<string, any> = {
       package_name: name,
       package_description: description,
-      package_price: price,
+      // For flexible date packages, use 0 as default price (prices come from date_ranges)
+      // Database requires NOT NULL, so we use 0 instead of null
+      package_price: isFlexibleDatePackage && (price === null || Number.isNaN(price)) ? 0 : price,
       package_category_id: categoryId,
       package_days: days,
       package_nights: nights,

@@ -32,7 +32,7 @@ export default function BecomeAgentPage() {
 
         <div className='become-agent-header'>
           <h1 className='become-agent-title'>
-            Become an <span className='title-highlight'>Agent</span>
+            Become AAPKA <span className='title-highlight'>Partner</span>
           </h1>
           <p className='become-agent-subtitle'>
             Join our network of travel agents and unlock exclusive benefits

@@ -89,6 +89,7 @@ export default function AddPackageClient({
   const [imageLoadError, setImageLoadError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
   const modalContent = open ? (
@@ -821,28 +822,58 @@ export default function AddPackageClient({
             type='button'
             className='btn_primary'
             disabled={
-              !name.trim() || !price || Number.isNaN(Number(price)) || isPending
+              isPending || 
+              isSaving || 
+              !name.trim() || 
+              (!usesFlexibleDate && (!price || Number.isNaN(Number(price))))
             }
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Save button clicked!', { name, price, isPending, usesFlexibleDate, dateRangesLength: dateRanges.length });
-              startTransition(async () => {
-                try {
-                  if (!name.trim()) {
-                    toast.error('Name is required');
-                    return;
-                  }
-                  if (!price || Number.isNaN(Number(price))) {
-                    toast.error('Valid price is required');
-                    return;
-                  }
-                  
-                  // Validate flexible date packages have at least one date range
-                  if (usesFlexibleDate && (!dateRanges || dateRanges.length === 0)) {
-                    toast.error('At least one date range is required for flexible date packages');
-                    return;
-                  }
+              
+              console.log('Save button clicked!', { 
+                name, 
+                price, 
+                isPending, 
+                isSaving,
+                usesFlexibleDate, 
+                dateRangesLength: dateRanges.length 
+              });
+              
+              // Client-side validation before starting
+              if (!name.trim()) {
+                toast.error('Name is required');
+                return;
+              }
+              
+              // For flexible date packages, price is in date ranges, so skip main price validation
+              // For other package types, price is required
+              if (!usesFlexibleDate) {
+                if (!price || Number.isNaN(Number(price))) {
+                  toast.error('Valid price is required');
+                  return;
+                }
+              }
+              
+              // Validate flexible date packages have at least one date range
+              if (usesFlexibleDate) {
+                if (!dateRanges || dateRanges.length === 0) {
+                  toast.error('At least one date range is required for flexible date packages');
+                  return;
+                }
+                // Also validate that each date range has valid adult price
+                const invalidRange = dateRanges.find(
+                  range => !range.adultPrice || Number.isNaN(Number(range.adultPrice)) || Number(range.adultPrice) <= 0
+                );
+                if (invalidRange) {
+                  toast.error('All date ranges must have a valid adult price');
+                  return;
+                }
+              }
+              
+              setIsSaving(true);
+              
+              try {
                   
                   // Prepare date ranges payload for flexible date packages
                   const dateRangesPayload = usesFlexibleDate ? dateRanges.map((d: any) => ({
@@ -861,7 +892,11 @@ export default function AddPackageClient({
                   const payload: any = {
                     name: name.trim(),
                     description: description.trim() || undefined,
-                    price: Number(price),
+                    // For flexible date packages, use 0 as default price (prices come from date_ranges)
+                    // For other package types, price is required
+                    price: usesFlexibleDate 
+                      ? (price && !Number.isNaN(Number(price)) ? Number(price) : 0)
+                      : Number(price),
                     category_id: categoryId,
                     days: days ? Number(days) : undefined,
                     nights: nights ? Number(nights) : undefined,
@@ -915,24 +950,27 @@ export default function AddPackageClient({
                     flexibleDatesCount: dateRangesPayload.length,
                   });
 
-                  console.log('AddPackage: Full payload being sent:', JSON.stringify(payload, null, 2));
-                  
-                  const res = await fetch('/api/packages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                  });
-                  
-                  const responseData = await res.json().catch(() => ({}));
-                  console.log('AddPackage: API response:', res.status, responseData);
-                  
-                  if (!res.ok) {
-                    throw new Error(responseData?.error ?? 'Failed to add package');
-                  }
-                  
-                  if (!responseData.data) {
-                    throw new Error('Package was not created. Please check the console for details.');
-                  }
+                console.log('AddPackage: Full payload being sent:', JSON.stringify(payload, null, 2));
+                
+                const res = await fetch('/api/packages', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload),
+                });
+                
+                const responseData = await res.json().catch(() => ({}));
+                console.log('AddPackage: API response:', res.status, responseData);
+                
+                if (!res.ok) {
+                  throw new Error(responseData?.error ?? 'Failed to add package');
+                }
+                
+                if (!responseData.data) {
+                  throw new Error('Package was not created. Please check the console for details.');
+                }
+                
+                // Use startTransition for state updates
+                startTransition(() => {
                   setOpen(false);
                   // Reset form
                   setName('');
@@ -946,6 +984,18 @@ export default function AddPackageClient({
                   setAdultPrice('');
                   setChildPrice('');
                   setInfantPrice('');
+                  setSoloTravellerEnabled(false);
+                  setSoloTravellerPrice('');
+                  setWithVisa(false);
+                  setAdultVisaPrice('');
+                  setChildVisaPrice('');
+                  setInfantVisaPrice('');
+                  setAdultDiscountAmount('');
+                  setChildDiscountAmount('');
+                  setInfantDiscountAmount('');
+                  setDiscountStartDate('');
+                  setDiscountEndDate('');
+                  setAgentDiscount('');
                   setTermsHtml('');
                   setInclusionHtml('');
                   setExclusionHtml('');
@@ -965,23 +1015,26 @@ export default function AddPackageClient({
                   if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                   }
-                  // Refresh current route to show the new package
-                  router.refresh();
-                  // Also notify list to refetch
-                  try {
-                    window.dispatchEvent(new CustomEvent('packages:changed'));
-                  } catch {}
-                  toast.success('Package added');
-                } catch (e) {
-                  console.error('Error adding package:', e);
-                  toast.error(
-                    e instanceof Error ? e.message : 'Failed to add package'
-                  );
-                }
-              });
+                });
+                
+                // Refresh current route to show the new package
+                router.refresh();
+                // Also notify list to refetch
+                try {
+                  window.dispatchEvent(new CustomEvent('packages:changed'));
+                } catch {}
+                toast.success('Package added');
+              } catch (e) {
+                console.error('Error adding package:', e);
+                toast.error(
+                  e instanceof Error ? e.message : 'Failed to add package'
+                );
+              } finally {
+                setIsSaving(false);
+              }
             }}
           >
-            {isPending ? 'Saving...' : 'Save'}
+            {isSaving || isPending ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>

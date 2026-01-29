@@ -15,12 +15,16 @@ function SubscribePageContent() {
     fullName: '',
     residentCountry: '',
     mobileNumber: '',
+    password: '',
+    confirmPassword: '',
   });
   const [errors, setErrors] = useState<{
     email?: string;
     fullName?: string;
     residentCountry?: string;
     mobileNumber?: string;
+    password?: string;
+    confirmPassword?: string;
     general?: string;
   }>({});
 
@@ -91,6 +95,18 @@ function SubscribePageContent() {
       newErrors.mobileNumber = 'Please enter a valid mobile number';
     }
 
+    if (!formData.password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -116,6 +132,7 @@ function SubscribePageContent() {
           fullName: formData.fullName.trim(),
           residentCountry: formData.residentCountry.trim(),
           mobileNumber: formData.mobileNumber.trim(),
+          password: formData.password,
         }),
       });
 
@@ -265,6 +282,42 @@ function SubscribePageContent() {
             />
             {errors.mobileNumber && (
               <p className='subscribe-error'>{errors.mobileNumber}</p>
+            )}
+          </div>
+
+          <div className='subscribe-form-group'>
+            <label htmlFor='password' className='subscribe-label'>
+              Password <span className='required'>*</span>
+            </label>
+            <input
+              type='password'
+              id='password'
+              value={formData.password}
+              onChange={e => handleInputChange('password', e.target.value)}
+              className={`subscribe-input ${errors.password ? 'error' : ''}`}
+              placeholder='Enter your password (min. 8 characters)'
+              disabled={isSubmitting}
+            />
+            {errors.password && (
+              <p className='subscribe-error'>{errors.password}</p>
+            )}
+          </div>
+
+          <div className='subscribe-form-group'>
+            <label htmlFor='confirmPassword' className='subscribe-label'>
+              Confirm Password <span className='required'>*</span>
+            </label>
+            <input
+              type='password'
+              id='confirmPassword'
+              value={formData.confirmPassword}
+              onChange={e => handleInputChange('confirmPassword', e.target.value)}
+              className={`subscribe-input ${errors.confirmPassword ? 'error' : ''}`}
+              placeholder='Confirm your password'
+              disabled={isSubmitting}
+            />
+            {errors.confirmPassword && (
+              <p className='subscribe-error'>{errors.confirmPassword}</p>
             )}
           </div>
 

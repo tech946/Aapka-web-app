@@ -10,17 +10,26 @@ interface CreateAgentSubscriptionPaymentRequest {
   fullName: string;
   residentCountry: string;
   mobileNumber: string;
+  password: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: CreateAgentSubscriptionPaymentRequest = await req.json();
-    const { email, fullName, residentCountry, mobileNumber } = body;
+    const { email, fullName, residentCountry, mobileNumber, password } = body;
 
     // Validation
-    if (!email || !fullName || !residentCountry || !mobileNumber) {
+    if (!email || !fullName || !residentCountry || !mobileNumber || !password) {
       return NextResponse.json(
         { error: 'All fields are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters long' },
         { status: 400 }
       );
     }
@@ -53,9 +62,79 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if user already exists in auth by checking profiles table
+    // (users in auth.users will have corresponding profiles)
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email_address', email)
+      .maybeSingle();
+    
+    if (existingProfile) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists. Please login or use a different email.' },
+        { status: 400 }
+      );
+    }
+
+    // Create user account BEFORE payment (with password, but inactive/pending)
+    // This way user can login immediately after payment success
+    console.log('[CREATE PAYMENT] Creating user account before payment...');
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: email,
+      password: password, // User's actual password
+      email_confirm: false, // Don't auto-confirm - will confirm after payment
+      user_metadata: {
+        full_name: fullName,
+        phone: mobileNumber,
+        account_status: 'pending_payment', // Mark as pending payment
+      },
+    });
+
+    if (authError || !authData.user) {
+      console.error('[CREATE PAYMENT] Error creating user account:', authError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to create account',
+          details: authError?.message || 'Unknown error creating user account'
+        },
+        { status: 500 }
+      );
+    }
+
+    const userId = authData.user.id;
+    console.log('[CREATE PAYMENT] User account created successfully:', userId);
+
+    // Create profile for the user (inactive/pending)
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: userId,
+        email_address: email,
+        full_name: fullName,
+        account_details: {
+          phone: mobileNumber,
+          country: residentCountry,
+          status: 'pending_payment',
+        },
+      });
+
+    if (profileError) {
+      console.error('[CREATE PAYMENT] Error creating profile:', profileError);
+      // Try to clean up user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return NextResponse.json(
+        { 
+          error: 'Failed to create profile',
+          details: profileError.message
+        },
+        { status: 500 }
+      );
+    }
+
     // DO NOT create subscription or agent records yet
     // Only create them AFTER payment is successful in the callback
-    // Store user details in merchant params to retrieve after payment
+    // Store user_id in merchant params to retrieve after payment
     const subscriptionAmount = 110.00; // Correct amount: 110 AED
     const currency = 'AED';
 
@@ -69,7 +148,9 @@ export async function POST(req: NextRequest) {
     const orderId = `AG${timestampShort}${Math.random().toString(36).substring(2, 8).toUpperCase()}`.substring(0, 30);
     
     // Encode user details to pass via merchant params (will be used to create records after payment)
+    // Include user_id so we can activate the account after payment
     const userDetails = {
+      userId, // Store user_id to activate account after payment
       email,
       fullName,
       residentCountry,
