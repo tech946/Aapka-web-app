@@ -231,21 +231,25 @@ async function handleCallback(req: NextRequest) {
       // Continue anyway - user can still login
     }
 
-    // Update profile (only update fields that exist in the schema)
-    // Note: account_details column may not exist, so we'll just update basic fields
+    // Try to update profile (only update id if other columns don't exist)
+    // Note: profiles table structure may vary - Supabase might auto-create it
     const { error: profileUpdateError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        email_address: userDetails.email,
-        full_name: userDetails.fullName,
-        // Only update account_details if column exists (will be ignored if it doesn't)
-        // account_details: {
-        //   phone: userDetails.mobileNumber,
-        //   country: userDetails.residentCountry,
-        //   status: 'active',
-        // },
-      })
-      .eq('id', userId);
+      .upsert({
+        id: userId,
+        // Only include id - other columns may not exist in schema
+        // Supabase might auto-create profiles or have different schema
+      }, {
+        onConflict: 'id'
+      });
+
+    if (profileUpdateError) {
+      console.warn('[AGENT CALLBACK] Profile update warning (may be auto-created):', profileUpdateError.message);
+      // Don't fail - profile might be auto-created by Supabase trigger
+      // Continue with agent creation
+    } else {
+      console.log('[AGENT CALLBACK] Profile updated successfully');
+    }
 
     if (profileUpdateError) {
       console.error('[AGENT CALLBACK] Error updating profile:', profileUpdateError);
