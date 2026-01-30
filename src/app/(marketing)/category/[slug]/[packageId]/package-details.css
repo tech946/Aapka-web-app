@@ -142,7 +142,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .tabs-slider-nav-button:hover:not(:disabled) {
   background: #f9fafb;
   border-color: #d1d5db;
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .tabs-slider-nav-button:disabled {
@@ -174,8 +174,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .package-tab-button.active {
   background: transparent;
-  color: #ff4d00;
-  border-bottom-color: #ff4d00;
+  color: #fd6b06;
+  border-bottom-color: #fd6b06;
   border-bottom-width: 2px;
 }
 
@@ -188,7 +188,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-tab-button.active .package-tab-chevron {
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .package-tab-button:hover .package-tab-chevron {
@@ -236,7 +236,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .discount-banner-content {
-  background: linear-gradient(135deg, #ff6b35 0%, #ff4d00 50%, #e63900 100%);
+  background: linear-gradient(135deg, #ff6b35 0%, #fd6b06 50%, #e63900 100%);
   border-radius: 12px;
   padding: 16px 24px;
   display: flex;
@@ -331,9 +331,42 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   margin-right: 8px;
 }
 
+.booking-price-original.agent-discount-original,
+.mobile-booking-price-original.agent-discount-original {
+  font-size: 16px;
+  margin-bottom: 4px;
+  display: block;
+}
+
 .booking-price-amount.discounted,
 .mobile-booking-price-amount.discounted {
   color: #16a34a;
+}
+
+/* Premium Partner Discount Badge */
+.agent-discount-badge-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  justify-content: center;
+}
+
+.agent-discount-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  background: #d1fae5;
+  padding: 3px 10px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.agent-discount-badge-amount {
+  color: #047857;
+  font-weight: 700;
 }
 
 /* Responsive discount banner */
@@ -492,7 +525,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   transform: translateX(-50%);
   padding: 14px 32px;
   height: 56px;
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
   border: none;
   border-radius: 28px;
@@ -669,7 +702,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .desktop-booking-popover-content .booking-input-wrapper:focus-within {
-  border-color: #ff4d00;
+  border-color: #fd6b06;
   box-shadow: 0 0 0 3px rgba(255, 77, 0, 0.1);
 }
 
@@ -685,7 +718,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 15px;
   font-weight: 600;
   border-radius: 14px;
-  background: linear-gradient(135deg, #ff4d00 0%, #e64500 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
   box-shadow: 0 4px 14px -2px rgba(255, 77, 0, 0.4);
   transition: all 0.2s ease;
 }
@@ -762,7 +795,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .solo-checkbox input {
   width: 18px;
   height: 18px;
-  accent-color: #ff4d00;
+  accent-color: #fd6b06;
   cursor: pointer;
 }
 
@@ -815,8 +848,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .solo-pill.active {
-  background: linear-gradient(135deg, #ff4d00 0%, #e64500 100%);
-  border-color: #ff4d00;
+  background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
+  border-color: #fd6b06;
   color: #fff;
   box-shadow: 0 3px 10px -2px rgba(255, 77, 0, 0.4);
   transform: translateY(-1px);
@@ -835,7 +868,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   width: 14px;
   height: 14px;
   margin-top: 2px;
-  accent-color: #ff4d00;
+  accent-color: #fd6b06;
 }
 
 .booking-price-amount {
@@ -870,7 +903,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .booking-input-wrapper:hover .booking-input-icon,
 .booking-input-wrapper:focus-within .booking-input-icon {
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .booking-dropdown-chevron {
@@ -916,7 +949,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .booking-input:focus {
   outline: none;
-  border-color: #ff4d00;
+  border-color: #fd6b06;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(255, 77, 0, 0.08);
 }
@@ -1010,7 +1043,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .counter-button:hover:not(:disabled) {
-  background: #ff4d00;
+  background: #fd6b06;
   transform: scale(1.05);
 }
 
@@ -1085,7 +1118,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .booking-date-item.selected {
-  background: linear-gradient(135deg, #ff4d00 0%, #e64500 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
   color: white;
 }
 
@@ -1168,7 +1201,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .custom-calendar {
   --rdp-cell-size: 40px;
-  --rdp-accent-color: #ff4d00;
+  --rdp-accent-color: #fd6b06;
   --rdp-background-color: #fef3e2;
 }
 
@@ -1230,7 +1263,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .custom-calendar .rdp-day_selected {
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
 }
 
@@ -1311,7 +1344,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .booking-add-to-cart-button {
   padding: 14px 36px;
   height: 52px;
-  background: linear-gradient(135deg, #ff4d00 0%, #e64500 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
   color: #fff;
   border: none;
   border-radius: 14px;
@@ -1339,7 +1372,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .booking-contact-button {
   padding: 14px 36px;
   height: 52px;
-  background: linear-gradient(135deg, #ff4d00 0%, #e64500 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
   color: #fff;
   border: none;
   border-radius: 14px;
@@ -1478,7 +1511,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   .tabs-slider-nav-button:hover:not(:disabled) {
     background: #f9fafb;
     border-color: #d1d5db;
-    color: #ff4d00;
+    color: #fd6b06;
   }
 
   .tabs-slider-nav-button:disabled {
@@ -1500,7 +1533,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   }
 
   .package-tab-button.active {
-    border-bottom: 2px solid #ff4d00 !important;
+    border-bottom: 2px solid #fd6b06 !important;
   }
 
   .package-details-title-section {
@@ -1555,7 +1588,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   .mobile-add-to-cart-button {
     width: 100%;
     padding: 0 32px;
-    background: #ff4d00;
+    background: #fd6b06;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -1944,7 +1977,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
   .mobile-custom-calendar {
     --rdp-cell-size: 40px;
-    --rdp-accent-color: #ff4d00;
+    --rdp-accent-color: #fd6b06;
     --rdp-background-color: #fef3e2;
   }
 
@@ -2007,7 +2040,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   }
 
   .mobile-custom-calendar .rdp-day_selected {
-    background: #ff4d00;
+    background: #fd6b06;
     color: #fff;
   }
 
@@ -2091,7 +2124,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     width: 100%;
     padding: 14px 32px;
     height: 40px;
-    background: #ff4d00;
+    background: #fd6b06;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -2112,7 +2145,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     width: 100%;
     padding: 14px 32px;
     height: 40px;
-    background: #ff4d00;
+    background: #fd6b06;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -2147,7 +2180,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   right: 24px;
   width: 48px;
   height: 48px;
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
   border: none;
   border-radius: 50%;
@@ -2220,6 +2253,307 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     padding-block: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Share Payment Link Section - Mobile */
+.mobile-share-payment-link-section {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.mobile-share-payment-link-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fd6b06;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-share-payment-link-button:hover {
+  background: #e64500;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 77, 0, 0.3);
+}
+
+/* Share Payment Link Section - Desktop */
+.desktop-share-payment-link-section {
+  padding: 12px 0;
+  margin-bottom: 12px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.desktop-share-payment-link-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fd6b06;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.desktop-share-payment-link-button:hover {
+  background: #e64500;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 77, 0, 0.3);
+}
+
+/* Share Modal */
+.share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  padding: 20px;
+}
+
+.share-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 10000;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+  pointer-events: auto;
+}
+
+.share-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.share-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.share-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.share-modal-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.share-modal-body {
+  padding: 24px;
+}
+
+.share-modal-description {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.share-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-option-button {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.share-option-button:hover:not(:disabled) {
+  border-color: #fd6b06;
+  background: #fffbf5;
+}
+
+.share-option-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.share-option-with-discount {
+  border-color: #d1fae5;
+  background: #f0fdf4;
+}
+
+.share-option-with-discount:hover:not(:disabled) {
+  border-color: #059669;
+  background: #ecfdf5;
+}
+
+.share-option-without-discount {
+  border-color: #dbeafe;
+  background: #eff6ff;
+}
+
+.share-option-without-discount:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
+.share-option-header {
+  margin-bottom: 8px;
+}
+
+.share-option-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  display: block;
+}
+
+.share-option-description {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.share-link-display {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: monospace;
+  background: #f9fafb;
+  color: #111827;
+}
+
+.share-link-copy-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #fd6b06;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.share-link-copy-button:hover {
+  background: #e64500;
+}
+
+.share-link-generate-new {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.share-link-generate-new:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .share-modal-content {
+    width: 95%;
+    max-height: 85vh;
+  }
+
+  .share-modal-header {
+    padding: 16px 20px;
+  }
+
+  .share-modal-body {
+    padding: 20px;
+  }
+
+  .share-payment-link-section {
+    padding: 12px 16px;
+  }
+
+  .share-payment-link-button {
+    width: 100%;
     justify-content: center;
   }
 }

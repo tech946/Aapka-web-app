@@ -23,7 +23,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid #e5e7eb;
-  border-top-color: #ff4d00;
+  border-top-color: #fd6b06;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -65,7 +65,7 @@
 /* Calendar Base Styles */
 .flexible-date-calendar {
   --rdp-cell-size: 34px;
-  --rdp-accent-color: #ff4d00;
+  --rdp-accent-color: #fd6b06;
   --rdp-background-color: #fef3e2;
   margin: 0 !important;
   overflow: visible !important;
@@ -139,7 +139,7 @@
 }
 
 .flexible-day-button.selected {
-  background: #ff4d00 !important;
+  background: #fd6b06 !important;
   color: #fff !important;
 }
 

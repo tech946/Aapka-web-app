@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,10 @@ interface CartItemRequest {
   visaForAdults?: number;
   visaForChildren?: number;
   visaForInfants?: number;
+  // Referral data
+  referralCode?: string | null;
+  referralId?: string | null;
+  referralDiscountApplied?: boolean;
 }
 
 // Helper function to check if discount is active
@@ -72,12 +77,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if user has active agent subscription
+    let hasActiveAgentSubscription = false;
+    try {
+      const supabase = createServerSupabaseClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session && session.user) {
+        const userId = session.user.id;
+        const { data: agent } = await supabaseAdmin
+          .from('agents')
+          .select('id, subscription_id, is_active')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (agent && agent.subscription_id) {
+          const { data: subscription } = await supabaseAdmin
+            .from('subscriptions')
+            .select('id, payment_status, is_active, end_date')
+            .eq('id', agent.subscription_id)
+            .single();
+
+          if (
+            subscription &&
+            subscription.payment_status === 'completed' &&
+            subscription.is_active === true &&
+            new Date(subscription.end_date) > new Date()
+          ) {
+            hasActiveAgentSubscription = true;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking agent subscription:', error);
+      // Continue without agent discount if check fails
+    }
+
     // Fetch all packages at once (including date_ranges for flexible date pricing)
     const packageIds = items.map(item => item.packageId);
     const { data: packages, error: fetchError } = await supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date'
+        'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount'
       )
       .in('package_id', packageIds);
 
@@ -244,6 +288,20 @@ export async function POST(req: NextRequest) {
       calculatedPrice += visaPrice;
       originalPrice += visaPrice;
 
+      // Apply agent discount if user is an agent with active subscription (percentage-based)
+      // OR if referral discount is applied (customer came via referral link with discount)
+      let agentDiscountAmount = 0;
+      const shouldApplyDiscount = 
+        (hasActiveAgentSubscription && pkg?.agent_discount && pkg.agent_discount > 0) ||
+        (item.referralDiscountApplied && item.referralId && pkg?.agent_discount && pkg.agent_discount > 0);
+      
+      if (shouldApplyDiscount) {
+        // agent_discount is now a percentage (e.g., 10 for 10%)
+        const discountPercentage = pkg.agent_discount;
+        agentDiscountAmount = (calculatedPrice * discountPercentage) / 100;
+        calculatedPrice = Math.max(0, calculatedPrice - agentDiscountAmount);
+      }
+
       return {
         packageId: item.packageId,
         valid: true,
@@ -262,6 +320,8 @@ export async function POST(req: NextRequest) {
         adultDiscountAmount: discountActive ? pkg.adult_discount_amount : null,
         childDiscountAmount: discountActive ? pkg.child_discount_amount : null,
         infantDiscountAmount: discountActive ? pkg.infant_discount_amount : null,
+        // Agent discount info
+        agentDiscountAmount: hasActiveAgentSubscription && agentDiscountAmount > 0 ? agentDiscountAmount : null,
         // Visa info
         visaPrice: visaPrice,
         adultVisaPrice: pkg.adult_visa_price,

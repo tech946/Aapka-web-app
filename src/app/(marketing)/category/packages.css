@@ -193,7 +193,7 @@
 }
 
 .sort-option.active {
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
 }
 
@@ -225,7 +225,7 @@
 }
 
 .view-toggle-btn.active {
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
 }
 
@@ -401,11 +401,56 @@
   margin-bottom: 12px;
 }
 
+/* Premium Partner Discount Badge for Listing Cards */
+.agent-discount-badge-container-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.agent-discount-badge-card {
+  font-size: 10px;
+  font-weight: 600;
+  color: #059669;
+  background: #d1fae5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.agent-discount-badge-amount-card {
+  color: #047857;
+  font-weight: 700;
+}
+
+.package-price-original {
+  font-size: 14px;
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+.package-price-discounted {
+  font-size: 18px;
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.package-price-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .package-details-button {
   display: inline-block;
   width: 100%;
   padding: 12px 20px;
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
   text-align: center;
   text-decoration: none;

@@ -113,6 +113,65 @@ async function handleCallback(req: NextRequest) {
       );
     }
 
+    // Approve commissions for this booking (if referral exists and discount was not applied)
+    try {
+      const { data: booking } = await supabaseAdmin
+        .from('bookings')
+        .select('referral_id, total_amount, payment_amount_currency')
+        .eq('id', bookingId)
+        .single();
+
+      if (booking?.referral_id) {
+        // Check if referral had discount applied
+        const { data: referral } = await supabaseAdmin
+          .from('agent_referrals')
+          .select('id, discount_applied, agent_id')
+          .eq('id', booking.referral_id)
+          .single();
+
+        // Only approve commission if discount was NOT applied
+        if (referral && !referral.discount_applied) {
+          // Update commission status to approved
+          const { data: commissions } = await supabaseAdmin
+            .from('agent_commissions')
+            .select('id, amount, currency')
+            .eq('booking_id', bookingId)
+            .eq('status', 'pending');
+
+          if (commissions && commissions.length > 0) {
+            for (const commission of commissions) {
+              // Update commission status
+              await supabaseAdmin
+                .from('agent_commissions')
+                .update({
+                  status: 'approved',
+                  approved_at: new Date().toISOString(),
+                })
+                .eq('id', commission.id);
+
+              // Move wallet balance from pending to available
+              await supabaseAdmin
+                .from('agent_wallet')
+                .update({
+                  balance_type: 'available',
+                })
+                .eq('commission_id', commission.id)
+                .eq('balance_type', 'pending');
+
+              // Update referral status
+              await supabaseAdmin
+                .from('agent_referrals')
+                .update({ status: 'completed' })
+                .eq('id', booking.referral_id);
+            }
+          }
+        }
+      }
+    } catch (commissionError) {
+      // Log error but don't fail payment callback
+      console.error('[COMMISSION] Error approving commission:', commissionError);
+    }
+
     // Fetch booking details and send confirmation emails
     // Don't block redirect if email fails - send in background
     console.log(

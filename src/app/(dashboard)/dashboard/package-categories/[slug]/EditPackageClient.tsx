@@ -715,11 +715,11 @@ export default function EditPackageClient({
           <div className='form_section'>
             <h5 className='section_title'>Agent Discount (Optional)</h5>
             <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '16px' }}>
-              Exclusive discount for agents with active subscriptions. This discount will be applied to the total price (total price - agent discount).
+              Exclusive discount for agents with active subscriptions. This discount will be applied as a percentage to the total price (e.g., 10 for 10% discount).
             </p>
             <div className='form_grid pricing_grid'>
               <div className='form_row'>
-                <label>Agent Discount (AED)</label>
+                <label>Agent Discount (%)</label>
                 <input
                   type='text'
                   inputMode='numeric'
@@ -730,7 +730,7 @@ export default function EditPackageClient({
                       setAgentDiscount(val);
                     }
                   }}
-                  placeholder='100'
+                  placeholder='10'
                 />
               </div>
             </div>

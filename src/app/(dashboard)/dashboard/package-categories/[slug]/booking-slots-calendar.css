@@ -91,7 +91,7 @@
 
 .custom-calendar {
   --rdp-cell-size: 40px !important;
-  --rdp-accent-color: #ff4d00 !important;
+  --rdp-accent-color: #fd6b06 !important;
   --rdp-background-color: #fef3e2 !important;
   width: 100% !important;
   margin: 0 !important;
@@ -207,7 +207,7 @@
 }
 
 .custom-calendar .rdp-day_selected {
-  background: #ff4d00;
+  background: #fd6b06;
   color: #fff;
 }
 
@@ -217,12 +217,12 @@
 
 /* Range styles */
 .custom-calendar .rdp-day_range_start {
-  background: #ff4d00 !important;
+  background: #fd6b06 !important;
   color: #fff !important;
 }
 
 .custom-calendar .rdp-day_range_end {
-  background: #ff4d00 !important;
+  background: #fd6b06 !important;
   color: #fff !important;
 }
 
@@ -249,13 +249,13 @@
 }
 
 .custom-calendar .rdp-day.hover-end {
-  background: #ff4d00 !important;
+  background: #fd6b06 !important;
   color: #fff !important;
   font-weight: 500;
 }
 
 .custom-calendar .rdp-day_range_start.hover-range {
-  background: #ff4d00 !important;
+  background: #fd6b06 !important;
   color: #fff !important;
 }
 

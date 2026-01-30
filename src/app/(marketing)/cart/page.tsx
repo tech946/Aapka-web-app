@@ -328,6 +328,26 @@ export default function CartPage() {
                             {formatPrice(item.originalPrice)}
                           </span>
                         )}
+                        {item.agentDiscountAmount && item.agentDiscountAmount > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                            <span style={{ 
+                              fontSize: '10px', 
+                              fontWeight: 600, 
+                              color: '#059669', 
+                              background: '#d1fae5', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              Premium Partner Discount
+                              <span style={{ color: '#047857', fontWeight: 700 }}>
+                                -{formatPrice(item.agentDiscountAmount).replace('AED ', '')}
+                              </span>
+                            </span>
+                          </div>
+                        )}
                         <span className={item.isDiscountActive ? 'cart-item-discounted-price' : ''}>
                           {formatPrice(item.price)}
                         </span>

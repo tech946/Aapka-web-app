@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { redirectResponseToJson } from '@/lib/ccavenue-crypto';
+import { generateAgentCode } from '@/lib/agent-code-utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -295,6 +296,10 @@ async function handleCallback(req: NextRequest) {
     
     console.log('[AGENT CALLBACK] Subscription created successfully:', subscription.id);
 
+    // Generate unique agent code
+    console.log('[AGENT CALLBACK] Generating agent code...');
+    const agentCode = await generateAgentCode();
+    console.log('[AGENT CALLBACK] Generated agent code:', agentCode);
 
     // NOW create agent record with all details
     const { data: agent, error: agentError } = await supabaseAdmin
@@ -307,6 +312,7 @@ async function handleCallback(req: NextRequest) {
         mobile_number: userDetails.mobileNumber,
         subscription_id: subscription.id,
         document_image_url: userDetails.documentImageUrl || null, // Document image URL from Cloudinary
+        agent_code: agentCode, // Auto-generated unique agent code
         is_active: true, // Active since payment is completed
       })
       .select()

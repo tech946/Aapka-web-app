@@ -18,6 +18,9 @@ import {
   Minus,
   X,
   ArrowUp,
+  Share2,
+  Copy,
+  Check,
   ChevronLeft,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -133,6 +136,19 @@ export default function PackageDetailsPage() {
   const [visaForInfants, setVisaForInfants] = useState(0);
   const [isAgent, setIsAgent] = useState(false);
   const [hasActiveAgentSubscription, setHasActiveAgentSubscription] = useState(false);
+  
+  // Referral tracking
+  const [referralData, setReferralData] = useState<{
+    referralCode: string;
+    referralId: string;
+    discountApplied: boolean;
+  } | null>(null);
+  
+  // Share link state (for agents)
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // Initialize minimum adults: 1 for all packages, 2 for offer packages and flexible date packages
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -155,6 +171,8 @@ export default function PackageDetailsPage() {
   }, [isSoloTraveller, withVisa, visaForAdults]);
 
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
+  const [agentDiscountAmount, setAgentDiscountAmount] = useState<number | null>(null);
+  const [priceBeforeAgentDiscount, setPriceBeforeAgentDiscount] = useState<number | null>(null);
   const [expandedItineraryItems, setExpandedItineraryItems] = useState<
     Set<number>
   >(new Set());
@@ -598,13 +616,29 @@ export default function PackageDetailsPage() {
     const visaPrice = getVisaPrice();
     let finalPrice = basePrice + visaPrice;
     
-    // Apply agent discount if user is an agent with active subscription
-    if (hasActiveAgentSubscription && pkg?.agent_discount && pkg.agent_discount > 0) {
-      finalPrice = Math.max(0, finalPrice - pkg.agent_discount);
+    // Apply agent discount if:
+    // 1. User is an agent with active subscription, OR
+    // 2. User came via referral link with discount=true
+    let discountAmount = 0;
+    const agentDiscountPercentage = pkg?.agent_discount || 0;
+    const shouldApplyAgentDiscount = 
+      (hasActiveAgentSubscription && agentDiscountPercentage > 0) ||
+      (referralData?.discountApplied === true && referralData?.referralId && agentDiscountPercentage > 0);
+    
+    if (shouldApplyAgentDiscount && agentDiscountPercentage > 0) {
+      // Store price before agent discount for display
+      setPriceBeforeAgentDiscount(finalPrice);
+      // agent_discount is now a percentage (e.g., 10 for 10%)
+      discountAmount = (finalPrice * agentDiscountPercentage) / 100;
+      finalPrice = Math.max(0, finalPrice - discountAmount);
+      setAgentDiscountAmount(discountAmount);
+    } else {
+      setAgentDiscountAmount(null);
+      setPriceBeforeAgentDiscount(null);
     }
     
     setCalculatedPrice(finalPrice);
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate, hasActiveAgentSubscription]);
+  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate, hasActiveAgentSubscription, referralData]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
@@ -626,6 +660,116 @@ export default function PackageDetailsPage() {
       console.error('Error checking agent status:', error);
       setIsAgent(false);
       setHasActiveAgentSubscription(false);
+    }
+  };
+
+  // Detect and validate referral from URL
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    const discount = searchParams.get('discount');
+
+    if (!ref || !discount) {
+      // Check if referral exists in localStorage (from previous visit)
+      const storedReferral = localStorage.getItem('agent_referral');
+      if (storedReferral) {
+        try {
+          const parsed = JSON.parse(storedReferral);
+          setReferralData(parsed);
+        } catch (e) {
+          localStorage.removeItem('agent_referral');
+        }
+      }
+      return;
+    }
+
+    // Validate referral code
+    const validateReferral = async () => {
+      try {
+        const response = await fetch('/api/agent-referrals/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            referralCode: ref,
+            discount: discount,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.valid && result.referral) {
+          const referralInfo = {
+            referralCode: ref,
+            referralId: result.referral.id,
+            discountApplied: result.referral.discountApplied,
+          };
+          
+          setReferralData(referralInfo);
+          
+          // Store in localStorage for cart/checkout
+          localStorage.setItem('agent_referral', JSON.stringify(referralInfo));
+          
+          // Remove URL parameters (clean URL)
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        } else {
+          // Invalid referral - remove from URL silently
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        }
+      } catch (error) {
+        console.error('Error validating referral:', error);
+        // Remove invalid referral from URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    };
+
+    validateReferral();
+  }, [searchParams]);
+
+  // Generate share link (for agents)
+  const handleGenerateShareLink = async (discountApplied: boolean) => {
+    if (!pkg || !hasActiveAgentSubscription) return;
+
+    setIsGeneratingLink(true);
+    try {
+      const response = await fetch('/api/agent-referrals/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packageId: pkg.package_id,
+          discountApplied: discountApplied,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.referral) {
+        setShareLink(result.referral.shareableUrl);
+        setShowShareModal(true);
+      } else {
+        toast.error(result.error || 'Failed to generate share link');
+      }
+    } catch (error) {
+      console.error('Error generating share link:', error);
+      toast.error('Failed to generate share link');
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  // Copy share link to clipboard
+  const handleCopyShareLink = async () => {
+    if (!shareLink) return;
+
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setShareLinkCopied(true);
+      toast.success('Link copied to clipboard!');
+      setTimeout(() => setShareLinkCopied(false), 2000);
+    } catch (error) {
+      console.error('Error copying link:', error);
+      toast.error('Failed to copy link');
     }
   };
 
@@ -852,6 +996,10 @@ export default function PackageDetailsPage() {
       visaForAdults: withVisa ? visaForAdults : 0,
       visaForChildren: withVisa ? visaForChildren : 0,
       visaForInfants: withVisa ? visaForInfants : 0,
+      // Include referral data if available
+      referralCode: referralData?.referralCode || null,
+      referralId: referralData?.referralId || null,
+      referralDiscountApplied: referralData?.discountApplied || false,
     };
 
     addToCart(cartItem);
@@ -1072,6 +1220,115 @@ export default function PackageDetailsPage() {
       <div className='package-details-title-section'>
         <h1>{pkg.package_name}</h1>
       </div>
+
+
+      {/* Share Link Modal */}
+      {showShareModal && (
+        <div
+          className='share-modal-overlay'
+          onClick={(e) => {
+            // Only close if clicking the overlay itself, not the modal content
+            if (e.target === e.currentTarget) {
+              setShowShareModal(false);
+              setShareLink(null);
+              setShareLinkCopied(false);
+            }
+          }}
+        >
+          <div 
+            className='share-modal-content'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='share-modal-header'>
+              <h3>Share Payment Link</h3>
+              <button
+                className='share-modal-close'
+                onClick={() => {
+                  setShowShareModal(false);
+                  setShareLink(null);
+                  setShareLinkCopied(false);
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className='share-modal-body'>
+              {!shareLink ? (
+                <>
+                  <p className='share-modal-description'>
+                    Choose how you want to share this package:
+                  </p>
+                  <div className='share-options'>
+                    <button
+                      className='share-option-button share-option-with-discount'
+                      onClick={() => handleGenerateShareLink(true)}
+                      disabled={isGeneratingLink}
+                    >
+                      <div className='share-option-header'>
+                        <span className='share-option-title'>Share with Discount</span>
+                      </div>
+                      <p className='share-option-description'>
+                        Customer gets the agent discount. You don't earn commission.
+                      </p>
+                    </button>
+                    <button
+                      className='share-option-button share-option-without-discount'
+                      onClick={() => handleGenerateShareLink(false)}
+                      disabled={isGeneratingLink}
+                    >
+                      <div className='share-option-header'>
+                        <span className='share-option-title'>Share without Discount</span>
+                      </div>
+                      <p className='share-option-description'>
+                        Customer pays full price. You earn commission on successful booking.
+                      </p>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className='share-modal-description'>
+                    Your shareable link has been generated:
+                  </p>
+                  <div className='share-link-display'>
+                    <input
+                      type='text'
+                      readOnly
+                      value={shareLink}
+                      className='share-link-input'
+                    />
+                    <button
+                      className='share-link-copy-button'
+                      onClick={handleCopyShareLink}
+                    >
+                      {shareLinkCopied ? (
+                        <>
+                          <Check size={16} />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={16} />
+                          Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <button
+                    className='share-link-generate-new'
+                    onClick={() => {
+                      setShareLink(null);
+                      setShareLinkCopied(false);
+                    }}
+                  >
+                    Generate New Link
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Discount Banner */}
       {isDiscountActive && (
@@ -1583,12 +1840,27 @@ export default function PackageDetailsPage() {
               )}
 
               <div className='mobile-booking-price-section'>
-                {isDiscountActive && getOriginalPrice() !== calculatedPrice && (
-                  <span className='mobile-booking-price-original'>
+                {(hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
+                  <>
+                    <span className='mobile-booking-price-original agent-discount-original'>
+                      {formatPrice(priceBeforeAgentDiscount)}
+                    </span>
+                    <div className='agent-discount-badge-container'>
+                      <span className='agent-discount-badge'>
+                        Premium Partner Discount
+                        <span className='agent-discount-badge-amount'>
+                          -{formatPrice(agentDiscountAmount).replace('AED ', '')}
+                        </span>
+                      </span>
+                    </div>
+                  </>
+                )}
+                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) && (
+                  <span className='mobile-booking-price-original agent-discount-original'>
                     {formatPrice(getOriginalPrice())}
                   </span>
                 )}
-                <span className={`mobile-booking-price-amount ${isDiscountActive ? 'discounted' : ''}`}>
+                <span className={`mobile-booking-price-amount ${isDiscountActive || ((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
                   {formatPrice(
                     calculatedPrice !== null
                       ? calculatedPrice
@@ -1846,6 +2118,22 @@ export default function PackageDetailsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Share Payment Link Button (for agents) - Mobile */}
+              {hasActiveAgentSubscription && isAgent && (
+                <div className='mobile-share-payment-link-section'>
+                  <button
+                    onClick={() => {
+                      setShowMobileDrawer(false);
+                      setShowShareModal(true);
+                    }}
+                    className='mobile-share-payment-link-button'
+                  >
+                    <Share2 size={16} />
+                    Share Payment Link
+                  </button>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className='mobile-booking-actions'>
@@ -2170,12 +2458,27 @@ export default function PackageDetailsPage() {
                 )}
 
                 <div className='booking-price-section'>
-                {isDiscountActive && getOriginalPrice() !== calculatedPrice && (
-                  <span className='booking-price-original'>
+                {(hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
+                  <>
+                    <span className='booking-price-original agent-discount-original'>
+                      {formatPrice(priceBeforeAgentDiscount)}
+                    </span>
+                    <div className='agent-discount-badge-container'>
+                      <span className='agent-discount-badge'>
+                        Premium Partner Discount
+                        <span className='agent-discount-badge-amount'>
+                          -{formatPrice(agentDiscountAmount).replace('AED ', '')}
+                        </span>
+                      </span>
+                    </div>
+                  </>
+                )}
+                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) && (
+                  <span className='booking-price-original agent-discount-original'>
                     {formatPrice(getOriginalPrice())}
                   </span>
                 )}
-                <span className={`booking-price-amount ${isDiscountActive ? 'discounted' : ''}`}>
+                <span className={`booking-price-amount ${isDiscountActive || ((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
                   {formatPrice(
                     calculatedPrice !== null
                       ? calculatedPrice
@@ -2188,6 +2491,22 @@ export default function PackageDetailsPage() {
                     : 'total'}
                 </span>
               </div>
+
+              {/* Share Payment Link Button (for agents) - Desktop */}
+              {hasActiveAgentSubscription && isAgent && (
+                <div className='desktop-share-payment-link-section'>
+                  <button
+                    onClick={() => {
+                      setShowDesktopPopover(false);
+                      setShowShareModal(true);
+                    }}
+                    className='desktop-share-payment-link-button'
+                  >
+                    <Share2 size={16} />
+                    Share Payment Link
+                  </button>
+                </div>
+              )}
 
               <div className='input-selectors'>
                 {/* Persons Selector */}

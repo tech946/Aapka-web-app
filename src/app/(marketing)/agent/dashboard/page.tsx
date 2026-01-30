@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { FileText, User, Calendar } from 'lucide-react';
+import { Wallet, TrendingUp } from 'lucide-react';
 import './dashboard.css';
 
 interface Subscription {
@@ -31,7 +31,7 @@ interface Agent {
   created_at: string;
 }
 
-type TabType = 'invoice' | 'personal' | 'bookings';
+type TabType = 'invoice' | 'personal' | 'bookings' | 'commissions';
 
 export default function AgentDashboardPage() {
   const router = useRouter();
@@ -40,6 +40,13 @@ export default function AgentDashboardPage() {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [commissions, setCommissions] = useState<any[]>([]);
+  const [walletBalance, setWalletBalance] = useState<{
+    available: number;
+    pending: number;
+    total: number;
+  }>({ available: 0, pending: 0, total: 0 });
+  const [loadingCommissions, setLoadingCommissions] = useState(false);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -70,6 +77,13 @@ export default function AgentDashboardPage() {
         const data = await response.json();
         setAgent(data.agent);
         setSubscription(data.subscription);
+        
+        // Load commissions and wallet if agent exists
+        // Use agentId from response or agent.id
+        const agentId = data.agentId || data.agent?.id;
+        if (agentId) {
+          loadCommissionsAndWallet(agentId);
+        }
       } catch (error: any) {
         console.error('Error loading dashboard:', error);
         toast.error('Failed to load dashboard. Please try again.');
@@ -82,16 +96,22 @@ export default function AgentDashboardPage() {
     loadDashboard();
   }, [router]);
 
-  const handleLogout = async () => {
+  const loadCommissionsAndWallet = async (agentId: string) => {
+    setLoadingCommissions(true);
     try {
-      const supabase = createClientComponentClient();
-      await supabase.auth.signOut();
-      router.push('/agent/login');
-      toast.success('Logged out successfully');
+      const response = await fetch(`/api/agent-referrals/commissions?agentId=${agentId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCommissions(data.commissions || []);
+        setWalletBalance(data.walletBalance || { available: 0, pending: 0, total: 0 });
+      }
     } catch (error) {
-      toast.error('Failed to logout');
+      console.error('Error loading commissions:', error);
+    } finally {
+      setLoadingCommissions(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -108,44 +128,40 @@ export default function AgentDashboardPage() {
       <div className='agent-dashboard-container'>
         <div className='agent-dashboard-header'>
           <div>
-            <h1 className='dashboard-title'>Agent Dashboard</h1>
             <p className='dashboard-subtitle'>Welcome back, {agent?.full_name || 'Agent'}</p>
           </div>
-          <button onClick={handleLogout} className='logout-button'>
-            Logout
+        </div>
+
+        {/* Horizontal Tabs Navigation */}
+        <div className='agent-dashboard-tabs'>
+          <button
+            className={`dashboard-tab ${activeTab === 'invoice' ? 'active' : ''}`}
+            onClick={() => setActiveTab('invoice')}
+          >
+            Invoice
+          </button>
+          <button
+            className={`dashboard-tab ${activeTab === 'personal' ? 'active' : ''}`}
+            onClick={() => setActiveTab('personal')}
+          >
+            Personal Info
+          </button>
+          <button
+            className={`dashboard-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bookings')}
+          >
+            My Booking
+          </button>
+          <button
+            className={`dashboard-tab ${activeTab === 'commissions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('commissions')}
+          >
+            Commissions
           </button>
         </div>
 
-        <div className='agent-dashboard-layout'>
-          {/* Sidebar */}
-          <aside className='agent-dashboard-sidebar'>
-            <nav className='sidebar-nav'>
-              <button
-                className={`sidebar-nav-item ${activeTab === 'invoice' ? 'active' : ''}`}
-                onClick={() => setActiveTab('invoice')}
-              >
-                <FileText size={20} />
-                <span>Invoice</span>
-              </button>
-              <button
-                className={`sidebar-nav-item ${activeTab === 'personal' ? 'active' : ''}`}
-                onClick={() => setActiveTab('personal')}
-              >
-                <User size={20} />
-                <span>Personal Info</span>
-              </button>
-              <button
-                className={`sidebar-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
-                onClick={() => setActiveTab('bookings')}
-              >
-                <Calendar size={20} />
-                <span>My Booking</span>
-              </button>
-            </nav>
-          </aside>
-
-          {/* Main Content */}
-          <main className='agent-dashboard-main'>
+        {/* Main Content */}
+        <main className='agent-dashboard-main'>
             {activeTab === 'invoice' && subscription && (
               <div className='dashboard-card'>
                 <h2 className='card-title'>Invoice Details</h2>
@@ -272,8 +288,89 @@ export default function AgentDashboardPage() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'commissions' && (
+              <div className='commissions-dashboard'>
+                {loadingCommissions ? (
+                  <div className='loading-state'>Loading...</div>
+                ) : (
+                  <>
+                    {/* Wallet Summary Cards */}
+                    <div className='wallet-summary-cards'>
+                      <div className='wallet-summary-card available'>
+                        <div className='wallet-card-content'>
+                          <p className='wallet-label'>Available Balance</p>
+                          <p className='wallet-amount'>AED {walletBalance.available.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <div className='wallet-summary-card pending'>
+                        <div className='wallet-card-content'>
+                          <p className='wallet-label'>Pending</p>
+                          <p className='wallet-amount'>AED {walletBalance.pending.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <div className='wallet-summary-card total'>
+                        <div className='wallet-card-content'>
+                          <p className='wallet-label'>Total Earnings</p>
+                          <p className='wallet-amount'>AED {walletBalance.total.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Commissions Cards Grid */}
+                    <div className='commissions-section'>
+                      <h2 className='commissions-section-title'>Commission History</h2>
+                      {commissions.length === 0 ? (
+                        <div className='commissions-empty-state'>
+                          <div className='empty-state-icon'>
+                            <TrendingUp size={48} />
+                          </div>
+                          <h3 className='empty-state-title'>No Commissions Yet</h3>
+                          <p className='empty-state-description'>
+                            Start sharing your referral links to earn commissions on successful bookings.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className='commissions-grid'>
+                          {commissions.map((commission: any) => (
+                            <div key={commission.id} className='commission-card'>
+                              <div className='commission-card-header'>
+                                <div className='commission-amount'>
+                                  <span className='commission-currency'>{commission.currency}</span>
+                                  <span className='commission-value'>{commission.amount.toFixed(2)}</span>
+                                </div>
+                                <span className={`commission-status-badge status-${commission.status}`}>
+                                  {commission.status.charAt(0).toUpperCase() + commission.status.slice(1)}
+                                </span>
+                              </div>
+                              <div className='commission-card-body'>
+                                <div className='commission-detail-row'>
+                                  <span className='commission-detail-label'>Booking ID</span>
+                                  <span className='commission-detail-value'>
+                                    #{commission.booking_id?.slice(0, 8).toUpperCase() || 'N/A'}
+                                  </span>
+                                </div>
+                                <div className='commission-detail-row'>
+                                  <span className='commission-detail-label'>Commission Rate</span>
+                                  <span className='commission-detail-value'>{commission.commission_rate}%</span>
+                                </div>
+                                <div className='commission-detail-row'>
+                                  <span className='commission-detail-label'>Date</span>
+                                  <span className='commission-detail-value'>
+                                    {format(new Date(commission.created_at), 'MMM dd, yyyy')}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </main>
-        </div>
       </div>
     </div>
   );

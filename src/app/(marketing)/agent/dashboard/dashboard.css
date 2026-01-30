@@ -11,9 +11,6 @@
 }
 
 .agent-dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 2rem;
 }
 
@@ -30,22 +27,6 @@
   margin: 0;
 }
 
-.logout-button {
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-button:hover {
-  background-color: #b91c1c;
-  transform: translateY(-2px);
-}
 
 .dashboard-content {
   display: flex;
@@ -209,36 +190,23 @@
   margin: 0.5rem 0;
 }
 
-/* Dashboard Layout with Sidebar */
-.agent-dashboard-layout {
+/* Horizontal Tabs Navigation */
+.agent-dashboard-tabs {
   display: flex;
-  gap: 2rem;
-  align-items: flex-start;
-}
-
-.agent-dashboard-sidebar {
-  flex-shrink: 0;
-  width: 250px;
+  gap: 0;
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 0.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 2rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.sidebar-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 1rem;
+.dashboard-tab {
+  flex: 1;
+  min-width: fit-content;
+  padding: 0.875rem 1.5rem;
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -248,27 +216,35 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  white-space: nowrap;
+  position: relative;
 }
 
-.sidebar-nav-item:hover {
-  background: #f9fafb;
+.dashboard-tab:hover {
   color: #fd6b06;
+  background: rgba(253, 107, 6, 0.05);
 }
 
-.sidebar-nav-item.active {
+.dashboard-tab.active {
+  color: #fd6b06;
   background: rgba(253, 107, 6, 0.1);
-  color: #fd6b06;
   font-weight: 600;
 }
 
-.sidebar-nav-item svg {
-  flex-shrink: 0;
+.dashboard-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: #fd6b06;
+  border-radius: 2px 2px 0 0;
 }
 
 .agent-dashboard-main {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
 }
 
 .invoice-pending {
@@ -300,25 +276,14 @@
     font-size: 2rem;
   }
 
-  .agent-dashboard-layout {
-    flex-direction: column;
-    gap: 1.5rem;
+  .agent-dashboard-tabs {
+    margin-bottom: 1.5rem;
+    padding: 0.375rem;
   }
 
-  .agent-dashboard-sidebar {
-    width: 100%;
-    position: static;
-  }
-
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-  }
-
-  .sidebar-nav-item {
-    white-space: nowrap;
-    min-width: fit-content;
+  .dashboard-tab {
+    padding: 0.75rem 1rem;
+    font-size: 14px;
   }
 
   .dashboard-card {
@@ -332,5 +297,248 @@
   .invoice-header {
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .wallet-summary-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .commissions-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .commissions-section-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Commissions Dashboard */
+.commissions-dashboard {
+  width: 100%;
+}
+
+/* Wallet Summary Cards */
+.wallet-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.wallet-summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.wallet-summary-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.wallet-summary-card.available {
+  border-left: 4px solid #10b981;
+}
+
+.wallet-summary-card.pending {
+  border-left: 4px solid #f59e0b;
+}
+
+.wallet-summary-card.total {
+  border-left: 4px solid #3b82f6;
+}
+
+.wallet-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wallet-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wallet-amount {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Commissions Section */
+.commissions-section {
+  margin-top: 0;
+}
+
+.commissions-section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Commissions Grid */
+.commissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.commission-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.commission-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.commission-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.commission-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.commission-currency {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.commission-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.commission-status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.commission-status-badge.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.commission-status-badge.status-approved {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.commission-status-badge.status-paid {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.commission-status-badge.status-reversed,
+.commission-status-badge.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.commission-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.commission-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.commission-detail-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.commission-detail-value {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Empty State */
+.commissions-empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 50%;
+  color: #9ca3af;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state-description {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .wallet-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .commissions-table-container {
+    overflow-x: scroll;
+  }
+
+  .commissions-table {
+    min-width: 600px;
   }
 }

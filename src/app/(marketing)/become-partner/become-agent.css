@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: linear-gradient(135deg, #ff4d00 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   color: white;
   padding: 8px 16px;
   border-radius: 50px;
@@ -70,7 +70,7 @@
   color: #1f2937;
   margin: 0 0 0.5rem 0;
   line-height: 1.2;
-  background: linear-gradient(135deg, #ff4d00 0%, #0066cc 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #0066cc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -78,7 +78,7 @@
 
 .title-highlight {
   display: inline-block;
-  background: linear-gradient(135deg, #ff4d00 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -111,7 +111,7 @@
   border: 2px solid transparent;
   background-image: 
     linear-gradient(white, white),
-    linear-gradient(135deg, #ff4d00, #0066cc);
+    linear-gradient(135deg, #fd6b06, #0066cc);
   background-origin: border-box;
   background-clip: padding-box, border-box;
   transition: all 0.3s ease;
@@ -160,7 +160,7 @@
 }
 
 .title-icon {
-  color: #ff4d00;
+  color: #fd6b06;
   width: 20px;
   height: 20px;
   animation: float 3s ease-in-out infinite;
@@ -180,7 +180,7 @@
   font-weight: 800;
   color: #1f2937;
   margin: 0;
-  background: linear-gradient(135deg, #ff4d00 0%, #0066cc 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #0066cc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -197,7 +197,7 @@
 .price-amount {
   font-size: 3rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ff4d00 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -295,7 +295,7 @@
 
 .pricing-card-button {
   width: 100%;
-  background: linear-gradient(135deg, #ff4d00 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -329,7 +329,7 @@
 }
 
 .pricing-card-button:hover {
-  background: linear-gradient(135deg, #ea580c 0%, #ff4d00 100%);
+  background: linear-gradient(135deg, #ea580c 0%, #fd6b06 100%);
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(255, 77, 0, 0.4);
 }

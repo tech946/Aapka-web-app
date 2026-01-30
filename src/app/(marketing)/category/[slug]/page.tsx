@@ -29,6 +29,7 @@ interface Package {
   package_category_id?: string;
   adult_price?: number | null;
   child_price?: number | null;
+  agent_discount?: number | null;
   overview?: string | null;
   holiday_description_html?: string | null;
   thumbnail_image?: string | null;
@@ -54,6 +55,7 @@ export default function CategoryPage() {
   const [limit] = useState(12);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [hasActiveAgentSubscription, setHasActiveAgentSubscription] = useState(false);
 
   // Filter states
   const [sortBy, setSortBy] = useState('created_at_desc');
@@ -102,6 +104,21 @@ export default function CategoryPage() {
     };
 
     initialize();
+  }, []);
+
+  // Check if user is an agent
+  useEffect(() => {
+    const checkAgentStatus = async () => {
+      try {
+        const response = await fetch('/api/agent-subscription/check-agent-status');
+        const result = await response.json();
+        setHasActiveAgentSubscription(result.hasActiveSubscription || false);
+      } catch (error) {
+        console.error('Error checking agent status:', error);
+        setHasActiveAgentSubscription(false);
+      }
+    };
+    checkAgentStatus();
   }, []);
 
   // Helper function to format price - always shows AED
@@ -334,6 +351,7 @@ export default function CategoryPage() {
                         slug={slug}
                         packageSlug={packageSlug}
                         isFavorite={favorites.has(pkg.package_id)}
+                        hasActiveAgentSubscription={hasActiveAgentSubscription}
                         onToggleFavorite={e => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -383,6 +401,7 @@ function PackageCard({
   isFavorite,
   onToggleFavorite,
   userLocation,
+  hasActiveAgentSubscription,
 }: {
   pkg: Package;
   slug: string;
@@ -390,6 +409,7 @@ function PackageCard({
   isFavorite: boolean;
   onToggleFavorite: (e: React.MouseEvent) => void;
   userLocation: UserLocation | null;
+  hasActiveAgentSubscription: boolean;
 }) {
   // Helper function to get location/description text
   const getLocationText = (): string | null => {
@@ -482,7 +502,28 @@ function PackageCard({
           })()}
         </div>
         <div className='package-price'>
-          from {formatPrice(pkg.package_price)}
+          {hasActiveAgentSubscription && pkg.agent_discount && pkg.agent_discount > 0 && pkg.package_price ? (
+            <>
+              <div className='agent-discount-badge-container-card'>
+                <span className='agent-discount-badge-card'>
+                  Premium Partner Discount
+                  <span className='agent-discount-badge-amount-card'>
+                    -{formatPrice((pkg.package_price * pkg.agent_discount) / 100).replace('AED ', '')}
+                  </span>
+                </span>
+              </div>
+              <div className='package-price-wrapper'>
+                <span className='package-price-original'>
+                  from {formatPrice(pkg.package_price)}
+                </span>
+                <span className='package-price-discounted'>
+                  from {formatPrice(pkg.package_price - (pkg.package_price * pkg.agent_discount) / 100)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <span>from {formatPrice(pkg.package_price)}</span>
+          )}
         </div>
         <Link
           href={`/category/${slug}/${packageSlug}`}

@@ -26,6 +26,10 @@ export interface CartItemStorage {
   visaForAdults?: number;
   visaForChildren?: number;
   visaForInfants?: number;
+  // Referral data
+  referralCode?: string | null;
+  referralId?: string | null;
+  referralDiscountApplied?: boolean;
 }
 
 // Full cart item with validated prices from server
@@ -47,6 +51,8 @@ export interface CartItem extends CartItemStorage {
   adultDiscountAmount?: number | null;
   childDiscountAmount?: number | null;
   infantDiscountAmount?: number | null;
+  // Agent discount info
+  agentDiscountAmount?: number | null;
 }
 
 interface CartContextType {
@@ -148,6 +154,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   adultDiscountAmount: validated.adultDiscountAmount,
                   childDiscountAmount: validated.childDiscountAmount,
                   infantDiscountAmount: validated.infantDiscountAmount,
+                  // Agent discount info
+                  agentDiscountAmount: validated.agentDiscountAmount,
                 };
               }
               return item;

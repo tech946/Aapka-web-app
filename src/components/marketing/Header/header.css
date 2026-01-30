@@ -43,7 +43,7 @@ header {
   position: absolute;
   bottom: -4px;
   height: 2px;
-  background: linear-gradient(90deg, #ff4d00, #fd6b06);
+  background: linear-gradient(90deg, #fd6b06, #fd6b06);
   border-radius: 2px;
   pointer-events: none;
   z-index: 1;
@@ -85,7 +85,7 @@ header {
 }
 
 .header-dropdown-button:hover {
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .header-chevron {
@@ -141,7 +141,7 @@ header {
 
 .header-dropdown-item:hover {
   background: #f9fafb;
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .header-dropdown-item.disabled {
@@ -165,14 +165,14 @@ header {
 }
 
 .header-cart-link:hover {
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .header-cart-badge {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: #ff4d00;
+  background: #fd6b06;
   color: white;
   border-radius: 50%;
   width: 20px;
@@ -354,14 +354,14 @@ header {
 }
 
 .mobile-header-cart-button:hover {
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .mobile-header-cart-badge {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: #ff4d00;
+  background: #fd6b06;
   color: white;
   border-radius: 50%;
   width: 18px;
@@ -455,7 +455,7 @@ header {
 }
 
 .mobile-sidebar-close:hover {
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .mobile-sidebar-nav {
@@ -482,7 +482,7 @@ header {
 
 .mobile-sidebar-link:hover {
   background-color: #f9fafb;
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .mobile-sidebar-link.active {
@@ -565,7 +565,7 @@ header {
   position: absolute;
   top: 12px;
   right: 20px;
-  background: #ff4d00;
+  background: #fd6b06;
   color: white;
   border-radius: 50%;
   width: 20px;
@@ -620,7 +620,7 @@ header {
 
 .mobile-sidebar-dropdown-item:hover {
   background: #f3f4f6;
-  color: #ff4d00;
+  color: #fd6b06;
 }
 
 .mobile-sidebar-dropdown-item.disabled {
