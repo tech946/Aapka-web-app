@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify agent subscription is still active
+    // Verify agent exists and is active (verify agent_id from params matches real agent)
     const { data: agent, error: agentError } = await supabaseAdmin
       .from('agents')
       .select('id, is_active, subscription_id')
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     if (agentError || !agent || !agent.is_active) {
       return NextResponse.json(
-        { valid: false, error: 'Agent account is inactive' },
+        { valid: false, error: 'Agent account is inactive or not found' },
         { status: 200 }
       );
     }

@@ -198,6 +198,9 @@ export default function PackageDetailsPage() {
 
   useEffect(() => {
     if (packageSlug) {
+      // Reset package state when slug changes to prevent stale data
+      setPkg(null);
+      setLoading(true);
       fetchPackage();
       checkAgentStatus();
     }
@@ -211,11 +214,13 @@ export default function PackageDetailsPage() {
 
   // Set month to earliest available date when flexible date package loads
   useEffect(() => {
-    if (slug === 'flexible-date-packages' && pkg?.date_ranges) {
+    if (slug === 'flexible-date-packages' && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0) {
       const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
-      setMonth(earliestMonth);
+      if (earliestMonth) {
+        setMonth(earliestMonth);
+      }
     }
-  }, [slug, pkg?.date_ranges]);
+  }, [slug, pkg?.package_id, pkg?.date_ranges]);
 
   // Helper function to find the date range that contains a given date
   const findDateRangeForDate = useCallback((dateStr: string): DateRange | null => {
@@ -320,6 +325,8 @@ export default function PackageDetailsPage() {
   }, []);
 
   // Get flexible date info from date_ranges - finds the range that contains the given date
+  // This should return the SAME data for all users (normal users and shared link users)
+  // No difference based on referral status - always show actual prices from date ranges
   const getFlexibleDateInfo = useCallback((dateStr: string): {
     adult_price: number;
     child_price: number;
@@ -329,6 +336,7 @@ export default function PackageDetailsPage() {
   } | null => {
     const range = findDateRangeForDate(dateStr);
     if (!range) return null;
+    // Always return actual prices from date ranges - no modification based on referral
     return {
       adult_price: range.adultPrice,
       child_price: range.childPrice,
@@ -338,9 +346,12 @@ export default function PackageDetailsPage() {
     };
   }, [findDateRangeForDate]);
 
+  // Get available dates - should return SAME dates for all users (normal and shared link users)
+  // No difference based on referral status - always show all dates from date ranges
   const getAvailableDates = useCallback((): string[] => {
     // For flexible date packages, generate all dates within the configured date ranges
     // Include ALL dates (both available and sold out) - the calendar will handle showing sold out status
+    // This should be the SAME for all users regardless of referral status
     if (slug === 'flexible-date-packages' && pkg?.date_ranges && pkg.date_ranges.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -483,8 +494,11 @@ export default function PackageDetailsPage() {
   }, [pkg?.date_ranges]);
 
   // Get prices for selected date (for flexible date packages) or package base prices
+  // This should return the SAME prices for all users (normal and shared link users)
+  // The discount is applied AFTER getting these base prices, not here
   const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } => {
     // For flexible date packages, use date-specific pricing from date_ranges
+    // Always return actual prices from date ranges - no modification based on referral
     if (slug === 'flexible-date-packages') {
       // Check if date is selected (either as string or Date object)
       const dateToCheck = selectedDateString || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null);
@@ -493,6 +507,7 @@ export default function PackageDetailsPage() {
         const dateInfo = getFlexibleDateInfo(dateToCheck);
         if (dateInfo) {
           // Use prices from the date range that contains this date
+          // These are the actual prices - discount will be applied later if applicable
           return {
             adultPrice: dateInfo.adult_price || 0,
             childPrice: dateInfo.child_price || 0,
@@ -600,35 +615,49 @@ export default function PackageDetailsPage() {
         : prices.infantPrice;
     }
 
-    const totalPrice =
+    // Calculate total price based on selected date and persons
+    // For flexible date packages: use date-specific prices from date ranges
+    // For other packages: use package base prices
+    let totalPrice = 0;
+    
+    // Always use the prices from getPricesForDate() which handles date-specific pricing
+    // For flexible date packages, getPricesForDate() returns prices from the selected date's range
+    // For other packages, it returns package base prices
+    totalPrice =
       (persons.adult > 0 ? persons.adult * adultPrice : 0) +
       (persons.child > 0 ? persons.child * childPrice : 0) +
       (persons.infant > 0 ? persons.infant * infantPrice : 0);
 
-    // For flexible date packages, don't fall back to package base price
-    // Only use the calculated price from date-specific pricing
-    // For other packages, fall back to base price if no person pricing
-    const basePrice = slug === 'flexible-date-packages' 
-      ? totalPrice 
-      : (totalPrice === 0 ? (pkg.package_price || 0) : totalPrice);
+    // Only fall back to package_price if no per-person pricing and totalPrice is 0
+    // This should only happen for non-flexible date packages
+    if (totalPrice === 0 && slug !== 'flexible-date-packages' && !pkg.adult_price && !pkg.child_price && !pkg.infant_price) {
+      totalPrice = pkg.package_price || 0;
+    }
     
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
-    let finalPrice = basePrice + visaPrice;
+    let finalPrice = totalPrice + visaPrice;
     
-    // Apply agent discount if:
-    // 1. User is an agent with active subscription, OR
-    // 2. User came via referral link with discount=true
+    // Apply agent discount logic:
+    // 1. If user is an agent with active subscription: apply discount
+    // 2. If referral link with discount=true: apply discount (agent gets NO commission)
+    // 3. If referral link with discount=false: NO discount (normal price, agent gets commission)
     let discountAmount = 0;
     const agentDiscountPercentage = pkg?.agent_discount || 0;
+    
+    // Only apply discount if:
+    // - User is an agent with active subscription, OR
+    // - Referral link with discount=true (discounted link)
     const shouldApplyAgentDiscount = 
       (hasActiveAgentSubscription && agentDiscountPercentage > 0) ||
       (referralData?.discountApplied === true && referralData?.referralId && agentDiscountPercentage > 0);
     
+    // If referral link with discount=false, don't apply discount (normal price, agent gets commission)
+    
     if (shouldApplyAgentDiscount && agentDiscountPercentage > 0) {
       // Store price before agent discount for display
       setPriceBeforeAgentDiscount(finalPrice);
-      // agent_discount is now a percentage (e.g., 10 for 10%)
+      // agent_discount is now a percentage (e.g., 50 for 50%)
       discountAmount = (finalPrice * agentDiscountPercentage) / 100;
       finalPrice = Math.max(0, finalPrice - discountAmount);
       setAgentDiscountAmount(discountAmount);
@@ -780,7 +809,46 @@ export default function PackageDetailsPage() {
       const result = await response.json();
 
       if (result.data) {
-        setPkg(result.data);
+        // Process and normalize all package data to ensure consistency
+        const packageData = { ...result.data };
+        
+        // Parse date_ranges if it's a string (from JSONB column)
+        if (packageData.date_ranges) {
+          if (typeof packageData.date_ranges === 'string') {
+            try {
+              packageData.date_ranges = JSON.parse(packageData.date_ranges);
+            } catch (e) {
+              console.error('Error parsing date_ranges:', e);
+              packageData.date_ranges = null;
+            }
+          }
+          // Ensure it's an array
+          if (!Array.isArray(packageData.date_ranges)) {
+            packageData.date_ranges = null;
+          }
+        } else {
+          packageData.date_ranges = null;
+        }
+        
+        // Ensure with_visa is a boolean
+        if (packageData.with_visa !== undefined && packageData.with_visa !== null) {
+          packageData.with_visa = Boolean(packageData.with_visa);
+        } else {
+          packageData.with_visa = false;
+        }
+        
+        // Ensure all numeric fields are properly set
+        packageData.package_price = packageData.package_price || 0;
+        packageData.adult_price = packageData.adult_price || 0;
+        packageData.child_price = packageData.child_price || 0;
+        packageData.infant_price = packageData.infant_price || 0;
+        packageData.adult_visa_price = packageData.adult_visa_price || 0;
+        packageData.child_visa_price = packageData.child_visa_price || 0;
+        packageData.infant_visa_price = packageData.infant_visa_price || 0;
+        packageData.agent_discount = packageData.agent_discount || 0;
+        
+        // Set package data - this will trigger re-renders of dependent components
+        setPkg(packageData);
       } else {
       }
     } catch (error) {
@@ -886,6 +954,8 @@ export default function PackageDetailsPage() {
   };
 
   // Get disabled dates for DayPicker (for UAE Tours and Flexible Date Packages)
+  // This should return the SAME disabled dates for all users (normal and shared link users)
+  // No difference based on referral status - always show same sold out status and availability
   const getDisabledDates = (date: Date): boolean => {
     const today = startOfDay(new Date());
     const checkDate = startOfDay(date);
@@ -893,7 +963,14 @@ export default function PackageDetailsPage() {
     // Disable past dates
     if (checkDate < today) return true;
 
+    // For tours only: disable today's date (no same-day booking, only tomorrow onwards)
+    if (slug && usesBookingSlots(slug)) {
+      // Disable today - tours can only be booked from tomorrow onwards
+      if (checkDate.getTime() === today.getTime()) return true;
+    }
+
     // For flexible date packages, check if date falls within a valid date range
+    // Always use actual sold out status from date ranges - no modification based on referral
     if (slug === 'flexible-date-packages') {
       // Disable dates after package end_date
       if (pkg?.end_date) {
@@ -904,7 +981,7 @@ export default function PackageDetailsPage() {
       const dateStr = format(date, 'yyyy-MM-dd');
       const dateInfo = getFlexibleDateInfo(dateStr);
       if (!dateInfo) return true; // Disable if date is not within any date range
-      if (dateInfo.is_sold_out) return true; // Disable if the range is sold out
+      if (dateInfo.is_sold_out) return true; // Disable if the range is sold out - same for all users
       return false;
     }
 
@@ -1649,10 +1726,10 @@ export default function PackageDetailsPage() {
                 </div>
               )}
 
-              {/* Visa Option - Only for flexible date packages */}
-              {slug === 'flexible-date-packages' && (
-                <div className='solo-traveller-block' style={{ borderColor: '#3b82f6', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%)' }}>
-                  <label className='solo-checkbox' style={{ color: '#1e40af' }}>
+              {/* Visa Option - For flexible date packages and offer packages */}
+              {(slug === 'flexible-date-packages' || slug === 'offer-packages') && (
+                <div className='visa-option-block'>
+                  <label className='visa-checkbox'>
                     <input
                       type='checkbox'
                       checked={withVisa}
@@ -1681,27 +1758,15 @@ export default function PackageDetailsPage() {
                   </label>
 
                   {withVisa && (
-                    <div className='solo-options'>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className='visa-options'>
                         {(isSoloTraveller ? 1 : persons.adult) > 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                        <div className='visa-counter-row'>
+                          <span className='visa-counter-label'>
                               Visa for Adults ({isSoloTraveller ? 1 : persons.adult})
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className='visa-counter-controls'>
                               <button
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  border: '1px solid #93c5fd',
-                                  borderRadius: '6px',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                }}
+                              className='visa-counter-button'
                                 onClick={() => {
                                   if (isSoloTraveller) return; // Can't decrease below 1 for solo traveller
                                   setVisaForAdults(Math.max(0, visaForAdults - 1));
@@ -1710,22 +1775,11 @@ export default function PackageDetailsPage() {
                               >
                                 <Minus size={14} style={{ color: '#1e40af' }} />
                               </button>
-                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                            <span className='visa-counter-value'>
                                 {visaForAdults}
                               </span>
                               <button
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  border: '1px solid #93c5fd',
-                                  borderRadius: '6px',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                }}
+                              className='visa-counter-button'
                                 onClick={() => {
                                   if (isSoloTraveller) return; // Can't increase above 1 for solo traveller
                                   setVisaForAdults(Math.min(persons.adult, visaForAdults + 1));
@@ -1738,45 +1792,23 @@ export default function PackageDetailsPage() {
                           </div>
                         )}
                         {persons.child > 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                        <div className='visa-counter-row'>
+                          <span className='visa-counter-label'>
                               Visa for Children ({persons.child})
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className='visa-counter-controls'>
                               <button
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  border: '1px solid #93c5fd',
-                                  borderRadius: '6px',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                }}
+                              className='visa-counter-button'
                                 onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
                                 disabled={visaForChildren === 0}
                               >
                                 <Minus size={14} style={{ color: '#1e40af' }} />
                               </button>
-                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                            <span className='visa-counter-value'>
                                 {visaForChildren}
                               </span>
                               <button
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  border: '1px solid #93c5fd',
-                                  borderRadius: '6px',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                }}
+                              className='visa-counter-button'
                                 onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
                                 disabled={visaForChildren >= persons.child}
                               >
@@ -1786,45 +1818,23 @@ export default function PackageDetailsPage() {
                           </div>
                         )}
                         {persons.infant > 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                        <div className='visa-counter-row'>
+                          <span className='visa-counter-label'>
                               Visa for Infants ({persons.infant})
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className='visa-counter-controls'>
                               <button
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  border: '1px solid #93c5fd',
-                                  borderRadius: '6px',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                }}
+                              className='visa-counter-button'
                                 onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
                                 disabled={visaForInfants === 0}
                               >
                                 <Minus size={14} style={{ color: '#1e40af' }} />
                               </button>
-                              <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                            <span className='visa-counter-value'>
                                 {visaForInfants}
                               </span>
                               <button
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  border: '1px solid #93c5fd',
-                                  borderRadius: '6px',
-                                  background: '#fff',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                }}
+                              className='visa-counter-button'
                                 onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
                                 disabled={visaForInfants >= persons.infant}
                               >
@@ -1833,7 +1843,6 @@ export default function PackageDetailsPage() {
                             </div>
                           </div>
                         )}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -2050,11 +2059,12 @@ export default function PackageDetailsPage() {
                         onClick={e => e.stopPropagation()}
                         onTouchStart={e => e.stopPropagation()}
                       >
-                        {slug === 'flexible-date-packages' ? (
+                        {slug === 'flexible-date-packages' && !loading && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
                           <FlexibleDateCalendar
-                            packageId={pkg?.package_id || ''}
-                            endDate={pkg?.end_date}
-                            dateRanges={pkg?.date_ranges}
+                            key={`mobile-calendar-${pkg.package_id}-${pkg.date_ranges.length}`}
+                            packageId={pkg.package_id}
+                            endDate={pkg.end_date || undefined}
+                            dateRanges={pkg.date_ranges}
                             selectedDate={selectedDate}
                             onDateSelect={handleDateSelect}
                             month={month}
@@ -2120,7 +2130,7 @@ export default function PackageDetailsPage() {
               </div>
 
               {/* Share Payment Link Button (for agents) - Mobile */}
-              {hasActiveAgentSubscription && isAgent && (
+              {hasActiveAgentSubscription && (
                 <div className='mobile-share-payment-link-section'>
                   <button
                     onClick={() => {
@@ -2267,10 +2277,10 @@ export default function PackageDetailsPage() {
                   </div>
                 )}
 
-                {/* Visa Option - Only for flexible date packages */}
-                {slug === 'flexible-date-packages' && (
-                  <div className='solo-traveller-block' style={{ borderColor: '#3b82f6', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%)' }}>
-                    <label className='solo-checkbox' style={{ color: '#1e40af' }}>
+                {/* Visa Option - For flexible date packages and offer packages */}
+                {(slug === 'flexible-date-packages' || slug === 'offer-packages') && (
+                  <div className='visa-option-block'>
+                    <label className='visa-checkbox'>
                       <input
                         type='checkbox'
                         checked={withVisa}
@@ -2299,27 +2309,15 @@ export default function PackageDetailsPage() {
                     </label>
 
                     {withVisa && (
-                      <div className='solo-options'>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className='visa-options'>
                           {(isSoloTraveller ? 1 : persons.adult) > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                          <div className='visa-counter-row'>
+                            <span className='visa-counter-label'>
                                 Visa for Adults ({isSoloTraveller ? 1 : persons.adult})
                               </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className='visa-counter-controls'>
                                 <button
-                                  style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '6px',
-                                    background: '#fff',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 0,
-                                  }}
+                                className='visa-counter-button'
                                   onClick={() => {
                                     if (isSoloTraveller) return; // Can't decrease below 1 for solo traveller
                                     setVisaForAdults(Math.max(0, visaForAdults - 1));
@@ -2328,22 +2326,11 @@ export default function PackageDetailsPage() {
                                 >
                                   <Minus size={14} style={{ color: '#1e40af' }} />
                                 </button>
-                                <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                              <span className='visa-counter-value'>
                                   {visaForAdults}
                                 </span>
                                 <button
-                                  style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '6px',
-                                    background: '#fff',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 0,
-                                  }}
+                                className='visa-counter-button'
                                   onClick={() => {
                                     if (isSoloTraveller) return; // Can't increase above 1 for solo traveller
                                     setVisaForAdults(Math.min(persons.adult, visaForAdults + 1));
@@ -2356,45 +2343,23 @@ export default function PackageDetailsPage() {
                             </div>
                           )}
                           {persons.child > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                          <div className='visa-counter-row'>
+                            <span className='visa-counter-label'>
                                 Visa for Children ({persons.child})
                               </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className='visa-counter-controls'>
                                 <button
-                                  style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '6px',
-                                    background: '#fff',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 0,
-                                  }}
+                                className='visa-counter-button'
                                   onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
                                   disabled={visaForChildren === 0}
                                 >
                                   <Minus size={14} style={{ color: '#1e40af' }} />
                                 </button>
-                                <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                              <span className='visa-counter-value'>
                                   {visaForChildren}
                                 </span>
                                 <button
-                                  style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '6px',
-                                    background: '#fff',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 0,
-                                  }}
+                                className='visa-counter-button'
                                   onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
                                   disabled={visaForChildren >= persons.child}
                                 >
@@ -2404,45 +2369,23 @@ export default function PackageDetailsPage() {
                             </div>
                           )}
                           {persons.infant > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                          <div className='visa-counter-row'>
+                            <span className='visa-counter-label'>
                                 Visa for Infants ({persons.infant})
                               </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className='visa-counter-controls'>
                                 <button
-                                  style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '6px',
-                                    background: '#fff',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 0,
-                                  }}
+                                className='visa-counter-button'
                                   onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
                                   disabled={visaForInfants === 0}
                                 >
                                   <Minus size={14} style={{ color: '#1e40af' }} />
                                 </button>
-                                <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 500, color: '#1e40af' }}>
+                              <span className='visa-counter-value'>
                                   {visaForInfants}
                                 </span>
                                 <button
-                                  style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '6px',
-                                    background: '#fff',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    padding: 0,
-                                  }}
+                                className='visa-counter-button'
                                   onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
                                   disabled={visaForInfants >= persons.infant}
                                 >
@@ -2451,7 +2394,6 @@ export default function PackageDetailsPage() {
                               </div>
                             </div>
                           )}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -2493,7 +2435,7 @@ export default function PackageDetailsPage() {
               </div>
 
               {/* Share Payment Link Button (for agents) - Desktop */}
-              {hasActiveAgentSubscription && isAgent && (
+              {hasActiveAgentSubscription && (
                 <div className='desktop-share-payment-link-section'>
                   <button
                     onClick={() => {
@@ -2680,11 +2622,12 @@ export default function PackageDetailsPage() {
                         onClick={e => e.stopPropagation()}
                         onTouchStart={e => e.stopPropagation()}
                       >
-                        {slug === 'flexible-date-packages' ? (
+                        {slug === 'flexible-date-packages' && !loading && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
                           <FlexibleDateCalendar
-                            packageId={pkg?.package_id || ''}
-                            endDate={pkg?.end_date}
-                            dateRanges={pkg?.date_ranges}
+                            key={`desktop-calendar-${pkg.package_id}-${pkg.date_ranges.length}`}
+                            packageId={pkg.package_id}
+                            endDate={pkg.end_date || undefined}
+                            dateRanges={pkg.date_ranges}
                             selectedDate={selectedDate}
                             onDateSelect={handleDateSelect}
                             month={month}

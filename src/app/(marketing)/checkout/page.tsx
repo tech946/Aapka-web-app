@@ -67,6 +67,12 @@ export default function CheckoutPage() {
     return categorySlug === 'flexible-date-packages';
   });
 
+  // Check if any cart item is an offer package
+  const hasOfferPackage = cartItems.some(item => {
+    const categorySlug = item.categorySlug?.toLowerCase() || '';
+    return categorySlug === 'offer-packages';
+  });
+
   // Check if any cart item has visa selected
   const hasVisaSelected = cartItems.some(item => item.withVisa === true);
 
@@ -156,14 +162,25 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router]);
 
-  // For flexible date packages: only show documents if visa is selected
-  // For other packages: show documents for India (preserve previous functionality)
+  // Document display logic:
+  // - For tours: never show documents
+  // - For offer packages or flexible date packages: only show if visa is selected
+  // - For other packages: show documents for India (preserve previous functionality)
   // Computed after passengers state is initialized
   const shouldShowDocuments = useMemo(() => {
-    return hasFlexibleDatePackage
-      ? hasVisaSelected
-      : passengers[0]?.country === 'India';
-  }, [hasFlexibleDatePackage, hasVisaSelected, passengers]);
+    // Tours: never show documents
+    if (isTourCheckout) {
+      return false;
+    }
+    
+    // Offer packages or flexible date packages: only show if visa is selected
+    if (hasOfferPackage || hasFlexibleDatePackage) {
+      return hasVisaSelected;
+    }
+    
+    // Other packages: show for India
+    return passengers[0]?.country === 'India';
+  }, [isTourCheckout, hasOfferPackage, hasFlexibleDatePackage, hasVisaSelected, passengers]);
 
   // Fetch platform fee and detect user location on mount
   useEffect(() => {
@@ -328,11 +345,14 @@ export default function CheckoutPage() {
       }
 
       // Required documents logic:
-      // - For flexible date packages: only if visa is selected and not "Other" country
-      // - For other packages: if India (preserve previous functionality)
-      const requiresDocuments = hasFlexibleDatePackage
-        ? hasVisaSelected && !isOtherCountry
-        : !isOtherCountry;
+      // - For tours: never require documents
+      // - For offer packages or flexible date packages: only if visa is selected and not "Other" country
+      // - For other packages: require if not "Other" country (preserve previous functionality)
+      const requiresDocuments = isTourCheckout
+        ? false // Tours: never require documents
+        : (hasOfferPackage || hasFlexibleDatePackage)
+        ? hasVisaSelected && !isOtherCountry // Offer/flexible: only if visa selected
+        : !isOtherCountry; // Other packages: require if not "Other"
 
       if (requiresDocuments) {
         if (!passenger.applicantPhoto) {

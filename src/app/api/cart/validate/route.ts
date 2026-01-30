@@ -192,20 +192,48 @@ export async function POST(req: NextRequest) {
           soloTravellerPrice = pkg.solo_traveller_price ?? null;
         }
       } else {
-        // If no date selected, use package base prices (for tours and offer packages)
-        // Check if per-person prices are set (not null)
-        const hasPerPersonPricing = pkg.adult_price != null || pkg.child_price != null || pkg.infant_price != null;
-        
-        if (hasPerPersonPricing) {
-          // Use per-person pricing from columns
-          adultPrice = pkg.adult_price ?? 0;
-          childPrice = pkg.child_price ?? 0;
-          infantPrice = pkg.infant_price ?? 0;
+        // No date selected
+        // For flexible date packages, use minimum price from date ranges (for display)
+        if (pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0) {
+          const availableRanges = pkg.date_ranges.filter((r: any) => !r.isSoldOut);
+          if (availableRanges.length > 0) {
+            isFlexibleDatePackage = true;
+            // Get the range with minimum adult price for display when no date selected
+            const minRange = availableRanges.reduce((min: any, range: any) => 
+              (range.adultPrice < min.adultPrice) ? range : min
+            , availableRanges[0]);
+            
+            adultPrice = minRange.adultPrice || 0;
+            childPrice = minRange.childPrice || 0;
+            infantPrice = minRange.infantPrice || 0;
+            soloTravellerPrice = minRange.soloTravellerPrice ?? null;
+          } else {
+            // All ranges sold out, use package base prices
+            const hasPerPersonPricing = pkg.adult_price != null || pkg.child_price != null || pkg.infant_price != null;
+            if (hasPerPersonPricing) {
+              adultPrice = pkg.adult_price ?? 0;
+              childPrice = pkg.child_price ?? 0;
+              infantPrice = pkg.infant_price ?? 0;
+            } else {
+              usePackagePriceAsFlatRate = true;
+            }
+            soloTravellerPrice = pkg.solo_traveller_price ?? null;
+          }
         } else {
-          // No per-person pricing set, will use package_price as flat rate
-          usePackagePriceAsFlatRate = true;
+          // Not a flexible date package - use package base prices (for tours and offer packages)
+          const hasPerPersonPricing = pkg.adult_price != null || pkg.child_price != null || pkg.infant_price != null;
+          
+          if (hasPerPersonPricing) {
+            // Use per-person pricing from columns
+            adultPrice = pkg.adult_price ?? 0;
+            childPrice = pkg.child_price ?? 0;
+            infantPrice = pkg.infant_price ?? 0;
+          } else {
+            // No per-person pricing set, will use package_price as flat rate
+            usePackagePriceAsFlatRate = true;
+          }
+          soloTravellerPrice = pkg.solo_traveller_price ?? null;
         }
-        soloTravellerPrice = pkg.solo_traveller_price ?? null;
       }
 
       // Calculate price with discount applied
@@ -302,6 +330,11 @@ export async function POST(req: NextRequest) {
         calculatedPrice = Math.max(0, calculatedPrice - agentDiscountAmount);
       }
 
+      // Calculate price before agent discount for display
+      const priceBeforeAgentDiscount = shouldApplyDiscount && agentDiscountAmount > 0 
+        ? calculatedPrice + agentDiscountAmount 
+        : null;
+
       return {
         packageId: item.packageId,
         valid: true,
@@ -320,8 +353,9 @@ export async function POST(req: NextRequest) {
         adultDiscountAmount: discountActive ? pkg.adult_discount_amount : null,
         childDiscountAmount: discountActive ? pkg.child_discount_amount : null,
         infantDiscountAmount: discountActive ? pkg.infant_discount_amount : null,
-        // Agent discount info
-        agentDiscountAmount: hasActiveAgentSubscription && agentDiscountAmount > 0 ? agentDiscountAmount : null,
+        // Agent discount info - return if agent has subscription OR referral discount is applied
+        agentDiscountAmount: (hasActiveAgentSubscription || (item.referralDiscountApplied && item.referralId)) && agentDiscountAmount > 0 ? agentDiscountAmount : null,
+        priceBeforeAgentDiscount: priceBeforeAgentDiscount,
         // Visa info
         visaPrice: visaPrice,
         adultVisaPrice: pkg.adult_visa_price,

@@ -864,6 +864,104 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   color: #7c2d12;
 }
 
+/* Visa Option Styles */
+.visa-option-block {
+  border-radius: 6px;
+  border: 1px solid #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%);
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 2px 8px -2px rgba(59, 130, 246, 0.15);
+  transition: all 0.2s ease;
+}
+
+.visa-option-block:hover {
+  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.visa-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  cursor: pointer;
+}
+
+.visa-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.visa-checkbox input:checked {
+  transform: scale(1.05);
+}
+
+.visa-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 30px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.visa-counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.visa-counter-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.visa-counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.visa-counter-button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.visa-counter-button:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.visa-counter-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.visa-counter-value {
+  min-width: 24px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e40af;
+}
+
 .solo-consent input {
   width: 14px;
   height: 14px;
