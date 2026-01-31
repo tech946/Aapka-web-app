@@ -26,10 +26,6 @@ export interface CartItemStorage {
   visaForAdults?: number;
   visaForChildren?: number;
   visaForInfants?: number;
-  // Referral data
-  referralCode?: string | null;
-  referralId?: string | null;
-  referralDiscountApplied?: boolean;
 }
 
 // Full cart item with validated prices from server

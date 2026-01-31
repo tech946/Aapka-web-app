@@ -18,9 +18,6 @@ import {
   Minus,
   X,
   ArrowUp,
-  Share2,
-  Copy,
-  Check,
   ChevronLeft,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -108,6 +105,7 @@ export default function PackageDetailsPage() {
 
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRangesReady, setDateRangesReady] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [category, setCategory] = useState<any>(null);
@@ -137,18 +135,6 @@ export default function PackageDetailsPage() {
   const [isAgent, setIsAgent] = useState(false);
   const [hasActiveAgentSubscription, setHasActiveAgentSubscription] = useState(false);
   
-  // Referral tracking
-  const [referralData, setReferralData] = useState<{
-    referralCode: string;
-    referralId: string;
-    discountApplied: boolean;
-  } | null>(null);
-  
-  // Share link state (for agents)
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareLink, setShareLink] = useState<string | null>(null);
-  const [shareLinkCopied, setShareLinkCopied] = useState(false);
-  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // Initialize minimum adults: 1 for all packages, 2 for offer packages and flexible date packages
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -201,6 +187,7 @@ export default function PackageDetailsPage() {
       // Reset package state when slug changes to prevent stale data
       setPkg(null);
       setLoading(true);
+      setDateRangesReady(false); // Reset date ranges ready state
       fetchPackage();
       checkAgentStatus();
     }
@@ -213,22 +200,50 @@ export default function PackageDetailsPage() {
   }, [pkg?.package_category_id]);
 
   // Set month to earliest available date when flexible date package loads
+  // But only if no date is selected from URL params
   useEffect(() => {
     if (slug === 'flexible-date-packages' && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0) {
+      // Check if there's a date in URL params - if so, don't override the month
+      const dateParam = searchParams.get('date');
+      if (dateParam) {
+        // Date will be set from URL params in another effect, skip setting month here
+        return;
+      }
+      
       const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
       if (earliestMonth) {
         setMonth(earliestMonth);
       }
     }
-  }, [slug, pkg?.package_id, pkg?.date_ranges]);
+  }, [slug, pkg?.package_id, pkg?.date_ranges, searchParams]);
 
   // Helper function to find the date range that contains a given date
   const findDateRangeForDate = useCallback((dateStr: string): DateRange | null => {
     if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges)) return null;
     const targetDate = new Date(dateStr);
+    targetDate.setHours(0, 0, 0, 0); // Normalize to midnight for accurate comparison
+    
+    // First check for sold out ranges (they take priority)
     for (const range of pkg.date_ranges) {
+      if (!range.isSoldOut) continue;
       const fromDate = new Date(range.fromDate);
       const toDate = new Date(range.toDate);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(0, 0, 0, 0);
+      
+      if (targetDate >= fromDate && targetDate <= toDate) {
+        return range; // Return sold out range immediately
+      }
+    }
+    
+    // Then check for regular (non-sold-out) ranges
+    for (const range of pkg.date_ranges) {
+      if (range.isSoldOut) continue; // Skip sold out ranges (already checked)
+      const fromDate = new Date(range.fromDate);
+      const toDate = new Date(range.toDate);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(0, 0, 0, 0);
+      
       if (targetDate >= fromDate && targetDate <= toDate) {
         return range;
       }
@@ -325,8 +340,7 @@ export default function PackageDetailsPage() {
   }, []);
 
   // Get flexible date info from date_ranges - finds the range that contains the given date
-  // This should return the SAME data for all users (normal users and shared link users)
-  // No difference based on referral status - always show actual prices from date ranges
+  // Always show actual prices from date ranges
   const getFlexibleDateInfo = useCallback((dateStr: string): {
     adult_price: number;
     child_price: number;
@@ -346,12 +360,10 @@ export default function PackageDetailsPage() {
     };
   }, [findDateRangeForDate]);
 
-  // Get available dates - should return SAME dates for all users (normal and shared link users)
-  // No difference based on referral status - always show all dates from date ranges
+  // Get available dates - always show all dates from date ranges
   const getAvailableDates = useCallback((): string[] => {
     // For flexible date packages, generate all dates within the configured date ranges
     // Include ALL dates (both available and sold out) - the calendar will handle showing sold out status
-    // This should be the SAME for all users regardless of referral status
     if (slug === 'flexible-date-packages' && pkg?.date_ranges && pkg.date_ranges.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -408,6 +420,10 @@ export default function PackageDetailsPage() {
   // Read query parameters and initialize state
   useEffect(() => {
     if (!pkg) return; // Wait for package to load
+    // For flexible date packages, also wait for date_ranges to be loaded
+    if (slug === 'flexible-date-packages' && (!pkg.date_ranges || !Array.isArray(pkg.date_ranges) || pkg.date_ranges.length === 0)) {
+      return; // Wait for date ranges to be available
+    }
 
     const dateParam = searchParams.get('date');
     const adultsParam = searchParams.get('adults');
@@ -416,16 +432,25 @@ export default function PackageDetailsPage() {
     // Initialize date
     if (dateParam) {
       const isPackage = category?.packagetypeid === 1;
+      const isFlexibleDatePackage = slug === 'flexible-date-packages';
 
       if (isPackage) {
-        // For packages, match with available dates
+        // For packages (including flexible date packages), match with available dates
         const availableDates = getAvailableDates();
         const matchedDate = availableDates.find(d => d === dateParam);
-        if (matchedDate) {
-          setSelectedDateString(matchedDate);
-        } else {
-          // Try to parse as date string format
-          setSelectedDateString(dateParam);
+        const dateToSet = matchedDate || dateParam;
+        
+        setSelectedDateString(dateToSet);
+        
+        // Also parse and set as Date object for calendar display
+        const parsedDate = parseDateStringToLocal(dateToSet);
+        if (parsedDate) {
+          setSelectedDate(parsedDate);
+          
+          // Set month to show the selected date in calendar
+          if (isFlexibleDatePackage) {
+            setMonth(parsedDate);
+          }
         }
       } else {
         // For tours, parse as Date object
@@ -446,7 +471,7 @@ export default function PackageDetailsPage() {
         infant: infantsParam ? parseInt(infantsParam, 10) : 0,
       });
     }
-  }, [searchParams, pkg, category, getAvailableDates]);
+  }, [searchParams, pkg, category, slug, getAvailableDates, pkg?.date_ranges]);
 
   // Helper to get discounted price for a person type
   const getDiscountedPrice = useCallback((basePrice: number | null | undefined, discountAmount: number | null | undefined): number => {
@@ -494,11 +519,10 @@ export default function PackageDetailsPage() {
   }, [pkg?.date_ranges]);
 
   // Get prices for selected date (for flexible date packages) or package base prices
-  // This should return the SAME prices for all users (normal and shared link users)
   // The discount is applied AFTER getting these base prices, not here
   const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } => {
     // For flexible date packages, use date-specific pricing from date_ranges
-    // Always return actual prices from date ranges - no modification based on referral
+    // Always return actual prices from date ranges
     if (slug === 'flexible-date-packages') {
       // Check if date is selected (either as string or Date object)
       const dateToCheck = selectedDateString || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null);
@@ -543,7 +567,7 @@ export default function PackageDetailsPage() {
       childPrice: pkg?.child_price || 0,
       infantPrice: pkg?.infant_price || 0,
     };
-  }, [slug, selectedDateString, selectedDate, pkg, getFlexibleDateInfo, getMinPricesFromRanges]);
+  }, [slug, selectedDateString, selectedDate, pkg, pkg?.date_ranges, getFlexibleDateInfo, getMinPricesFromRanges]);
 
   // Calculate original price (without discount)
   const getOriginalPrice = useCallback((): number | null => {
@@ -639,20 +663,12 @@ export default function PackageDetailsPage() {
     let finalPrice = totalPrice + visaPrice;
     
     // Apply agent discount logic:
-    // 1. If user is an agent with active subscription: apply discount
-    // 2. If referral link with discount=true: apply discount (agent gets NO commission)
-    // 3. If referral link with discount=false: NO discount (normal price, agent gets commission)
+    // If user is an agent with active subscription: apply discount
     let discountAmount = 0;
     const agentDiscountPercentage = pkg?.agent_discount || 0;
     
-    // Only apply discount if:
-    // - User is an agent with active subscription, OR
-    // - Referral link with discount=true (discounted link)
-    const shouldApplyAgentDiscount = 
-      (hasActiveAgentSubscription && agentDiscountPercentage > 0) ||
-      (referralData?.discountApplied === true && referralData?.referralId && agentDiscountPercentage > 0);
-    
-    // If referral link with discount=false, don't apply discount (normal price, agent gets commission)
+    // Only apply discount if user is an agent with active subscription
+    const shouldApplyAgentDiscount = hasActiveAgentSubscription && agentDiscountPercentage > 0;
     
     if (shouldApplyAgentDiscount && agentDiscountPercentage > 0) {
       // Store price before agent discount for display
@@ -667,7 +683,7 @@ export default function PackageDetailsPage() {
     }
     
     setCalculatedPrice(finalPrice);
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate, hasActiveAgentSubscription, referralData]);
+  }, [pkg, pkg?.date_ranges, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate, hasActiveAgentSubscription]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
@@ -692,115 +708,6 @@ export default function PackageDetailsPage() {
     }
   };
 
-  // Detect and validate referral from URL
-  useEffect(() => {
-    const ref = searchParams.get('ref');
-    const discount = searchParams.get('discount');
-
-    if (!ref || !discount) {
-      // Check if referral exists in localStorage (from previous visit)
-      const storedReferral = localStorage.getItem('agent_referral');
-      if (storedReferral) {
-        try {
-          const parsed = JSON.parse(storedReferral);
-          setReferralData(parsed);
-        } catch (e) {
-          localStorage.removeItem('agent_referral');
-        }
-      }
-      return;
-    }
-
-    // Validate referral code
-    const validateReferral = async () => {
-      try {
-        const response = await fetch('/api/agent-referrals/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            referralCode: ref,
-            discount: discount,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (result.valid && result.referral) {
-          const referralInfo = {
-            referralCode: ref,
-            referralId: result.referral.id,
-            discountApplied: result.referral.discountApplied,
-          };
-          
-          setReferralData(referralInfo);
-          
-          // Store in localStorage for cart/checkout
-          localStorage.setItem('agent_referral', JSON.stringify(referralInfo));
-          
-          // Remove URL parameters (clean URL)
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
-        } else {
-          // Invalid referral - remove from URL silently
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
-        }
-      } catch (error) {
-        console.error('Error validating referral:', error);
-        // Remove invalid referral from URL
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      }
-    };
-
-    validateReferral();
-  }, [searchParams]);
-
-  // Generate share link (for agents)
-  const handleGenerateShareLink = async (discountApplied: boolean) => {
-    if (!pkg || !hasActiveAgentSubscription) return;
-
-    setIsGeneratingLink(true);
-    try {
-      const response = await fetch('/api/agent-referrals/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          packageId: pkg.package_id,
-          discountApplied: discountApplied,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success && result.referral) {
-        setShareLink(result.referral.shareableUrl);
-        setShowShareModal(true);
-      } else {
-        toast.error(result.error || 'Failed to generate share link');
-      }
-    } catch (error) {
-      console.error('Error generating share link:', error);
-      toast.error('Failed to generate share link');
-    } finally {
-      setIsGeneratingLink(false);
-    }
-  };
-
-  // Copy share link to clipboard
-  const handleCopyShareLink = async () => {
-    if (!shareLink) return;
-
-    try {
-      await navigator.clipboard.writeText(shareLink);
-      setShareLinkCopied(true);
-      toast.success('Link copied to clipboard!');
-      setTimeout(() => setShareLinkCopied(false), 2000);
-    } catch (error) {
-      console.error('Error copying link:', error);
-      toast.error('Failed to copy link');
-    }
-  };
 
   const fetchPackage = async () => {
     try {
@@ -856,6 +763,20 @@ export default function PackageDetailsPage() {
       setLoading(false);
     }
   };
+  
+  // Watch for date_ranges to become available (for flexible date packages)
+  useEffect(() => {
+    if (slug === 'flexible-date-packages') {
+      if (pkg && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0) {
+        setDateRangesReady(true);
+      } else {
+        setDateRangesReady(false);
+      }
+    } else {
+      // For non-flexible packages, mark as ready immediately
+      setDateRangesReady(true);
+    }
+  }, [slug, pkg?.date_ranges, pkg?.package_id]);
 
   const fetchCategory = async () => {
     if (!pkg?.package_category_id) return;
@@ -932,6 +853,10 @@ export default function PackageDetailsPage() {
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
+    // For flexible date packages, also set selectedDateString in 'yyyy-MM-dd' format
+    if (date && slug === 'flexible-date-packages') {
+      setSelectedDateString(format(date, 'yyyy-MM-dd'));
+    }
     if (date) {
       setShowDatePicker(false);
     }
@@ -954,8 +879,7 @@ export default function PackageDetailsPage() {
   };
 
   // Get disabled dates for DayPicker (for UAE Tours and Flexible Date Packages)
-  // This should return the SAME disabled dates for all users (normal and shared link users)
-  // No difference based on referral status - always show same sold out status and availability
+  // Always show same sold out status and availability
   const getDisabledDates = (date: Date): boolean => {
     const today = startOfDay(new Date());
     const checkDate = startOfDay(date);
@@ -1073,10 +997,6 @@ export default function PackageDetailsPage() {
       visaForAdults: withVisa ? visaForAdults : 0,
       visaForChildren: withVisa ? visaForChildren : 0,
       visaForInfants: withVisa ? visaForInfants : 0,
-      // Include referral data if available
-      referralCode: referralData?.referralCode || null,
-      referralId: referralData?.referralId || null,
-      referralDiscountApplied: referralData?.discountApplied || false,
     };
 
     addToCart(cartItem);
@@ -1298,114 +1218,81 @@ export default function PackageDetailsPage() {
         <h1>{pkg.package_name}</h1>
       </div>
 
-
-      {/* Share Link Modal */}
-      {showShareModal && (
-        <div
-          className='share-modal-overlay'
-          onClick={(e) => {
-            // Only close if clicking the overlay itself, not the modal content
-            if (e.target === e.currentTarget) {
-              setShowShareModal(false);
-              setShareLink(null);
-              setShareLinkCopied(false);
-            }
-          }}
-        >
-          <div 
-            className='share-modal-content'
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className='share-modal-header'>
-              <h3>Share Payment Link</h3>
-              <button
-                className='share-modal-close'
-                onClick={() => {
-                  setShowShareModal(false);
-                  setShareLink(null);
-                  setShareLinkCopied(false);
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className='share-modal-body'>
-              {!shareLink ? (
-                <>
-                  <p className='share-modal-description'>
-                    Choose how you want to share this package:
-                  </p>
-                  <div className='share-options'>
-                    <button
-                      className='share-option-button share-option-with-discount'
-                      onClick={() => handleGenerateShareLink(true)}
-                      disabled={isGeneratingLink}
-                    >
-                      <div className='share-option-header'>
-                        <span className='share-option-title'>Share with Discount</span>
+      {/* Price Display Section */}
+      {(() => {
+        const prices = getPricesForDate();
+        const hasPricing = prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
+        
+        if (!hasPricing && !pkg.package_price) return null;
+        
+        return (
+          <div className='package-price-display-section'>
+            <div className='package-price-display-container'>
+              <h3 className='package-price-display-title'>Pricing</h3>
+              <div className='package-price-grid'>
+                {prices.adultPrice > 0 && (
+                  <div className='package-price-card'>
+                    <div className='package-price-card-header'>
+                      <span className='package-price-label'>Adult</span>
+                      <span className='package-price-age'>12+ Years</span>
+                    </div>
+                    <div className='package-price-amount'>
+                      {formatPrice(prices.adultPrice)}
+                    </div>
+                    {isDiscountActive && pkg.adult_discount_amount && pkg.adult_discount_amount > 0 && (
+                      <div className='package-price-discount-badge'>
+                        Save {formatPrice(pkg.adult_discount_amount).replace('AED ', '')}
                       </div>
-                      <p className='share-option-description'>
-                        Customer gets the agent discount. You don't earn commission.
-                      </p>
-                    </button>
-                    <button
-                      className='share-option-button share-option-without-discount'
-                      onClick={() => handleGenerateShareLink(false)}
-                      disabled={isGeneratingLink}
-                    >
-                      <div className='share-option-header'>
-                        <span className='share-option-title'>Share without Discount</span>
+                    )}
+                  </div>
+                )}
+                {prices.childPrice > 0 && (
+                  <div className='package-price-card'>
+                    <div className='package-price-card-header'>
+                      <span className='package-price-label'>Child</span>
+                      <span className='package-price-age'>2-11 Years</span>
+                    </div>
+                    <div className='package-price-amount'>
+                      {formatPrice(prices.childPrice)}
+                    </div>
+                    {isDiscountActive && pkg.child_discount_amount && pkg.child_discount_amount > 0 && (
+                      <div className='package-price-discount-badge'>
+                        Save {formatPrice(pkg.child_discount_amount).replace('AED ', '')}
                       </div>
-                      <p className='share-option-description'>
-                        Customer pays full price. You earn commission on successful booking.
-                      </p>
-                    </button>
+                    )}
                   </div>
-                </>
-              ) : (
-                <>
-                  <p className='share-modal-description'>
-                    Your shareable link has been generated:
-                  </p>
-                  <div className='share-link-display'>
-                    <input
-                      type='text'
-                      readOnly
-                      value={shareLink}
-                      className='share-link-input'
-                    />
-                    <button
-                      className='share-link-copy-button'
-                      onClick={handleCopyShareLink}
-                    >
-                      {shareLinkCopied ? (
-                        <>
-                          <Check size={16} />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={16} />
-                          Copy
-                        </>
-                      )}
-                    </button>
+                )}
+                {prices.infantPrice > 0 && (
+                  <div className='package-price-card'>
+                    <div className='package-price-card-header'>
+                      <span className='package-price-label'>Infant</span>
+                      <span className='package-price-age'>&lt;2 Years</span>
+                    </div>
+                    <div className='package-price-amount'>
+                      {formatPrice(prices.infantPrice)}
+                    </div>
+                    {isDiscountActive && pkg.infant_discount_amount && pkg.infant_discount_amount > 0 && (
+                      <div className='package-price-discount-badge'>
+                        Save {formatPrice(pkg.infant_discount_amount).replace('AED ', '')}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    className='share-link-generate-new'
-                    onClick={() => {
-                      setShareLink(null);
-                      setShareLinkCopied(false);
-                    }}
-                  >
-                    Generate New Link
-                  </button>
-                </>
-              )}
+                )}
+                {!hasPricing && pkg.package_price && (
+                  <div className='package-price-card package-price-card-full'>
+                    <div className='package-price-card-header'>
+                      <span className='package-price-label'>Package Price</span>
+                    </div>
+                    <div className='package-price-amount'>
+                      {formatPrice(pkg.package_price)}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Discount Banner */}
       {isDiscountActive && (
@@ -1849,7 +1736,7 @@ export default function PackageDetailsPage() {
               )}
 
               <div className='mobile-booking-price-section'>
-                {(hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
+                {hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
                   <>
                     <span className='mobile-booking-price-original agent-discount-original'>
                       {formatPrice(priceBeforeAgentDiscount)}
@@ -1864,12 +1751,12 @@ export default function PackageDetailsPage() {
                     </div>
                   </>
                 )}
-                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) && (
+                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !(hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) && (
                   <span className='mobile-booking-price-original agent-discount-original'>
                     {formatPrice(getOriginalPrice())}
                   </span>
                 )}
-                <span className={`mobile-booking-price-amount ${isDiscountActive || ((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
+                <span className={`mobile-booking-price-amount ${isDiscountActive || (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
                   {formatPrice(
                     calculatedPrice !== null
                       ? calculatedPrice
@@ -2059,9 +1946,9 @@ export default function PackageDetailsPage() {
                         onClick={e => e.stopPropagation()}
                         onTouchStart={e => e.stopPropagation()}
                       >
-                        {slug === 'flexible-date-packages' && !loading && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
+                        {slug === 'flexible-date-packages' && !loading && dateRangesReady && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
                           <FlexibleDateCalendar
-                            key={`mobile-calendar-${pkg.package_id}-${pkg.date_ranges.length}`}
+                            key={`mobile-calendar-${pkg.package_id}-${pkg.date_ranges.length}-${dateRangesReady}`}
                             packageId={pkg.package_id}
                             endDate={pkg.end_date || undefined}
                             dateRanges={pkg.date_ranges}
@@ -2128,22 +2015,6 @@ export default function PackageDetailsPage() {
                   </div>
                 )}
               </div>
-
-              {/* Share Payment Link Button (for agents) - Mobile */}
-              {hasActiveAgentSubscription && (
-                <div className='mobile-share-payment-link-section'>
-                  <button
-                    onClick={() => {
-                      setShowMobileDrawer(false);
-                      setShowShareModal(true);
-                    }}
-                    className='mobile-share-payment-link-button'
-                  >
-                    <Share2 size={16} />
-                    Share Payment Link
-                  </button>
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className='mobile-booking-actions'>
@@ -2400,7 +2271,7 @@ export default function PackageDetailsPage() {
                 )}
 
                 <div className='booking-price-section'>
-                {(hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
+                {hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
                   <>
                     <span className='booking-price-original agent-discount-original'>
                       {formatPrice(priceBeforeAgentDiscount)}
@@ -2415,12 +2286,12 @@ export default function PackageDetailsPage() {
                     </div>
                   </>
                 )}
-                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) && (
+                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !(hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) && (
                   <span className='booking-price-original agent-discount-original'>
                     {formatPrice(getOriginalPrice())}
                   </span>
                 )}
-                <span className={`booking-price-amount ${isDiscountActive || ((hasActiveAgentSubscription || referralData?.discountApplied === true) && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
+                <span className={`booking-price-amount ${isDiscountActive || (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
                   {formatPrice(
                     calculatedPrice !== null
                       ? calculatedPrice
@@ -2433,22 +2304,6 @@ export default function PackageDetailsPage() {
                     : 'total'}
                 </span>
               </div>
-
-              {/* Share Payment Link Button (for agents) - Desktop */}
-              {hasActiveAgentSubscription && (
-                <div className='desktop-share-payment-link-section'>
-                  <button
-                    onClick={() => {
-                      setShowDesktopPopover(false);
-                      setShowShareModal(true);
-                    }}
-                    className='desktop-share-payment-link-button'
-                  >
-                    <Share2 size={16} />
-                    Share Payment Link
-                  </button>
-                </div>
-              )}
 
               <div className='input-selectors'>
                 {/* Persons Selector */}
@@ -2622,9 +2477,9 @@ export default function PackageDetailsPage() {
                         onClick={e => e.stopPropagation()}
                         onTouchStart={e => e.stopPropagation()}
                       >
-                        {slug === 'flexible-date-packages' && !loading && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
+                        {slug === 'flexible-date-packages' && !loading && dateRangesReady && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
                           <FlexibleDateCalendar
-                            key={`desktop-calendar-${pkg.package_id}-${pkg.date_ranges.length}`}
+                            key={`desktop-calendar-${pkg.package_id}-${pkg.date_ranges.length}-${dateRangesReady}`}
                             packageId={pkg.package_id}
                             endDate={pkg.end_date || undefined}
                             dateRanges={pkg.date_ranges}

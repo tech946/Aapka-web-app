@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { v2 as cloudinary } from 'cloudinary';
-import { hashReferralCode } from '@/lib/referral-utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,10 +41,6 @@ interface BookingRequest {
     isSoloTraveller?: boolean;
     soloTravellerGender?: 'male' | 'female' | null;
     soloTravellerShareConsent?: boolean;
-    // Referral data
-    referralCode?: string | null;
-    referralId?: string | null;
-    referralDiscountApplied?: boolean;
   }>;
   passengers: PassengerData[];
   paymentMethod: string;
@@ -248,30 +243,6 @@ export async function POST(req: NextRequest) {
       bookingData.payment_gateway = paymentMethod;
     }
 
-    // Validate and store referral if present
-    let referralId: string | null = null;
-    const firstCartItem = cartItems[0];
-    if (firstCartItem?.referralId && firstCartItem?.referralCode) {
-      // Validate referral code one more time before storing
-      const referralCodeHash = hashReferralCode(firstCartItem.referralCode);
-      
-      const { data: referral } = await supabaseAdmin
-        .from('agent_referrals')
-        .select('id, agent_id, discount_applied, status, expires_at')
-        .eq('referral_code_hash', referralCodeHash)
-        .eq('id', firstCartItem.referralId)
-        .eq('status', 'active')
-        .single();
-
-      if (referral && new Date(referral.expires_at) > new Date()) {
-        referralId = referral.id;
-        bookingData.referral_id = referralId;
-        
-        // Update referral with customer user_id if logged in
-        // (We'll update booking_id after booking is created)
-      }
-    }
-
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .insert(bookingData)
@@ -283,64 +254,6 @@ export async function POST(req: NextRequest) {
         { error: 'Failed to create booking', details: bookingError.message },
         { status: 500 }
       );
-    }
-
-    // Update referral with booking_id if referral exists
-    if (referralId && booking.id) {
-      await supabaseAdmin
-        .from('agent_referrals')
-        .update({ booking_id: booking.id, status: 'pending_commission' })
-        .eq('id', referralId);
-    }
-
-    // Calculate and create commission if referral exists and discount was NOT applied
-    if (referralId && firstCartItem && !firstCartItem.referralDiscountApplied) {
-      try {
-        const { data: referral } = await supabaseAdmin
-          .from('agent_referrals')
-          .select('agent_id')
-          .eq('id', referralId)
-          .single();
-
-        if (referral) {
-          // Commission rate: 10% of total amount (configurable)
-          const commissionRate = 10.0; // Percentage
-          const commissionAmount = (totalAmount * commissionRate) / 100;
-
-          // Create commission record
-          const { data: commission } = await supabaseAdmin
-            .from('agent_commissions')
-            .insert({
-              agent_id: referral.agent_id,
-              referral_id: referralId,
-              booking_id: booking.id,
-              amount: commissionAmount,
-              currency: currency || 'AED',
-              commission_rate: commissionRate,
-              status: 'pending',
-            })
-            .select()
-            .single();
-
-          // Update wallet with pending commission
-          if (commission) {
-            await supabaseAdmin
-              .from('agent_wallet')
-              .insert({
-                agent_id: referral.agent_id,
-                commission_id: commission.id,
-                amount: commissionAmount,
-                currency: currency || 'AED',
-                balance_type: 'pending',
-                transaction_type: 'commission',
-                description: `Commission from booking #${booking.id}`,
-              });
-          }
-        }
-      } catch (commissionError) {
-        // Log error but don't fail booking creation
-        console.error('[COMMISSION] Error creating commission:', commissionError);
-      }
     }
 
     return NextResponse.json({

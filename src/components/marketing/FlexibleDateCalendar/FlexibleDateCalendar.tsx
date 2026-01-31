@@ -42,6 +42,13 @@ export default function FlexibleDateCalendar({
   const [defaultSeats, setDefaultSeats] = useState<number>(45);
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Normalize dateRanges to ensure it's always an array
+  const normalizedDateRanges = useMemo(() => {
+    if (!dateRanges) return [];
+    if (Array.isArray(dateRanges)) return dateRanges;
+    return [];
+  }, [dateRanges]);
 
   // Fetch seat availability
   useEffect(() => {
@@ -69,13 +76,13 @@ export default function FlexibleDateCalendar({
   // Priority: Sold out ranges take precedence (if a date is in both a sold out range and a regular range, it's sold out)
   const findDateRangeForDate = useCallback(
     (dateStr: string): DateRange | null => {
-      if (!dateRanges || !Array.isArray(dateRanges)) return null;
+      if (!normalizedDateRanges || normalizedDateRanges.length === 0) return null;
       const targetDate = new Date(dateStr);
       targetDate.setHours(0, 0, 0, 0);
       
       // First check for sold out ranges (they take priority)
-      for (const range of dateRanges) {
-        if (!range.isSoldOut) continue;
+      for (const range of normalizedDateRanges) {
+        if (!range || !range.isSoldOut) continue;
         const fromDate = new Date(range.fromDate);
         const toDate = new Date(range.toDate);
         fromDate.setHours(0, 0, 0, 0);
@@ -87,8 +94,8 @@ export default function FlexibleDateCalendar({
       }
       
       // Then check for regular (non-sold-out) ranges
-      for (const range of dateRanges) {
-        if (range.isSoldOut) continue; // Skip sold out ranges (already checked)
+      for (const range of normalizedDateRanges) {
+        if (!range || range.isSoldOut) continue; // Skip sold out ranges (already checked)
         const fromDate = new Date(range.fromDate);
         const toDate = new Date(range.toDate);
         fromDate.setHours(0, 0, 0, 0);
@@ -100,7 +107,7 @@ export default function FlexibleDateCalendar({
       }
       return null;
     },
-    [dateRanges]
+    [normalizedDateRanges]
   );
 
   // Get available seats for a date
@@ -117,10 +124,11 @@ export default function FlexibleDateCalendar({
 
   // Calculate the last available date from date ranges
   const lastAvailableDate = useMemo(() => {
-    if (!dateRanges || dateRanges.length === 0) return null;
+    if (!normalizedDateRanges || normalizedDateRanges.length === 0) return null;
     
     let maxDate: Date | null = null;
-    for (const range of dateRanges) {
+    for (const range of normalizedDateRanges) {
+      if (!range) continue;
       const toDate = new Date(range.toDate);
       toDate.setHours(0, 0, 0, 0);
       if (!maxDate || toDate > maxDate) {
@@ -128,16 +136,16 @@ export default function FlexibleDateCalendar({
       }
     }
     return maxDate;
-  }, [dateRanges]);
+  }, [normalizedDateRanges]);
 
   // Calculate min month for navigation (earliest available date month)
   const minNavigationMonth = useMemo(() => {
-    if (!dateRanges || dateRanges.length === 0) {
+    if (!normalizedDateRanges || normalizedDateRanges.length === 0) {
       // If no date ranges, use current month
       return startOfMonth(new Date());
     }
-    return getEarliestAvailableDateMonth(dateRanges);
-  }, [dateRanges]);
+    return getEarliestAvailableDateMonth(normalizedDateRanges);
+  }, [normalizedDateRanges]);
 
   // Calculate max month for navigation (use end_date or last date from ranges)
   const maxNavigationMonth = useMemo(() => {
@@ -248,18 +256,25 @@ export default function FlexibleDateCalendar({
     // Determine what to show below the date
     // Priority: Sold Out > Available (price) > N/A
     let statusDisplay: React.ReactNode = null;
-    if (dateRange && isSoldOut) {
-      // Show "Sold Out" if date is in a sold-out range
-      statusDisplay = <span className="flexible-day-soldout">Sold Out</span>;
-    } else if (dateRange && !isSoldOut && !isDisabled) {
-      // Show price if date is available and not disabled
-      statusDisplay = (
-        <span className="flexible-day-price">
-          {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
-        </span>
-      );
+    
+    // First check if date is in a range (regardless of disabled status)
+    if (dateRange) {
+      if (isSoldOut) {
+        // Show "Sold Out" if date is in a sold-out range
+        statusDisplay = <span className="flexible-day-soldout">Sold Out</span>;
+      } else if (!isDisabled) {
+        // Show price if date is available and not disabled (not past, not within 6 days, etc.)
+        statusDisplay = (
+          <span className="flexible-day-price">
+            {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
+          </span>
+        );
+      } else {
+        // Date is in range but disabled (past, within 6 days, etc.) - show N/A
+        statusDisplay = <span className="flexible-day-na">N/A</span>;
+      }
     } else if (isDisabled) {
-      // Show "N/A" for dates that are disabled for other reasons (not in range, past, etc.)
+      // Date is not in any range and is disabled - show N/A
       statusDisplay = <span className="flexible-day-na">N/A</span>;
     }
 
@@ -278,7 +293,7 @@ export default function FlexibleDateCalendar({
   };
 
   // Show message if no date ranges are configured
-  if (!dateRanges || dateRanges.length === 0) {
+  if (!normalizedDateRanges || normalizedDateRanges.length === 0) {
     return (
       <div className='flexible-date-calendar-wrapper'>
         <div className='flexible-calendar-header-nav'>
