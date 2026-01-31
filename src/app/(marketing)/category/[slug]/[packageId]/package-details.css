@@ -354,7 +354,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 @media (max-width: 768px) {
   .package-price-display-section {
-    padding: 16px 16px 0;
+    padding: 16px 16px ;
   }
 
   .package-price-display-container {
