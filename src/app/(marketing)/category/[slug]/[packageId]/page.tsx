@@ -1250,7 +1250,7 @@ export default function PackageDetailsPage() {
                   <div className='package-price-card'>
                     <div className='package-price-card-header'>
                       <span className='package-price-label'>Child</span>
-                      <span className='package-price-age'>2-11 Years</span>
+                      <span className='package-price-age'>2-8 Years</span>
                     </div>
                     <div className='package-price-amount'>
                       {formatPrice(prices.childPrice)}
