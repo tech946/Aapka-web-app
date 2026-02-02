@@ -61,6 +61,22 @@ export default function CheckoutPage() {
     return categorySlug.includes('tour');
   });
 
+  // Check if cart has only tours (no packages)
+  const hasOnlyTours = cartItems.length > 0 && cartItems.every(item => {
+    const categorySlug = item.categorySlug?.toLowerCase() || '';
+    return categorySlug.includes('tour');
+  });
+
+  // Check if cart has packages (not tours)
+  const hasPackages = cartItems.some(item => {
+    const categorySlug = item.categorySlug?.toLowerCase() || '';
+    return !categorySlug.includes('tour');
+  });
+
+  // Show passport expiry only if cart has packages (or both tours and packages)
+  // Hide passport expiry if cart has only tours
+  const shouldShowPassportExpiry = hasPackages;
+
   // Check if any cart item is a flexible date package
   const hasFlexibleDatePackage = cartItems.some(item => {
     const categorySlug = item.categorySlug?.toLowerCase() || '';
@@ -304,7 +320,8 @@ export default function CheckoutPage() {
         newErrors[`passenger_${actualIndex}_lastName`] =
           'Last name is required';
       }
-      if (!passenger.passportExpiry) {
+      // Only validate passport expiry if it should be shown (has packages in cart)
+      if (shouldShowPassportExpiry && !passenger.passportExpiry) {
         newErrors[`passenger_${actualIndex}_passportExpiry`] =
           'Passport expiry date is required';
       }
@@ -970,35 +987,37 @@ export default function CheckoutPage() {
                         </div>
                       )}
 
-                      {/* Passport Expiry Date */}
-                      <div className='form-group'>
-                        <label>
-                          Passport Expiry Date{' '}
-                          <span className='required'>*</span>
-                        </label>
-                        <input
-                          type='date'
-                          value={passenger.passportExpiry}
-                          onChange={e =>
-                            updatePassenger(
-                              index,
-                              'passportExpiry',
-                              e.target.value
-                            )
-                          }
-                          className={
-                            errors[`passenger_${index}_passportExpiry`]
-                              ? 'error'
-                              : ''
-                          }
-                          data-field={`passenger_${index}_passportExpiry`}
-                        />
-                        {errors[`passenger_${index}_passportExpiry`] && (
-                          <span className='error-message'>
-                            {errors[`passenger_${index}_passportExpiry`]}
-                          </span>
-                        )}
-                      </div>
+                      {/* Passport Expiry Date - Only show if cart has packages (not only tours) */}
+                      {shouldShowPassportExpiry && (
+                        <div className='form-group'>
+                          <label>
+                            Passport Expiry Date{' '}
+                            <span className='required'>*</span>
+                          </label>
+                          <input
+                            type='date'
+                            value={passenger.passportExpiry}
+                            onChange={e =>
+                              updatePassenger(
+                                index,
+                                'passportExpiry',
+                                e.target.value
+                              )
+                            }
+                            className={
+                              errors[`passenger_${index}_passportExpiry`]
+                                ? 'error'
+                                : ''
+                            }
+                            data-field={`passenger_${index}_passportExpiry`}
+                          />
+                          {errors[`passenger_${index}_passportExpiry`] && (
+                            <span className='error-message'>
+                              {errors[`passenger_${index}_passportExpiry`]}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* Permanent Address - Only for first passenger */}
                       {index === 0 && (

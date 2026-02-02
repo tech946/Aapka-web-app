@@ -14,7 +14,7 @@ import {
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { generateShortSlug, parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
-import { usesFlexibleDatePackagesByName } from '@/lib/package-config';
+import { usesFlexibleDatePackagesByName, usesBookingSlotsByName } from '@/lib/package-config';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import 'react-day-picker/dist/style.css';
 import './home.css';
@@ -268,6 +268,15 @@ export default function BannerSection() {
       cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
     );
     return activeCategory ? usesFlexibleDatePackagesByName(activeCategory.name) : false;
+  };
+
+  // Check if active category is a tour (uses booking slots)
+  const isTourPackage = (): boolean => {
+    if (!activeCategoryId) return false;
+    const activeCategory = categories.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    );
+    return activeCategory ? usesBookingSlotsByName(activeCategory.name) : false;
   };
 
   // Get disabled dates for DayPicker (for non-flexible packages)
@@ -594,7 +603,25 @@ export default function BannerSection() {
                             mode='single'
                             selected={selectedDate}
                             onSelect={handleDateSelect}
-                            disabled={{ before: new Date() }}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const tomorrow = new Date(today);
+                              tomorrow.setDate(tomorrow.getDate() + 1);
+                              const checkDate = new Date(date);
+                              checkDate.setHours(0, 0, 0, 0);
+                              
+                              // Disable past dates
+                              if (checkDate < today) return true;
+                              
+                              // For tours only: disable today and tomorrow
+                              if (isTourPackage()) {
+                                if (checkDate.getTime() === today.getTime()) return true;
+                                if (checkDate.getTime() === tomorrow.getTime()) return true;
+                              }
+                              
+                              return false;
+                            }}
                             numberOfMonths={1}
                             showOutsideDays={true}
                             month={month}

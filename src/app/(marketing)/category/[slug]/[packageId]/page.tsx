@@ -882,15 +882,18 @@ export default function PackageDetailsPage() {
   // Always show same sold out status and availability
   const getDisabledDates = (date: Date): boolean => {
     const today = startOfDay(new Date());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     const checkDate = startOfDay(date);
 
     // Disable past dates
     if (checkDate < today) return true;
 
-    // For tours only: disable today's date (no same-day booking, only tomorrow onwards)
+    // For tours only: disable today and tomorrow (tours can only be booked from day after tomorrow onwards)
     if (slug && usesBookingSlots(slug)) {
-      // Disable today - tours can only be booked from tomorrow onwards
+      // Disable today and tomorrow - tours can only be booked from day after tomorrow onwards
       if (checkDate.getTime() === today.getTime()) return true;
+      if (checkDate.getTime() === tomorrow.getTime()) return true;
     }
 
     // For flexible date packages, check if date falls within a valid date range
