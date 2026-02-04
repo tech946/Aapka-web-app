@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -89,12 +89,37 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Map the data to flatten category information
-    const mappedData = data?.map((pkg: any) => ({
-      ...pkg,
-      category_name: pkg.package_categories?.name || null,
-      package_categories: undefined, // Remove the nested object
-    }));
+    // Fetch active deals for all packages
+    const packageIds = data?.map((pkg: any) => pkg.package_id) || [];
+    let activeDealsMap = new Map();
+    
+    if (packageIds.length > 0) {
+      const now = new Date().toISOString();
+      const { data: dealsData } = await supabaseAdmin
+        .from('package_deals')
+        .select('*')
+        .in('package_id', packageIds)
+        .eq('is_active', true)
+        .lte('start_date', now)
+        .gte('end_date', now);
+
+      if (dealsData) {
+        dealsData.forEach((deal: any) => {
+          activeDealsMap.set(deal.package_id, deal);
+        });
+      }
+    }
+
+    // Map the data to flatten category information and include active deals
+    const mappedData = data?.map((pkg: any) => {
+      const activeDeal = activeDealsMap.get(pkg.package_id);
+      return {
+        ...pkg,
+        category_name: pkg.package_categories?.name || null,
+        package_categories: undefined, // Remove the nested object
+        active_deal: activeDeal || null, // Include active deal if exists
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -229,6 +254,10 @@ export async function POST(req: NextRequest) {
       body?.thumbnail_image !== undefined
         ? String(body.thumbnail_image).trim() || null
         : null;
+    const galleryImages: string[] | null =
+      Array.isArray(body?.gallery) && body.gallery.length > 0
+        ? body.gallery.filter((url: any) => typeof url === 'string' && url.trim())
+        : null;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -310,6 +339,7 @@ export async function POST(req: NextRequest) {
       holiday_description_html: holidayDescriptionHtml,
       itinerary: itineraryJson,
       thumbnail_image: thumbnailImage,
+      gallery: galleryImages,
     };
 
     // Add travel_dates, booking_slots, or date_ranges based on what's provided
@@ -485,6 +515,12 @@ export async function PUT(req: NextRequest) {
       body?.thumbnail_image !== undefined
         ? String(body.thumbnail_image).trim() || null
         : undefined;
+    const galleryImages =
+      body?.gallery !== undefined
+        ? Array.isArray(body.gallery)
+          ? body.gallery.filter((url: any) => typeof url === 'string' && url.trim())
+          : undefined
+        : undefined;
     const status =
       body?.status !== undefined
         ? String(body.status).trim() || null
@@ -563,6 +599,7 @@ export async function PUT(req: NextRequest) {
       updates.holiday_description_html = holidayDescriptionHtml;
     if (itineraryJson !== undefined) updates.itinerary = itineraryJson;
     if (thumbnailImage !== undefined) updates.thumbnail_image = thumbnailImage;
+    if (galleryImages !== undefined) updates.gallery = galleryImages;
     if (status !== undefined) updates.status = status;
 
     if (Object.keys(updates).length === 0) {

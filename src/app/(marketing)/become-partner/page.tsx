@@ -9,7 +9,7 @@ export default function BecomeAgentPage() {
   const router = useRouter();
 
   const handleSubscribe = () => {
-    router.push('/become-agent/subscribe');
+    router.push('/become-partner/subscribe');
   };
 
   const features = [
@@ -18,7 +18,6 @@ export default function BecomeAgentPage() {
     { icon: Shield, text: 'Dedicated partner dashboard' },
     { icon: Users, text: 'Real-time booking management' },
     { icon: Award, text: 'Commission tracking and invoicing' },
-    { icon: Star, text: 'Marketing materials and resources' },
   ];
 
   return (

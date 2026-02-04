@@ -1224,12 +1224,18 @@ export default function CheckoutPage() {
                                 : ''
                             }`}
                       </p>
-                      {item.isDiscountActive && (
+                      {item.hasActiveDeal && (
+                        <span className='checkout-discount-badge' style={{ 
+                          background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                          color: '#fff'
+                        }}>Deal of the Day</span>
+                      )}
+                      {item.isDiscountActive && !item.hasActiveDeal && (
                         <span className='checkout-discount-badge'>Limited Offer Applied</span>
                       )}
                     </div>
                     <div className='package-price'>
-                      {item.isDiscountActive && item.originalPrice && item.originalPrice > item.price && (
+                      {(item.hasActiveDeal || item.isDiscountActive) && item.originalPrice && item.originalPrice > item.price && (
                         <span className='checkout-original-price'>
                           {formatPrice(item.originalPrice)}
                         </span>
@@ -1254,7 +1260,7 @@ export default function CheckoutPage() {
                           </span>
                         </div>
                       )}
-                      <span className={item.isDiscountActive ? 'checkout-discounted-price' : ''}>
+                      <span className={(item.hasActiveDeal || item.isDiscountActive) ? 'checkout-discounted-price' : ''}>
                         {formatPrice(item.price)}
                       </span>
                     </div>

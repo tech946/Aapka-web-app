@@ -2,7 +2,7 @@ import type React from 'react';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Poppins } from 'next/font/google';
+import { Manrope, Fraunces } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
 import 'antd/dist/reset.css';
@@ -12,10 +12,18 @@ import ConditionalWhatsAppButton from '@/components/marketing/WhatsAppButton/Con
 import GTMPageViewTracker from '@/components/GTMPageViewTracker';
 import { CartProvider } from '@/context/CartContext';
 
-const poppins = Poppins({
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+  variable: '--font-manrope',
+});
+
+const fraunces = Fraunces({
   subsets: ['latin'],
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-poppins',
+  variable: '--font-fraunces',
+  style: ['normal', 'italic'],
+  opticalSizing: true,
 });
 
 export const metadata: Metadata = {
@@ -23,6 +31,9 @@ export const metadata: Metadata = {
   description:
     "With 10 years of experience in the travel industry and deep knowledge of Dubai's culture, attractions, and hidden gems, our expert guides ensure you get the most authentic and memorable experience possible. We don't just show you Dubai - we help you live it.",
   generator: 'aapka-tourism.com',
+  other: {
+    'google-fonts': 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Manrope:wght@200..800&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap',
+  },
 };
 
 export default function RootLayout({
@@ -31,8 +42,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en' suppressHydrationWarning className={poppins.variable}>
-      <body className={poppins.className}>
+    <html lang='en' suppressHydrationWarning className={`${manrope.variable} ${fraunces.variable}`}>
+      <head>
+        <link rel='preconnect' href='https://fonts.googleapis.com' />
+        <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='' />
+        <link
+          href='https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Manrope:wght@200..800&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap'
+          rel='stylesheet'
+        />
+      </head>
+      <body className={manrope.className}>
         {/* Google Tag Manager */}
         <Script
           id='google-tag-manager'

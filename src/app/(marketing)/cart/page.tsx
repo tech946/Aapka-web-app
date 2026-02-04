@@ -323,7 +323,7 @@ export default function CartPage() {
                   <div className='cart-item-price'>
                     {item.validated ? (
                       <>
-                        {item.isDiscountActive && item.originalPrice && item.originalPrice > item.price && (
+                        {(item.hasActiveDeal || item.isDiscountActive) && item.originalPrice && item.originalPrice > item.price && (
                           <span className='cart-item-original-price'>
                             {formatPrice(item.originalPrice)}
                           </span>
@@ -348,10 +348,13 @@ export default function CartPage() {
                             </span>
                           </div>
                         )}
-                        <span className={item.isDiscountActive ? 'cart-item-discounted-price' : ''}>
+                        <span className={(item.hasActiveDeal || item.isDiscountActive) ? 'cart-item-discounted-price' : ''}>
                           {formatPrice(item.price)}
                         </span>
-                        {item.isDiscountActive && (
+                        {item.hasActiveDeal && (
+                          <span className='cart-item-deal-badge'>Deal of the Day</span>
+                        )}
+                        {item.isDiscountActive && !item.hasActiveDeal && (
                           <span className='cart-item-discount-badge'>OFFER</span>
                         )}
                       </>

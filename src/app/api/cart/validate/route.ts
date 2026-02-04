@@ -129,6 +129,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
     }
 
+    // Fetch active deals for all packages
+    const fetchedPackageIds = packages?.map(p => p.package_id) || [];
+    let activeDealsMap = new Map();
+    
+    if (fetchedPackageIds.length > 0) {
+      const now = new Date().toISOString();
+      const { data: dealsData } = await supabaseAdmin
+        .from('package_deals')
+        .select('*')
+        .in('package_id', fetchedPackageIds)
+        .eq('is_active', true)
+        .lte('start_date', now)
+        .gte('end_date', now);
+
+      if (dealsData) {
+        dealsData.forEach((deal: any) => {
+          activeDealsMap.set(deal.package_id, deal);
+        });
+      }
+    }
+
+    // Helper function to apply deal prices
+    const applyDealPrices = (
+      packageId: string,
+      adult: number,
+      child: number,
+      infant: number,
+      solo: number | null
+    ): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice: number | null } => {
+      const deal = activeDealsMap.get(packageId);
+      if (!deal) {
+        return { adultPrice: adult, childPrice: child, infantPrice: infant, soloTravellerPrice: solo };
+      }
+
+      const now = new Date();
+      const startDate = new Date(deal.start_date);
+      const endDate = new Date(deal.end_date);
+
+      // Check if deal is currently active
+      if (deal.is_active && now >= startDate && now <= endDate) {
+        return {
+          adultPrice: deal.deal_adult_price !== null ? deal.deal_adult_price : adult,
+          childPrice: deal.deal_child_price !== null ? deal.deal_child_price : child,
+          infantPrice: deal.deal_infant_price !== null ? deal.deal_infant_price : infant,
+          soloTravellerPrice: deal.deal_solo_traveller_price !== null ? deal.deal_solo_traveller_price : solo,
+        };
+      }
+
+      return { adultPrice: adult, childPrice: child, infantPrice: infant, soloTravellerPrice: solo };
+    };
+
     // Validate and calculate prices for each cart item
     const validatedItems = await Promise.all(items.map(async item => {
       const pkg = packages?.find(p => p.package_id === item.packageId);
@@ -236,6 +287,33 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Store original prices before applying deal
+      const originalAdultPrice = adultPrice;
+      const originalChildPrice = childPrice;
+      const originalInfantPrice = infantPrice;
+      const originalSoloPrice = soloTravellerPrice;
+
+      // Apply deal prices if active deal exists
+      const dealPrices = applyDealPrices(
+        pkg.package_id,
+        adultPrice,
+        childPrice,
+        infantPrice,
+        soloTravellerPrice
+      );
+      
+      // Check if deal is actually applied (prices changed)
+      const hasActiveDeal = 
+        dealPrices.adultPrice !== originalAdultPrice ||
+        dealPrices.childPrice !== originalChildPrice ||
+        dealPrices.infantPrice !== originalInfantPrice ||
+        dealPrices.soloTravellerPrice !== originalSoloPrice;
+      
+      adultPrice = dealPrices.adultPrice;
+      childPrice = dealPrices.childPrice;
+      infantPrice = dealPrices.infantPrice;
+      soloTravellerPrice = dealPrices.soloTravellerPrice;
+
       // Calculate price with discount applied
       let calculatedPrice = 0;
       let originalPrice = 0;
@@ -335,12 +413,42 @@ export async function POST(req: NextRequest) {
         ? calculatedPrice + agentDiscountAmount 
         : null;
 
+      // Calculate original price based on original prices (before deal) for display
+      let originalPriceForDisplay = originalPrice;
+      if (hasActiveDeal) {
+        // Recalculate original price using original prices (before deal)
+        if (isSolo) {
+          originalPriceForDisplay = originalSoloPrice ?? pkg.solo_traveller_price ?? (isFlexibleDatePackage ? 0 : (pkg.package_price ?? 0));
+        } else {
+          if (usePackagePriceAsFlatRate) {
+            originalPriceForDisplay = pkg.package_price ?? 0;
+          } else {
+            originalPriceForDisplay = 0;
+            if (originalAdultPrice > 0 && item.adults > 0) {
+              originalPriceForDisplay += originalAdultPrice * item.adults;
+            }
+            if (originalChildPrice > 0 && item.children > 0) {
+              originalPriceForDisplay += originalChildPrice * item.children;
+            }
+            if (originalInfantPrice > 0 && item.infants > 0) {
+              originalPriceForDisplay += originalInfantPrice * item.infants;
+            }
+            if (originalPriceForDisplay === 0 && !isFlexibleDatePackage && pkg.package_price && pkg.package_price > 0) {
+              originalPriceForDisplay = pkg.package_price;
+            }
+          }
+        }
+        originalPriceForDisplay += visaPrice;
+      }
+
       return {
         packageId: item.packageId,
         valid: true,
         packageName: pkg.package_name,
         price: calculatedPrice,
-        originalPrice: discountActive && originalPrice !== calculatedPrice ? originalPrice : null,
+        originalPrice: (hasActiveDeal && originalPriceForDisplay > calculatedPrice) || (discountActive && originalPrice !== calculatedPrice) 
+          ? (hasActiveDeal ? originalPriceForDisplay : originalPrice) 
+          : null,
         adultPrice: discountActive && !isFlexibleDatePackage ? Math.max(0, adultPrice - (pkg.adult_discount_amount || 0)) : adultPrice,
         childPrice: discountActive && !isFlexibleDatePackage ? Math.max(0, childPrice - (pkg.child_discount_amount || 0)) : childPrice,
         infantPrice: discountActive && !isFlexibleDatePackage ? Math.max(0, infantPrice - (pkg.infant_discount_amount || 0)) : infantPrice,
@@ -349,7 +457,8 @@ export async function POST(req: NextRequest) {
         days: pkg.package_days,
         thumbnailImage: pkg.thumbnail_image,
         // Discount info
-        isDiscountActive: discountActive,
+        isDiscountActive: discountActive || hasActiveDeal,
+        hasActiveDeal: hasActiveDeal,
         adultDiscountAmount: discountActive ? pkg.adult_discount_amount : null,
         childDiscountAmount: discountActive ? pkg.child_discount_amount : null,
         infantDiscountAmount: discountActive ? pkg.infant_discount_amount : null,

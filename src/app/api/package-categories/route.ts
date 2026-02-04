@@ -62,6 +62,14 @@ export async function POST(req: NextRequest) {
       body?.packagetypename !== undefined
         ? String(body.packagetypename).trim() || null
         : null;
+    const image: string | null =
+      body?.image !== undefined
+        ? String(body.image).trim() || null
+        : null;
+    const description: string | null =
+      body?.description !== undefined
+        ? String(body.description).trim() || null
+        : null;
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -74,6 +82,8 @@ export async function POST(req: NextRequest) {
           name,
           packagetypeid,
           packagetypename,
+          image,
+          description,
         },
       ])
       .select('*')
@@ -108,6 +118,14 @@ export async function PUT(req: NextRequest) {
       body?.packagetypename !== undefined
         ? String(body.packagetypename).trim() || null
         : undefined;
+    const image: string | null | undefined =
+      body?.image !== undefined
+        ? String(body.image).trim() || null
+        : undefined;
+    const description: string | null | undefined =
+      body?.description !== undefined
+        ? String(body.description).trim() || null
+        : undefined;
 
     if (!id) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 });
@@ -118,6 +136,8 @@ export async function PUT(req: NextRequest) {
     if (packagetypeid !== undefined) updates.packagetypeid = packagetypeid;
     if (packagetypename !== undefined)
       updates.packagetypename = packagetypename;
+    if (image !== undefined) updates.image = image;
+    if (description !== undefined) updates.description = description;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

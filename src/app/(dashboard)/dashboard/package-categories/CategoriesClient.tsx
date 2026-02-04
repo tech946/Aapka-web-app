@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition, useRef } from 'react';
+import { toast } from 'sonner';
+import {
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+} from '@/lib/cloudinary';
 
 type CategoryRow = {
   id: string;
   name: string;
   packagetypename?: string | null;
   packagetypeid?: number | null;
+  image?: string | null;
+  description?: string | null;
   created_at?: string | null;
 };
 
@@ -189,7 +196,7 @@ export default function CategoriesClient() {
         <AddCategoryModal
           onClose={() => setModalOpen(false)}
           submitting={isPending}
-          onSubmit={(name, packagetypeid, packagetypename) => {
+          onSubmit={(name, packagetypeid, packagetypename, image, description) => {
             startTransition(async () => {
               try {
                 const res = await fetch('/api/package-categories', {
@@ -199,14 +206,18 @@ export default function CategoriesClient() {
                     name,
                     packagetypeid,
                     packagetypename,
+                    image,
+                    description,
                   }),
                 });
                 if (!res.ok) {
                   const j = await res.json().catch(() => ({}));
                   throw new Error(j?.error ?? 'Failed to add');
                 }
-              } catch (e) {
+                toast.success('Category added successfully');
+              } catch (e: any) {
                 console.error(e);
+                toast.error(e?.message || 'Failed to add category');
               }
               setModalOpen(false);
               // Reset to first page and clear search; GET data will refetch
@@ -225,7 +236,7 @@ export default function CategoriesClient() {
             setEditingCategory(null);
           }}
           submitting={isPending}
-          onSubmit={(name, packagetypeid, packagetypename) => {
+          onSubmit={(name, packagetypeid, packagetypename, image, description) => {
             startTransition(async () => {
               try {
                 const res = await fetch('/api/package-categories', {
@@ -236,14 +247,18 @@ export default function CategoriesClient() {
                     name,
                     packagetypeid,
                     packagetypename,
+                    image,
+                    description,
                   }),
                 });
                 if (!res.ok) {
                   const j = await res.json().catch(() => ({}));
                   throw new Error(j?.error ?? 'Failed to update');
                 }
-              } catch (e) {
+                toast.success('Category updated successfully');
+              } catch (e: any) {
                 console.error(e);
+                toast.error(e?.message || 'Failed to update category');
               }
               setEditModalOpen(false);
               setEditingCategory(null);
@@ -268,22 +283,77 @@ function AddCategoryModal({
   onSubmit: (
     name: string,
     packagetypeid: number,
-    packagetypename: string
+    packagetypename: string,
+    image: string | null,
+    description: string | null
   ) => void;
   submitting: boolean;
 }) {
   const [name, setName] = useState('');
   const [type, setType] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [thumbnailImage, setThumbnailImage] = useState<File | null>(null);
+  const [thumbnailImagePreview, setThumbnailImagePreview] = useState<string>('');
+  const [thumbnailImageUrl, setThumbnailImageUrl] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const typeOptions = [
     { id: 1, name: 'package' },
     { id: 2, name: 'tour' },
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const selectedType = typeOptions.find(t => String(t.id) === type);
     if (selectedType) {
-      onSubmit(name.trim(), selectedType.id, selectedType.name);
+      onSubmit(name.trim(), selectedType.id, selectedType.name, thumbnailImageUrl || null, description.trim() || null);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setThumbnailImage(file);
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setThumbnailImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    setIsUploadingImage(true);
+    try {
+      const url = await uploadImageToCloudinary(file, 'categories');
+      setThumbnailImageUrl(url);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload image'
+      );
+      setThumbnailImage(null);
+      setThumbnailImagePreview('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -316,6 +386,217 @@ function AddCategoryModal({
               ))}
             </select>
           </div>
+          <div className='form_row full_width'>
+            <label>Description</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder='Enter category description (optional)'
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+          </div>
+          <div className='form_row full_width'>
+            <label>Category Image</label>
+            <div
+              style={{
+                border: '2px dashed #d1d5db',
+                borderRadius: '8px',
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#f9fafb',
+                cursor: isUploadingImage ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: isUploadingImage ? 0.6 : 1,
+              }}
+              onDragOver={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isUploadingImage) {
+                  e.currentTarget.style.borderColor = '#f97316';
+                  e.currentTarget.style.backgroundColor = '#fff7ed';
+                }
+              }}
+              onDragLeave={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.backgroundColor = '#f9fafb';
+              }}
+              onDrop={async e => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.backgroundColor = '#f9fafb';
+                if (isUploadingImage) return;
+                const file = Array.from(e.dataTransfer.files || []).find(
+                  file => file.type.startsWith('image/')
+                );
+                if (!file) return;
+                const fakeEvent = {
+                  target: { files: [file] },
+                } as unknown as React.ChangeEvent<HTMLInputElement>;
+                await handleImageUpload(fakeEvent);
+              }}
+              onClick={() => {
+                if (!isUploadingImage) {
+                  fileInputRef.current?.click();
+                }
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                onChange={handleImageUpload}
+                disabled={isUploadingImage}
+                style={{ display: 'none' }}
+              />
+              {isUploadingImage ? (
+                <div>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      border: '3px solid #f3f4f6',
+                      borderTop: '3px solid #f97316',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      margin: '0 auto 12px',
+                    }}
+                  />
+                  <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>
+                    Uploading image...
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <svg
+                    width='48'
+                    height='48'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='#9ca3af'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    style={{ margin: '0 auto 12px', display: 'block' }}
+                  >
+                    <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                    <polyline points='17 8 12 3 7 8' />
+                    <line x1='12' y1='3' x2='12' y2='15' />
+                  </svg>
+                  <p style={{ color: '#374151', margin: '0 0 4px', fontSize: '14px', fontWeight: '500' }}>
+                    Click to upload or drag and drop
+                  </p>
+                  <p style={{ color: '#6b7280', margin: 0, fontSize: '12px' }}>
+                    Single image (Max 5MB)
+                  </p>
+                </div>
+              )}
+            </div>
+            {thumbnailImagePreview && thumbnailImagePreview.trim() && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '12px',
+                  marginTop: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'relative',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: '1px solid #e5e7eb',
+                    backgroundColor: '#fff',
+                    aspectRatio: '1',
+                  }}
+                >
+                  <img
+                    src={thumbnailImagePreview}
+                    alt='Category preview'
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                  <button
+                    type='button'
+                    onClick={async e => {
+                      e.stopPropagation();
+                      const imageToRemove = thumbnailImageUrl;
+                      setThumbnailImage(null);
+                      setThumbnailImagePreview('');
+                      setThumbnailImageUrl('');
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                      if (imageToRemove) {
+                        try {
+                          await deleteImageFromCloudinary(imageToRemove);
+                          toast.success('Image removed');
+                        } catch (error) {
+                          console.error('Error deleting image:', error);
+                          toast.error('Failed to delete image from storage');
+                        }
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ef4444',
+                      border: 'none',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#dc2626';
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = '#ef4444';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <svg
+                      width='16'
+                      height='16'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    >
+                      <line x1='18' y1='6' x2='6' y2='18' />
+                      <line x1='6' y1='6' x2='18' y2='18' />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className='modal_footer'>
           <button onClick={onClose} disabled={submitting}>
@@ -345,7 +626,9 @@ function EditCategoryModal({
   onSubmit: (
     name: string,
     packagetypeid: number,
-    packagetypename: string
+    packagetypename: string,
+    image: string | null,
+    description: string | null
   ) => void;
   submitting: boolean;
 }) {
@@ -353,11 +636,29 @@ function EditCategoryModal({
   const [type, setType] = useState<string>(
     category.packagetypeid ? String(category.packagetypeid) : ''
   );
+  const [description, setDescription] = useState<string>(category.description || '');
+  const [thumbnailImage, setThumbnailImage] = useState<File | null>(null);
+  const [thumbnailImagePreview, setThumbnailImagePreview] = useState<string>(
+    category.image || ''
+  );
+  const [thumbnailImageUrl, setThumbnailImageUrl] = useState<string>(
+    category.image || ''
+  );
+  const [originalImageUrl, setOriginalImageUrl] = useState<string>(
+    category.image || ''
+  );
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update form when category changes
   useEffect(() => {
     setName(category.name || '');
     setType(category.packagetypeid ? String(category.packagetypeid) : '');
+    setDescription(category.description || '');
+    const imageUrl = category.image || '';
+    setThumbnailImagePreview(imageUrl);
+    setThumbnailImageUrl(imageUrl);
+    setOriginalImageUrl(imageUrl);
   }, [category]);
 
   const typeOptions = [
@@ -365,10 +666,65 @@ function EditCategoryModal({
     { id: 2, name: 'tour' },
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const selectedType = typeOptions.find(t => String(t.id) === type);
     if (selectedType) {
-      onSubmit(name.trim(), selectedType.id, selectedType.name);
+      // Delete old image if it was changed
+      if (originalImageUrl && thumbnailImageUrl !== originalImageUrl && originalImageUrl) {
+        try {
+          await deleteImageFromCloudinary(originalImageUrl);
+        } catch (error) {
+          console.error('Error deleting old image:', error);
+        }
+      }
+      onSubmit(name.trim(), selectedType.id, selectedType.name, thumbnailImageUrl || null, description.trim() || null);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setThumbnailImage(file);
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setThumbnailImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    setIsUploadingImage(true);
+    try {
+      const url = await uploadImageToCloudinary(file, 'categories');
+      setThumbnailImageUrl(url);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload image'
+      );
+      setThumbnailImage(null);
+      setThumbnailImagePreview(originalImageUrl);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -400,6 +756,217 @@ function EditCategoryModal({
                 </option>
               ))}
             </select>
+          </div>
+          <div className='form_row full_width'>
+            <label>Description</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder='Enter category description (optional)'
+              rows={4}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+          </div>
+          <div className='form_row full_width'>
+            <label>Category Image</label>
+            <div
+              style={{
+                border: '2px dashed #d1d5db',
+                borderRadius: '8px',
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#f9fafb',
+                cursor: isUploadingImage ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: isUploadingImage ? 0.6 : 1,
+              }}
+              onDragOver={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isUploadingImage) {
+                  e.currentTarget.style.borderColor = '#f97316';
+                  e.currentTarget.style.backgroundColor = '#fff7ed';
+                }
+              }}
+              onDragLeave={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.backgroundColor = '#f9fafb';
+              }}
+              onDrop={async e => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.backgroundColor = '#f9fafb';
+                if (isUploadingImage) return;
+                const file = Array.from(e.dataTransfer.files || []).find(
+                  file => file.type.startsWith('image/')
+                );
+                if (!file) return;
+                const fakeEvent = {
+                  target: { files: [file] },
+                } as unknown as React.ChangeEvent<HTMLInputElement>;
+                await handleImageUpload(fakeEvent);
+              }}
+              onClick={() => {
+                if (!isUploadingImage) {
+                  fileInputRef.current?.click();
+                }
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                onChange={handleImageUpload}
+                disabled={isUploadingImage}
+                style={{ display: 'none' }}
+              />
+              {isUploadingImage ? (
+                <div>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      border: '3px solid #f3f4f6',
+                      borderTop: '3px solid #f97316',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      margin: '0 auto 12px',
+                    }}
+                  />
+                  <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>
+                    Uploading image...
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <svg
+                    width='48'
+                    height='48'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='#9ca3af'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    style={{ margin: '0 auto 12px', display: 'block' }}
+                  >
+                    <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                    <polyline points='17 8 12 3 7 8' />
+                    <line x1='12' y1='3' x2='12' y2='15' />
+                  </svg>
+                  <p style={{ color: '#374151', margin: '0 0 4px', fontSize: '14px', fontWeight: '500' }}>
+                    Click to upload or drag and drop
+                  </p>
+                  <p style={{ color: '#6b7280', margin: 0, fontSize: '12px' }}>
+                    Single image (Max 5MB)
+                  </p>
+                </div>
+              )}
+            </div>
+            {thumbnailImagePreview && thumbnailImagePreview.trim() && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '12px',
+                  marginTop: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'relative',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: '1px solid #e5e7eb',
+                    backgroundColor: '#fff',
+                    aspectRatio: '1',
+                  }}
+                >
+                  <img
+                    src={thumbnailImagePreview}
+                    alt='Category preview'
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                  <button
+                    type='button'
+                    onClick={async e => {
+                      e.stopPropagation();
+                      const imageToRemove = thumbnailImageUrl;
+                      setThumbnailImage(null);
+                      setThumbnailImagePreview(originalImageUrl);
+                      setThumbnailImageUrl(originalImageUrl);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                      if (imageToRemove && imageToRemove !== originalImageUrl) {
+                        try {
+                          await deleteImageFromCloudinary(imageToRemove);
+                          toast.success('Image removed');
+                        } catch (error) {
+                          console.error('Error deleting image:', error);
+                          toast.error('Failed to delete image from storage');
+                        }
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ef4444',
+                      border: 'none',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#dc2626';
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = '#ef4444';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <svg
+                      width='16'
+                      height='16'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    >
+                      <line x1='18' y1='6' x2='6' y2='18' />
+                      <line x1='6' y1='6' x2='18' y2='18' />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className='modal_footer'>

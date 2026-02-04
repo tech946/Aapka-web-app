@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Heart,
   MapPin,
   Grid3x3,
   List,
   Filter,
   ChevronDown,
 } from 'lucide-react';
+import { gsap } from 'gsap';
+import PackageSliderArrowRight from '@/components/icons/PackageSliderArrowRight';
 import {
   detectUserLocation,
   initializeExchangeRate,
@@ -30,10 +31,25 @@ interface Package {
   adult_price?: number | null;
   child_price?: number | null;
   agent_discount?: number | null;
+  adult_discount_amount?: number | null;
+  child_discount_amount?: number | null;
+  discount_start_date?: string | null;
+  discount_end_date?: string | null;
+  active_deal?: {
+    deal_adult_price: number | null;
+    deal_child_price: number | null;
+    deal_infant_price: number | null;
+    deal_solo_traveller_price: number | null;
+    start_date: string;
+    end_date: string;
+    is_active: boolean;
+  } | null;
   overview?: string | null;
   holiday_description_html?: string | null;
+  itinerary?: Array<{ heading: string; desc: string }> | null;
   thumbnail_image?: string | null;
   created_at?: string | null;
+  end_date?: string | null;
 }
 
 interface Category {
@@ -224,109 +240,141 @@ export default function CategoryPage() {
   return (
     <div className='packages-page'>
       <div className='container'>
-        {/* Main Content */}
-        <div className='packages-layout'>
-          {/* Cards */}
-          <div className='packages-cards-container'>
-            <div className='packages-header'>
-              <h2>
-                {category?.name ? `${category.name} - ` : ''}Over {total} places
-              </h2>
-              <div className='packages-header-controls'>
-                <div className='packages-sort-dropdown'>
-                  <button
-                    className='packages-sort-button'
-                    onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                  >
-                    <Filter size={18} />
-                    <span>Filters</span>
-                    <ChevronDown
-                      size={16}
-                      className={`sort-chevron ${isSortDropdownOpen ? 'open' : ''}`}
-                    />
-                  </button>
-                  {isSortDropdownOpen && (
-                    <>
-                      <div
-                        className='sort-dropdown-overlay'
-                        onClick={() => setIsSortDropdownOpen(false)}
-                      />
-                      <div className='sort-dropdown-menu'>
-                        <button
-                          className={`sort-option ${
-                            sortBy === 'created_at_asc' ? 'active' : ''
-                          }`}
-                          onClick={() => {
-                            setSortBy('created_at_asc');
-                            setPage(1);
-                            setIsSortDropdownOpen(false);
-                          }}
-                        >
-                          Ascending Order
-                        </button>
-                        <button
-                          className={`sort-option ${
-                            sortBy === 'created_at_desc' ? 'active' : ''
-                          }`}
-                          onClick={() => {
-                            setSortBy('created_at_desc');
-                            setPage(1);
-                            setIsSortDropdownOpen(false);
-                          }}
-                        >
-                          Descending Order
-                        </button>
-                        <button
-                          className={`sort-option ${
-                            sortBy === 'price_asc' ? 'active' : ''
-                          }`}
-                          onClick={() => {
-                            setSortBy('price_asc');
-                            setPage(1);
-                            setIsSortDropdownOpen(false);
-                          }}
-                        >
-                          Price Ascending
-                        </button>
-                        <button
-                          className={`sort-option ${
-                            sortBy === 'price_desc' ? 'active' : ''
-                          }`}
-                          onClick={() => {
-                            setSortBy('price_desc');
-                            setPage(1);
-                            setIsSortDropdownOpen(false);
-                          }}
-                        >
-                          Price Descending
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className='packages-view-toggle'>
-                  <button
-                    className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                    onClick={() => setViewMode('grid')}
-                    title='Grid View'
-                  >
-                    <Grid3x3 size={20} />
-                  </button>
-                  <button
-                    className={`view-toggle-btn ${viewMode === 'row' ? 'active' : ''}`}
-                    onClick={() => setViewMode('row')}
-                    title='Row View'
-                  >
-                    <List size={20} />
-                  </button>
-                </div>
+
+        {/* Filters Bar */}
+        <div className='packages-filters-bar'>
+          <div className='packages-found'>
+            <span className='packages-found-label'>Packages Found</span>
+            <span className='packages-found-value'>{total}</span>
+          </div>
+
+          <div className='packages-header-controls'>
+            <div className='packages-sort-dropdown'>
+              <button
+                type='button'
+                className='packages-sort-button'
+                onClick={() => setIsSortDropdownOpen((v) => !v)}
+                aria-expanded={isSortDropdownOpen}
+                aria-haspopup='menu'
+              >
+                <span>Sort</span>
+                <span className='packages-sort-current'>
+                  {sortBy === 'created_at_desc'
+                    ? 'Descending Order'
+                    : sortBy === 'created_at_asc'
+                      ? 'Ascending Order'
+                      : sortBy === 'price_asc'
+                        ? 'Price Ascending'
+                        : sortBy === 'price_desc'
+                          ? 'Price Descending'
+                          : 'Newest'}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`sort-chevron ${isSortDropdownOpen ? 'open' : ''}`}
+                />
+              </button>
+
+              {isSortDropdownOpen && (
+                <>
+                  <div
+                    className='sort-dropdown-overlay'
+                    onClick={() => setIsSortDropdownOpen(false)}
+                  />
+                  <div className='sort-dropdown-menu' role='menu'>
+                    <button
+                      type='button'
+                      className={`sort-option ${
+                        sortBy === 'created_at_asc' ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setSortBy('created_at_asc');
+                        setPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                      role='menuitem'
+                    >
+                      Ascending Order
+                    </button>
+                    <button
+                      type='button'
+                      className={`sort-option ${
+                        sortBy === 'created_at_desc' ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setSortBy('created_at_desc');
+                        setPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                      role='menuitem'
+                    >
+                      Descending Order
+                    </button>
+                    <button
+                      type='button'
+                      className={`sort-option ${
+                        sortBy === 'price_asc' ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setSortBy('price_asc');
+                        setPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                      role='menuitem'
+                    >
+                      Price Ascending
+                    </button>
+                    <button
+                      type='button'
+                      className={`sort-option ${
+                        sortBy === 'price_desc' ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setSortBy('price_desc');
+                        setPage(1);
+                        setIsSortDropdownOpen(false);
+                      }}
+                      role='menuitem'
+                    >
+                      Price Descending
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className='packages-view-section'>
+              <div className='packages-view-toggle'>
+                <button
+                  className={`view-toggle-btn ${
+                    viewMode === 'grid' ? 'active' : ''
+                  }`}
+                  onClick={() => setViewMode('grid')}
+                  title='Grid View'
+                >
+                  <Grid3x3 size={18} />
+                </button>
+                <button
+                  className={`view-toggle-btn ${
+                    viewMode === 'row' ? 'active' : ''
+                  }`}
+                  onClick={() => setViewMode('row')}
+                  title='Row View'
+                >
+                  <List size={18} />
+                </button>
               </div>
             </div>
-            <div
-              className={`packages-cards-grid ${
-                viewMode === 'row' ? 'packages-cards-row' : ''
-              }`}
-            >
+          </div>
+        </div>
+
+        {/* Packages Grid */}
+        <div className='packages-cards-container'>
+          <div
+            className={`packages-cards-grid ${
+              viewMode === 'row' ? 'packages-cards-row' : ''
+            }`}
+          >
               {loading ? (
                 <div className='packages-loading'>Loading packages...</div>
               ) : packages.length === 0 ? (
@@ -350,44 +398,37 @@ export default function CategoryPage() {
                         pkg={pkg}
                         slug={slug}
                         packageSlug={packageSlug}
-                        isFavorite={favorites.has(pkg.package_id)}
                         hasActiveAgentSubscription={hasActiveAgentSubscription}
-                        onToggleFavorite={e => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleFavorite(pkg.package_id);
-                        }}
                         userLocation={userLocation}
                       />
                     </div>
                   );
                 })
               )}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className='packages-pagination'>
-                <button
-                  className='pagination-button'
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                >
-                  Previous
-                </button>
-                <span className='pagination-info'>
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  className='pagination-button'
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                >
-                  Next
-                </button>
-              </div>
-            )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className='packages-pagination'>
+              <button
+                className='pagination-button'
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <span className='pagination-info'>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                className='pagination-button'
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -398,19 +439,18 @@ function PackageCard({
   pkg,
   slug,
   packageSlug,
-  isFavorite,
-  onToggleFavorite,
   userLocation,
   hasActiveAgentSubscription,
 }: {
   pkg: Package;
   slug: string;
   packageSlug: string;
-  isFavorite: boolean;
-  onToggleFavorite: (e: React.MouseEvent) => void;
   userLocation: UserLocation | null;
   hasActiveAgentSubscription: boolean;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+
   // Helper function to get location/description text
   const getLocationText = (): string | null => {
     if (pkg.overview) {
@@ -437,23 +477,172 @@ function PackageCard({
       maximumFractionDigits: 2,
     })}`;
   };
-  const rating = 99; // Mock rating - replace with actual data
-  const reviewCount = 1004; // Mock review count - replace with actual data
+
+  // Calculate discount percentage
+  const getDiscountPercentage = (): number | null => {
+    if (hasActiveAgentSubscription && pkg.agent_discount) {
+      return pkg.agent_discount;
+    }
+    
+    // Check if regular discount is active
+    if (pkg.discount_start_date && pkg.discount_end_date) {
+      const now = new Date();
+      const startDate = new Date(pkg.discount_start_date);
+      const endDate = new Date(pkg.discount_end_date);
+      
+      if (now >= startDate && now <= endDate) {
+        const basePrice = pkg.adult_price || pkg.package_price || 0;
+        if (basePrice > 0 && pkg.adult_discount_amount) {
+          return Math.round((pkg.adult_discount_amount / basePrice) * 100);
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  // Get full package description/details (not truncated, HTML stripped)
+  const getPackageDescription = (): string | null => {
+    // Priority: overview > package_description > holiday_description_html
+    if (pkg.overview && pkg.overview.trim()) {
+      // Strip all HTML tags and decode HTML entities
+      return pkg.overview
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    if (pkg.package_description && pkg.package_description.trim()) {
+      // Strip all HTML tags and decode HTML entities
+      return pkg.package_description
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    if (pkg.holiday_description_html && pkg.holiday_description_html.trim()) {
+      // Strip all HTML tags and decode HTML entities
+      return pkg.holiday_description_html
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    return null;
+  };
+
+
+
+  // Format duration with dates
+  const getDuration = (): string => {
+    const nights = pkg.package_nights || 0;
+    
+    // For now, just show nights. In the future, if we have travel_dates or booking_slots,
+    // we can extract actual dates from there
+    if (nights > 0) {
+      return `${nights} ${nights === 1 ? 'Night' : 'Nights'}`;
+    }
+    
+    return 'Duration not specified';
+  };
+
+  // Get price per person
+  const getPricePerPerson = (): string => {
+    const price = pkg.adult_price || pkg.package_price;
+    if (!price) return 'N/A';
+    
+    const discount = getDiscountPercentage();
+    if (discount) {
+      const discountedPrice = price * (1 - discount / 100);
+      return formatPrice(discountedPrice);
+    }
+    
+    return formatPrice(price);
+  };
+
+  const discountPercentage = getDiscountPercentage();
+  const packageDescription = getPackageDescription();
+  const duration = getDuration();
+  const pricePerPerson = getPricePerPerson();
+  
   // Show "New" tag for recently created packages (within last 30 days)
   const isNew = pkg.created_at
     ? new Date().getTime() - new Date(pkg.created_at).getTime() <
       30 * 24 * 60 * 60 * 1000
     : false;
 
+  // Keep subtle image hover (matches homepage suites feel)
+  useEffect(() => {
+    const card = cardRef.current;
+    const image = imageRef.current;
+
+    if (!card || !image) return;
+
+    const handleMouseEnter = () => {
+      gsap.to(image, {
+        scale: 1.03,
+        duration: 0.22,
+        ease: 'power2.out',
+      });
+    };
+
+    const handleMouseLeave = () => {
+      gsap.to(image, {
+        scale: 1,
+        duration: 0.18,
+        ease: 'power2.out',
+      });
+    };
+
+    card.addEventListener('mouseenter', handleMouseEnter);
+    card.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      card.removeEventListener('mouseenter', handleMouseEnter);
+      card.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
+
+  // Check if package has active deal
+  const hasActiveDeal = (): boolean => {
+    if (!pkg.active_deal) return false;
+    const deal = pkg.active_deal;
+    const now = new Date();
+    const startDate = new Date(deal.start_date);
+    const endDate = new Date(deal.end_date);
+    return deal.is_active && now >= startDate && now <= endDate;
+  };
+
   return (
-    <div className='package-card'>
-      <div className='package-card-image'>
+    <div className='suites-card' ref={cardRef}>
+      <div className='suites-card-image' ref={imageRef}>
+        {hasActiveDeal() && (
+          <div className='package-deal-badge'>Deal of the Day</div>
+        )}
         {isNew && <div className='package-new-badge'>New</div>}
+        {duration && duration !== 'Duration not specified' && (
+          <div className='package-duration-badge'>{duration}</div>
+        )}
         {pkg.thumbnail_image && pkg.thumbnail_image.trim() ? (
           <img
             src={pkg.thumbnail_image}
             alt={pkg.package_name}
-            className='package-card-thumbnail'
+            className='suites-img'
             onError={e => {
               // Hide image and show placeholder if it fails to load
               e.currentTarget.style.display = 'none';
@@ -476,60 +665,26 @@ function PackageCard({
         >
           <MapPin className='package-image-icon' />
         </div>
-        <div className='package-image-dots'>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <button
-          className={`package-favorite-button ${isFavorite ? 'active' : ''}`}
-          onClick={e => {
-            e.stopPropagation();
-            onToggleFavorite(e);
-          }}
-        >
-          <Heart className={isFavorite ? 'filled' : ''} />
-        </button>
       </div>
-      <div className='package-card-content'>
-        <h3 className='package-name'>{pkg.package_name}</h3>
-        <div className='package-details'>
-          {(() => {
-            const locationText = getLocationText();
-            return locationText ? (
-              <span className='package-location'>{locationText}</span>
-            ) : null;
-          })()}
+      <div className='suites-card-content'>
+        <h3 className='suites-card-title'>{pkg.package_name}</h3>
+
+        {packageDescription && (
+          <p className='suites-card-destinations'>{packageDescription}</p>
+        )}
+
+        {discountPercentage && (
+          <div className='suites-discount-badge'>{discountPercentage}% Off</div>
+        )}
+
+        <div className='suites-card-price'>
+          <span className='suites-price-amount'>{pricePerPerson}</span>
+          <span className='suites-price-label'> / per person</span>
         </div>
-        <div className='package-price'>
-          {hasActiveAgentSubscription && pkg.agent_discount && pkg.agent_discount > 0 && pkg.package_price ? (
-            <>
-              <div className='agent-discount-badge-container-card'>
-                <span className='agent-discount-badge-card'>
-                  Premium Partner Discount
-                  <span className='agent-discount-badge-amount-card'>
-                    -{formatPrice((pkg.package_price * pkg.agent_discount) / 100).replace('AED ', '')}
-                  </span>
-                </span>
-              </div>
-              <div className='package-price-wrapper'>
-                <span className='package-price-original'>
-                  from {formatPrice(pkg.package_price)}
-                </span>
-                <span className='package-price-discounted'>
-                  from {formatPrice(pkg.package_price - (pkg.package_price * pkg.agent_discount) / 100)}
-                </span>
-              </div>
-            </>
-          ) : (
-            <span>from {formatPrice(pkg.package_price)}</span>
-          )}
-        </div>
-        <Link
-          href={`/category/${slug}/${packageSlug}`}
-          className='package-details-button'
-        >
-          View Details
+
+        <Link href={`/category/${slug}/${packageSlug}`} className='suites-read-more'>
+          <span>View Details</span>
+          <PackageSliderArrowRight size={20} className='suites-btn-arrow' />
         </Link>
       </div>
     </div>

@@ -44,6 +44,7 @@ export interface CartItem extends CartItemStorage {
   validated?: boolean; // Flag to indicate if price is validated
   // Discount info
   isDiscountActive?: boolean;
+  hasActiveDeal?: boolean;
   adultDiscountAmount?: number | null;
   childDiscountAmount?: number | null;
   infantDiscountAmount?: number | null;
@@ -147,6 +148,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   validated: true,
                   // Discount info
                   isDiscountActive: validated.isDiscountActive,
+                  hasActiveDeal: validated.hasActiveDeal || false,
                   adultDiscountAmount: validated.adultDiscountAmount,
                   childDiscountAmount: validated.childDiscountAmount,
                   infantDiscountAmount: validated.infantDiscountAmount,

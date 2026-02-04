@@ -11,8 +11,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
-        poppins: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-manrope)', 'Manrope', 'system-ui', 'sans-serif'],
+        manrope: ['var(--font-manrope)', 'Manrope', 'system-ui', 'sans-serif'],
+        fraunces: ['var(--font-fraunces)', 'Fraunces', 'serif'],
+        heading: ['var(--font-fraunces)', 'Fraunces', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

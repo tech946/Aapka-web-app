@@ -19,27 +19,27 @@ import {
   X,
   ArrowUp,
   ChevronLeft,
+  ShoppingCart,
+  ShoppingCartIcon,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
-import useEmblaCarousel from 'embla-carousel-react';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from '@/components/ui/popover';
+import BookingModal from '@/components/marketing/BookingModal';
 import {
   detectUserLocation,
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
 import { parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
+import { gsap } from 'gsap';
 import 'react-day-picker/dist/style.css';
 import '../../packages.css';
 import './package-details.css';
+import PackageGallery from './PackageGallery';
+import PackageDetailsTabs from './PackageDetailsTabs';
 
 interface DateRange {
   id: string;
@@ -76,6 +76,16 @@ interface Package {
   discount_start_date?: string | null;
   discount_end_date?: string | null;
   agent_discount?: number | null;
+  // Deal of the day
+  active_deal?: {
+    deal_adult_price: number | null;
+    deal_child_price: number | null;
+    deal_infant_price: number | null;
+    deal_solo_traveller_price: number | null;
+    start_date: string;
+    end_date: string;
+    is_active: boolean;
+  } | null;
   overview?: string | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
@@ -92,6 +102,7 @@ interface Package {
   date_ranges?: DateRange[] | null;
   end_date?: string | null;
   thumbnail_image?: string | null;
+  gallery?: string[] | null;
   created_at?: string | null;
 }
 
@@ -107,7 +118,6 @@ export default function PackageDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [dateRangesReady, setDateRangesReady] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('overview');
   const [category, setCategory] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedDateString, setSelectedDateString] = useState<string>('');
@@ -159,9 +169,6 @@ export default function PackageDetailsPage() {
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [agentDiscountAmount, setAgentDiscountAmount] = useState<number | null>(null);
   const [priceBeforeAgentDiscount, setPriceBeforeAgentDiscount] = useState<number | null>(null);
-  const [expandedItineraryItems, setExpandedItineraryItems] = useState<
-    Set<number>
-  >(new Set());
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   // Note: Date ranges are now stored in pkg.date_ranges directly (no separate state needed)
@@ -170,17 +177,12 @@ export default function PackageDetailsPage() {
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [discountTimeLeft, setDiscountTimeLeft] = useState<string>('');
   const isMobile = useIsMobile();
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'start',
-    containScroll: 'trimSnaps',
-    dragFree: false,
-    skipSnaps: false,
-    duration: 25,
-  });
 
   const datePickerRef = useRef<HTMLDivElement>(null);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
   const personsDropdownRef = useRef<HTMLDivElement>(null);
+  const addToCartButtonRef = useRef<HTMLButtonElement>(null);
+  const addToCartIconRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (packageSlug) {
@@ -521,6 +523,8 @@ export default function PackageDetailsPage() {
   // Get prices for selected date (for flexible date packages) or package base prices
   // The discount is applied AFTER getting these base prices, not here
   const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } => {
+    let basePrices: { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null };
+    
     // For flexible date packages, use date-specific pricing from date_ranges
     // Always return actual prices from date ranges
     if (slug === 'flexible-date-packages') {
@@ -532,42 +536,82 @@ export default function PackageDetailsPage() {
         if (dateInfo) {
           // Use prices from the date range that contains this date
           // These are the actual prices - discount will be applied later if applicable
-          return {
+          basePrices = {
             adultPrice: dateInfo.adult_price || 0,
             childPrice: dateInfo.child_price || 0,
             infantPrice: dateInfo.infant_price || 0,
             soloTravellerPrice: dateInfo.solo_traveller_price,
           };
+        } else {
+          // If no date selected, show minimum price from available ranges as "starting from" price
+          const minPrices = getMinPricesFromRanges();
+          if (minPrices) {
+            basePrices = {
+              adultPrice: minPrices.adultPrice,
+              childPrice: minPrices.childPrice,
+              infantPrice: minPrices.infantPrice,
+              soloTravellerPrice: minPrices.soloTravellerPrice,
+            };
+          } else {
+            // Fallback to 0 if no ranges available
+            basePrices = {
+              adultPrice: 0,
+              childPrice: 0,
+              infantPrice: 0,
+              soloTravellerPrice: null,
+            };
+          }
+        }
+      } else {
+        // If no date selected, show minimum price from available ranges as "starting from" price
+        const minPrices = getMinPricesFromRanges();
+        if (minPrices) {
+          basePrices = {
+            adultPrice: minPrices.adultPrice,
+            childPrice: minPrices.childPrice,
+            infantPrice: minPrices.infantPrice,
+            soloTravellerPrice: minPrices.soloTravellerPrice,
+          };
+        } else {
+          // Fallback to 0 if no ranges available
+          basePrices = {
+            adultPrice: 0,
+            childPrice: 0,
+            infantPrice: 0,
+            soloTravellerPrice: null,
+          };
         }
       }
-      
-      // If no date selected, show minimum price from available ranges as "starting from" price
-      const minPrices = getMinPricesFromRanges();
-      if (minPrices) {
-        return {
-          adultPrice: minPrices.adultPrice,
-          childPrice: minPrices.childPrice,
-          infantPrice: minPrices.infantPrice,
-          soloTravellerPrice: minPrices.soloTravellerPrice,
-        };
-      }
-      
-      // Fallback to 0 if no ranges available
-      return {
-        adultPrice: 0,
-        childPrice: 0,
-        infantPrice: 0,
-        soloTravellerPrice: null,
+    } else {
+      // For non-flexible date packages, use package base prices
+      basePrices = {
+        adultPrice: pkg?.adult_price || 0,
+        childPrice: pkg?.child_price || 0,
+        infantPrice: pkg?.infant_price || 0,
+        soloTravellerPrice: pkg?.solo_traveller_price || null,
       };
     }
-    
-    // For non-flexible date packages, use package base prices
-    return {
-      adultPrice: pkg?.adult_price || 0,
-      childPrice: pkg?.child_price || 0,
-      infantPrice: pkg?.infant_price || 0,
-    };
-  }, [slug, selectedDateString, selectedDate, pkg, pkg?.date_ranges, getFlexibleDateInfo, getMinPricesFromRanges]);
+
+    // Apply deal prices if active deal exists
+    if (pkg?.active_deal) {
+      const deal = pkg.active_deal;
+      const now = new Date();
+      const startDate = new Date(deal.start_date);
+      const endDate = new Date(deal.end_date);
+
+      // Check if deal is currently active
+      if (deal.is_active && now >= startDate && now <= endDate) {
+        return {
+          adultPrice: deal.deal_adult_price !== null ? deal.deal_adult_price : basePrices.adultPrice,
+          childPrice: deal.deal_child_price !== null ? deal.deal_child_price : basePrices.childPrice,
+          infantPrice: deal.deal_infant_price !== null ? deal.deal_infant_price : basePrices.infantPrice,
+          soloTravellerPrice: deal.deal_solo_traveller_price !== null ? deal.deal_solo_traveller_price : basePrices.soloTravellerPrice,
+        };
+      }
+    }
+
+    return basePrices;
+  }, [slug, selectedDateString, selectedDate, pkg, pkg?.date_ranges, pkg?.active_deal, getFlexibleDateInfo, getMinPricesFromRanges]);
 
   // Calculate original price (without discount)
   const getOriginalPrice = useCallback((): number | null => {
@@ -601,16 +645,9 @@ export default function PackageDetailsPage() {
 
     // Solo traveller pricing overrides per-person pricing
     if (isSoloTraveller && pkg.solo_traveller_enabled) {
-      // For flexible date packages, get solo traveller price from date ranges
-      if (slug === 'flexible-date-packages') {
-        const prices = getPricesForDate();
-        const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
-        const visaPrice = getVisaPrice();
-        setCalculatedPrice(soloPrice + visaPrice);
-        return;
-      }
-      // For non-flexible packages, use package-level solo traveller price
-      const soloPrice = pkg.solo_traveller_price ?? pkg.package_price ?? 0;
+      const prices = getPricesForDate();
+      // getPricesForDate already applies deal prices if active
+      const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
       const visaPrice = getVisaPrice();
       setCalculatedPrice(soloPrice + visaPrice);
       return;
@@ -1020,32 +1057,6 @@ export default function PackageDetailsPage() {
     setShowMobileDrawer(true);
   };
 
-  // Get tabs based on available content
-  const getTabs = () => {
-    const tabs: Array<{ id: string; label: string }> = [];
-    if (pkg?.overview) tabs.push({ id: 'overview', label: 'Overview' });
-    if (pkg?.package_description)
-      tabs.push({ id: 'description', label: 'Description' });
-    if (pkg?.holiday_description_html)
-      tabs.push({ id: 'holiday', label: 'Holiday Description' });
-    if (pkg?.itinerary && pkg.itinerary.length > 0)
-      tabs.push({ id: 'itinerary', label: 'Itinerary' });
-    if (pkg?.inclusion_html)
-      tabs.push({ id: 'inclusions', label: 'Inclusions' });
-    if (pkg?.exclusion_html)
-      tabs.push({ id: 'exclusions', label: 'Exclusions' });
-    if (pkg?.terms_html)
-      tabs.push({ id: 'terms', label: 'Terms & Conditions' });
-    return tabs;
-  };
-
-  const tabs = getTabs();
-
-  useEffect(() => {
-    if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
-      setActiveTab(tabs[0].id);
-    }
-  }, [pkg, tabs, activeTab]);
 
   // Scroll to top button visibility and scrollbar visibility
   useEffect(() => {
@@ -1073,60 +1084,92 @@ export default function PackageDetailsPage() {
     };
   }, []);
 
-  const toggleItineraryItem = (index: number) => {
-    setExpandedItineraryItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
-    });
-  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Embla carousel navigation
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
 
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
+  // GSAP hover animations for Add to Cart button
   useEffect(() => {
-    if (!emblaApi || !isMobile) return;
+    const button = addToCartButtonRef.current;
+    const icon = addToCartIconRef.current;
+    
+    if (!button) return;
 
-    const updateScrollButtons = () => {
-      setCanScrollPrev(emblaApi.canScrollPrev());
-      setCanScrollNext(emblaApi.canScrollNext());
+    const handleMouseEnter = () => {
+      gsap.to(button, {
+        scale: 1.05,
+        y: -3,
+        boxShadow: '0 12px 32px -4px rgba(253, 107, 6, 0.6)',
+        background: 'linear-gradient(135deg, #ff7a1a 0%, #fd6b06 100%)',
+        duration: 0.4,
+        ease: 'power2.out',
+      });
+      
+      if (icon) {
+        gsap.to(icon, {
+          scale: 1.15,
+          rotation: -8,
+          duration: 0.4,
+          ease: 'back.out(1.7)',
+        });
+      }
+
     };
 
-    updateScrollButtons();
-    emblaApi.on('select', updateScrollButtons);
-    emblaApi.on('reInit', updateScrollButtons);
-    emblaApi.on('settle', updateScrollButtons);
+    const handleMouseLeave = () => {
+      gsap.to(button, {
+        scale: 1,
+        y: 0,
+        boxShadow: '0 4px 14px -2px rgba(253, 107, 6, 0.4)',
+        background: 'linear-gradient(135deg, #fd6b06 0%, #e64500 100%)',
+        duration: 0.3,
+        ease: 'power2.out',
+      });
+      
+      if (icon) {
+        gsap.to(icon, {
+          scale: 1,
+          rotation: 0,
+          duration: 0.3,
+          ease: 'power2.out',
+        });
+      }
 
-    // Reinitialize on resize
-    const handleResize = () => {
-      emblaApi.reInit();
+   
     };
-    window.addEventListener('resize', handleResize);
+
+    const handleMouseDown = () => {
+      gsap.to(button, {
+        scale: 0.97,
+        y: 0,
+        duration: 0.1,
+        ease: 'power2.out',
+      });
+    };
+
+    const handleMouseUp = () => {
+      gsap.to(button, {
+        scale: 1.05,
+        y: -3,
+        duration: 0.2,
+        ease: 'back.out(1.7)',
+      });
+    };
+
+    button.addEventListener('mouseenter', handleMouseEnter);
+    button.addEventListener('mouseleave', handleMouseLeave);
+    button.addEventListener('mousedown', handleMouseDown);
+    button.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      emblaApi.off('select', updateScrollButtons);
-      emblaApi.off('reInit', updateScrollButtons);
-      emblaApi.off('settle', updateScrollButtons);
-      window.removeEventListener('resize', handleResize);
+      button.removeEventListener('mouseenter', handleMouseEnter);
+      button.removeEventListener('mouseleave', handleMouseLeave);
+      button.removeEventListener('mousedown', handleMouseDown);
+      button.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [emblaApi, isMobile]);
+  }, []);
 
   // Click outside handlers for dropdowns
   useEffect(() => {
@@ -1161,6 +1204,7 @@ export default function PackageDetailsPage() {
     };
   }, []);
 
+
   if (loading) {
     return (
       <div className='package-details-page'>
@@ -1184,44 +1228,47 @@ export default function PackageDetailsPage() {
     );
   }
 
+  // Get images array
+  const images = (pkg.gallery && Array.isArray(pkg.gallery) && pkg.gallery.length > 0)
+    ? pkg.gallery
+    : (pkg.thumbnail_image && pkg.thumbnail_image.trim() ? [pkg.thumbnail_image] : []);
+
+  // Calculate pricing for display
+  const prices = getPricesForDate();
+  const hasPricing = prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
+  const currentPrice = calculatedPrice !== null ? calculatedPrice : (hasPricing ? 0 : (pkg.package_price || 0));
+  const originalPrice = getOriginalPrice();
+  const showOriginalPrice = (isDiscountActive && originalPrice !== null && originalPrice !== currentPrice) || 
+                            (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount);
+  const displayOriginalPrice = hasActiveAgentSubscription && priceBeforeAgentDiscount ? priceBeforeAgentDiscount : originalPrice;
+
   return (
     <div className='package-details-page'>
-      {/* Hero Image */}
-      <div className='package-details-hero'>
-        {pkg.thumbnail_image && pkg.thumbnail_image.trim() ? (
-          <img
-            src={pkg.thumbnail_image}
-            alt={pkg.package_name}
-            className='package-hero-image'
-            onError={e => {
-              e.currentTarget.style.display = 'none';
-              const placeholder = e.currentTarget
-                .nextElementSibling as HTMLElement;
-              if (placeholder) {
-                placeholder.style.display = 'flex';
-              }
-            }}
-          />
-        ) : null}
-        <div
-          className='package-hero-placeholder'
-          style={{
-            display:
-              pkg.thumbnail_image && pkg.thumbnail_image.trim()
-                ? 'none'
-                : 'flex',
-          }}
-        >
-          <MapPin className='package-hero-icon' />
-        </div>
+      {/* Gallery and Product Details Section */}
+      <div className='package-hero-section'>
+        {/* Gallery on Left */}
+        <PackageGallery images={images} packageName={pkg.package_name} />
+
+        {/* Product Details on Right */}
+        <div className='package-hero-details'>
+          <h1 className='package-hero-title'>{pkg.package_name}</h1>
+          
+          <div className='package-hero-pricing'>
+            <span className='package-hero-price-current'>
+              {formatPrice(currentPrice)}
+            </span>
+            {showOriginalPrice && displayOriginalPrice && (
+              <span className='package-hero-price-original'>
+                {formatPrice(displayOriginalPrice)}
+              </span>
+            )}
       </div>
 
-      {/* Title and Rating */}
-      <div className='package-details-title-section'>
-        <h1>{pkg.package_name}</h1>
-      </div>
+          {pkg.package_description && (
+            <p className='package-hero-description'>{pkg.package_description}</p>
+          )}
 
-      {/* Price Display Section */}
+          {/* Price Breakdown */}
       {(() => {
         const prices = getPricesForDate();
         const hasPricing = prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
@@ -1229,73 +1276,78 @@ export default function PackageDetailsPage() {
         if (!hasPricing && !pkg.package_price) return null;
         
         return (
-          <div className='package-price-display-section'>
-            <div className='package-price-display-container'>
-              <h3 className='package-price-display-title'>Pricing</h3>
-              <div className='package-price-grid'>
+              <div className='package-hero-price-breakdown'>
                 {prices.adultPrice > 0 && (
-                  <div className='package-price-card'>
-                    <div className='package-price-card-header'>
-                      <span className='package-price-label'>Adult</span>
-                      <span className='package-price-age'>12+ Years</span>
-                    </div>
-                    <div className='package-price-amount'>
+                  <div className='package-hero-price-item'>
+                    <span className='package-hero-price-item-label'>Adult</span>
+                    <span className='package-hero-price-item-age'>12+ Years</span>
+                    <span className='package-hero-price-item-amount'>
                       {formatPrice(prices.adultPrice)}
-                    </div>
+                    </span>
                     {isDiscountActive && pkg.adult_discount_amount && pkg.adult_discount_amount > 0 && (
-                      <div className='package-price-discount-badge'>
-                        Save {formatPrice(pkg.adult_discount_amount).replace('AED ', '')}
-                      </div>
+                      <span className='package-hero-price-item-discount'>
+                        Save {formatPrice(pkg.adult_discount_amount)}
+                      </span>
                     )}
                   </div>
                 )}
                 {prices.childPrice > 0 && (
-                  <div className='package-price-card'>
-                    <div className='package-price-card-header'>
-                      <span className='package-price-label'>Child</span>
-                      <span className='package-price-age'>2-8 Years</span>
-                    </div>
-                    <div className='package-price-amount'>
+                  <div className='package-hero-price-item'>
+                    <span className='package-hero-price-item-label'>Child</span>
+                    <span className='package-hero-price-item-age'>2-8 Years</span>
+                    <span className='package-hero-price-item-amount'>
                       {formatPrice(prices.childPrice)}
-                    </div>
+                    </span>
                     {isDiscountActive && pkg.child_discount_amount && pkg.child_discount_amount > 0 && (
-                      <div className='package-price-discount-badge'>
-                        Save {formatPrice(pkg.child_discount_amount).replace('AED ', '')}
-                      </div>
+                      <span className='package-hero-price-item-discount'>
+                        Save {formatPrice(pkg.child_discount_amount)}
+                      </span>
                     )}
                   </div>
                 )}
                 {prices.infantPrice > 0 && (
-                  <div className='package-price-card'>
-                    <div className='package-price-card-header'>
-                      <span className='package-price-label'>Infant</span>
-                      <span className='package-price-age'>&lt;2 Years</span>
-                    </div>
-                    <div className='package-price-amount'>
+                  <div className='package-hero-price-item'>
+                    <span className='package-hero-price-item-label'>Infant</span>
+                    <span className='package-hero-price-item-age'>&lt;2 Years</span>
+                    <span className='package-hero-price-item-amount'>
                       {formatPrice(prices.infantPrice)}
-                    </div>
+                    </span>
                     {isDiscountActive && pkg.infant_discount_amount && pkg.infant_discount_amount > 0 && (
-                      <div className='package-price-discount-badge'>
-                        Save {formatPrice(pkg.infant_discount_amount).replace('AED ', '')}
-                      </div>
+                      <span className='package-hero-price-item-discount'>
+                        Save {formatPrice(pkg.infant_discount_amount)}
+                      </span>
                     )}
                   </div>
                 )}
                 {!hasPricing && pkg.package_price && (
-                  <div className='package-price-card package-price-card-full'>
-                    <div className='package-price-card-header'>
-                      <span className='package-price-label'>Package Price</span>
-                    </div>
-                    <div className='package-price-amount'>
+                  <div className='package-hero-price-item'>
+                    <span className='package-hero-price-item-label'>Package Price</span>
+                    <span className='package-hero-price-item-amount'>
                       {formatPrice(pkg.package_price)}
-                    </div>
+                    </span>
                   </div>
                 )}
-              </div>
-            </div>
           </div>
         );
       })()}
+
+          <button
+            ref={addToCartButtonRef}
+            className='package-hero-add-to-cart-button'
+            onClick={() => {
+              if (isMobile) {
+                setShowMobileDrawer(true);
+              } else {
+                setShowDesktopPopover(true);
+              }
+            }}
+          >
+            <ShoppingCartIcon ref={addToCartIconRef} size={24} />
+            Add to Cart
+          </button>
+                  </div>
+      </div>
+
 
       {/* Discount Banner */}
       {isDiscountActive && (
@@ -1332,1237 +1384,74 @@ export default function PackageDetailsPage() {
         </div>
       )}
 
-      {/* Mobile Add to Cart Button - Center */}
-      {isMobile && (
-        <div className='mobile-add-to-cart-button-container'>
-          <button
-            onClick={handleMobileAddToCartClick}
-            className='mobile-add-to-cart-button'
-          >
-            Add to Cart
-          </button>
-        </div>
-      )}
+
 
       {/* Main Content with Tabs */}
-      <div className='package-details-container'>
-        {/* Vertical Tabs Panel - Left */}
-        {isMobile ? (
-          <div className='package-details-tabs-panel-mobile'>
-            <button
-              className='tabs-slider-nav-button tabs-slider-prev'
-              onClick={scrollPrev}
-              disabled={!canScrollPrev}
-              aria-label='Previous tabs'
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <div className='tabs-slider-container' ref={emblaRef}>
-              <div className='tabs-slider-wrapper'>
-                {tabs.map(tab => (
-                  <button
-                    key={tab.id}
-                    className={`package-tab-button ${
-                      activeTab === tab.id ? 'active' : ''
-                    }`}
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button
-              className='tabs-slider-nav-button tabs-slider-next'
-              onClick={scrollNext}
-              disabled={!canScrollNext}
-              aria-label='Next tabs'
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        ) : (
-          <div className='package-details-tabs-panel'>
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                className={`package-tab-button ${
-                  activeTab === tab.id ? 'active' : ''
-                }`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                <span>{tab.label}</span>
-                <ChevronRight className='package-tab-chevron' />
-              </button>
-            ))}
-          </div>
-        )}
+      <PackageDetailsTabs pkg={pkg} />
 
-        {/* Content Panel - Right */}
-        <div className='package-details-content-panel'>
-          {activeTab === 'overview' && pkg.overview && (
-            <div className='package-section'>
-              <h2>Overview</h2>
-              <p>{pkg.overview}</p>
-            </div>
-          )}
-
-          {activeTab === 'description' && pkg.package_description && (
-            <div className='package-section'>
-              <h2>Description</h2>
-              <p>{pkg.package_description}</p>
-            </div>
-          )}
-
-          {activeTab === 'holiday' && pkg.holiday_description_html && (
-            <div className='package-section'>
-              <h2>Holiday Description</h2>
-              <div
-                className='package-html-content'
-                dangerouslySetInnerHTML={{
-                  __html: pkg.holiday_description_html,
-                }}
-              />
-            </div>
-          )}
-
-          {activeTab === 'itinerary' &&
-            pkg.itinerary &&
-            pkg.itinerary.length > 0 && (
-              <div className='package-section'>
-                <h2>Itinerary</h2>
-                <div className='itinerary-list'>
-                  {pkg.itinerary.map((item, idx) => {
-                    const isExpanded = expandedItineraryItems.has(idx);
-                    return (
-                      <div key={idx} className='itinerary-item'>
-                        {item.heading && (
-                          <button
-                            className='itinerary-item-header'
-                            onClick={() => toggleItineraryItem(idx)}
-                          >
-                            <h3
-                              className='itinerary-heading'
-                              dangerouslySetInnerHTML={{ __html: item.heading }}
-                            />
-                            <ChevronDown
-                              className={`itinerary-chevron ${
-                                isExpanded ? 'expanded' : ''
-                              }`}
-                            />
-                          </button>
-                        )}
-                        {item.desc && (
-                          <div
-                            className={`itinerary-description ${
-                              isExpanded ? 'expanded' : ''
-                            }`}
-                            dangerouslySetInnerHTML={{ __html: item.desc }}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-          {activeTab === 'inclusions' && pkg.inclusion_html && (
-            <div className='package-section'>
-              <h2>Inclusions</h2>
-              <div
-                className='package-html-content'
-                dangerouslySetInnerHTML={{ __html: pkg.inclusion_html }}
-              />
-            </div>
-          )}
-
-          {activeTab === 'exclusions' && pkg.exclusion_html && (
-            <div className='package-section'>
-              <h2>Exclusions</h2>
-              <div
-                className='package-html-content'
-                dangerouslySetInnerHTML={{ __html: pkg.exclusion_html }}
-              />
-            </div>
-          )}
-
-          {activeTab === 'terms' && pkg.terms_html && (
-            <div className='package-section'>
-              <h2>Terms & Conditions</h2>
-              <div
-                className='package-html-content'
-                dangerouslySetInnerHTML={{ __html: pkg.terms_html }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      {isMobile && (
-        <>
-          {showMobileDrawer && (
-            <div
-              className='mobile-drawer-overlay'
-              onClick={() => setShowMobileDrawer(false)}
-            />
-          )}
-          <div
-            className={`mobile-booking-drawer ${
-              showMobileDrawer ? 'mobile-drawer-open' : ''
-            }`}
-          >
-            <div className='mobile-drawer-header'>
-              <h3>Booking Details</h3>
-              <button
-                className='mobile-drawer-close'
-                onClick={() => setShowMobileDrawer(false)}
-              >
-                <X className='close-icon' />
-              </button>
-            </div>
-            <div className='mobile-drawer-content'>
-              {pkg.solo_traveller_enabled && (
-                <div className='solo-traveller-block'>
-                  <label className='solo-checkbox'>
-                    <input
-                      type='checkbox'
-                      checked={isSoloTraveller}
-                      onChange={e => {
-                        const checked = e.target.checked;
-                        const wasVisaSelected = withVisa;
-                        setIsSoloTraveller(checked);
-                        setSoloTravellerShareConsent(false);
-                        setSoloTravellerGender(null);
-                        if (checked) {
-                          setPersons({ adult: 1, child: 0, infant: 0 });
-                          setShowPersonsDropdown(false);
-                          // If visa was selected, keep it selected but set to 1 adult
-                          if (wasVisaSelected) {
-                            setVisaForAdults(1);
-                            setVisaForChildren(0);
-                            setVisaForInfants(0);
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={isMobile ? showMobileDrawer : showDesktopPopover}
+        onClose={() => {
+          if (isMobile) {
+            setShowMobileDrawer(false);
                           } else {
-                            setWithVisa(false);
-                            setVisaForAdults(0);
-                            setVisaForChildren(0);
-                            setVisaForInfants(0);
+            setShowDesktopPopover(false);
                           }
-                        } else {
-                          const isOfferPackage = slug === 'offer-packages';
-                          const isFlexibleDatePackage = slug === 'flexible-date-packages';
-                          const newAdultCount = (isOfferPackage || isFlexibleDatePackage) ? 2 : 1;
-                          setPersons({
-                            adult: newAdultCount,
-                            child: 0,
-                            infant: 0,
-                          });
-                          // If visa was selected, update visa counts based on new adult count
-                          if (wasVisaSelected) {
-                            setVisaForAdults(newAdultCount);
-                            setVisaForChildren(0);
-                            setVisaForInfants(0);
-                          }
-                        }
-                      }}
-                    />
-                    Solo Traveller (AED{' '}
-                    {(() => {
-                      if (slug === 'flexible-date-packages') {
-                        const prices = getPricesForDate();
-                        const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? pkg.package_price;
-                        return formatPrice(soloPrice).replace('AED ', '').trim();
-                      }
-                      return formatPrice(pkg.solo_traveller_price || pkg.package_price).replace('AED ', '').trim();
-                    })()}
-                    )
-                  </label>
-
-                  {isSoloTraveller && (
-                    <div className='solo-options'>
-                      <div className='solo-gender-pills'>
-                        <button
-                          className={`solo-pill ${
-                            soloTravellerGender === 'male' ? 'active' : ''
-                          }`}
-                          onClick={() => setSoloTravellerGender('male')}
-                        >
-                          Male
-                        </button>
-                        <button
-                          className={`solo-pill ${
-                            soloTravellerGender === 'female' ? 'active' : ''
-                          }`}
-                          onClick={() => setSoloTravellerGender('female')}
-                        >
-                          Female
-                        </button>
-                      </div>
-                      <label className='solo-consent'>
-                        <input
-                          type='checkbox'
-                          checked={soloTravellerShareConsent}
-                          onChange={e =>
-                            setSoloTravellerShareConsent(e.target.checked)
-                          }
-                        />
-                        {`I am comfortable to share the room with ${
-                          soloTravellerGender === 'female' ? 'female' : 'male'
-                        } passengers`}
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Visa Option - For flexible date packages and offer packages */}
-              {(slug === 'flexible-date-packages' || slug === 'offer-packages') && (
-                <div className='visa-option-block'>
-                  <label className='visa-checkbox'>
-                    <input
-                      type='checkbox'
-                      checked={withVisa}
-                      onChange={e => {
-                        const checked = e.target.checked;
-                        setWithVisa(checked);
-                        if (!checked) {
-                          setVisaForAdults(0);
-                          setVisaForChildren(0);
-                          setVisaForInfants(0);
-                        } else {
-                          // If solo traveller is selected, set visa for 1 adult, otherwise use current counts
-                          if (isSoloTraveller) {
-                            setVisaForAdults(1);
-                            setVisaForChildren(0);
-                            setVisaForInfants(0);
-                          } else {
-                            setVisaForAdults(persons.adult);
-                            setVisaForChildren(persons.child);
-                            setVisaForInfants(persons.infant);
-                          }
-                        }
-                      }}
-                    />
-                    With Visa
-                  </label>
-
-                  {withVisa && (
-                    <div className='visa-options'>
-                        {(isSoloTraveller ? 1 : persons.adult) > 0 && (
-                        <div className='visa-counter-row'>
-                          <span className='visa-counter-label'>
-                              Visa for Adults ({isSoloTraveller ? 1 : persons.adult})
-                            </span>
-                          <div className='visa-counter-controls'>
-                              <button
-                              className='visa-counter-button'
-                                onClick={() => {
-                                  if (isSoloTraveller) return; // Can't decrease below 1 for solo traveller
-                                  setVisaForAdults(Math.max(0, visaForAdults - 1));
-                                }}
-                                disabled={visaForAdults === 0 || (isSoloTraveller && visaForAdults === 1)}
-                              >
-                                <Minus size={14} style={{ color: '#1e40af' }} />
-                              </button>
-                            <span className='visa-counter-value'>
-                                {visaForAdults}
-                              </span>
-                              <button
-                              className='visa-counter-button'
-                                onClick={() => {
-                                  if (isSoloTraveller) return; // Can't increase above 1 for solo traveller
-                                  setVisaForAdults(Math.min(persons.adult, visaForAdults + 1));
-                                }}
-                                disabled={visaForAdults >= (isSoloTraveller ? 1 : persons.adult)}
-                              >
-                                <Plus size={14} style={{ color: '#1e40af' }} />
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {persons.child > 0 && (
-                        <div className='visa-counter-row'>
-                          <span className='visa-counter-label'>
-                              Visa for Children ({persons.child})
-                            </span>
-                          <div className='visa-counter-controls'>
-                              <button
-                              className='visa-counter-button'
-                                onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
-                                disabled={visaForChildren === 0}
-                              >
-                                <Minus size={14} style={{ color: '#1e40af' }} />
-                              </button>
-                            <span className='visa-counter-value'>
-                                {visaForChildren}
-                              </span>
-                              <button
-                              className='visa-counter-button'
-                                onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
-                                disabled={visaForChildren >= persons.child}
-                              >
-                                <Plus size={14} style={{ color: '#1e40af' }} />
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {persons.infant > 0 && (
-                        <div className='visa-counter-row'>
-                          <span className='visa-counter-label'>
-                              Visa for Infants ({persons.infant})
-                            </span>
-                          <div className='visa-counter-controls'>
-                              <button
-                              className='visa-counter-button'
-                                onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
-                                disabled={visaForInfants === 0}
-                              >
-                                <Minus size={14} style={{ color: '#1e40af' }} />
-                              </button>
-                            <span className='visa-counter-value'>
-                                {visaForInfants}
-                              </span>
-                              <button
-                              className='visa-counter-button'
-                                onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
-                                disabled={visaForInfants >= persons.infant}
-                              >
-                                <Plus size={14} style={{ color: '#1e40af' }} />
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className='mobile-booking-price-section'>
-                {hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
-                  <>
-                    <span className='mobile-booking-price-original agent-discount-original'>
-                      {formatPrice(priceBeforeAgentDiscount)}
-                    </span>
-                    <div className='agent-discount-badge-container'>
-                      <span className='agent-discount-badge'>
-                        Premium Partner Discount
-                        <span className='agent-discount-badge-amount'>
-                          -{formatPrice(agentDiscountAmount).replace('AED ', '')}
-                        </span>
-                      </span>
-                    </div>
-                  </>
-                )}
-                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !(hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) && (
-                  <span className='mobile-booking-price-original agent-discount-original'>
-                    {formatPrice(getOriginalPrice())}
-                  </span>
-                )}
-                <span className={`mobile-booking-price-amount ${isDiscountActive || (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
-                  {formatPrice(
-                    calculatedPrice !== null
-                      ? calculatedPrice
-                      : pkg.package_price
-                  )}
-                </span>
-                <span className='mobile-booking-price-label'>
-                  {persons.adult > 0 || persons.child > 0 || persons.infant > 0
-                    ? 'total'
-                    : 'total'}
-                </span>
-              </div>
-
-              <div className='mobile-input-selectors'>
-                {/* Persons Selector */}
-                <div
-                  className='mobile-booking-input-wrapper'
-                  ref={personsDropdownRef}
-                >
-                  <Users className='mobile-booking-input-icon' />
-                  <input
-                    type='text'
-                    placeholder='Persons'
-                    className='mobile-booking-input'
-                    value={getPersonsDisplayText()}
-                    readOnly
-                    onClick={() => setShowPersonsDropdown(!showPersonsDropdown)}
-                  />
-                  <ChevronDown className='mobile-booking-dropdown-chevron' />
-                  {showPersonsDropdown && (
-                    <div className='mobile-booking-persons-dropdown'>
-                      <div className='mobile-person-counter-row'>
-                        <span className='mobile-person-label'>
-                          Adult{' '}
-                          <span className='person-age-info'>(8+ years)</span>
-                        </span>
-                        <div className='mobile-person-counter'>
-                          <button
-                            className='mobile-counter-button'
-                            onClick={() => updatePersonCount('adult', -1)}
-                            disabled={
-                              slug === 'offer-packages' || slug === 'flexible-date-packages'
-                                ? persons.adult <= 2
-                                : persons.adult <= 1
-                            }
-                          >
-                            <Minus className='mobile-counter-icon' />
-                          </button>
-                          <span className='mobile-counter-value'>
-                            {persons.adult}
-                          </span>
-                          <button
-                            className='mobile-counter-button'
-                            onClick={() => updatePersonCount('adult', 1)}
-                          >
-                            <Plus className='mobile-counter-icon' />
-                          </button>
-                        </div>
-                      </div>
-                      <div className='mobile-person-counter-row'>
-                        <span className='mobile-person-label'>
-                          Child{' '}
-                          <span className='person-age-info'>(3-8 years)</span>
-                        </span>
-                        <div className='mobile-person-counter'>
-                          <button
-                            className='mobile-counter-button'
-                            onClick={() => updatePersonCount('child', -1)}
-                            disabled={persons.child === 0}
-                          >
-                            <Minus className='mobile-counter-icon' />
-                          </button>
-                          <span className='mobile-counter-value'>
-                            {persons.child}
-                          </span>
-                          <button
-                            className='mobile-counter-button'
-                            onClick={() => updatePersonCount('child', 1)}
-                          >
-                            <Plus className='mobile-counter-icon' />
-                          </button>
-                        </div>
-                      </div>
-                      <div className='mobile-person-counter-row'>
-                        <span className='mobile-person-label'>
-                          Infant{' '}
-                          <span className='person-age-info'>(0-2 years)</span>
-                        </span>
-                        <div className='mobile-person-counter'>
-                          <button
-                            className='mobile-counter-button'
-                            onClick={() => updatePersonCount('infant', -1)}
-                            disabled={persons.infant === 0}
-                          >
-                            <Minus className='mobile-counter-icon' />
-                          </button>
-                          <span className='mobile-counter-value'>
-                            {persons.infant}
-                          </span>
-                          <button
-                            className='mobile-counter-button'
-                            onClick={() => updatePersonCount('infant', 1)}
-                          >
-                            <Plus className='mobile-counter-icon' />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Date Picker / Calendar */}
-                {isPackageType() ? (
-                  // Package: Show dropdown with dates
-                  <div
-                    className='mobile-booking-input-wrapper'
-                    ref={dateDropdownRef}
-                  >
-                    <Calendar className='mobile-booking-input-icon' />
-                    <input
-                      type='text'
-                      placeholder={
-                        getAvailableDates().length === 0
-                          ? 'No dates available'
-                          : 'Select date'
-                      }
-                      className='mobile-booking-input'
-                      value={
-                        selectedDateString
-                          ? (() => {
-                              const d = parseDateStringToLocal(
-                                selectedDateString
-                              );
-                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : '';
-                            })()
-                          : ''
-                      }
-                      readOnly
-                      disabled={getAvailableDates().length === 0}
-                      onClick={() => {
-                        if (getAvailableDates().length > 0) {
-                          setShowDateDropdown(!showDateDropdown);
-                        }
-                      }}
-                    />
-                    <ChevronDown className='mobile-booking-dropdown-chevron' />
-                    {showDateDropdown && getAvailableDates().length > 0 && (
-                      <div className='mobile-booking-dates-dropdown'>
-                        {getAvailableDates().map((dateStr, idx) => (
-                          <div
-                            key={idx}
-                            className='mobile-booking-date-item'
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleDateStringSelect(dateStr);
-                            }}
-                          >
-                            {(() => {
-                              const d = parseDateStringToLocal(dateStr);
-                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
-                            })()}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Tour: Show calendar
-                  <div
-                    className='mobile-booking-input-wrapper'
-                    ref={datePickerRef}
-                  >
-                    <Calendar className='mobile-booking-input-icon' />
-                    <input
-                      type='text'
-                      placeholder='Add dates'
-                      className='mobile-booking-input'
-                      value={
-                        selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''
-                      }
-                      readOnly
-                      onClick={() => setShowDatePicker(!showDatePicker)}
-                    />
-                    {showDatePicker && (
-                      <div 
-                        className='mobile-booking-calendar-dropdown'
-                        onClick={e => e.stopPropagation()}
-                        onTouchStart={e => e.stopPropagation()}
-                      >
-                        {slug === 'flexible-date-packages' && !loading && dateRangesReady && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
-                          <FlexibleDateCalendar
-                            key={`mobile-calendar-${pkg.package_id}-${pkg.date_ranges.length}-${dateRangesReady}`}
-                            packageId={pkg.package_id}
-                            endDate={pkg.end_date || undefined}
-                            dateRanges={pkg.date_ranges}
+        }}
+        isMobile={isMobile}
+        pkg={pkg}
+        slug={slug}
+        soloTravellerEnabled={pkg.solo_traveller_enabled || false}
+        isSoloTraveller={isSoloTraveller}
+        setIsSoloTraveller={setIsSoloTraveller}
+        soloTravellerGender={soloTravellerGender}
+        setSoloTravellerGender={setSoloTravellerGender}
+        soloTravellerShareConsent={soloTravellerShareConsent}
+        setSoloTravellerShareConsent={setSoloTravellerShareConsent}
+        withVisa={withVisa}
+        setWithVisa={setWithVisa}
+        visaForAdults={visaForAdults}
+        setVisaForAdults={setVisaForAdults}
+        visaForChildren={visaForChildren}
+        setVisaForChildren={setVisaForChildren}
+        visaForInfants={visaForInfants}
+        setVisaForInfants={setVisaForInfants}
+        persons={persons}
+        setPersons={setPersons}
+        updatePersonCount={updatePersonCount}
+        getPersonsDisplayText={getPersonsDisplayText}
                             selectedDate={selectedDate}
-                            onDateSelect={handleDateSelect}
+        setSelectedDate={setSelectedDate}
+        selectedDateString={selectedDateString}
+        handleDateStringSelect={handleDateStringSelect}
+        handleDateSelect={handleDateSelect}
                             month={month}
-                            onMonthChange={setMonth}
-                          />
-                        ) : (
-                          <>
-                            <div className='mobile-calendar-header-nav'>
-                              <button
-                                className='mobile-calendar-nav-button'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  const newMonth = new Date(month);
-                                  newMonth.setMonth(newMonth.getMonth() - 1);
-                                  setMonth(newMonth);
-                                }}
-                              >
-                                ‹
-                              </button>
-                              <button
-                                className='mobile-calendar-nav-button'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  const newMonth = new Date(month);
-                                  newMonth.setMonth(newMonth.getMonth() + 1);
-                                  setMonth(newMonth);
-                                }}
-                              >
-                                ›
-                              </button>
-                            </div>
-                            <DayPicker
-                              mode='single'
-                              selected={selectedDate}
-                              onSelect={handleDateSelect}
-                              disabled={getDisabledDates}
-                              numberOfMonths={1}
-                              showOutsideDays={true}
-                              month={month}
-                              onMonthChange={setMonth}
-                              className='mobile-custom-calendar'
-                              modifiersClassNames={{
-                                disabled: 'rdp-day_unavailable',
-                              }}
-                            />
-                            <div className='mobile-calendar-footer'>
-                              <button
-                                className='mobile-clear-dates-button'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedDate(undefined);
-                                }}
-                              >
-                                Clear dates
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className='mobile-booking-actions'>
-                <button
-                  onClick={handleAddToCart}
-                  className='mobile-booking-add-to-cart-button'
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Desktop Add to Cart Button - Fixed Center Bottom */}
-      {!isMobile && (
-        <Popover open={showDesktopPopover} onOpenChange={setShowDesktopPopover}>
-          <PopoverTrigger asChild>
-            <button className='desktop-add-to-cart-button-fixed'>
-              Add to Cart
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            className='desktop-booking-popover'
-            side='top'
-            align='center'
-            sideOffset={16}
-          >
-            <div className='desktop-booking-popover-header'>
-              <h3 className='desktop-booking-popover-title'>Booking Details</h3>
-              <button
-                className='desktop-booking-popover-close'
-                onClick={() => setShowDesktopPopover(false)}
-                aria-label='Close booking popover'
-              >
-                <X className='desktop-booking-popover-close-icon' />
-              </button>
-            </div>
-              <div className='desktop-booking-popover-content'>
-                {pkg.solo_traveller_enabled && (
-                  <div className='solo-traveller-block'>
-                    <label className='solo-checkbox'>
-                      <input
-                        type='checkbox'
-                        checked={isSoloTraveller}
-                        onChange={e => {
-                          const checked = e.target.checked;
-                          const wasVisaSelected = withVisa;
-                          setIsSoloTraveller(checked);
-                          setSoloTravellerShareConsent(false);
-                          setSoloTravellerGender(null);
-                          if (checked) {
-                            setPersons({ adult: 1, child: 0, infant: 0 });
-                            setShowPersonsDropdown(false);
-                            // If visa was selected, keep it selected but set to 1 adult
-                            if (wasVisaSelected) {
-                              setVisaForAdults(1);
-                              setVisaForChildren(0);
-                              setVisaForInfants(0);
-                            } else {
-                              setWithVisa(false);
-                              setVisaForAdults(0);
-                              setVisaForChildren(0);
-                              setVisaForInfants(0);
-                            }
-                          } else {
-                            const isOfferPackage = slug === 'offer-packages';
-                            const isFlexibleDatePackage = slug === 'flexible-date-packages';
-                            const newAdultCount = (isOfferPackage || isFlexibleDatePackage) ? 2 : 1;
-                            setPersons({
-                              adult: newAdultCount,
-                              child: 0,
-                              infant: 0,
-                            });
-                            // If visa was selected, update visa counts based on new adult count
-                            if (wasVisaSelected) {
-                              setVisaForAdults(newAdultCount);
-                              setVisaForChildren(0);
-                              setVisaForInfants(0);
-                            }
-                          }
-                        }}
-                      />
-                      Solo Traveller (AED{' '}
-                      {(() => {
-                        if (slug === 'flexible-date-packages') {
-                          const prices = getPricesForDate();
-                          const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? pkg.package_price;
-                          return formatPrice(soloPrice).replace('AED ', '').trim();
-                        }
-                        return formatPrice(pkg.solo_traveller_price || pkg.package_price).replace('AED ', '').trim();
-                      })()}
-                      )
-                    </label>
-
-                    {isSoloTraveller && (
-                      <div className='solo-options'>
-                        <div className='solo-gender-pills'>
-                          <button
-                            className={`solo-pill ${
-                              soloTravellerGender === 'male' ? 'active' : ''
-                            }`}
-                            onClick={() => setSoloTravellerGender('male')}
-                          >
-                            Male
-                          </button>
-                          <button
-                            className={`solo-pill ${
-                              soloTravellerGender === 'female' ? 'active' : ''
-                            }`}
-                            onClick={() => setSoloTravellerGender('female')}
-                          >
-                            Female
-                          </button>
-                        </div>
-                        <label className='solo-consent'>
-                          <input
-                            type='checkbox'
-                            checked={soloTravellerShareConsent}
-                            onChange={e =>
-                              setSoloTravellerShareConsent(e.target.checked)
-                            }
-                          />
-                          {`I am comfortable to share the room with ${
-                            soloTravellerGender === 'female' ? 'female' : 'male'
-                          } passengers`}
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Visa Option - For flexible date packages and offer packages */}
-                {(slug === 'flexible-date-packages' || slug === 'offer-packages') && (
-                  <div className='visa-option-block'>
-                    <label className='visa-checkbox'>
-                      <input
-                        type='checkbox'
-                        checked={withVisa}
-                        onChange={e => {
-                          const checked = e.target.checked;
-                          setWithVisa(checked);
-                        if (!checked) {
-                          setVisaForAdults(0);
-                          setVisaForChildren(0);
-                          setVisaForInfants(0);
-                        } else {
-                          // If solo traveller is selected, set visa for 1 adult, otherwise use current counts
-                          if (isSoloTraveller) {
-                            setVisaForAdults(1);
-                            setVisaForChildren(0);
-                            setVisaForInfants(0);
-                          } else {
-                            setVisaForAdults(persons.adult);
-                            setVisaForChildren(persons.child);
-                            setVisaForInfants(persons.infant);
-                          }
-                        }
-                        }}
-                      />
-                      With Visa (Indian passport Holder)
-                    </label>
-
-                    {withVisa && (
-                      <div className='visa-options'>
-                          {(isSoloTraveller ? 1 : persons.adult) > 0 && (
-                          <div className='visa-counter-row'>
-                            <span className='visa-counter-label'>
-                                Visa for Adults ({isSoloTraveller ? 1 : persons.adult})
-                              </span>
-                            <div className='visa-counter-controls'>
-                                <button
-                                className='visa-counter-button'
-                                  onClick={() => {
-                                    if (isSoloTraveller) return; // Can't decrease below 1 for solo traveller
-                                    setVisaForAdults(Math.max(0, visaForAdults - 1));
-                                  }}
-                                  disabled={visaForAdults === 0 || (isSoloTraveller && visaForAdults === 1)}
-                                >
-                                  <Minus size={14} style={{ color: '#1e40af' }} />
-                                </button>
-                              <span className='visa-counter-value'>
-                                  {visaForAdults}
-                                </span>
-                                <button
-                                className='visa-counter-button'
-                                  onClick={() => {
-                                    if (isSoloTraveller) return; // Can't increase above 1 for solo traveller
-                                    setVisaForAdults(Math.min(persons.adult, visaForAdults + 1));
-                                  }}
-                                  disabled={visaForAdults >= (isSoloTraveller ? 1 : persons.adult)}
-                                >
-                                  <Plus size={14} style={{ color: '#1e40af' }} />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {persons.child > 0 && (
-                          <div className='visa-counter-row'>
-                            <span className='visa-counter-label'>
-                                Visa for Children ({persons.child})
-                              </span>
-                            <div className='visa-counter-controls'>
-                                <button
-                                className='visa-counter-button'
-                                  onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
-                                  disabled={visaForChildren === 0}
-                                >
-                                  <Minus size={14} style={{ color: '#1e40af' }} />
-                                </button>
-                              <span className='visa-counter-value'>
-                                  {visaForChildren}
-                                </span>
-                                <button
-                                className='visa-counter-button'
-                                  onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
-                                  disabled={visaForChildren >= persons.child}
-                                >
-                                  <Plus size={14} style={{ color: '#1e40af' }} />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {persons.infant > 0 && (
-                          <div className='visa-counter-row'>
-                            <span className='visa-counter-label'>
-                                Visa for Infants ({persons.infant})
-                              </span>
-                            <div className='visa-counter-controls'>
-                                <button
-                                className='visa-counter-button'
-                                  onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
-                                  disabled={visaForInfants === 0}
-                                >
-                                  <Minus size={14} style={{ color: '#1e40af' }} />
-                                </button>
-                              <span className='visa-counter-value'>
-                                  {visaForInfants}
-                                </span>
-                                <button
-                                className='visa-counter-button'
-                                  onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
-                                  disabled={visaForInfants >= persons.infant}
-                                >
-                                  <Plus size={14} style={{ color: '#1e40af' }} />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className='booking-price-section'>
-                {hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
-                  <>
-                    <span className='booking-price-original agent-discount-original'>
-                      {formatPrice(priceBeforeAgentDiscount)}
-                    </span>
-                    <div className='agent-discount-badge-container'>
-                      <span className='agent-discount-badge'>
-                        Premium Partner Discount
-                        <span className='agent-discount-badge-amount'>
-                          -{formatPrice(agentDiscountAmount).replace('AED ', '')}
-                        </span>
-                      </span>
-                    </div>
-                  </>
-                )}
-                {isDiscountActive && getOriginalPrice() !== calculatedPrice && !(hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) && (
-                  <span className='booking-price-original agent-discount-original'>
-                    {formatPrice(getOriginalPrice())}
-                  </span>
-                )}
-                <span className={`booking-price-amount ${isDiscountActive || (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
-                  {formatPrice(
-                    calculatedPrice !== null
-                      ? calculatedPrice
-                      : pkg.package_price
-                  )}
-                </span>
-                <span className='booking-price-label'>
-                  {persons.adult > 0 || persons.child > 0 || persons.infant > 0
-                    ? 'total'
-                    : 'total'}
-                </span>
-              </div>
-
-              <div className='input-selectors'>
-                {/* Persons Selector */}
-                <div className='booking-input-wrapper' ref={personsDropdownRef}>
-                  <Users className='booking-input-icon' />
-                  <input
-                    type='text'
-                    placeholder='Persons'
-                    className='booking-input'
-                    value={getPersonsDisplayText()}
-                    readOnly
-                    disabled={isSoloTraveller}
-                    onClick={() =>
-                      !isSoloTraveller &&
-                      setShowPersonsDropdown(!showPersonsDropdown)
-                    }
-                  />
-                  <ChevronDown className='booking-dropdown-chevron' />
-                  {showPersonsDropdown && (
-                    <div className='booking-persons-dropdown'>
-                      <div className='person-counter-row'>
-                        <span className='person-label'>
-                          Adult{' '}
-                          <span className='person-age-info'>(8+ years)</span>
-                        </span>
-                        <div className='person-counter'>
-                          <button
-                            className='counter-button'
-                            onClick={() => updatePersonCount('adult', -1)}
-                            disabled={
-                              isSoloTraveller
-                                ? true
-                                : slug === 'offer-packages' || slug === 'flexible-date-packages'
-                                  ? persons.adult <= 2
-                                  : persons.adult <= 1
-                            }
-                          >
-                            <Minus className='counter-icon' />
-                          </button>
-                          <span className='counter-value'>{persons.adult}</span>
-                          <button
-                            className='counter-button'
-                            onClick={() => updatePersonCount('adult', 1)}
-                            disabled={isSoloTraveller}
-                          >
-                            <Plus className='counter-icon' />
-                          </button>
-                        </div>
-                      </div>
-                      <div className='person-counter-row'>
-                        <span className='person-label'>
-                          Child{' '}
-                          <span className='person-age-info'>(3-8 years)</span>
-                        </span>
-                        <div className='person-counter'>
-                          <button
-                            className='counter-button'
-                            onClick={() => updatePersonCount('child', -1)}
-                            disabled={isSoloTraveller || persons.child === 0}
-                          >
-                            <Minus className='counter-icon' />
-                          </button>
-                          <span className='counter-value'>{persons.child}</span>
-                          <button
-                            className='counter-button'
-                            onClick={() => updatePersonCount('child', 1)}
-                            disabled={isSoloTraveller}
-                          >
-                            <Plus className='counter-icon' />
-                          </button>
-                        </div>
-                      </div>
-                      <div className='person-counter-row'>
-                        <span className='person-label'>
-                          Infant{' '}
-                          <span className='person-age-info'>(0-2 years)</span>
-                        </span>
-                        <div className='person-counter'>
-                          <button
-                            className='counter-button'
-                            onClick={() => updatePersonCount('infant', -1)}
-                            disabled={isSoloTraveller || persons.infant === 0}
-                          >
-                            <Minus className='counter-icon' />
-                          </button>
-                          <span className='counter-value'>
-                            {persons.infant}
-                          </span>
-                          <button
-                            className='counter-button'
-                            onClick={() => updatePersonCount('infant', 1)}
-                            disabled={isSoloTraveller}
-                          >
-                            <Plus className='counter-icon' />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Date Picker / Calendar */}
-                {isPackageType() ? (
-                  // Package: Show dropdown with dates
-                  <div className='booking-input-wrapper' ref={dateDropdownRef}>
-                    <Calendar className='booking-input-icon' />
-                    <input
-                      type='text'
-                      placeholder={
-                        getAvailableDates().length === 0
-                          ? 'No dates available'
-                          : 'Select date'
-                      }
-                      className='booking-input'
-                      value={
-                        selectedDateString
-                          ? (() => {
-                              const d = parseDateStringToLocal(
-                                selectedDateString
-                              );
-                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : '';
-                            })()
-                          : ''
-                      }
-                      readOnly
-                      disabled={getAvailableDates().length === 0}
-                      onClick={() => {
-                        if (getAvailableDates().length > 0) {
-                          setShowDateDropdown(!showDateDropdown);
-                        }
-                      }}
-                    />
-                    <ChevronDown className='booking-dropdown-chevron' />
-                    {showDateDropdown && getAvailableDates().length > 0 && (
-                      <div className='booking-dates-dropdown'>
-                        {getAvailableDates().map((dateStr, idx) => (
-                          <div
-                            key={idx}
-                            className='booking-date-item'
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleDateStringSelect(dateStr);
-                            }}
-                          >
-                            {(() => {
-                              const d = parseDateStringToLocal(dateStr);
-                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
-                            })()}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Tour: Show calendar
-                  <div className='booking-input-wrapper' ref={datePickerRef}>
-                    <Calendar className='booking-input-icon' />
-                    <input
-                      type='text'
-                      placeholder='Add dates'
-                      className='booking-input'
-                      value={
-                        selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''
-                      }
-                      readOnly
-                      onClick={() => setShowDatePicker(!showDatePicker)}
-                    />
-                    {showDatePicker && (
-                      <div 
-                        className='booking-calendar-dropdown'
-                        onClick={e => e.stopPropagation()}
-                        onTouchStart={e => e.stopPropagation()}
-                      >
-                        {slug === 'flexible-date-packages' && !loading && dateRangesReady && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
-                          <FlexibleDateCalendar
-                            key={`desktop-calendar-${pkg.package_id}-${pkg.date_ranges.length}-${dateRangesReady}`}
-                            packageId={pkg.package_id}
-                            endDate={pkg.end_date || undefined}
-                            dateRanges={pkg.date_ranges}
-                            selectedDate={selectedDate}
-                            onDateSelect={handleDateSelect}
-                            month={month}
-                            onMonthChange={setMonth}
-                          />
-                        ) : (
-                          <>
-                            <div className='calendar-header-nav'>
-                              <button
-                                className='calendar-nav-button'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  const newMonth = new Date(month);
-                                  newMonth.setMonth(newMonth.getMonth() - 1);
-                                  setMonth(newMonth);
-                                }}
-                              >
-                                ‹
-                              </button>
-                              <button
-                                className='calendar-nav-button'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  const newMonth = new Date(month);
-                                  newMonth.setMonth(newMonth.getMonth() + 1);
-                                  setMonth(newMonth);
-                                }}
-                              >
-                                ›
-                              </button>
-                            </div>
-                            <DayPicker
-                              mode='single'
-                              selected={selectedDate}
-                              onSelect={handleDateSelect}
-                              disabled={getDisabledDates}
-                              numberOfMonths={1}
-                              showOutsideDays={true}
-                              month={month}
-                              onMonthChange={setMonth}
-                              className='custom-calendar'
-                              modifiersClassNames={{
-                                disabled: 'rdp-day_unavailable',
-                              }}
-                            />
-                            <div className='calendar-footer'>
-                              <button
-                                className='clear-dates-button'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedDate(undefined);
-                                }}
-                              >
-                                Clear dates
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className='booking-actions'>
-                <button
-                  onClick={handleAddToCart}
-                  className='booking-add-to-cart-button'
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      )}
+        setMonth={setMonth}
+        showPersonsDropdown={showPersonsDropdown}
+        setShowPersonsDropdown={setShowPersonsDropdown}
+        showDateDropdown={showDateDropdown}
+        setShowDateDropdown={setShowDateDropdown}
+        showDatePicker={showDatePicker}
+        setShowDatePicker={setShowDatePicker}
+        personsDropdownRef={personsDropdownRef}
+        dateDropdownRef={dateDropdownRef}
+        datePickerRef={datePickerRef}
+        isPackageType={isPackageType}
+        getAvailableDates={getAvailableDates}
+        getDisabledDates={getDisabledDates}
+        getPricesForDate={getPricesForDate}
+        formatPrice={formatPrice}
+        getOriginalPrice={getOriginalPrice}
+        calculatedPrice={calculatedPrice}
+        isDiscountActive={isDiscountActive}
+        hasActiveAgentSubscription={hasActiveAgentSubscription}
+        agentDiscountAmount={agentDiscountAmount}
+        priceBeforeAgentDiscount={priceBeforeAgentDiscount}
+        loading={loading}
+        dateRangesReady={dateRangesReady}
+        handleAddToCart={handleAddToCart}
+      />
 
       {/* Scroll to Top Button */}
       {showScrollToTop && (

@@ -9,6 +9,13 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { gsap } from 'gsap';
 import './header.css';
 
+interface Category {
+  id?: string;
+  category_id?: string;
+  categoryId?: string;
+  name: string;
+}
+
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -16,6 +23,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [categoriesWithPackages, setCategoriesWithPackages] = useState<Category[]>([]);
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
   const pathname = usePathname();
@@ -75,6 +83,52 @@ export default function Header() {
 
     return () => clearTimeout(timer);
   }, [pathname]);
+
+  // Fetch categories with packages
+  useEffect(() => {
+    const fetchCategoriesWithPackages = async () => {
+      try {
+        const response = await fetch('/api/package-categories?limit=100');
+        const result = await response.json();
+        if (result.data && Array.isArray(result.data)) {
+          // Check package count for each category and filter out categories with zero packages
+          const categoriesWithPackagesPromises = result.data.map(async (category: Category) => {
+            const categoryId =
+              category.category_id ||
+              category.id ||
+              category.categoryId;
+            
+            if (!categoryId) return null;
+            
+            try {
+              const packagesResponse = await fetch(
+                `/api/packages?category_id=${categoryId}&limit=1&status=active`
+              );
+              if (packagesResponse.ok) {
+                const packagesResult = await packagesResponse.json();
+                const packageCount = packagesResult.total || 0;
+                return packageCount > 0 ? category : null;
+              }
+              return null;
+            } catch (error) {
+              return null;
+            }
+          });
+          
+          const categoriesWithPackagesResults = await Promise.all(categoriesWithPackagesPromises);
+          const filteredCategories = categoriesWithPackagesResults.filter(
+            (cat): cat is Category => cat !== null
+          );
+          
+          setCategoriesWithPackages(filteredCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    
+    fetchCategoriesWithPackages();
+  }, []);
 
   // Check agent status and login status
   useEffect(() => {
@@ -160,6 +214,20 @@ export default function Header() {
     }
   };
 
+  const toSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  };
+
+  const getCategoryHref = (category: Category) => {
+    const slug = toSlug(category.name);
+    return `/category/${slug}`;
+  };
+
   return (
     <>
       <header className='header'>
@@ -187,60 +255,33 @@ export default function Header() {
                   Home
                 </Link>
               </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/category/offer-packages'] = el;
-                }}
-                className={
-                  pathname === '/category/offer-packages' ? 'active' : ''
-                }
-              >
-                <Link
-                  href='/category/offer-packages'
-                  className={`header-nav-link ${
-                    pathname === '/category/offer-packages' ? 'active' : ''
-                  }`}
-                >
-                  Offer Packages
-                </Link>
-              </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/category/flexible-date-packages'] = el;
-                }}
-                className={`header-nav-link-with-badge ${
-                  pathname === '/category/flexible-date-packages'
-                    ? 'active'
-                    : ''
-                }`}
-              >
-                <span className='header-nav-badge'>NEW</span>
-                <Link
-                  href='/category/flexible-date-packages'
-                  className={`header-nav-link ${
-                    pathname === '/category/flexible-date-packages'
-                      ? 'active'
-                      : ''
-                  }`}
-                >
-                  Flexible Date Packages
-                </Link>
-              </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/category/uae-tours'] = el;
-                }}
-                className={pathname === '/category/uae-tours' ? 'active' : ''}
-              >
-                <Link
-                  href='/category/uae-tours'
-                  className={`header-nav-link ${
-                    pathname === '/category/uae-tours' ? 'active' : ''
-                  }`}
-                >
-                  Tours
-                </Link>
-              </li>
+              {categoriesWithPackages.map(category => {
+                const href = getCategoryHref(category);
+                const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
+                return (
+                  <li
+                    key={category.id || category.category_id || category.categoryId}
+                    ref={el => {
+                      linkRefs.current[href] = el;
+                    }}
+                    className={`${pathname === href || pathname.startsWith(href + '/') ? 'active' : ''} ${isFlexibleDatePackages ? 'header-nav-link-with-badge' : ''}`}
+                  >
+                    {isFlexibleDatePackages && (
+                      <span className='header-nav-badge'>NEW</span>
+                    )}
+                    <Link
+                      href={href}
+                      className={`header-nav-link ${
+                        pathname === href || pathname.startsWith(href + '/')
+                          ? 'active'
+                          : ''
+                      }`}
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                );
+              })}
 
               <li
                 ref={el => {
@@ -464,36 +505,27 @@ export default function Header() {
               Home
             </Link>
 
-            <Link
-              href='/category/offer-packages'
-              className={`mobile-sidebar-link ${
-                pathname === '/category/offer-packages' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Offer Packages
-            </Link>
-
-            <Link
-              href='/category/uae-tours'
-              className={`mobile-sidebar-link ${
-                pathname === '/category/uae-tours' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Tours
-            </Link>
-
-            <Link
-              href='/category/flexible-date-packages'
-              className={`mobile-sidebar-link mobile-sidebar-link-with-badge ${
-                pathname === '/category/flexible-date-packages' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <span className='mobile-sidebar-badge'>NEW</span>
-              Flexible Date Packages
-            </Link>
+            {categoriesWithPackages.map(category => {
+              const href = getCategoryHref(category);
+              const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
+              return (
+                <Link
+                  key={category.id || category.category_id || category.categoryId}
+                  href={href}
+                  className={`mobile-sidebar-link ${
+                    pathname === href || pathname.startsWith(href + '/')
+                      ? 'active'
+                      : ''
+                  } ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {isFlexibleDatePackages && (
+                    <span className='mobile-sidebar-badge'>NEW</span>
+                  )}
+                  {category.name}
+                </Link>
+              );
+            })}
 
             <Link
               href='/About'

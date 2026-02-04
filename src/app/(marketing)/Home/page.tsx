@@ -1,12 +1,18 @@
 import BannerSection from './BannerSection';
-import PromotionalSection from './PromotionalSection';
+import EleganceSection from './EleganceSection';
+import SuitesSection from './SuitesSection';
+import TestimonialsSection from './TestimonialsSection';
 import SocialGrid from './SocialGrid';
 
 export default function Home() {
   return (
     <div>
       <BannerSection />
-      <PromotionalSection />
+      <SuitesSection />
+      <EleganceSection />
+      {/* <PromotionalSection /> */}
+      {/* <DealsOfTheDaySection /> */}
+      <TestimonialsSection />
       <SocialGrid />
     </div>
   );

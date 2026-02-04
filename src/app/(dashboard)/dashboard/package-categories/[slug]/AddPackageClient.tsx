@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import TipTapEditor from '@/components/ui/TipTapEditor';
 import { toast } from 'sonner';
-import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import {
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+} from '@/lib/cloudinary';
 import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
@@ -88,9 +91,49 @@ export default function AddPackageClient({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Gallery images state
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
+
+  const handleGalleryUpload = async (files: File[]) => {
+    // Validate all files
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not a valid image file`);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} size should be less than 5MB`);
+        return;
+      }
+    }
+
+    setIsUploadingGallery(true);
+    try {
+      const uploadPromises = files.map(file =>
+        uploadImageToCloudinary(file, 'packages/gallery')
+      );
+      const urls = await Promise.all(uploadPromises);
+      setGalleryImages(prev => [...prev, ...urls]);
+      toast.success(`${files.length} image(s) uploaded successfully`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload images'
+      );
+    } finally {
+      setIsUploadingGallery(false);
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = '';
+      }
+    }
+  };
 
   const modalContent = open ? (
     <div className='modal_overlay' onClick={() => setOpen(false)}>
@@ -207,6 +250,192 @@ export default function AddPackageClient({
                   )}
                 {isUploadingImage && (
                   <p className='upload_status'>Uploading image...</p>
+                )}
+              </div>
+
+              <div className='form_row full_width'>
+                <label>Gallery Images</label>
+                <div
+                  style={{
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '8px',
+                    padding: '24px',
+                    textAlign: 'center',
+                    backgroundColor: '#f9fafb',
+                    cursor: isUploadingGallery ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    opacity: isUploadingGallery ? 0.6 : 1,
+                  }}
+                  onDragOver={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isUploadingGallery) {
+                      e.currentTarget.style.borderColor = '#f97316';
+                      e.currentTarget.style.backgroundColor = '#fff7ed';
+                    }
+                  }}
+                  onDragLeave={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                  }}
+                  onDrop={async e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                    if (isUploadingGallery) return;
+                    const files = Array.from(e.dataTransfer.files || []).filter(
+                      file => file.type.startsWith('image/')
+                    );
+                    if (files.length === 0) return;
+                    await handleGalleryUpload(files);
+                  }}
+                  onClick={() => {
+                    if (!isUploadingGallery) {
+                      galleryInputRef.current?.click();
+                    }
+                  }}
+                >
+                  <input
+                    ref={galleryInputRef}
+                    type='file'
+                    accept='image/*'
+                    multiple
+                    onChange={async e => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length === 0) return;
+                      await handleGalleryUpload(files);
+                    }}
+                    disabled={isUploadingGallery}
+                    style={{ display: 'none' }}
+                  />
+                  {isUploadingGallery ? (
+                    <div>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          border: '3px solid #f3f4f6',
+                          borderTop: '3px solid #f97316',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite',
+                          margin: '0 auto 12px',
+                        }}
+                      />
+                      <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>
+                        Uploading images...
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <svg
+                        width='48'
+                        height='48'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='#9ca3af'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        style={{ margin: '0 auto 12px', display: 'block' }}
+                      >
+                        <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                        <polyline points='17 8 12 3 7 8' />
+                        <line x1='12' y1='3' x2='12' y2='15' />
+                      </svg>
+                      <p style={{ color: '#374151', margin: '0 0 4px', fontSize: '14px', fontWeight: '500' }}>
+                        Click to upload or drag and drop
+                      </p>
+                      <p style={{ color: '#6b7280', margin: 0, fontSize: '12px' }}>
+                        Multiple images supported (Max 5MB each)
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {galleryImages.length > 0 && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                      gap: '12px',
+                      marginTop: '16px',
+                    }}
+                  >
+                    {galleryImages.map((url, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          position: 'relative',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '1px solid #e5e7eb',
+                          backgroundColor: '#fff',
+                          aspectRatio: '1',
+                        }}
+                      >
+                        <img
+                          src={url}
+                          alt={`Gallery ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                        <button
+                          type='button'
+                          onClick={async e => {
+                            e.stopPropagation();
+                            const imageToRemove = url;
+                            // Remove from state
+                            setGalleryImages(prev => prev.filter((_, i) => i !== index));
+                            // Delete from Cloudinary immediately
+                            try {
+                              await deleteImageFromCloudinary(imageToRemove);
+                              toast.success('Image removed');
+                            } catch (error) {
+                              console.error('Error deleting gallery image:', error);
+                              toast.error('Failed to delete image from storage');
+                            }
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            background: 'rgba(239, 68, 68, 0.95)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '16px',
+                            lineHeight: '1',
+                            fontWeight: 'bold',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(220, 38, 38, 1)';
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.95)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          title='Remove image'
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -927,6 +1156,7 @@ export default function AddPackageClient({
                     holiday_description_html: holidayDescHtml || undefined,
                     itinerary: itinerary,
                     thumbnail_image: thumbnailImageUrl || undefined,
+                    gallery: galleryImages.length > 0 ? galleryImages : undefined,
                   };
 
                   // Add date-related fields based on package type
@@ -1014,6 +1244,11 @@ export default function AddPackageClient({
                   setImageLoadError(false);
                   if (fileInputRef.current) {
                     fileInputRef.current.value = '';
+                  }
+                  // Reset gallery images (don't delete from Cloudinary - they're saved in the package)
+                  setGalleryImages([]);
+                  if (galleryInputRef.current) {
+                    galleryInputRef.current.value = '';
                   }
                 });
                 

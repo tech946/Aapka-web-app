@@ -217,6 +217,30 @@ export function Sidebar() {
           <span>Agents</span>
         </Link>
 
+        {/* Deals of the Day */}
+        <Link
+          href='/dashboard/deals-of-the-day'
+          className={`sidebar_item ${pathname === '/dashboard/deals-of-the-day' ? 'active' : ''}`}
+        >
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            stroke-linecap='round'
+            strokeLinejoin='round'
+            className='lucide lucide-tag w-16 h-16'
+            aria-hidden='true'
+          >
+            <path d='M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.586 8.586a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z'></path>
+            <circle cx='7.5' cy='7.5' r='.5' fill='currentColor'></circle>
+          </svg>
+          <span>Deals of the Day</span>
+        </Link>
+
         {/* Price Master - Button to open modal */}
         <PriceMasterSidebarButton />
 

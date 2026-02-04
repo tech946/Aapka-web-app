@@ -60,6 +60,7 @@ interface PersonsCount {
 export default function BannerSection() {
   const router = useRouter();
   const [categories, setCategories] = useState<PackageCategory[]>([]);
+  const [categoriesWithPackages, setCategoriesWithPackages] = useState<PackageCategory[]>([]);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
@@ -152,20 +153,48 @@ export default function BannerSection() {
       const response = await fetch('/api/package-categories?limit=100');
       const result = await response.json();
       if (result.data && Array.isArray(result.data)) {
-        // Log first category to see its structure
-        if (result.data.length > 0) {
-        }
         setCategories(result.data);
-        if (result.data.length > 0) {
-          // Try different possible field names
-          const firstCategory = result.data[0];
+        
+        // Check package count for each category and filter out categories with zero packages
+        const categoriesWithPackagesPromises = result.data.map(async (category: PackageCategory) => {
+          const categoryId =
+            category.category_id ||
+            category.id ||
+            category.categoryId;
+          
+          if (!categoryId) return null;
+          
+          try {
+            const packagesResponse = await fetch(
+              `/api/packages?category_id=${categoryId}&limit=1&status=active`
+            );
+            if (packagesResponse.ok) {
+              const packagesResult = await packagesResponse.json();
+              const packageCount = packagesResult.total || 0;
+              return packageCount > 0 ? category : null;
+            }
+            return null;
+          } catch (error) {
+            return null;
+          }
+        });
+        
+        const categoriesWithPackagesResults = await Promise.all(categoriesWithPackagesPromises);
+        const filteredCategories = categoriesWithPackagesResults.filter(
+          (cat): cat is PackageCategory => cat !== null
+        );
+        
+        setCategoriesWithPackages(filteredCategories);
+        
+        // Set the first category with packages as active
+        if (filteredCategories.length > 0) {
+          const firstCategory = filteredCategories[0];
           const categoryId =
             firstCategory.category_id ||
             firstCategory.id ||
             firstCategory.categoryId;
           if (categoryId) {
             setActiveCategoryId(categoryId);
-          } else {
           }
         }
       }
@@ -255,7 +284,9 @@ export default function BannerSection() {
   // Get active category's packagetypeid
   const getActiveCategoryType = (): number | null => {
     if (!activeCategoryId) return null;
-    const activeCategory = categories.find(
+    const activeCategory = categoriesWithPackages.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    ) || categories.find(
       cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
     );
     return activeCategory?.packagetypeid ?? null;
@@ -264,7 +295,9 @@ export default function BannerSection() {
   // Check if active category uses flexible date packages
   const isFlexibleDatePackage = (): boolean => {
     if (!activeCategoryId) return false;
-    const activeCategory = categories.find(
+    const activeCategory = categoriesWithPackages.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    ) || categories.find(
       cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
     );
     return activeCategory ? usesFlexibleDatePackagesByName(activeCategory.name) : false;
@@ -273,7 +306,9 @@ export default function BannerSection() {
   // Check if active category is a tour (uses booking slots)
   const isTourPackage = (): boolean => {
     if (!activeCategoryId) return false;
-    const activeCategory = categories.find(
+    const activeCategory = categoriesWithPackages.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    ) || categories.find(
       cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
     );
     return activeCategory ? usesBookingSlotsByName(activeCategory.name) : false;
@@ -341,7 +376,9 @@ export default function BannerSection() {
     }
 
     // Get category slug from active category
-    const activeCategory = categories.find(
+    const activeCategory = categoriesWithPackages.find(
+      cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
+    ) || categories.find(
       cat => (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
     );
 
@@ -400,7 +437,7 @@ export default function BannerSection() {
 
           <div className='search_form_container'>
             <div className='search_tabs'>
-              {categories.map(category => {
+              {categoriesWithPackages.map(category => {
                 // Try different possible field names for category ID
                 const categoryId =
                   category.category_id ||

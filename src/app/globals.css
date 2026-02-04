@@ -65,6 +65,25 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Manrope', var(--font-manrope), system-ui, -apple-system, sans-serif;
+  }
+  
+  /* Headings - Fraunces */
+  h1, h2, h3, h4, h5, h6,
+  .heading, [class*="heading"], [class*="title"], [class*="Title"] {
+    font-family: 'Fraunces', var(--font-fraunces), serif !important;
+    font-weight: 600;
+  }
+  
+  /* Body text, paragraphs, lists, buttons - Manrope */
+  p, li, button, a, span, div, input, textarea, select, label,
+  .body, [class*="body"], [class*="text"], [class*="Text"] {
+    font-family: 'Manrope', var(--font-manrope), system-ui, -apple-system, sans-serif !important;
+  }
+  
+  /* Buttons specifically */
+  button, .btn, [class*="button"], [class*="Button"] {
+    font-family: 'Manrope', var(--font-manrope), system-ui, -apple-system, sans-serif !important;
   }
 }
 
