@@ -70,6 +70,7 @@ export default function AddPackageClient({
   const [discountStartDate, setDiscountStartDate] = useState<string>('');
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [agentDiscount, setAgentDiscount] = useState<string>('');
+  const [minAdults, setMinAdults] = useState<string>('1');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -474,6 +475,24 @@ export default function AddPackageClient({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className='form_row'>
+                <label>Minimum Adults *</label>
+                <select
+                  value={minAdults}
+                  onChange={e => setMinAdults(e.target.value)}
+                  required
+                >
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1} {i + 1 === 1 ? 'Adult' : 'Adults'}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  Minimum number of adults required to book this package
+                </span>
               </div>
 
               {usesSlots ? (
@@ -1149,6 +1168,7 @@ export default function AddPackageClient({
                     discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
                     discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
                     agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
+                    min_adults: minAdults ? Math.max(1, Number(minAdults)) : 1,
                     terms_html: termsHtml || undefined,
                     inclusion_html: inclusionHtml || undefined,
                     exclusion_html: exclusionHtml || undefined,
@@ -1226,6 +1246,7 @@ export default function AddPackageClient({
                   setDiscountStartDate('');
                   setDiscountEndDate('');
                   setAgentDiscount('');
+                  setMinAdults('1');
                   setTermsHtml('');
                   setInclusionHtml('');
                   setExclusionHtml('');

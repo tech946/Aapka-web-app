@@ -27,10 +27,18 @@ interface CartItemRequest {
   visaForAdults?: number;
   visaForChildren?: number;
   visaForInfants?: number;
-  // Referral data
-  referralCode?: string | null;
+  // Referral data - SECURITY: only referralId is trusted, other fields verified from DB
   referralId?: string | null;
-  referralDiscountApplied?: boolean;
+  referralDiscountApplied?: boolean; // Client-provided, will be verified against DB
+  referralDiscountPercentage?: number; // Client-provided, will be verified against DB
+}
+
+// Interface for verified referral data from database
+interface VerifiedReferral {
+  id: string;
+  linkType: 'discount' | 'commission';
+  discountPercentage: number;
+  agentId: string;
 }
 
 // Helper function to check if discount is active
@@ -146,6 +154,34 @@ export async function POST(req: NextRequest) {
       if (dealsData) {
         dealsData.forEach((deal: any) => {
           activeDealsMap.set(deal.package_id, deal);
+        });
+      }
+    }
+
+    // SECURITY: Verify referral IDs from database instead of trusting client data
+    // Collect unique referral IDs and verify them
+    const referralIds = [...new Set(items.filter(i => i.referralId).map(i => i.referralId as string))];
+    const verifiedReferralsMap = new Map<string, VerifiedReferral>();
+    
+    if (referralIds.length > 0) {
+      const { data: referrals } = await supabaseAdmin
+        .from('agent_referrals')
+        .select('id, agent_id, link_type, discount_percentage, status, expires_at')
+        .in('id', referralIds)
+        .eq('status', 'active');
+      
+      if (referrals) {
+        const now = new Date();
+        referrals.forEach((ref: any) => {
+          // Only include valid, non-expired referrals
+          if (ref.expires_at && new Date(ref.expires_at) > now) {
+            verifiedReferralsMap.set(ref.id, {
+              id: ref.id,
+              linkType: ref.link_type || 'commission',
+              discountPercentage: ref.discount_percentage || 0,
+              agentId: ref.agent_id,
+            });
+          }
         });
       }
     }
@@ -394,23 +430,44 @@ export async function POST(req: NextRequest) {
       calculatedPrice += visaPrice;
       originalPrice += visaPrice;
 
-      // Apply agent discount if user is an agent with active subscription (percentage-based)
-      // OR if referral discount is applied (customer came via referral link with discount)
+      // SECURITY: Apply discount based on verified data, not client-provided values
+      // Priority 1: Agent with active subscription gets agent discount
+      // Priority 2: Customer via discount-type referral link gets referral discount (verified from DB)
       let agentDiscountAmount = 0;
-      const shouldApplyDiscount = 
-        (hasActiveAgentSubscription && pkg?.agent_discount && pkg.agent_discount > 0) ||
-        (item.referralDiscountApplied && item.referralId && pkg?.agent_discount && pkg.agent_discount > 0);
+      let referralDiscountAmount = 0;
+      let isReferralDiscount = false;
       
-      if (shouldApplyDiscount) {
-        // agent_discount is now a percentage (e.g., 10 for 10%)
+      // Get verified referral data from database (not from client)
+      const verifiedReferral = item.referralId ? verifiedReferralsMap.get(item.referralId) : null;
+      
+      // Check if agent discount should apply (logged-in agent with subscription)
+      const shouldApplyAgentDiscount = hasActiveAgentSubscription && pkg?.agent_discount && pkg.agent_discount > 0;
+      
+      // Check if referral discount should apply (verified from DB as discount-type link)
+      // IMPORTANT: Agent discount and referral discount are mutually exclusive
+      // An agent cannot use their own or another agent's referral link
+      const shouldApplyReferralDiscount = !hasActiveAgentSubscription && 
+        verifiedReferral && 
+        verifiedReferral.linkType === 'discount' && 
+        verifiedReferral.discountPercentage > 0;
+      
+      if (shouldApplyAgentDiscount) {
+        // Agent discount (for logged-in agents)
         const discountPercentage = pkg.agent_discount;
         agentDiscountAmount = (calculatedPrice * discountPercentage) / 100;
         calculatedPrice = Math.max(0, calculatedPrice - agentDiscountAmount);
+      } else if (shouldApplyReferralDiscount) {
+        // Referral discount (verified from DB, not from client)
+        isReferralDiscount = true;
+        const discountPercentage = verifiedReferral.discountPercentage;
+        referralDiscountAmount = (calculatedPrice * discountPercentage) / 100;
+        calculatedPrice = Math.max(0, calculatedPrice - referralDiscountAmount);
       }
 
-      // Calculate price before agent discount for display
-      const priceBeforeAgentDiscount = shouldApplyDiscount && agentDiscountAmount > 0 
-        ? calculatedPrice + agentDiscountAmount 
+      // Calculate price before discount for display
+      const totalDiscountAmount = agentDiscountAmount + referralDiscountAmount;
+      const priceBeforeAgentDiscount = totalDiscountAmount > 0 
+        ? calculatedPrice + totalDiscountAmount 
         : null;
 
       // Calculate original price based on original prices (before deal) for display
@@ -462,9 +519,15 @@ export async function POST(req: NextRequest) {
         adultDiscountAmount: discountActive ? pkg.adult_discount_amount : null,
         childDiscountAmount: discountActive ? pkg.child_discount_amount : null,
         infantDiscountAmount: discountActive ? pkg.infant_discount_amount : null,
-        // Agent discount info - return if agent has subscription OR referral discount is applied
-        agentDiscountAmount: (hasActiveAgentSubscription || (item.referralDiscountApplied && item.referralId)) && agentDiscountAmount > 0 ? agentDiscountAmount : null,
+        // Agent discount info (for logged-in agents with subscription)
+        agentDiscountAmount: shouldApplyAgentDiscount && agentDiscountAmount > 0 ? agentDiscountAmount : null,
         priceBeforeAgentDiscount: priceBeforeAgentDiscount,
+        // Referral discount info (for customers via discount-type referral link - verified from DB)
+        referralDiscountAmount: isReferralDiscount && referralDiscountAmount > 0 ? referralDiscountAmount : null,
+        priceBeforeReferralDiscount: isReferralDiscount && referralDiscountAmount > 0 ? calculatedPrice + referralDiscountAmount : null,
+        // Verified referral tracking info (for booking creation)
+        verifiedReferralId: verifiedReferral?.id || null,
+        verifiedReferralLinkType: verifiedReferral?.linkType || null,
         // Visa info
         visaPrice: visaPrice,
         adultVisaPrice: pkg.adult_visa_price,

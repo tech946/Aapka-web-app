@@ -24,7 +24,7 @@ export async function GET(
     const { data: allPackages, error: fetchError } = await supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, booking_slots, date_ranges, end_date, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, created_at'
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, travel_dates, booking_slots, date_ranges, end_date, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, created_at'
       )
       .eq('status', 'active');
 
@@ -33,67 +33,62 @@ export async function GET(
     }
 
     // Find package by matching slug
-    // Support both old full slugs and new short slugs (with package_id suffix)
+    // Support multiple slug formats for flexibility
     const packageData = allPackages?.find((pkg: any) => {
-      // Extract ID suffix from slug (last 5 digits)
       const slugLower = packageSlug.toLowerCase();
-      const idSuffixFromSlug = slugLower.split('-').pop() || '';
-
-      // Try matching by ID suffix first (most reliable)
-      const pkgIdSuffix = pkg.package_id.replace(/-/g, '').slice(-5);
-      if (idSuffixFromSlug === pkgIdSuffix) {
-        // Generate expected slug format to verify match
-        const firstWord =
-          pkg.package_name
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, '')
-            .trim()
-            .split(/\s+/)[0] || 'pkg';
-        const location = firstWord.substring(0, 10);
-
-        let daysNights = '';
-        if (pkg.package_nights && pkg.package_days) {
-          daysNights = `${pkg.package_nights}n${pkg.package_days}d`;
-        } else if (pkg.package_nights) {
-          daysNights = `${pkg.package_nights}n`;
-        } else if (pkg.package_days) {
-          daysNights = `${pkg.package_days}d`;
-        }
-
-        const nameLower = pkg.package_name.toLowerCase();
-        let type = '';
-        if (nameLower.includes('offer')) {
-          type = 'offer';
-        } else if (nameLower.includes('tour')) {
-          type = 'tour';
-        } else if (nameLower.includes('package')) {
-          type = 'pkg';
-        } else if (nameLower.includes('trip')) {
-          type = 'trip';
-        }
-
-        const expectedSlug = [location, daysNights, type, pkgIdSuffix]
-          .filter(Boolean)
-          .join('-');
-
-        // Match if slug contains the same components (flexible matching)
-        if (
-          slugLower.includes(pkgIdSuffix) &&
-          (slugLower.includes(location) ||
-            slugLower.startsWith(location.substring(0, 3)))
-        ) {
+      const pkgIdClean = pkg.package_id.replace(/-/g, '').toLowerCase();
+      const pkgIdSuffix5 = pkgIdClean.slice(-5); // Last 5 chars (new format)
+      const pkgIdSuffix8 = pkgIdClean.slice(0, 8); // First 8 chars (old format)
+      
+      // Extract the last segment from slug (potential ID suffix)
+      const slugParts = slugLower.split('-');
+      const lastSegment = slugParts[slugParts.length - 1] || '';
+      
+      // Method 1: Direct package_id match
+      if (pkg.package_id === packageSlug) {
+        return true;
+      }
+      
+      // Method 2: Match by 5-digit ID suffix (new format: trio-4n5d-tour-38930)
+      if (lastSegment === pkgIdSuffix5) {
+        return true;
+      }
+      
+      // Method 3: Match by 8-char ID prefix (old format from agent dashboard: name-0091ce2c)
+      if (lastSegment.length >= 6 && pkgIdClean.startsWith(lastSegment)) {
+        return true;
+      }
+      
+      // Method 4: Slug contains the package ID suffix anywhere
+      if (slugLower.includes(pkgIdSuffix5) || slugLower.includes(pkgIdSuffix8)) {
+        // Verify first word of name matches for additional confidence
+        const firstWord = pkg.package_name
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, '')
+          .trim()
+          .split(/\s+/)[0] || '';
+        
+        if (firstWord && slugLower.includes(firstWord.substring(0, 3))) {
           return true;
         }
       }
-
-      // Also support old full slug format for backward compatibility
+      
+      // Method 5: Full slug from package name (backward compatibility)
       const fullSlug = pkg.package_name
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
-
-      // Also support direct ID lookup
-      return fullSlug === slugLower || pkg.package_id === packageSlug;
+      
+      if (fullSlug === slugLower) {
+        return true;
+      }
+      
+      // Method 6: Slug starts with full name slug (handles name + id suffix)
+      if (slugLower.startsWith(fullSlug)) {
+        return true;
+      }
+      
+      return false;
     });
 
     if (!packageData) {

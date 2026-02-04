@@ -53,6 +53,7 @@ type Pkg = {
   discount_start_date?: string | null;
   discount_end_date?: string | null;
   agent_discount?: number | null;
+  min_adults?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -123,6 +124,7 @@ export default function EditPackageClient({
   const [discountStartDate, setDiscountStartDate] = useState<string>('');
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [agentDiscount, setAgentDiscount] = useState<string>('');
+  const [minAdults, setMinAdults] = useState<string>('1');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -211,6 +213,8 @@ export default function EditPackageClient({
     if (pkg.child_discount_amount != null) setChildDiscountAmount(String(pkg.child_discount_amount));
     if (pkg.infant_discount_amount != null) setInfantDiscountAmount(String(pkg.infant_discount_amount));
     if (pkg.agent_discount != null) setAgentDiscount(String(pkg.agent_discount));
+    if (pkg.min_adults != null) setMinAdults(String(pkg.min_adults));
+    else setMinAdults('1');
     // Convert date strings to datetime-local format (YYYY-MM-DDTHH:mm)
     if (pkg.discount_start_date != null) {
       const startDate = new Date(pkg.discount_start_date);
@@ -648,6 +652,24 @@ export default function EditPackageClient({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className='form_row'>
+                <label>Minimum Adults *</label>
+                <select
+                  value={minAdults}
+                  onChange={e => setMinAdults(e.target.value)}
+                  required
+                >
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1} {i + 1 === 1 ? 'Adult' : 'Adults'}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  Minimum number of adults required to book this package
+                </span>
               </div>
 
               {usesSlots ? (
@@ -1327,6 +1349,7 @@ export default function EditPackageClient({
                       discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
                       discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
                       agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
+                      min_adults: minAdults ? Math.max(1, Number(minAdults)) : 1,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,

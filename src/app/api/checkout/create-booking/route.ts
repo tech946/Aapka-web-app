@@ -41,6 +41,11 @@ interface BookingRequest {
     isSoloTraveller?: boolean;
     soloTravellerGender?: 'male' | 'female' | null;
     soloTravellerShareConsent?: boolean;
+    // Referral tracking
+    referralId?: string;
+    referralCode?: string;
+    referralDiscountApplied?: boolean;
+    referralDiscountPercentage?: number;
   }>;
   passengers: PassengerData[];
   paymentMethod: string;
@@ -211,6 +216,11 @@ export async function POST(req: NextRequest) {
 
     const hasSoloTraveller = cartItems.some(item => item.isSoloTraveller);
     const soloItem = cartItems.find(item => item.isSoloTraveller);
+    
+    // Find the first item with referral data (if any)
+    const referralItem = cartItems.find(item => item.referralId);
+    const referralId = referralItem?.referralId || null;
+    const referralDiscountApplied = referralItem?.referralDiscountApplied || false;
 
     const bookingData: any = {
       package_ids: packageIds,
@@ -226,6 +236,8 @@ export async function POST(req: NextRequest) {
       solo_traveller_gender: soloItem?.soloTravellerGender || null,
       solo_traveller_share_consent:
         soloItem?.soloTravellerShareConsent ?? false,
+      // Referral tracking (for agent commission system)
+      referral_id: referralId,
     };
 
     // Add payment fields if provided
@@ -254,6 +266,72 @@ export async function POST(req: NextRequest) {
         { error: 'Failed to create booking', details: bookingError.message },
         { status: 500 }
       );
+    }
+
+    // Handle referral and commission tracking
+    if (referralId && booking?.id) {
+      try {
+        // Verify the referral exists and is valid
+        const { data: referral } = await supabaseAdmin
+          .from('agent_referrals')
+          .select('id, agent_id, link_type, discount_percentage, status')
+          .eq('id', referralId)
+          .eq('status', 'active')
+          .single();
+
+        if (referral) {
+          // Update referral with booking info
+          await supabaseAdmin
+            .from('agent_referrals')
+            .update({
+              booking_id: booking.id,
+              discount_applied: referral.link_type === 'discount',
+              status: referral.link_type === 'discount' ? 'completed' : 'pending_commission',
+              usage_count: (await supabaseAdmin.rpc('increment_referral_usage', { referral_id: referralId })) || 1,
+            })
+            .eq('id', referralId);
+
+          // If it's a commission-type link (no discount), create pending commission
+          if (referral.link_type === 'commission') {
+            // Calculate commission (default 10% of booking total)
+            const commissionRate = 10.00; // Can be made configurable later
+            const commissionAmount = (totalAmount * commissionRate) / 100;
+
+            // Create commission record
+            const { data: commission, error: commissionError } = await supabaseAdmin
+              .from('agent_commissions')
+              .insert({
+                agent_id: referral.agent_id,
+                referral_id: referralId,
+                booking_id: booking.id,
+                amount: commissionAmount,
+                currency: currency || 'AED',
+                commission_rate: commissionRate,
+                status: 'pending', // Will be approved on successful payment
+              })
+              .select('id')
+              .single();
+
+            if (!commissionError && commission) {
+              // Create wallet entry as pending
+              await supabaseAdmin
+                .from('agent_wallet')
+                .insert({
+                  agent_id: referral.agent_id,
+                  commission_id: commission.id,
+                  amount: commissionAmount,
+                  currency: currency || 'AED',
+                  balance_type: 'pending',
+                  transaction_type: 'commission',
+                  description: `Commission for booking #${booking.id.slice(0, 8).toUpperCase()}`,
+                });
+            }
+          }
+        }
+      } catch (referralError) {
+        // Don't fail the booking if referral tracking fails
+        console.error('Error tracking referral:', referralError);
+      }
     }
 
     return NextResponse.json({

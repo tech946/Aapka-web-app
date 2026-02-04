@@ -26,6 +26,11 @@ export interface CartItemStorage {
   visaForAdults?: number;
   visaForChildren?: number;
   visaForInfants?: number;
+  // Referral tracking (for agent commission/discount system)
+  referralId?: string;              // UUID of the referral record in DB
+  referralCode?: string;            // The actual referral code (for tracking)
+  referralDiscountApplied?: boolean; // true if discount link, false if commission link
+  referralDiscountPercentage?: number; // Discount % from the referral (locked at creation)
 }
 
 // Full cart item with validated prices from server
@@ -48,8 +53,11 @@ export interface CartItem extends CartItemStorage {
   adultDiscountAmount?: number | null;
   childDiscountAmount?: number | null;
   infantDiscountAmount?: number | null;
-  // Agent discount info
+  // Agent discount info (for logged-in agents)
   agentDiscountAmount?: number | null;
+  // Referral discount info (for customers via referral link)
+  referralDiscountAmount?: number | null;
+  priceBeforeReferralDiscount?: number | null;
 }
 
 interface CartContextType {
@@ -100,6 +108,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             visaForAdults: item.visaForAdults ?? 0,
             visaForChildren: item.visaForChildren ?? 0,
             visaForInfants: item.visaForInfants ?? 0,
+            // Referral tracking - these come from DB lookup, not URL params
+            referralId: item.referralId,
+            referralDiscountApplied: item.referralDiscountApplied ?? false,
+            referralDiscountPercentage: item.referralDiscountPercentage ?? 0,
           }));
 
           const response = await fetch('/api/cart/validate', {
@@ -152,8 +164,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   adultDiscountAmount: validated.adultDiscountAmount,
                   childDiscountAmount: validated.childDiscountAmount,
                   infantDiscountAmount: validated.infantDiscountAmount,
-                  // Agent discount info
+                  // Agent discount info (for logged-in agents)
                   agentDiscountAmount: validated.agentDiscountAmount,
+                  // Referral discount info (for customers via referral link)
+                  referralDiscountAmount: validated.referralDiscountAmount,
+                  priceBeforeReferralDiscount: validated.priceBeforeReferralDiscount,
                 };
               }
               return item;
@@ -230,6 +245,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           visaForAdults: item.visaForAdults ?? 0,
           visaForChildren: item.visaForChildren ?? 0,
           visaForInfants: item.visaForInfants ?? 0,
+          // Referral tracking
+          referralId: item.referralId,
+          referralCode: item.referralCode,
+          referralDiscountApplied: item.referralDiscountApplied,
+          referralDiscountPercentage: item.referralDiscountPercentage,
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
       } catch (error) {
@@ -261,6 +281,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           withVisa: item.withVisa ?? false,
           visaForAdults: item.visaForAdults ?? 0,
           visaForChildren: item.visaForChildren ?? 0,
+          // Preserve referral data if already set, or use new values
+          referralId: item.referralId ?? updated[existingIndex].referralId,
+          referralCode: item.referralCode ?? updated[existingIndex].referralCode,
+          referralDiscountApplied: item.referralDiscountApplied ?? updated[existingIndex].referralDiscountApplied,
+          referralDiscountPercentage: item.referralDiscountPercentage ?? updated[existingIndex].referralDiscountPercentage,
           validated: false, // Mark as needing validation
         };
         // Validate after update
@@ -277,6 +302,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           withVisa: item.withVisa ?? false,
           visaForAdults: item.visaForAdults ?? 0,
           visaForChildren: item.visaForChildren ?? 0,
+          // Include referral data
+          referralId: item.referralId,
+          referralCode: item.referralCode,
+          referralDiscountApplied: item.referralDiscountApplied,
+          referralDiscountPercentage: item.referralDiscountPercentage,
           packageName: '',
           thumbnailImage: null,
           price: 0,
