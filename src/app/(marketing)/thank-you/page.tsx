@@ -17,8 +17,7 @@ function ThankYouContent() {
           Your booking has been confirmed successfully!
         </p>
         <p className='thank-you-info'>
-          We have received your booking and will process it shortly. You will
-          receive a confirmation email with all the details.
+          Our team will review your booking and get back to you in 24 hours.
         </p>
         <div className='thank-you-actions'>
           <Link href='/' className='thank-you-button primary'>
