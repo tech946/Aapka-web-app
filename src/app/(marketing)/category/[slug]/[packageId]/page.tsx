@@ -1422,9 +1422,9 @@ export default function PackageDetailsPage() {
                         </span>
                       </>
                     ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(prices.adultPrice)}
-                      </span>
+                    <span className='package-hero-price-item-amount'>
+                      {formatPrice(prices.adultPrice)}
+                    </span>
                     )}
                     {isDiscountActive && pkg.adult_discount_amount && pkg.adult_discount_amount > 0 && (
                       <span className='package-hero-price-item-discount'>
@@ -1447,9 +1447,9 @@ export default function PackageDetailsPage() {
                         </span>
                       </>
                     ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(prices.childPrice)}
-                      </span>
+                    <span className='package-hero-price-item-amount'>
+                      {formatPrice(prices.childPrice)}
+                    </span>
                     )}
                     {isDiscountActive && pkg.child_discount_amount && pkg.child_discount_amount > 0 && (
                       <span className='package-hero-price-item-discount'>
@@ -1472,9 +1472,9 @@ export default function PackageDetailsPage() {
                         </span>
                       </>
                     ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(prices.infantPrice)}
-                      </span>
+                    <span className='package-hero-price-item-amount'>
+                      {formatPrice(prices.infantPrice)}
+                    </span>
                     )}
                     {isDiscountActive && pkg.infant_discount_amount && pkg.infant_discount_amount > 0 && (
                       <span className='package-hero-price-item-discount'>
@@ -1496,9 +1496,9 @@ export default function PackageDetailsPage() {
                         </span>
                       </>
                     ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(pkg.package_price)}
-                      </span>
+                    <span className='package-hero-price-item-amount'>
+                      {formatPrice(pkg.package_price)}
+                    </span>
                     )}
                   </div>
                 )}

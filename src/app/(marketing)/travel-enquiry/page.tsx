@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Loader2,
-  CheckCircle2,
   AlertCircle,
   Search,
   X,
@@ -148,8 +148,8 @@ interface Attraction {
 }
 
 export default function SubmitLeadPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [attractionsLoading, setAttractionsLoading] = useState(true);
@@ -292,52 +292,12 @@ export default function SubmitLeadPage() {
         throw new Error(data.error || 'Failed to submit lead');
       }
 
-      setSubmitted(true);
       toast.success('Lead submitted successfully! We will contact you soon.');
 
-      // Reset form after successful submission
+      // Redirect to thank you page after successful submission
       setTimeout(() => {
-        setFormData({
-          full_name_as_per_passport: '',
-          whatsapp_number: '',
-          email_id: '',
-          nationality: '',
-          city_country_of_departure: '',
-          check_in_date: '',
-          check_out_date: '',
-          total_nights: 0,
-          flexible_dates: false,
-          total_travelers: 0,
-          adults: 0,
-          children_count: 0,
-          children_ages: '',
-          infant_count: 0,
-          senior_travelers: false,
-          senior_travelers_age_detail: '',
-          special_needs: '',
-          need_dubai_visa: false,
-          hotel_category: '',
-          room_type: '',
-          room_type_id: '',
-          meal_plan: '',
-          preferred_location: '',
-          bed_type: '',
-          smoking_room_required: false,
-          tours_and_activities: [],
-          food_preference_id: null,
-          per_person_budget: 0,
-          full_package_budget: 0,
-          flexible_budget: false,
-          payment_mode: '',
-          currency: '',
-          honeymoon: false,
-          anniversary: false,
-          birthday: false,
-          surprise_decorations: false,
-          cake_private_dinner: false,
-        });
-        setSubmitted(false);
-      }, 5000);
+        router.push('/travel-enquiry/thank-you');
+      }, 1000);
     } catch (error: any) {
       console.error('Error submitting lead:', error);
       toast.error(error.message || 'Failed to submit lead. Please try again.');
@@ -390,23 +350,6 @@ export default function SubmitLeadPage() {
       </div>
     );
   };
-
-  if (submitted) {
-    return (
-      <div className='lead-page'>
-        <div className='lead-container'>
-          <div className='lead-success-message'>
-            <CheckCircle2 size={64} className='success-icon' />
-            <h1>Thank You!</h1>
-            <p>
-              Your lead has been submitted successfully. We will contact you
-              soon.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className='lead-page'>
