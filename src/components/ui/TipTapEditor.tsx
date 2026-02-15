@@ -15,6 +15,15 @@ import {
   UndoOutlined,
   RedoOutlined,
 } from '@ant-design/icons';
+import {
+  Heading1,
+  Heading2,
+  Heading3,
+  Quote,
+  Code,
+  Minus,
+  Strikethrough,
+} from 'lucide-react';
 import { useEffect } from 'react';
 
 interface TipTapEditorProps {
@@ -35,18 +44,16 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable heading, code, blockquote, horizontal rule, etc.
-        heading: false,
-        code: false,
-        codeBlock: false,
-        blockquote: false,
-        horizontalRule: false,
-        hardBreak: false,
-        // Keep only paragraph, bold, italic, strike
+        heading: { levels: [1, 2, 3] },
         paragraph: {},
         bold: {},
         italic: {},
         strike: {},
+        code: {},
+        codeBlock: {},
+        blockquote: {},
+        horizontalRule: {},
+        hardBreak: false,
       }),
       BulletList,
       OrderedList,
@@ -94,33 +101,53 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
         size='small'
         icon={icon}
         onClick={onClick}
+        className='tiptap-toolbar-btn'
         style={{
-          backgroundColor: isActive ? '#1890ff' : 'transparent',
-          borderColor: isActive ? '#1890ff' : '#d9d9d9',
-          color: isActive ? '#fff' : '#000',
+          backgroundColor: isActive ? 'var(--accent, #ff4c00)' : 'transparent',
+          borderColor: isActive ? 'var(--accent, #ff4c00)' : 'var(--border, #e5e7eb)',
+          color: isActive ? '#fff' : 'var(--text, #111827)',
         }}
       />
     </Tooltip>
   );
 
+  const Divider = () => (
+    <div
+      style={{
+        width: '1px',
+        height: '20px',
+        backgroundColor: 'var(--border, #e5e7eb)',
+        margin: '0 4px',
+      }}
+    />
+  );
+
   return (
     <div className='tiptap-editor'>
       {/* Toolbar */}
-      <div
-        style={{
-          border: '1px solid #d9d9d9',
-          borderBottom: 'none',
-          borderTopLeftRadius: '6px',
-          borderTopRightRadius: '6px',
-          padding: '8px 12px',
-          backgroundColor: '#fafafa',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          flexWrap: 'wrap',
-        }}
-      >
+      <div className='tiptap-toolbar'>
         <Space size='small' wrap>
+          {/* Headings */}
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            isActive={editor.isActive('heading', { level: 1 })}
+            icon={<Heading1 size={16} />}
+            tooltip='Heading 1'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            isActive={editor.isActive('heading', { level: 2 })}
+            icon={<Heading2 size={16} />}
+            tooltip='Heading 2'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            isActive={editor.isActive('heading', { level: 3 })}
+            icon={<Heading3 size={16} />}
+            tooltip='Heading 3'
+          />
+          <Divider />
+          {/* Text formatting */}
           <MenuButton
             onClick={() => editor.chain().focus().toggleBold().run()}
             isActive={editor.isActive('bold')}
@@ -134,6 +161,20 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
             tooltip='Italic'
           />
           <MenuButton
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            isActive={editor.isActive('strike')}
+            icon={<Strikethrough size={16} />}
+            tooltip='Strikethrough'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleCode().run()}
+            isActive={editor.isActive('code')}
+            icon={<Code size={16} />}
+            tooltip='Inline Code'
+          />
+          <Divider />
+          {/* Lists */}
+          <MenuButton
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             isActive={editor.isActive('bulletList')}
             icon={<UnorderedListOutlined />}
@@ -145,14 +186,27 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
             icon={<OrderedListOutlined />}
             tooltip='Numbered List'
           />
-          <div
-            style={{
-              width: '1px',
-              height: '20px',
-              backgroundColor: '#d9d9d9',
-              margin: '0 4px',
-            }}
+          <Divider />
+          {/* Block elements */}
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            isActive={editor.isActive('blockquote')}
+            icon={<Quote size={16} />}
+            tooltip='Blockquote'
           />
+          <MenuButton
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            isActive={editor.isActive('codeBlock')}
+            icon={<Code size={16} style={{ fontWeight: 'bold' }} />}
+            tooltip='Code Block'
+          />
+          <MenuButton
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            icon={<Minus size={16} />}
+            tooltip='Horizontal Rule'
+          />
+          <Divider />
+          {/* History */}
           <MenuButton
             onClick={() => editor.chain().focus().undo().run()}
             icon={<UndoOutlined />}
@@ -193,16 +247,8 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
       </div>
 
       {/* Instructions */}
-      <div
-        style={{
-          fontSize: '12px',
-          color: '#8c8c8c',
-          marginTop: '8px',
-          padding: '0 4px',
-        }}
-      >
-        Use bullet points (•) or numbered lists (1.) to organize your content.
-        Press Enter for new paragraphs.
+      <div className='tiptap-instructions'>
+        Headings (H1–H3), bold, italic, lists, blockquote, code blocks. Press Enter for new paragraphs.
       </div>
     </div>
   );

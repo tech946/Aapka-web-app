@@ -528,13 +528,30 @@
   color: var(--text);
   outline: none;
 }
-.table_actions button {
-  height: 36px;
-  padding: 0 12px;
+.table_actions button,
+.table_actions a {
+  height: 40px;
+  padding: 0 20px;
   border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.table_actions .btn_primary {
+  border: none;
+}
+.table_actions button:not(.btn_primary) {
   border: 1px solid var(--border);
   background: var(--panel-2);
   color: var(--text);
+}
+.table_actions button:not(.btn_primary):hover {
+  background: var(--hover);
+  border-color: var(--text-muted);
 }
 
 .table_wrapper {
@@ -846,6 +863,12 @@
   overflow: auto;
   flex: 1 1 auto;
 }
+.modal_body .form_row {
+  margin-bottom: 16px;
+}
+.modal_body .form_row:last-child {
+  margin-bottom: 0;
+}
 
 /* Form Section Styling */
 .form_section {
@@ -983,6 +1006,123 @@
 .form_row input[type='file'] {
   padding: 8px;
   cursor: pointer;
+}
+
+/* Blog Management - form spacing between inputs */
+.blog-form .form_row {
+  margin-bottom: 20px;
+}
+.blog-form .form_row:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Secondary button (Cancel) */
+.btn_secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn_secondary:hover {
+  background: var(--panel-2);
+  border-color: var(--text-muted);
+}
+
+/* Table action buttons (Edit, Delete) */
+.table tbody td .table_action_btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 8px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.table tbody td .table_action_btn:hover {
+  background: var(--panel-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.table tbody td .table_action_btn.table_action_delete {
+  color: #dc2626;
+  border-color: transparent;
+  background: transparent;
+}
+.table tbody td .table_action_btn.table_action_delete:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Table toolbar - gap between search and actions */
+.table_toolbar {
+  gap: 16px;
+}
+
+/* Pagination buttons */
+.pagination_controls button,
+.pagination_controls select {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pagination_controls button:hover:not(:disabled) {
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+.pagination_controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pagination_controls select {
+  margin: 0 8px;
+  cursor: pointer;
+}
+
+/* TipTap Editor toolbar */
+.tiptap-toolbar {
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  padding: 10px 14px;
+  background: var(--panel-2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tiptap-toolbar .tiptap-toolbar-btn {
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.tiptap-toolbar .tiptap-toolbar-btn:hover {
+  transform: none;
+}
+.tiptap-instructions {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  padding: 0 4px;
 }
 
 /* Image Preview */

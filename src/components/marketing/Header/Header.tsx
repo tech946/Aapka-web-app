@@ -285,6 +285,21 @@ export default function Header() {
 
               <li
                 ref={el => {
+                  linkRefs.current['/blogs'] = el;
+                }}
+                className={pathname === '/blogs' || pathname?.startsWith('/blogs/') ? 'active' : ''}
+              >
+                <Link
+                  href='/blogs'
+                  className={`header-nav-link ${
+                    pathname === '/blogs' || pathname?.startsWith('/blogs/') ? 'active' : ''
+                  }`}
+                >
+                  Blogs
+                </Link>
+              </li>
+              <li
+                ref={el => {
                   linkRefs.current['/About'] = el;
                 }}
                 className={pathname === '/About' ? 'active' : ''}
@@ -526,6 +541,16 @@ export default function Header() {
                 </Link>
               );
             })}
+
+            <Link
+              href='/blogs'
+              className={`mobile-sidebar-link ${
+                pathname === '/blogs' || pathname?.startsWith('/blogs/') ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Blogs
+            </Link>
 
             <Link
               href='/About'

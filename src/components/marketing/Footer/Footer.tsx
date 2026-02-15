@@ -30,6 +30,7 @@ const stats = [
 
 const resources = [
   { label: 'About Us', href: '/About' },
+  { label: 'Blogs', href: '/blogs' },
   { label: 'Contact Us', href: '/contact' },
   { label: 'Terms and Conditions', href: '/terms-and-conditions' },
   { label: 'Disclaimer', href: '/disclaimer' },
