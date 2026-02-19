@@ -7,10 +7,17 @@ import { ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { EmailTemplatePreview } from './EmailTemplatePreview';
+import { useHasRoleId } from '@/hooks/use-roles';
+import { RoleId } from '@/types/roles';
+import { useUserStore } from '@/store/user-store';
 
 type Category = { id: string; name: string };
 
 export function Header() {
+  const { hasAccess: isContentEditor } = useHasRoleId(RoleId.CONTENT_EDITOR);
+  const { hasAccess: isSuperAdmin } = useHasRoleId(RoleId.SUPER_ADMIN);
+  const showPackageActions = isSuperAdmin || !isContentEditor;
+  const clearUser = useUserStore((s) => s.clearUser);
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -93,11 +100,10 @@ export function Header() {
       });
 
       if (response.ok) {
-        // Clear any local storage or cookies if needed
+        clearUser();
         localStorage.clear();
         sessionStorage.clear();
 
-        // Redirect to login page
         router.push('/auth/login');
       } else {
         console.error('Logout failed');
@@ -113,6 +119,7 @@ export function Header() {
         <TeamSelector />
       </div>
       <div className='header_right'>
+        {showPackageActions && (
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <button
             ref={buttonRef}
@@ -170,6 +177,8 @@ export function Header() {
             </div>
           )}
         </div>
+        )}
+        {showPackageActions && (
         <Button
           type='default'
           icon={<MailOutlined />}
@@ -179,6 +188,7 @@ export function Header() {
         >
           Preview Emails
         </Button>
+        )}
         <Button
           type='primary'
           danger

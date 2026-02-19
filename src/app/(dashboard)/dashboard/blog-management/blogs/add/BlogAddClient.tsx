@@ -7,9 +7,9 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import TipTapEditor from '@/components/ui/TipTapEditor';
 import {
-  uploadImageToCloudinary,
-  deleteImageFromCloudinary,
-} from '@/lib/cloudinary';
+  uploadImageToSupabase,
+  deleteImageFromSupabase,
+} from '@/lib/supabase-storage';
 
 type CategoryOption = { id: string; name: string };
 type SubCategoryOption = { id: string; name: string; category_id: string };
@@ -51,8 +51,18 @@ export default function BlogAddClient() {
         ]);
         const catJson = await catRes.json();
         const tagJson = await tagRes.json();
-        setCategories(catJson.data?.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })) ?? []);
-        setTags(tagJson.data?.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })) ?? []);
+        setCategories(
+          catJson.data?.map((c: { id: string; name: string }) => ({
+            id: c.id,
+            name: c.name,
+          })) ?? []
+        );
+        setTags(
+          tagJson.data?.map((t: { id: string; name: string }) => ({
+            id: t.id,
+            name: t.name,
+          })) ?? []
+        );
       } catch {
         setCategories([]);
         setTags([]);
@@ -73,7 +83,9 @@ export default function BlogAddClient() {
     }
     async function load() {
       try {
-        const res = await fetch(`/api/blog-sub-categories?category_id=${categoryId}&limit=100`);
+        const res = await fetch(
+          `/api/blog-sub-categories?category_id=${categoryId}&limit=100`
+        );
         const json = await res.json();
         setSubCategories(json.data ?? []);
         setSubCategoryId('');
@@ -118,8 +130,8 @@ export default function BlogAddClient() {
   };
 
   const toggleTag = (id: string) => {
-    setTagIds((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    setTagIds(prev =>
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
   };
 
@@ -139,7 +151,15 @@ export default function BlogAddClient() {
     reader.readAsDataURL(file);
     setIsUploadingImage(true);
     try {
-      const url = await uploadImageToCloudinary(file, 'blogs');
+      const url = await uploadImageToSupabase(file, 'blogs');
+      // Delete previous image from storage when replacing (scalability)
+      if (thumbnailImageUrl) {
+        try {
+          await deleteImageFromSupabase(thumbnailImageUrl);
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setThumbnailImageUrl(url);
       toast.success('Thumbnail uploaded successfully');
     } catch (error) {
@@ -154,7 +174,7 @@ export default function BlogAddClient() {
   const handleRemoveImage = async () => {
     if (thumbnailImageUrl) {
       try {
-        await deleteImageFromCloudinary(thumbnailImageUrl);
+        await deleteImageFromSupabase(thumbnailImageUrl);
       } catch (e) {
         console.error(e);
       }
@@ -165,24 +185,24 @@ export default function BlogAddClient() {
   };
 
   return (
-    <div className="dashboard_page">
-      <div className="heading_block">
+    <div className='dashboard_page'>
+      <div className='heading_block'>
         <h3>Add Blog</h3>
         <p>Create a new blog post</p>
       </div>
 
-      <div className="blog-form" style={{ padding: 24, maxWidth: 900 }}>
-        <div className="form_row">
+      <div className='blog-form' style={{ padding: 24, maxWidth: 900 }}>
+        <div className='form_row'>
           <label>Title</label>
           <input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Blog title"
+            onChange={e => setTitle(e.target.value)}
+            placeholder='Blog title'
             style={{ width: '100%', padding: '10px 12px' }}
           />
         </div>
 
-        <div className="form_row">
+        <div className='form_row'>
           <label>Slug (auto-generated)</label>
           <input
             value={slug}
@@ -198,15 +218,15 @@ export default function BlogAddClient() {
           />
         </div>
 
-        <div className="form_row">
+        <div className='form_row'>
           <label>Category</label>
           <select
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onChange={e => setCategoryId(e.target.value)}
             style={{ width: '100%', padding: '10px 12px' }}
           >
-            <option value="">Select category (optional)</option>
-            {categories.map((c) => (
+            <option value=''>Select category (optional)</option>
+            {categories.map(c => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
@@ -214,11 +234,11 @@ export default function BlogAddClient() {
           </select>
         </div>
 
-        <div className="form_row">
+        <div className='form_row'>
           <label>Sub Category (optional)</label>
           <select
             value={subCategoryId}
-            onChange={(e) => setSubCategoryId(e.target.value)}
+            onChange={e => setSubCategoryId(e.target.value)}
             disabled={!categoryId}
             style={{
               width: '100%',
@@ -226,8 +246,8 @@ export default function BlogAddClient() {
               opacity: categoryId ? 1 : 0.6,
             }}
           >
-            <option value="">Select sub-category (optional)</option>
-            {subCategories.map((s) => (
+            <option value=''>Select sub-category (optional)</option>
+            {subCategories.map(s => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
@@ -235,10 +255,10 @@ export default function BlogAddClient() {
           </select>
         </div>
 
-        <div className="form_row full_width">
+        <div className='form_row full_width'>
           <label>Thumbnail Image</label>
           <div
-            className="blog-thumbnail-upload"
+            className='blog-thumbnail-upload'
             style={{
               border: '2px dashed var(--border)',
               borderRadius: 8,
@@ -249,61 +269,122 @@ export default function BlogAddClient() {
               transition: 'all 0.2s ease',
               opacity: isUploadingImage ? 0.6 : 1,
             }}
-            onDragOver={(e) => {
+            onDragOver={e => {
               e.preventDefault();
-              if (!isUploadingImage) e.currentTarget.style.borderColor = 'var(--accent)';
+              if (!isUploadingImage)
+                e.currentTarget.style.borderColor = 'var(--accent)';
             }}
-            onDragLeave={(e) => {
+            onDragLeave={e => {
               e.preventDefault();
               e.currentTarget.style.borderColor = 'var(--border)';
             }}
-            onDrop={async (e) => {
+            onDrop={async e => {
               e.preventDefault();
               e.currentTarget.style.borderColor = 'var(--border)';
               if (isUploadingImage) return;
-              const file = Array.from(e.dataTransfer.files || []).find((f) => f.type.startsWith('image/'));
+              const file = Array.from(e.dataTransfer.files || []).find(f =>
+                f.type.startsWith('image/')
+              );
               if (!file) return;
-              const fake = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+              const fake = {
+                target: { files: [file] },
+              } as unknown as React.ChangeEvent<HTMLInputElement>;
               await handleImageUpload(fake);
             }}
             onClick={() => !isUploadingImage && fileInputRef.current?.click()}
           >
             <input
               ref={fileInputRef}
-              type="file"
-              accept="image/*"
+              type='file'
+              accept='image/*'
               onChange={handleImageUpload}
               disabled={isUploadingImage}
               style={{ display: 'none' }}
             />
             {isUploadingImage ? (
               <div>
-                <div className="upload-spinner" style={{ width: 40, height: 40, border: '3px solid #f3f4f6', borderTop: '3px solid var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: 14 }}>Uploading...</p>
+                <div
+                  className='upload-spinner'
+                  style={{
+                    width: 40,
+                    height: 40,
+                    border: '3px solid #f3f4f6',
+                    borderTop: '3px solid var(--accent)',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    margin: '0 auto 12px',
+                  }}
+                />
+                <p
+                  style={{
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    fontSize: 14,
+                  }}
+                >
+                  Uploading...
+                </p>
               </div>
             ) : (
               <div>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ margin: '0 auto 12px', display: 'block' }}>
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
+                <svg
+                  width='48'
+                  height='48'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='var(--text-muted)'
+                  strokeWidth='2'
+                  style={{ margin: '0 auto 12px', display: 'block' }}
+                >
+                  <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
+                  <polyline points='17 8 12 3 7 8' />
+                  <line x1='12' y1='3' x2='12' y2='15' />
                 </svg>
-                <p style={{ color: 'var(--text)', margin: '0 0 4px', fontSize: 14, fontWeight: 500 }}>Click or drag to upload thumbnail</p>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: 12 }}>Max 5MB</p>
+                <p
+                  style={{
+                    color: 'var(--text)',
+                    margin: '0 0 4px',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  Click or drag to upload thumbnail
+                </p>
+                <p
+                  style={{
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    fontSize: 12,
+                  }}
+                >
+                  Max 5MB
+                </p>
               </div>
             )}
           </div>
           {thumbnailImagePreview && (
-            <div style={{ marginTop: 16, position: 'relative', display: 'inline-block' }}>
+            <div
+              style={{
+                marginTop: 16,
+                position: 'relative',
+                display: 'inline-block',
+              }}
+            >
               <img
                 src={thumbnailImagePreview}
-                alt="Thumbnail preview"
-                style={{ maxWidth: 200, maxHeight: 150, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }}
+                alt='Thumbnail preview'
+                style={{
+                  maxWidth: 200,
+                  maxHeight: 150,
+                  objectFit: 'cover',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                }}
               />
               <button
-                type="button"
+                type='button'
                 onClick={handleRemoveImage}
-                className="btn_remove_image"
+                className='btn_remove_image'
                 style={{
                   position: 'absolute',
                   top: 8,
@@ -326,7 +407,7 @@ export default function BlogAddClient() {
           )}
         </div>
 
-        <div className="form_row">
+        <div className='form_row'>
           <label>Tags (multiple)</label>
           <div
             style={{
@@ -339,7 +420,7 @@ export default function BlogAddClient() {
               minHeight: 44,
             }}
           >
-            {tags.map((t) => (
+            {tags.map(t => (
               <label
                 key={t.id}
                 style={{
@@ -349,13 +430,15 @@ export default function BlogAddClient() {
                   cursor: 'pointer',
                   padding: '4px 10px',
                   borderRadius: 4,
-                  backgroundColor: tagIds.includes(t.id) ? '#ff4c00' : '#f3f4f6',
+                  backgroundColor: tagIds.includes(t.id)
+                    ? '#ff4c00'
+                    : '#f3f4f6',
                   color: tagIds.includes(t.id) ? '#fff' : '#374151',
                   fontSize: 14,
                 }}
               >
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={tagIds.includes(t.id)}
                   onChange={() => toggleTag(t.id)}
                   style={{ margin: 0 }}
@@ -371,39 +454,42 @@ export default function BlogAddClient() {
           </div>
         </div>
 
-        <div className="form_row full_width">
+        <div className='form_row full_width'>
           <label>Content</label>
-          <div className="blog-editor-wrapper">
+          <div className='blog-editor-wrapper'>
             <TipTapEditor
-            content={content}
-            onChange={setContent}
-            placeholder="Write your blog content here..."
-            height={400}
-          />
+              content={content}
+              onChange={setContent}
+              placeholder='Write your blog content here...'
+              height={400}
+            />
           </div>
         </div>
 
-        <div className="form_row">
+        <div className='form_row'>
           <label>Status</label>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={e => setStatus(e.target.value)}
             style={{ width: '100%', padding: '10px 12px' }}
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value='active'>Active</option>
+            <option value='inactive'>Inactive</option>
           </select>
         </div>
 
         <div style={{ display: 'flex', gap: 16, marginTop: 28 }}>
           <button
-            className="btn_primary"
+            className='btn_primary'
             onClick={handleSubmit}
             disabled={!title.trim() || isPending}
           >
             {isPending ? 'Saving...' : 'Create Blog'}
           </button>
-          <Link href="/dashboard/blog-management/blogs" className="btn_secondary">
+          <Link
+            href='/dashboard/blog-management/blogs'
+            className='btn_secondary'
+          >
             Cancel
           </Link>
         </div>

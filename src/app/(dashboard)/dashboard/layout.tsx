@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar, Header, Main } from '@/components/dashboard';
+import { ContentEditorGuard } from '@/components/dashboard/ContentEditorGuard';
+import { DashboardLoader } from '@/components/dashboard/DashboardLoader';
+import { useUserRoles } from '@/hooks/use-roles';
 import './dashboard.css';
 
 export default function DashboardLayout({
@@ -9,29 +13,50 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading } = useUserRoles();
+  const hadLoadingRef = useRef(false);
+
+  useEffect(() => {
+    if (loading) hadLoadingRef.current = true;
+  }, [loading]);
+
+  // Redirect to login only when fetch completed with no user (e.g. 401/session expired)
+  useEffect(() => {
+    if (!hadLoadingRef.current || loading || user !== null) return;
+    router.replace('/auth/login');
+  }, [loading, user, router]);
+
+  // Show loader until user roles are loaded - prevents sidebar glitch when switching accounts
+  const rolesReady = !loading && user !== null;
+  if (!rolesReady) {
+    return <DashboardLoader />;
+  }
 
   return (
-    <div className='dashboard_root'>
-      {/* Sidebar */}
-      <Sidebar />
+    <ContentEditorGuard>
+      <div className='dashboard_root'>
+        {/* Sidebar */}
+        <Sidebar />
 
-      {/* Main content area */}
-      <div className='main-content'>
-        {/* Header */}
-        <Header />
+        {/* Main content area */}
+        <div className='main-content'>
+          {/* Header */}
+          <Header />
 
-        {/* Main content */}
-        <Main>{children}</Main>
+          {/* Main content */}
+          <Main>{children}</Main>
+        </div>
+
+        {/* Mobile overlay */}
+        {mobileMenuOpen && (
+          <div
+            className='fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden'
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
       </div>
-
-      {/* Mobile overlay */}
-      {mobileMenuOpen && (
-        <div
-          className='fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden'
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-    </div>
+    </ContentEditorGuard>
   );
 }

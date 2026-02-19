@@ -1,16 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { v2 as cloudinary } from 'cloudinary';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
-  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || '',
-  api_secret: process.env.CLOUDINARY_API_SECRET || '',
-});
+const BUCKET_NAME = 'images';
+
+// Upload base64 image to Supabase Storage (images bucket)
+async function uploadBase64ToSupabase(
+  base64String: string,
+  folder: string = 'bookings/documents'
+): Promise<string> {
+  // Remove data URL prefix if present (e.g. "data:image/jpeg;base64,")
+  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  const ext = base64String.includes('image/png') ? 'png' : 'jpg';
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(BUCKET_NAME)
+    .upload(path, buffer, {
+      contentType: `image/${ext}`,
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to upload document');
+  }
+
+  const { data: urlData } = supabaseAdmin.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(data.path);
+
+  return urlData.publicUrl;
+}
 
 interface PassengerData {
   salutation: string;
@@ -55,31 +79,6 @@ interface BookingRequest {
   currency?: string;
 }
 
-// Upload base64 image to Cloudinary
-async function uploadBase64ToCloudinary(
-  base64String: string,
-  folder: string = 'bookings/documents'
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(
-      base64String,
-      {
-        folder,
-        resource_type: 'image',
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else if (result) {
-          resolve(result.secure_url);
-        } else {
-          reject(new Error('Upload failed'));
-        }
-      }
-    );
-  });
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body: BookingRequest = await req.json();
@@ -108,7 +107,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Upload all documents to Cloudinary
+    // Upload all documents to Supabase Storage
     const uploadedDocuments: Array<{
       passengerIndex: number;
       applicantPhoto?: string;
@@ -125,7 +124,7 @@ export async function POST(req: NextRequest) {
       try {
         // Upload Applicant Photo
         if (passenger.applicantPhoto) {
-          passengerDocs.applicantPhoto = await uploadBase64ToCloudinary(
+          passengerDocs.applicantPhoto = await uploadBase64ToSupabase(
             passenger.applicantPhoto,
             'bookings/documents'
           );
@@ -133,7 +132,7 @@ export async function POST(req: NextRequest) {
 
         // Upload Passport Main Copy
         if (passenger.passportMainCopy) {
-          passengerDocs.passportMainCopy = await uploadBase64ToCloudinary(
+          passengerDocs.passportMainCopy = await uploadBase64ToSupabase(
             passenger.passportMainCopy,
             'bookings/documents'
           );
@@ -141,7 +140,7 @@ export async function POST(req: NextRequest) {
 
         // Upload Passport Last Page
         if (passenger.passportLastPage) {
-          passengerDocs.passportLastPage = await uploadBase64ToCloudinary(
+          passengerDocs.passportLastPage = await uploadBase64ToSupabase(
             passenger.passportLastPage,
             'bookings/documents'
           );
@@ -149,7 +148,7 @@ export async function POST(req: NextRequest) {
 
         // Upload Passport Cover
         if (passenger.passportCover) {
-          passengerDocs.passportCover = await uploadBase64ToCloudinary(
+          passengerDocs.passportCover = await uploadBase64ToSupabase(
             passenger.passportCover,
             'bookings/documents'
           );
@@ -157,7 +156,7 @@ export async function POST(req: NextRequest) {
 
         // Upload National ID Card
         if (passenger.nationalIdCard) {
-          passengerDocs.nationalIdCard = await uploadBase64ToCloudinary(
+          passengerDocs.nationalIdCard = await uploadBase64ToSupabase(
             passenger.nationalIdCard,
             'bookings/documents'
           );

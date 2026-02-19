@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       fullName,
       residentCountry,
       mobileNumber,
-      documentImageUrl: documentImageUrl || '', // Document image URL from Cloudinary
+      documentImageUrl: documentImageUrl || '', // Document image URL from Supabase storage
     };
     // Base64 encode user details (safe for URL)
     const encodedUserDetails = Buffer.from(JSON.stringify(userDetails)).toString('base64');

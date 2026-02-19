@@ -4,6 +4,7 @@ import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import toast from 'react-hot-toast';
+import { useUserStore } from '@/store/user-store';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -23,6 +24,9 @@ function AuthCallbackContent() {
         router.replace('/login');
         return;
       }
+
+      // Clear any stale user/role data from previous account before redirect
+      useUserStore.getState().clearUser();
 
       const redirectedFrom = searchParams.get('redirectedFrom') || '/dashboard';
       router.replace(redirectedFrom);

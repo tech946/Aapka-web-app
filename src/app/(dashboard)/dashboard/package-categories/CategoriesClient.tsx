@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState, useTransition, useRef } from 'react';
 import { toast } from 'sonner';
 import {
-  uploadImageToCloudinary,
-  deleteImageFromCloudinary,
-} from '@/lib/cloudinary';
+  uploadImageToSupabase,
+  deleteImageFromSupabase,
+} from '@/lib/supabase-storage';
 
 type CategoryRow = {
   id: string;
@@ -334,10 +334,18 @@ function AddCategoryModal({
     };
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary
+    // Upload to Supabase storage
     setIsUploadingImage(true);
     try {
-      const url = await uploadImageToCloudinary(file, 'categories');
+      const url = await uploadImageToSupabase(file, 'categories');
+      // Delete previous image from storage when replacing (scalability)
+      if (thumbnailImageUrl) {
+        try {
+          await deleteImageFromSupabase(thumbnailImageUrl);
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setThumbnailImageUrl(url);
       toast.success('Image uploaded successfully');
     } catch (error) {
@@ -545,7 +553,7 @@ function AddCategoryModal({
                       }
                       if (imageToRemove) {
                         try {
-                          await deleteImageFromCloudinary(imageToRemove);
+                          await deleteImageFromSupabase(imageToRemove);
                           toast.success('Image removed');
                         } catch (error) {
                           console.error('Error deleting image:', error);
@@ -672,7 +680,7 @@ function EditCategoryModal({
       // Delete old image if it was changed
       if (originalImageUrl && thumbnailImageUrl !== originalImageUrl && originalImageUrl) {
         try {
-          await deleteImageFromCloudinary(originalImageUrl);
+          await deleteImageFromSupabase(originalImageUrl);
         } catch (error) {
           console.error('Error deleting old image:', error);
         }
@@ -705,10 +713,18 @@ function EditCategoryModal({
     };
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary
+    // Upload to Supabase storage
     setIsUploadingImage(true);
     try {
-      const url = await uploadImageToCloudinary(file, 'categories');
+      const url = await uploadImageToSupabase(file, 'categories');
+      // Delete previous image from storage when replacing (scalability)
+      if (thumbnailImageUrl) {
+        try {
+          await deleteImageFromSupabase(thumbnailImageUrl);
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setThumbnailImageUrl(url);
       toast.success('Image uploaded successfully');
     } catch (error) {
@@ -916,7 +932,7 @@ function EditCategoryModal({
                       }
                       if (imageToRemove && imageToRemove !== originalImageUrl) {
                         try {
-                          await deleteImageFromCloudinary(imageToRemove);
+                          await deleteImageFromSupabase(imageToRemove);
                           toast.success('Image removed');
                         } catch (error) {
                           console.error('Error deleting image:', error);

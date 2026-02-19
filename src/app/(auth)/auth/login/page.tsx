@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import Image from 'next/image';
+import { useUserStore } from '@/store/user-store';
 import '../auth.css';
 
 export default function LoginPage() {
@@ -29,7 +29,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Optional: capture redirect from middleware (/login?redirect=/dashboard/settings)
+      // Optional: capture redirect from middleware (/auth/login?redirect=/dashboard/...)
       const searchParams = new URLSearchParams(window.location.search);
       const redirectTo = searchParams.get('redirect') || '/dashboard';
 
@@ -46,6 +46,9 @@ export default function LoginPage() {
       if (!res.ok) {
         throw new Error(result.error || 'Login failed');
       }
+
+      // Clear any stale user/role data from previous account before redirect
+      useUserStore.getState().clearUser();
 
       toast.success('Logged in successfully!');
       router.refresh(); // refresh session state
@@ -81,11 +84,12 @@ export default function LoginPage() {
         {/* Logo */}
         <div className='auth-logo'>
           <div className='auth-logo-image'>
-            <Image
+            <img
               src='/aapka-tourism-logo.png'
               alt='Aapka Tourism'
               width={120}
               height={120}
+              style={{ width: 120, height: 120, objectFit: 'contain' }}
             />
           </div>
         </div>

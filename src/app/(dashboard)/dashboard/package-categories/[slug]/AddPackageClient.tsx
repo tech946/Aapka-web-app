@@ -6,9 +6,9 @@ import { createPortal } from 'react-dom';
 import TipTapEditor from '@/components/ui/TipTapEditor';
 import { toast } from 'sonner';
 import {
-  uploadImageToCloudinary,
-  deleteImageFromCloudinary,
-} from '@/lib/cloudinary';
+  uploadImageToSupabase,
+  deleteImageFromSupabase,
+} from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
@@ -116,7 +116,7 @@ export default function AddPackageClient({
     setIsUploadingGallery(true);
     try {
       const uploadPromises = files.map(file =>
-        uploadImageToCloudinary(file, 'packages/gallery')
+        uploadImageToSupabase(file, 'packages/gallery')
       );
       const urls = await Promise.all(uploadPromises);
       setGalleryImages(prev => [...prev, ...urls]);
@@ -190,13 +190,21 @@ export default function AddPackageClient({
                     };
                     reader.readAsDataURL(file);
 
-                    // Upload to Cloudinary
+                    // Upload to Supabase storage
                     setIsUploadingImage(true);
                     try {
-                      const url = await uploadImageToCloudinary(
+                      const url = await uploadImageToSupabase(
                         file,
                         'packages'
                       );
+                      // Delete previous image from storage when replacing (scalability)
+                      if (thumbnailImageUrl) {
+                        try {
+                          await deleteImageFromSupabase(thumbnailImageUrl);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }
                       setThumbnailImageUrl(url);
                       toast.success('Image uploaded successfully');
                     } catch (error) {
@@ -235,7 +243,14 @@ export default function AddPackageClient({
                       <button
                         type='button'
                         className='btn_remove_image'
-                        onClick={() => {
+                        onClick={async () => {
+                          if (thumbnailImageUrl) {
+                            try {
+                              await deleteImageFromSupabase(thumbnailImageUrl);
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }
                           setThumbnailImage(null);
                           setThumbnailImagePreview('');
                           setThumbnailImageUrl('');
@@ -393,9 +408,9 @@ export default function AddPackageClient({
                             const imageToRemove = url;
                             // Remove from state
                             setGalleryImages(prev => prev.filter((_, i) => i !== index));
-                            // Delete from Cloudinary immediately
+                            // Delete from Supabase storage immediately
                             try {
-                              await deleteImageFromCloudinary(imageToRemove);
+                              await deleteImageFromSupabase(imageToRemove);
                               toast.success('Image removed');
                             } catch (error) {
                               console.error('Error deleting gallery image:', error);

@@ -1,5 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
+import { hasRoleId } from '@/lib/roles';
+import { RoleId } from '@/types/roles';
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient();
@@ -8,7 +10,13 @@ export default async function DashboardPage() {
   } = await supabase.auth.getSession();
 
   if (!session) {
-    redirect('/login');
+    redirect('/auth/login');
+  }
+
+  // Content Editor: redirect to blog management (their only access)
+  const isContentEditor = await hasRoleId(session.user.id, RoleId.CONTENT_EDITOR);
+  if (isContentEditor) {
+    redirect('/dashboard/blog-management');
   }
 
   return (

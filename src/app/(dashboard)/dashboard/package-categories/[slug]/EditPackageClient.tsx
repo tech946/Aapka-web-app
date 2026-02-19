@@ -6,9 +6,9 @@ import { createPortal } from 'react-dom';
 import TipTapEditor from '@/components/ui/TipTapEditor';
 import { toast } from 'sonner';
 import {
-  uploadImageToCloudinary,
-  deleteImageFromCloudinary,
-} from '@/lib/cloudinary';
+  uploadImageToSupabase,
+  deleteImageFromSupabase,
+} from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
@@ -172,7 +172,7 @@ export default function EditPackageClient({
     setIsUploadingGallery(true);
     try {
       const uploadPromises = files.map(file =>
-        uploadImageToCloudinary(file, 'packages/gallery')
+        uploadImageToSupabase(file, 'packages/gallery')
       );
       const urls = await Promise.all(uploadPromises);
       setGalleryImages(prev => [...prev, ...urls]);
@@ -361,13 +361,21 @@ export default function EditPackageClient({
                     };
                     reader.readAsDataURL(file);
 
-                    // Upload to Cloudinary
+                    // Upload to Supabase storage
                     setIsUploadingImage(true);
                     try {
-                      const url = await uploadImageToCloudinary(
+                      const url = await uploadImageToSupabase(
                         file,
                         'packages'
                       );
+                      // Delete previous image from storage when replacing (scalability)
+                      if (thumbnailImageUrl) {
+                        try {
+                          await deleteImageFromSupabase(thumbnailImageUrl);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }
                       setThumbnailImageUrl(url);
                       toast.success('Image uploaded successfully');
                     } catch (error) {
@@ -407,7 +415,14 @@ export default function EditPackageClient({
                       <button
                         type='button'
                         className='btn_remove_image'
-                        onClick={() => {
+                        onClick={async () => {
+                          if (thumbnailImageUrl) {
+                            try {
+                              await deleteImageFromSupabase(thumbnailImageUrl);
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }
                           setThumbnailImage(null);
                           setThumbnailImagePreview('');
                           setThumbnailImageUrl('');
@@ -565,11 +580,11 @@ export default function EditPackageClient({
                             const imageToRemove = url;
                             // Remove from state immediately
                             setGalleryImages(prev => prev.filter((_, i) => i !== index));
-                            // If it's a newly uploaded image (not in original), delete from Cloudinary immediately
+                            // If it's a newly uploaded image (not in original), delete from Supabase storage immediately
                             // If it's an original image, it will be deleted when saved
                             if (!originalGalleryImages.includes(imageToRemove)) {
                               try {
-                                await deleteImageFromCloudinary(imageToRemove);
+                                await deleteImageFromSupabase(imageToRemove);
                                 toast.success('Image removed');
                               } catch (error) {
                                 console.error('Error deleting gallery image:', error);
@@ -1268,29 +1283,29 @@ export default function EditPackageClient({
                   if (imageChanged) {
                     // If image was removed (empty string)
                     if (!thumbnailImageUrl && originalThumbnailImageUrl) {
-                      // Delete old image from Cloudinary
-                      await deleteImageFromCloudinary(
+                      // Delete old image from Supabase storage
+                      await deleteImageFromSupabase(
                         originalThumbnailImageUrl
                       );
                     }
                     // If new image was uploaded, old one should be deleted
                     else if (thumbnailImageUrl && originalThumbnailImageUrl) {
-                      // Delete old image from Cloudinary
-                      await deleteImageFromCloudinary(
+                      // Delete old image from Supabase storage
+                      await deleteImageFromSupabase(
                         originalThumbnailImageUrl
                       );
                     }
                   }
 
-                  // Handle gallery images: delete removed images from Cloudinary
+                  // Handle gallery images: delete removed images from Supabase storage
                   // Find images that were in the original but are no longer in the current gallery
                   const removedGalleryImages = originalGalleryImages.filter(
                     url => !galleryImages.includes(url)
                   );
-                  // Delete all removed images from Cloudinary
+                  // Delete all removed images from Supabase storage
                   for (const url of removedGalleryImages) {
                     try {
-                      await deleteImageFromCloudinary(url);
+                      await deleteImageFromSupabase(url);
                     } catch (error) {
                       console.error('Error deleting removed gallery image:', error);
                     }

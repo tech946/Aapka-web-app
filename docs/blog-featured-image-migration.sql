@@ -1,11 +1,6 @@
--- ============================================================
--- Migration: Add Featured Image (Thumbnail) to Blog Posts
--- ============================================================
--- Run this in Supabase SQL Editor if blog_posts table exists
--- but does NOT have the featured_image column
--- ============================================================
 
--- Add featured_image column if it doesn't exist (stores Cloudinary URL)
+
+-- Add featured_image column if it doesn't exist (stores image URL from Supabase storage)
 DO $$
 BEGIN
   IF NOT EXISTS (

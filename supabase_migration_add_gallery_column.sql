@@ -11,7 +11,7 @@ CREATE INDEX IF NOT EXISTS idx_packages_gallery ON packages USING GIN (gallery);
 -- Comment explaining the JSON structure:
 -- gallery column stores an array of image URLs:
 -- [
---   "https://res.cloudinary.com/.../image1.jpg",
---   "https://res.cloudinary.com/.../image2.jpg",
+--   "https://{project}.supabase.co/storage/v1/object/public/images/.../image1.jpg",
+--   "https://{project}.supabase.co/storage/v1/object/public/images/.../image2.jpg",
 --   ...
 -- ]

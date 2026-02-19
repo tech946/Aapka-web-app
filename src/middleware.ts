@@ -13,8 +13,8 @@ export async function middleware(req: NextRequest) {
 
   // Protect all /dashboard routes
   if (!session && req.nextUrl.pathname.startsWith('/dashboard')) {
-    const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);
+    const loginUrl = new URL('/auth/login', req.url);
+    loginUrl.searchParams.set('redirect', req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 

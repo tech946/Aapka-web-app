@@ -4,7 +4,10 @@ import { useState, FormEvent, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { CountrySelect } from '@/components/ui/country-select';
-import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import {
+  uploadImageToSupabase,
+  deleteImageFromSupabase,
+} from '@/lib/supabase-storage';
 import { Upload, X, Loader2, Info } from 'lucide-react';
 import './subscribe.css';
 
@@ -233,10 +236,18 @@ function SubscribePageContent() {
     };
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary
+    // Upload to Supabase storage
     setIsUploadingDocument(true);
     try {
-      const url = await uploadImageToCloudinary(file, 'agents');
+      const url = await uploadImageToSupabase(file, 'agents');
+      // Delete previous document from storage when replacing (scalability)
+      if (documentImageUrl) {
+        try {
+          await deleteImageFromSupabase(documentImageUrl);
+        } catch (e) {
+          console.error(e);
+        }
+      }
       setDocumentImageUrl(url);
       toast.success('Document uploaded successfully');
       if (errors.documentImage) {
@@ -258,7 +269,14 @@ function SubscribePageContent() {
     }
   };
 
-  const handleRemoveDocument = () => {
+  const handleRemoveDocument = async () => {
+    if (documentImageUrl) {
+      try {
+        await deleteImageFromSupabase(documentImageUrl);
+      } catch (e) {
+        console.error(e);
+      }
+    }
     setDocumentImageUrl('');
     setDocumentPreview('');
     if (documentInputRef.current) {
