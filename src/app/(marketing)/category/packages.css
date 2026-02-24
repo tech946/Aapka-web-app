@@ -12,8 +12,6 @@
   width: 100%;
 }
 
-
-
 /* Filters Bar */
 .packages-filters-bar {
   display: flex;
@@ -205,7 +203,9 @@
   overflow: hidden;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.06);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -294,6 +294,20 @@
   font-size: 14px;
   font-weight: 400;
   color: #6b7280;
+}
+
+.package-visa-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
+  color: #fff;
+  font-family: var(--font-manrope);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  width: max-content;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .suites-read-more {
@@ -547,7 +561,8 @@
 }
 
 @keyframes dealPulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
   }
@@ -684,7 +699,12 @@
 }
 
 .package-subtitle {
-  font-family: 'Manrope', var(--font-manrope), system-ui, -apple-system, sans-serif !important;
+  font-family:
+    'Manrope',
+    var(--font-manrope),
+    system-ui,
+    -apple-system,
+    sans-serif !important;
   font-size: 14px;
   font-weight: 400;
   color: #6b7280;
@@ -800,8 +820,6 @@
   transform: translateX(-50%) translateY(4px);
 }
 
-
-
 .packages-loading,
 .packages-empty {
   grid-column: 1 / -1;
@@ -912,15 +930,15 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
   }
-  
+
   .packages-filters-bar {
     gap: 32px;
   }
-  
+
   .packages-cards-grid.packages-cards-row .package-card {
     flex-direction: column;
   }
-  
+
   .packages-cards-grid.packages-cards-row .package-card-image {
     width: 100%;
     min-width: unset;
@@ -940,55 +958,54 @@
   .packages-header h2 {
     font-size: 28px;
   }
-  
+
   .packages-filters-bar {
     flex-direction: column;
     gap: 24px;
     align-items: flex-start;
   }
-  
+
   .packages-cards-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
   }
-  
+
   .package-name {
     font-size: 20px;
   }
-  
+
   .package-price {
     font-size: 22px;
   }
 }
 
 @media (max-width: 576px) {
-  
   .packages-filters-bar {
     padding: 20px 0;
     gap: 20px;
   }
-  
+
   .filter-section-title {
     font-size: 16px;
   }
-  
+
   .packages-cards-grid {
     grid-template-columns: 1fr;
     gap: 28px;
   }
-  
+
   .packages-page {
     padding: 24px 16px 80px;
   }
-  
+
   .package-name {
     font-size: 20px;
   }
-  
+
   .package-price {
     font-size: 22px;
   }
-  
+
   .package-card-image {
     aspect-ratio: 16 / 10;
   }

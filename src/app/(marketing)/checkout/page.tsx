@@ -42,6 +42,7 @@ interface PassengerData {
   passportLastPage: File | null;
   passportCover: File | null;
   nationalIdCard: File | null;
+  birthCertificates: (File | null)[]; // Infant 1, Infant 2, etc. (lead passenger only)
 }
 
 export default function CheckoutPage() {
@@ -110,6 +111,10 @@ export default function CheckoutPage() {
     (sum, item) => sum + (item.isSoloTraveller ? 0 : item.children),
     0
   );
+  const totalInfants = cartItems.reduce(
+    (sum, item) => sum + (item.infants || 0),
+    0
+  );
   const totalPassengers = totalAdults + totalChildren;
 
   // Initialize passengers array
@@ -133,6 +138,7 @@ export default function CheckoutPage() {
         passportLastPage: null,
         passportCover: null,
         nationalIdCard: null,
+        birthCertificates: [],
       });
     }
     return initial;
@@ -165,6 +171,7 @@ export default function CheckoutPage() {
           passportLastPage: passengers[i]?.passportLastPage || null,
           passportCover: passengers[i]?.passportCover || null,
           nationalIdCard: passengers[i]?.nationalIdCard || null,
+          birthCertificates: passengers[i]?.birthCertificates ?? [],
         });
       }
       setPassengers(newPassengers);
@@ -295,6 +302,29 @@ export default function CheckoutPage() {
     updatePassenger(index, field, file);
   };
 
+  const handleBirthCertificateUpload = (
+    infantIndex: number,
+    file: File | null
+  ) => {
+    setPassengers(prev => {
+      const updated = [...prev];
+      if (!updated[0]) return prev;
+      const certs = [...(updated[0].birthCertificates || [])];
+      while (certs.length <= infantIndex) certs.push(null);
+      certs[infantIndex] = file;
+      updated[0] = { ...updated[0], birthCertificates: certs };
+      return updated;
+    });
+    const key = `passenger_0_birthCertificate_${infantIndex}`;
+    if (errors[key]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     const leadPassenger = passengers[0];
@@ -380,6 +410,16 @@ export default function CheckoutPage() {
           newErrors[`passenger_${actualIndex}_passportMainCopy`] =
             'Passport main copy is required';
         }
+        // Birth certificates required for lead passenger when infants in booking
+        if (actualIndex === 0 && totalInfants > 0) {
+          const certs = passenger.birthCertificates || [];
+          for (let i = 0; i < totalInfants; i++) {
+            if (!certs[i]) {
+              newErrors[`passenger_0_birthCertificate_${i}`] =
+                `Birth certificate (Infant ${i + 1}) is required`;
+            }
+          }
+        }
       }
     });
 
@@ -463,24 +503,35 @@ export default function CheckoutPage() {
 
       // Convert all files to base64
       const passengersWithBase64 = await Promise.all(
-        passengersToProcess.map(async passenger => ({
-          ...passenger,
-          applicantPhoto: passenger.applicantPhoto
-            ? await fileToBase64(passenger.applicantPhoto)
-            : null,
-          passportMainCopy: passenger.passportMainCopy
-            ? await fileToBase64(passenger.passportMainCopy)
-            : null,
-          passportLastPage: passenger.passportLastPage
-            ? await fileToBase64(passenger.passportLastPage)
-            : null,
-          passportCover: passenger.passportCover
-            ? await fileToBase64(passenger.passportCover)
-            : null,
-          nationalIdCard: passenger.nationalIdCard
-            ? await fileToBase64(passenger.nationalIdCard)
-            : null,
-        }))
+        passengersToProcess.map(async (passenger, pIdx) => {
+          const birthCertificatesBase64 =
+            pIdx === 0 && passenger.birthCertificates?.length
+              ? await Promise.all(
+                  passenger.birthCertificates.map(f =>
+                    f ? fileToBase64(f) : Promise.resolve(null)
+                  )
+                )
+              : [];
+          return {
+            ...passenger,
+            applicantPhoto: passenger.applicantPhoto
+              ? await fileToBase64(passenger.applicantPhoto)
+              : null,
+            passportMainCopy: passenger.passportMainCopy
+              ? await fileToBase64(passenger.passportMainCopy)
+              : null,
+            passportLastPage: passenger.passportLastPage
+              ? await fileToBase64(passenger.passportLastPage)
+              : null,
+            passportCover: passenger.passportCover
+              ? await fileToBase64(passenger.passportCover)
+              : null,
+            nationalIdCard: passenger.nationalIdCard
+              ? await fileToBase64(passenger.nationalIdCard)
+              : null,
+            birthCertificates: birthCertificatesBase64,
+          };
+        })
       );
 
       const totalAmountAED = getTotalPrice();
@@ -1146,9 +1197,9 @@ export default function CheckoutPage() {
                               />
                             </div>
 
-                            {/* National ID Card Copy */}
+                            {/* Pancard */}
                             <div className='document-upload-group'>
-                              <label>National ID Card Copy</label>
+                              <label>Pancard</label>
                               <FileUpload
                                 file={passenger.nationalIdCard}
                                 onFileChange={file =>
@@ -1164,6 +1215,36 @@ export default function CheckoutPage() {
                                 fieldKey={`passenger_${index}_nationalIdCard`}
                               />
                             </div>
+
+                            {/* Birth Certificates - for lead passenger when infant(s) in booking */}
+                            {totalInfants > 0 &&
+                              index === 0 &&
+                              Array.from({ length: totalInfants }, (_, i) => (
+                                <div
+                                  key={i}
+                                  className='document-upload-group'
+                                >
+                                  <label>
+                                    Birth Certificate (Infant {i + 1}){' '}
+                                    <span className='required'>*</span>
+                                  </label>
+                                  <FileUpload
+                                    file={
+                                      (passenger.birthCertificates || [])[i] ??
+                                      null
+                                    }
+                                    onFileChange={file =>
+                                      handleBirthCertificateUpload(i, file)
+                                    }
+                                    error={
+                                      errors[
+                                        `passenger_0_birthCertificate_${i}`
+                                      ]
+                                    }
+                                    fieldKey={`passenger_0_birthCertificate_${i}`}
+                                  />
+                                </div>
+                              ))}
                           </div>
 
                           {/* Important Note */}

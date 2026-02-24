@@ -258,9 +258,11 @@ export default function PaymentsPage() {
           'Pickup Location': 'N/A',
           'Permanent Address': 'N/A',
           'Applicant Photo': 'N/A',
-          'National ID Card': 'N/A',
-          'Passport Last Page': 'N/A',
           'Passport Main Copy': 'N/A',
+          'Passport Last Page': 'N/A',
+          'Passport Cover': 'N/A',
+          'Pancard': 'N/A',
+          'Birth Certificates': 'N/A',
           'Customer Notes': payment.customer_notes || '',
           'Admin Notes': payment.notes || '',
           'Created At': payment.created_at
@@ -297,9 +299,18 @@ export default function PaymentsPage() {
             'Pickup Location': passenger.pickupLocation || 'N/A',
             'Permanent Address': passenger.permanentAddress || 'N/A',
             'Applicant Photo': documents.applicantPhoto || 'N/A',
-            'National ID Card': documents.nationalIdCard || 'N/A',
-            'Passport Last Page': documents.passportLastPage || 'N/A',
             'Passport Main Copy': documents.passportMainCopy || 'N/A',
+            'Passport Last Page': documents.passportLastPage || 'N/A',
+            'Passport Cover': documents.passportCover || 'N/A',
+            'Pancard': documents.nationalIdCard || 'N/A',
+            'Birth Certificates':
+              (documents.birthCertificates?.length
+                ? documents.birthCertificates
+                    .map((u, i) => `Infant ${i + 1}: ${u}`)
+                    .join(' | ')
+                : documents.birthCertificate
+                  ? `Infant 1: ${documents.birthCertificate}`
+                  : 'N/A') || 'N/A',
             'Customer Notes': payment.customer_notes || '',
             'Admin Notes': payment.notes || '',
             'Created At': payment.created_at
@@ -385,9 +396,11 @@ export default function PaymentsPage() {
             'Pickup Location': 'N/A',
             'Permanent Address': 'N/A',
             'Applicant Photo': 'N/A',
-            'National ID Card': 'N/A',
-            'Passport Last Page': 'N/A',
             'Passport Main Copy': 'N/A',
+            'Passport Last Page': 'N/A',
+            'Passport Cover': 'N/A',
+            'Pancard': 'N/A',
+            'Birth Certificates': 'N/A',
             'Customer Notes': payment.customer_notes || '',
             'Admin Notes': payment.notes || '',
             'Created At': payment.created_at
@@ -425,9 +438,18 @@ export default function PaymentsPage() {
               'Pickup Location': passenger.pickupLocation || 'N/A',
               'Permanent Address': passenger.permanentAddress || 'N/A',
               'Applicant Photo': documents.applicantPhoto || 'N/A',
-              'National ID Card': documents.nationalIdCard || 'N/A',
-              'Passport Last Page': documents.passportLastPage || 'N/A',
               'Passport Main Copy': documents.passportMainCopy || 'N/A',
+              'Passport Last Page': documents.passportLastPage || 'N/A',
+              'Passport Cover': documents.passportCover || 'N/A',
+              'Pancard': documents.nationalIdCard || 'N/A',
+              'Birth Certificates':
+                (documents.birthCertificates?.length
+                  ? documents.birthCertificates
+                      .map((u, i) => `Infant ${i + 1}: ${u}`)
+                      .join(' | ')
+                  : documents.birthCertificate
+                    ? `Infant 1: ${documents.birthCertificate}`
+                    : 'N/A') || 'N/A',
               'Customer Notes': payment.customer_notes || '',
               'Admin Notes': payment.notes || '',
               'Created At': payment.created_at
@@ -855,9 +877,13 @@ export default function PaymentsPage() {
 
                           {/* Documents Section */}
                           {(documents.applicantPhoto ||
-                            documents.nationalIdCard ||
+                            documents.passportMainCopy ||
                             documents.passportLastPage ||
-                            documents.passportMainCopy) && (
+                            documents.passportCover ||
+                            documents.nationalIdCard ||
+                            (documents.birthCertificates &&
+                              documents.birthCertificates.length > 0) ||
+                            documents.birthCertificate) && (
                             <div
                               style={{
                                 marginTop: '16px',
@@ -924,7 +950,7 @@ export default function PaymentsPage() {
                                     </a>
                                   </div>
                                 )}
-                                {documents.nationalIdCard && (
+                                {documents.passportMainCopy && (
                                   <div
                                     style={{
                                       display: 'flex',
@@ -938,10 +964,10 @@ export default function PaymentsPage() {
                                         color: 'var(--text-muted)',
                                       }}
                                     >
-                                      National ID Card
+                                      Passport Main Copy
                                     </strong>
                                     <a
-                                      href={documents.nationalIdCard}
+                                      href={documents.passportMainCopy}
                                       target='_blank'
                                       rel='noopener noreferrer'
                                       style={{
@@ -952,8 +978,8 @@ export default function PaymentsPage() {
                                       }}
                                     >
                                       <img
-                                        src={documents.nationalIdCard}
-                                        alt='National ID Card'
+                                        src={documents.passportMainCopy}
+                                        alt='Passport Main Copy'
                                         style={{
                                           width: '100%',
                                           height: '120px',
@@ -1004,7 +1030,7 @@ export default function PaymentsPage() {
                                     </a>
                                   </div>
                                 )}
-                                {documents.passportMainCopy && (
+                                {documents.passportCover && (
                                   <div
                                     style={{
                                       display: 'flex',
@@ -1018,10 +1044,10 @@ export default function PaymentsPage() {
                                         color: 'var(--text-muted)',
                                       }}
                                     >
-                                      Passport Main Copy
+                                      Passport Cover
                                     </strong>
                                     <a
-                                      href={documents.passportMainCopy}
+                                      href={documents.passportCover}
                                       target='_blank'
                                       rel='noopener noreferrer'
                                       style={{
@@ -1032,8 +1058,8 @@ export default function PaymentsPage() {
                                       }}
                                     >
                                       <img
-                                        src={documents.passportMainCopy}
-                                        alt='Passport Main Copy'
+                                        src={documents.passportCover}
+                                        alt='Passport Cover'
                                         style={{
                                           width: '100%',
                                           height: '120px',
@@ -1044,6 +1070,131 @@ export default function PaymentsPage() {
                                     </a>
                                   </div>
                                 )}
+                                {documents.nationalIdCard && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '8px',
+                                    }}
+                                  >
+                                    <strong
+                                      style={{
+                                        fontSize: '11px',
+                                        color: 'var(--text-muted)',
+                                      }}
+                                    >
+                                      Pancard
+                                    </strong>
+                                    <a
+                                      href={documents.nationalIdCard}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      style={{
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border)',
+                                      }}
+                                    >
+                                      <img
+                                        src={documents.nationalIdCard}
+                                        alt='Pancard'
+                                        style={{
+                                          width: '100%',
+                                          height: '120px',
+                                          objectFit: 'cover',
+                                          display: 'block',
+                                        }}
+                                      />
+                                    </a>
+                                  </div>
+                                )}
+                                {(documents.birthCertificates || []).map(
+                                  (url, i) =>
+                                    url && (
+                                      <div
+                                        key={i}
+                                        style={{
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '8px',
+                                        }}
+                                      >
+                                        <strong
+                                          style={{
+                                            fontSize: '11px',
+                                            color: 'var(--text-muted)',
+                                          }}
+                                        >
+                                          Birth Certificate (Infant {i + 1})
+                                        </strong>
+                                        <a
+                                          href={url}
+                                          target='_blank'
+                                          rel='noopener noreferrer'
+                                          style={{
+                                            display: 'block',
+                                            overflow: 'hidden',
+                                            borderRadius: '6px',
+                                            border: '1px solid var(--border)',
+                                          }}
+                                        >
+                                          <img
+                                            src={url}
+                                            alt={`Birth Certificate Infant ${i + 1}`}
+                                            style={{
+                                              width: '100%',
+                                              height: '120px',
+                                              objectFit: 'cover',
+                                              display: 'block',
+                                            }}
+                                          />
+                                        </a>
+                                      </div>
+                                    )
+                                )}
+                                {!documents.birthCertificates?.length &&
+                                  documents.birthCertificate && (
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '8px',
+                                      }}
+                                    >
+                                      <strong
+                                        style={{
+                                          fontSize: '11px',
+                                          color: 'var(--text-muted)',
+                                        }}
+                                      >
+                                        Birth Certificate (Infant 1)
+                                      </strong>
+                                      <a
+                                        href={documents.birthCertificate}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        style={{
+                                          display: 'block',
+                                          overflow: 'hidden',
+                                          borderRadius: '6px',
+                                          border: '1px solid var(--border)',
+                                        }}
+                                      >
+                                        <img
+                                          src={documents.birthCertificate}
+                                          alt='Birth Certificate'
+                                          style={{
+                                            width: '100%',
+                                            height: '120px',
+                                            objectFit: 'cover',
+                                            display: 'block',
+                                          }}
+                                        />
+                                      </a>
+                                    </div>
+                                  )}
                               </div>
                             </div>
                           )}

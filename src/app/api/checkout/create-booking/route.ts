@@ -53,6 +53,7 @@ interface PassengerData {
   passportLastPage: string | null; // base64 string
   passportCover: string | null; // base64 string
   nationalIdCard: string | null; // base64 string
+  birthCertificates?: (string | null)[]; // base64 strings - Infant 1, Infant 2, etc.
 }
 
 interface BookingRequest {
@@ -115,6 +116,7 @@ export async function POST(req: NextRequest) {
       passportLastPage?: string;
       passportCover?: string;
       nationalIdCard?: string;
+      birthCertificates?: string[];
     }> = [];
 
     for (let i = 0; i < passengers.length; i++) {
@@ -154,12 +156,27 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Upload National ID Card
+        // Upload National ID Card / Pancard
         if (passenger.nationalIdCard) {
           passengerDocs.nationalIdCard = await uploadBase64ToSupabase(
             passenger.nationalIdCard,
             'bookings/documents'
           );
+        }
+
+        // Upload Birth Certificates (Infant 1, Infant 2, etc.)
+        const birthCerts = passenger.birthCertificates;
+        if (birthCerts && birthCerts.length > 0) {
+          passengerDocs.birthCertificates = [];
+          for (const bc of birthCerts) {
+            if (bc) {
+              const url = await uploadBase64ToSupabase(
+                bc,
+                'bookings/documents'
+              );
+              passengerDocs.birthCertificates!.push(url);
+            }
+          }
         }
 
         uploadedDocuments.push(passengerDocs);
@@ -194,6 +211,7 @@ export async function POST(req: NextRequest) {
           passportLastPage: docs?.passportLastPage || null,
           passportCover: docs?.passportCover || null,
           nationalIdCard: docs?.nationalIdCard || null,
+          birthCertificates: docs?.birthCertificates || [],
         },
       };
     });

@@ -30,6 +30,7 @@ interface Package {
   package_category_id?: string;
   adult_price?: number | null;
   child_price?: number | null;
+  with_visa?: boolean | null;
   agent_discount?: number | null;
   adult_discount_amount?: number | null;
   child_discount_amount?: number | null;
@@ -676,6 +677,8 @@ function PackageCard({
         {discountPercentage && (
           <div className='suites-discount-badge'>{discountPercentage}% Off</div>
         )}
+
+        <span className='package-visa-badge'>Without visa</span>
 
         <div className='suites-card-price'>
           <span className='suites-price-amount'>{pricePerPerson}</span>
