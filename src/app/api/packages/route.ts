@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, child_amount, infant_amount, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -304,6 +304,8 @@ export async function POST(req: NextRequest) {
     const discountEndDate = body?.discount_end_date && String(body.discount_end_date).trim() !== '' ? String(body.discount_end_date).trim() : null;
     const agentDiscount = body?.agent_discount !== undefined && body?.agent_discount !== null && body?.agent_discount !== '' && !Number.isNaN(Number(body.agent_discount)) ? Number(body.agent_discount) : null;
     const minAdults = body?.min_adults !== undefined && body?.min_adults !== null && body?.min_adults !== '' && !Number.isNaN(Number(body.min_adults)) ? Math.max(1, Number(body.min_adults)) : 1;
+    const childAmount = body?.child_amount !== undefined && body?.child_amount !== null && body?.child_amount !== '' && !Number.isNaN(Number(body.child_amount)) ? Number(body.child_amount) : null;
+    const infantAmount = body?.infant_amount !== undefined && body?.infant_amount !== null && body?.infant_amount !== '' && !Number.isNaN(Number(body.infant_amount)) ? Number(body.infant_amount) : null;
 
     console.log('POST - Discount fields received:', {
       adult_discount_amount: adultDiscountAmount,
@@ -346,6 +348,8 @@ export async function POST(req: NextRequest) {
       discount_end_date: discountEndDate,
       agent_discount: agentDiscount,
       min_adults: minAdults,
+      child_amount: childAmount,
+      infant_amount: infantAmount,
       terms_html: termsHtml,
       inclusion_html: inclusionHtml,
       exclusion_html: exclusionHtml,
@@ -607,6 +611,12 @@ export async function PUT(req: NextRequest) {
     }
     if (body?.min_adults !== undefined) {
       updates.min_adults = body.min_adults !== null && body.min_adults !== '' && !Number.isNaN(Number(body.min_adults)) ? Math.max(1, Number(body.min_adults)) : 1;
+    }
+    if (body?.child_amount !== undefined) {
+      updates.child_amount = body.child_amount !== null && body.child_amount !== '' && !Number.isNaN(Number(body.child_amount)) ? Number(body.child_amount) : null;
+    }
+    if (body?.infant_amount !== undefined) {
+      updates.infant_amount = body.infant_amount !== null && body.infant_amount !== '' && !Number.isNaN(Number(body.infant_amount)) ? Number(body.infant_amount) : null;
     }
     if (termsHtml !== undefined) updates.terms_html = termsHtml;
     if (inclusionHtml !== undefined) updates.inclusion_html = inclusionHtml;

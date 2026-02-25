@@ -71,6 +71,8 @@ export default function AddPackageClient({
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [agentDiscount, setAgentDiscount] = useState<string>('');
   const [minAdults, setMinAdults] = useState<string>('1');
+  const [childAmount, setChildAmount] = useState<string>('');
+  const [infantAmount, setInfantAmount] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -833,6 +835,43 @@ export default function AddPackageClient({
             </div>
           </div>
 
+          {/* Child & Infant Amount Section */}
+          <div className='form_section'>
+            <h5 className='section_title'>Child & Infant Amount (Optional)</h5>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Child Amount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={childAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setChildAmount(val);
+                    }
+                  }}
+                  placeholder='0'
+                />
+              </div>
+              <div className='form_row'>
+                <label>Infant Amount (AED)</label>
+                <input
+                  type='text'
+                  inputMode='numeric'
+                  value={infantAmount}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      setInfantAmount(val);
+                    }
+                  }}
+                  placeholder='0'
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Visa Pricing Section */}
           <div className='form_section'>
             <h5 className='section_title'>Visa Pricing</h5>
@@ -1184,6 +1223,8 @@ export default function AddPackageClient({
                     discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
                     agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
                     min_adults: minAdults ? Math.max(1, Number(minAdults)) : 1,
+                    child_amount: childAmount && childAmount.trim() !== '' && !Number.isNaN(Number(childAmount)) ? Number(childAmount) : null,
+                    infant_amount: infantAmount && infantAmount.trim() !== '' && !Number.isNaN(Number(infantAmount)) ? Number(infantAmount) : null,
                     terms_html: termsHtml || undefined,
                     inclusion_html: inclusionHtml || undefined,
                     exclusion_html: exclusionHtml || undefined,
