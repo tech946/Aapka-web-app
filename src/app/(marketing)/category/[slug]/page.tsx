@@ -31,6 +31,9 @@ interface Package {
   adult_price?: number | null;
   child_price?: number | null;
   with_visa?: boolean | null;
+  adult_visa_price?: number | null;
+  child_visa_price?: number | null;
+  infant_visa_price?: number | null;
   agent_discount?: number | null;
   adult_discount_amount?: number | null;
   child_discount_amount?: number | null;
@@ -678,7 +681,18 @@ function PackageCard({
           <div className='suites-discount-badge'>{discountPercentage}% Off</div>
         )}
 
-        <span className='package-visa-badge'>Without visa</span>
+        {(() => {
+          const hasVisaIncludedAtZero =
+            pkg.with_visa &&
+            (pkg.adult_visa_price ?? 0) === 0 &&
+            (pkg.child_visa_price ?? 0) === 0 &&
+            (pkg.infant_visa_price ?? 0) === 0;
+          return hasVisaIncludedAtZero ? (
+            <span className='package-visa-badge package-visa-badge-with'>With visa</span>
+          ) : (
+            <span className='package-visa-badge'>Without visa</span>
+          );
+        })()}
 
         <div className='suites-card-price'>
           <span className='suites-price-amount'>{pricePerPerson}</span>

@@ -1115,6 +1115,25 @@ export default function PackageDetailsPage() {
       }
     }
 
+    // When package has visa included at 0 price, visa block is hidden but we still pass visa data
+    const hasVisaIncludedAtZero =
+      pkg.with_visa &&
+      (pkg.adult_visa_price ?? 0) === 0 &&
+      (pkg.child_visa_price ?? 0) === 0 &&
+      (pkg.infant_visa_price ?? 0) === 0;
+    const effectiveWithVisa = withVisa || hasVisaIncludedAtZero;
+    const effectiveVisaForAdults = effectiveWithVisa
+      ? hasVisaIncludedAtZero
+        ? isSoloTraveller ? 1 : persons.adult
+        : visaForAdults
+      : 0;
+    const effectiveVisaForChildren = effectiveWithVisa
+      ? hasVisaIncludedAtZero ? persons.child : visaForChildren
+      : 0;
+    const effectiveVisaForInfants = effectiveWithVisa
+      ? hasVisaIncludedAtZero ? persons.infant : visaForInfants
+      : 0;
+
     // Create cart item (only identifiers, prices will be validated server-side)
     const cartItem: CartItemStorage = {
       packageId: pkg.package_id,
@@ -1129,10 +1148,10 @@ export default function PackageDetailsPage() {
       soloTravellerShareConsent: isSoloTraveller
         ? soloTravellerShareConsent
         : false,
-      withVisa: withVisa ? true : false,
-      visaForAdults: withVisa ? visaForAdults : 0,
-      visaForChildren: withVisa ? visaForChildren : 0,
-      visaForInfants: withVisa ? visaForInfants : 0,
+      withVisa: effectiveWithVisa ? true : false,
+      visaForAdults: effectiveVisaForAdults,
+      visaForChildren: effectiveVisaForChildren,
+      visaForInfants: effectiveVisaForInfants,
       // Include referral data if customer came via agent referral link
       // This data comes from server-side validation, NOT from URL params
       referralId: referralData?.id,

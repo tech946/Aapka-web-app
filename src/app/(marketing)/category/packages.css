@@ -310,6 +310,10 @@
   letter-spacing: 0.04em;
 }
 
+.package-visa-badge-with {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
 .suites-read-more {
   display: flex;
   align-items: center;

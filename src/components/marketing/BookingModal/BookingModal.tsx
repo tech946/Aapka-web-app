@@ -259,8 +259,14 @@ export default function BookingModal({
             </div>
           )}
 
-          {/* Visa Option */}
-          {(slug === 'flexible-date-packages' || slug === 'offer-packages') && (
+          {/* Visa Option - hide when package has visa included at 0 price */}
+          {(slug === 'flexible-date-packages' || slug === 'offer-packages') &&
+            !(
+              pkg?.with_visa &&
+              (pkg?.adult_visa_price ?? 0) === 0 &&
+              (pkg?.child_visa_price ?? 0) === 0 &&
+              (pkg?.infant_visa_price ?? 0) === 0
+            ) && (
             <div className='visa-option-block'>
               <label className='visa-checkbox'>
                 <input type='checkbox' checked={withVisa} onChange={e => handleVisaChange(e.target.checked)} />
