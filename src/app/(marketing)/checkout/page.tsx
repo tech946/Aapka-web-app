@@ -855,7 +855,9 @@ export default function CheckoutPage() {
                     <h2 className='passenger-section-title'>
                       {index === 0
                         ? 'Lead Passenger Information'
-                        : `Passenger ${index + 1}`}
+                        : index >= totalAdults
+                          ? `Child ${index - totalAdults + 1} Documents`
+                          : `Passenger ${index + 1}`}
                     </h2>
 
                     <div className='passenger-form'>
@@ -1194,7 +1196,9 @@ export default function CheckoutPage() {
                           <h3 className='documents-title'>
                             {index === 0
                               ? 'Lead Passenger Documents'
-                              : 'Documents'}
+                              : index >= totalAdults
+                                ? `Child ${index - totalAdults + 1} Documents`
+                                : 'Documents'}
                           </h3>
 
                           <div className='documents-grid'>

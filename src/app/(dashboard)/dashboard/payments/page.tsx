@@ -733,8 +733,17 @@ export default function PaymentsPage() {
                     (passenger: any, idx: number) => {
                       const documents = passenger.documents || {};
                       const address = passenger.permanentAddress || '';
+                      const totalAdults = (selectedPayment.cart_items || []).reduce(
+                        (s: number, i: any) =>
+                          s + (i.isSoloTraveller ? 1 : i.adults || 0),
+                        0
+                      );
                       const passengerTitle =
-                        idx === 0 ? 'Lead Passenger' : `Passenger ${idx + 1}`;
+                        idx === 0
+                          ? 'Lead Passenger'
+                          : idx >= totalAdults
+                            ? `Child ${idx - totalAdults + 1} Documents`
+                            : `Passenger ${idx + 1}`;
 
                       return (
                         <div
