@@ -54,8 +54,6 @@ type Pkg = {
   discount_end_date?: string | null;
   agent_discount?: number | null;
   min_adults?: number | null;
-  child_amount?: number | null;
-  infant_amount?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -127,8 +125,6 @@ export default function EditPackageClient({
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [agentDiscount, setAgentDiscount] = useState<string>('');
   const [minAdults, setMinAdults] = useState<string>('1');
-  const [childAmount, setChildAmount] = useState<string>('');
-  const [infantAmount, setInfantAmount] = useState<string>('');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
   const [exclusionHtml, setExclusionHtml] = useState<string>('');
@@ -219,10 +215,6 @@ export default function EditPackageClient({
     if (pkg.agent_discount != null) setAgentDiscount(String(pkg.agent_discount));
     if (pkg.min_adults != null) setMinAdults(String(pkg.min_adults));
     else setMinAdults('1');
-    if (pkg.child_amount != null) setChildAmount(String(pkg.child_amount));
-    else setChildAmount('');
-    if (pkg.infant_amount != null) setInfantAmount(String(pkg.infant_amount));
-    else setInfantAmount('');
     // Convert date strings to datetime-local format (YYYY-MM-DDTHH:mm)
     if (pkg.discount_start_date != null) {
       const startDate = new Date(pkg.discount_start_date);
@@ -1018,43 +1010,6 @@ export default function EditPackageClient({
             </div>
           </div>
 
-          {/* Child & Infant Amount Section */}
-          <div className='form_section'>
-            <h5 className='section_title'>Child & Infant Amount (Optional)</h5>
-            <div className='form_grid pricing_grid'>
-              <div className='form_row'>
-                <label>Child Amount (AED)</label>
-                <input
-                  type='text'
-                  inputMode='numeric'
-                  value={childAmount}
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                      setChildAmount(val);
-                    }
-                  }}
-                  placeholder='0'
-                />
-              </div>
-              <div className='form_row'>
-                <label>Infant Amount (AED)</label>
-                <input
-                  type='text'
-                  inputMode='numeric'
-                  value={infantAmount}
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
-                      setInfantAmount(val);
-                    }
-                  }}
-                  placeholder='0'
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Visa Pricing Section */}
           <div className='form_section'>
             <h5 className='section_title'>Visa Pricing</h5>
@@ -1410,8 +1365,6 @@ export default function EditPackageClient({
                       discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
                       agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
                       min_adults: minAdults ? Math.max(1, Number(minAdults)) : 1,
-                      child_amount: childAmount && childAmount.trim() !== '' && !Number.isNaN(Number(childAmount)) ? Number(childAmount) : null,
-                      infant_amount: infantAmount && infantAmount.trim() !== '' && !Number.isNaN(Number(infantAmount)) ? Number(infantAmount) : null,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,
                       exclusion_html: exclusionHtml || undefined,

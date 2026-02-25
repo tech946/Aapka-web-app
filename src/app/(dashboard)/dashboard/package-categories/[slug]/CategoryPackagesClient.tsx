@@ -16,8 +16,6 @@ type Pkg = {
   adult_price?: number | null;
   child_price?: number | null;
   infant_price?: number | null;
-  child_amount?: number | null;
-  infant_amount?: number | null;
   status?: string | null;
   created_at: string | null;
 };
@@ -288,8 +286,6 @@ export default function CategoryPackagesClient({
               <th>Adult</th>
               <th>Child</th>
               <th>Infant</th>
-              <th>Child Amt</th>
-              <th>Infant Amt</th>
               <th>Status</th>
               <th>Description</th>
               <th>Created</th>
@@ -299,14 +295,14 @@ export default function CategoryPackagesClient({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={13} className='table_loading'>
+                <td colSpan={11} className='table_loading'>
                   Loading...
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={13} className='table_empty'>
+                <td colSpan={11} className='table_empty'>
                   No packages found
                 </td>
               </tr>
@@ -327,8 +323,6 @@ export default function CategoryPackagesClient({
                   <td>{p.adult_price ?? '-'}</td>
                   <td>{p.child_price ?? '-'}</td>
                   <td>{p.infant_price ?? '-'}</td>
-                  <td>{p.child_amount ?? '-'}</td>
-                  <td>{p.infant_amount ?? '-'}</td>
                   <td>
                     <div
                       className='status_toggle_wrapper'
