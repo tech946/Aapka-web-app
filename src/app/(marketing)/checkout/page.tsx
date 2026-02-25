@@ -42,7 +42,16 @@ interface PassengerData {
   passportLastPage: File | null;
   passportCover: File | null;
   nationalIdCard: File | null;
-  birthCertificates: (File | null)[]; // Infant 1, Infant 2, etc. (lead passenger only)
+  birthCertificate: File | null; // For children only
+}
+
+interface InfantDocuments {
+  applicantPhoto: File | null;
+  passportMainCopy: File | null;
+  passportLastPage: File | null;
+  passportCover: File | null;
+  nationalIdCard: File | null;
+  birthCertificate: File | null;
 }
 
 export default function CheckoutPage() {
@@ -138,11 +147,41 @@ export default function CheckoutPage() {
         passportLastPage: null,
         passportCover: null,
         nationalIdCard: null,
-        birthCertificates: [],
+        birthCertificate: null,
       });
     }
     return initial;
   });
+
+  // Infant documents - one full doc set per infant (all docs like lead + birth certificate)
+  const [infantDocuments, setInfantDocuments] = useState<InfantDocuments[]>(() =>
+    Array.from({ length: totalInfants }, () => ({
+      applicantPhoto: null,
+      passportMainCopy: null,
+      passportLastPage: null,
+      passportCover: null,
+      nationalIdCard: null,
+      birthCertificate: null,
+    }))
+  );
+
+  // Sync infantDocuments when totalInfants changes
+  useEffect(() => {
+    const inf = cartItems.reduce((s, i) => s + (i.infants || 0), 0);
+    setInfantDocuments(prev => {
+      if (prev.length === inf) return prev;
+      return Array.from({ length: Math.max(inf, 0) }, (_, i) =>
+        prev[i] || {
+          applicantPhoto: null,
+          passportMainCopy: null,
+          passportLastPage: null,
+          passportCover: null,
+          nationalIdCard: null,
+          birthCertificate: null,
+        }
+      );
+    });
+  }, [cartItems]);
 
   // Update passengers when cart changes
   useEffect(() => {
@@ -171,7 +210,7 @@ export default function CheckoutPage() {
           passportLastPage: passengers[i]?.passportLastPage || null,
           passportCover: passengers[i]?.passportCover || null,
           nationalIdCard: passengers[i]?.nationalIdCard || null,
-          birthCertificates: passengers[i]?.birthCertificates ?? [],
+          birthCertificate: passengers[i]?.birthCertificate || null,
         });
       }
       setPassengers(newPassengers);
@@ -296,26 +335,32 @@ export default function CheckoutPage() {
       | 'passportMainCopy'
       | 'passportLastPage'
       | 'passportCover'
-      | 'nationalIdCard',
+      | 'nationalIdCard'
+      | 'birthCertificate',
     file: File | null
   ) => {
     updatePassenger(index, field, file);
   };
 
-  const handleBirthCertificateUpload = (
+  const handleInfantDocumentUpload = (
     infantIndex: number,
+    field: keyof InfantDocuments,
     file: File | null
   ) => {
-    setPassengers(prev => {
+    setInfantDocuments(prev => {
       const updated = [...prev];
-      if (!updated[0]) return prev;
-      const certs = [...(updated[0].birthCertificates || [])];
-      while (certs.length <= infantIndex) certs.push(null);
-      certs[infantIndex] = file;
-      updated[0] = { ...updated[0], birthCertificates: certs };
+      if (!updated[infantIndex]) updated[infantIndex] = {
+        applicantPhoto: null,
+        passportMainCopy: null,
+        passportLastPage: null,
+        passportCover: null,
+        nationalIdCard: null,
+        birthCertificate: null,
+      };
+      updated[infantIndex] = { ...updated[infantIndex], [field]: file };
       return updated;
     });
-    const key = `passenger_0_birthCertificate_${infantIndex}`;
+    const key = `infant_${infantIndex}_${field}`;
     if (errors[key]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -410,18 +455,39 @@ export default function CheckoutPage() {
           newErrors[`passenger_${actualIndex}_passportMainCopy`] =
             'Passport main copy is required';
         }
-        // Birth certificates required for lead passenger when infants in booking
-        if (actualIndex === 0 && totalInfants > 0) {
-          const certs = passenger.birthCertificates || [];
-          for (let i = 0; i < totalInfants; i++) {
-            if (!certs[i]) {
-              newErrors[`passenger_0_birthCertificate_${i}`] =
-                `Birth certificate (Infant ${i + 1}) is required`;
-            }
-          }
+        // Birth certificate required for children (index >= totalAdults)
+        const isChild = actualIndex >= totalAdults;
+        if (isChild && !passenger.birthCertificate) {
+          newErrors[`passenger_${actualIndex}_birthCertificate`] =
+            'Birth certificate is required for child';
         }
       }
     });
+
+    // Infant documents validation (when documents required)
+    const requiresDocuments = isTourCheckout
+      ? false
+      : (hasOfferPackage || hasFlexibleDatePackage)
+        ? hasVisaSelected && !isOtherCountry
+        : !isOtherCountry;
+    if (requiresDocuments && totalInfants > 0) {
+      for (let i = 0; i < totalInfants; i++) {
+        const infant = infantDocuments[i];
+        if (!infant) continue;
+        if (!infant.applicantPhoto) {
+          newErrors[`infant_${i}_applicantPhoto`] =
+            `Infant ${i + 1}: Applicant photo is required`;
+        }
+        if (!infant.passportMainCopy) {
+          newErrors[`infant_${i}_passportMainCopy`] =
+            `Infant ${i + 1}: Passport main copy is required`;
+        }
+        if (!infant.birthCertificate) {
+          newErrors[`infant_${i}_birthCertificate`] =
+            `Infant ${i + 1}: Birth certificate is required`;
+        }
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -503,35 +569,51 @@ export default function CheckoutPage() {
 
       // Convert all files to base64
       const passengersWithBase64 = await Promise.all(
-        passengersToProcess.map(async (passenger, pIdx) => {
-          const birthCertificatesBase64 =
-            pIdx === 0 && passenger.birthCertificates?.length
-              ? await Promise.all(
-                  passenger.birthCertificates.map(f =>
-                    f ? fileToBase64(f) : Promise.resolve(null)
-                  )
-                )
-              : [];
-          return {
-            ...passenger,
-            applicantPhoto: passenger.applicantPhoto
-              ? await fileToBase64(passenger.applicantPhoto)
-              : null,
-            passportMainCopy: passenger.passportMainCopy
-              ? await fileToBase64(passenger.passportMainCopy)
-              : null,
-            passportLastPage: passenger.passportLastPage
-              ? await fileToBase64(passenger.passportLastPage)
-              : null,
-            passportCover: passenger.passportCover
-              ? await fileToBase64(passenger.passportCover)
-              : null,
-            nationalIdCard: passenger.nationalIdCard
-              ? await fileToBase64(passenger.nationalIdCard)
-              : null,
-            birthCertificates: birthCertificatesBase64,
-          };
-        })
+        passengersToProcess.map(async passenger => ({
+          ...passenger,
+          applicantPhoto: passenger.applicantPhoto
+            ? await fileToBase64(passenger.applicantPhoto)
+            : null,
+          passportMainCopy: passenger.passportMainCopy
+            ? await fileToBase64(passenger.passportMainCopy)
+            : null,
+          passportLastPage: passenger.passportLastPage
+            ? await fileToBase64(passenger.passportLastPage)
+            : null,
+          passportCover: passenger.passportCover
+            ? await fileToBase64(passenger.passportCover)
+            : null,
+          nationalIdCard: passenger.nationalIdCard
+            ? await fileToBase64(passenger.nationalIdCard)
+            : null,
+          birthCertificate: passenger.birthCertificate
+            ? await fileToBase64(passenger.birthCertificate)
+            : null,
+        }))
+      );
+
+      // Convert infant documents to base64
+      const infantDocumentsBase64 = await Promise.all(
+        infantDocuments.map(async infant => ({
+          applicantPhoto: infant.applicantPhoto
+            ? await fileToBase64(infant.applicantPhoto)
+            : null,
+          passportMainCopy: infant.passportMainCopy
+            ? await fileToBase64(infant.passportMainCopy)
+            : null,
+          passportLastPage: infant.passportLastPage
+            ? await fileToBase64(infant.passportLastPage)
+            : null,
+          passportCover: infant.passportCover
+            ? await fileToBase64(infant.passportCover)
+            : null,
+          nationalIdCard: infant.nationalIdCard
+            ? await fileToBase64(infant.nationalIdCard)
+            : null,
+          birthCertificate: infant.birthCertificate
+            ? await fileToBase64(infant.birthCertificate)
+            : null,
+        }))
       );
 
       const totalAmountAED = getTotalPrice();
@@ -570,6 +652,7 @@ export default function CheckoutPage() {
             soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
           })),
           passengers: passengersWithBase64,
+          infantDocuments: infantDocumentsBase64,
           paymentMethod: 'ccavenue', // TEMPORARY: Always use CCAvenue
           totalAmount: totalAmountAED,
           paymentType,
@@ -1216,35 +1299,29 @@ export default function CheckoutPage() {
                               />
                             </div>
 
-                            {/* Birth Certificates - for lead passenger when infant(s) in booking */}
-                            {totalInfants > 0 &&
-                              index === 0 &&
-                              Array.from({ length: totalInfants }, (_, i) => (
-                                <div
-                                  key={i}
-                                  className='document-upload-group'
-                                >
-                                  <label>
-                                    Birth Certificate (Infant {i + 1}){' '}
-                                    <span className='required'>*</span>
-                                  </label>
-                                  <FileUpload
-                                    file={
-                                      (passenger.birthCertificates || [])[i] ??
-                                      null
-                                    }
-                                    onFileChange={file =>
-                                      handleBirthCertificateUpload(i, file)
-                                    }
-                                    error={
-                                      errors[
-                                        `passenger_0_birthCertificate_${i}`
-                                      ]
-                                    }
-                                    fieldKey={`passenger_0_birthCertificate_${i}`}
-                                  />
-                                </div>
-                              ))}
+                            {/* Birth Certificate - for children only */}
+                            {index >= totalAdults && (
+                              <div className='document-upload-group'>
+                                <label>
+                                  Birth Certificate{' '}
+                                  <span className='required'>*</span>
+                                </label>
+                                <FileUpload
+                                  file={passenger.birthCertificate}
+                                  onFileChange={file =>
+                                    handleFileUpload(
+                                      index,
+                                      'birthCertificate',
+                                      file
+                                    )
+                                  }
+                                  error={
+                                    errors[`passenger_${index}_birthCertificate`]
+                                  }
+                                  fieldKey={`passenger_${index}_birthCertificate`}
+                                />
+                              </div>
+                            )}
                           </div>
 
                           {/* Important Note */}
@@ -1262,6 +1339,123 @@ export default function CheckoutPage() {
                 );
               })
               .filter(Boolean)}
+
+            {/* Infant Documents - full docs like lead + birth certificate */}
+            {shouldShowDocuments &&
+              totalInfants > 0 &&
+              infantDocuments.map((infant, infantIdx) => (
+                <div key={infantIdx} className='passenger-section'>
+                  <h2 className='passenger-section-title'>
+                    Infant {infantIdx + 1} Documents
+                  </h2>
+                  <div className='documents-section'>
+                    <div className='documents-grid'>
+                      <div className='document-upload-group'>
+                        <label>
+                          Applicant Photo{' '}
+                          <span className='required'>*</span>
+                        </label>
+                        <FileUpload
+                          file={infant.applicantPhoto}
+                          onFileChange={file =>
+                            handleInfantDocumentUpload(
+                              infantIdx,
+                              'applicantPhoto',
+                              file
+                            )
+                          }
+                          error={
+                            errors[`infant_${infantIdx}_applicantPhoto`]
+                          }
+                          fieldKey={`infant_${infantIdx}_applicantPhoto`}
+                        />
+                      </div>
+                      <div className='document-upload-group'>
+                        <label>
+                          Passport Main Copy [ Indian passport ]{' '}
+                          <span className='required'>*</span>
+                        </label>
+                        <FileUpload
+                          file={infant.passportMainCopy}
+                          onFileChange={file =>
+                            handleInfantDocumentUpload(
+                              infantIdx,
+                              'passportMainCopy',
+                              file
+                            )
+                          }
+                          error={
+                            errors[`infant_${infantIdx}_passportMainCopy`]
+                          }
+                          fieldKey={`infant_${infantIdx}_passportMainCopy`}
+                        />
+                      </div>
+                      <div className='document-upload-group'>
+                        <label>Passport Last Page [ Indian passport ]</label>
+                        <FileUpload
+                          file={infant.passportLastPage}
+                          onFileChange={file =>
+                            handleInfantDocumentUpload(
+                              infantIdx,
+                              'passportLastPage',
+                              file
+                            )
+                          }
+                          fieldKey={`infant_${infantIdx}_passportLastPage`}
+                        />
+                      </div>
+                      <div className='document-upload-group'>
+                        <label>Passport Cover</label>
+                        <FileUpload
+                          file={infant.passportCover}
+                          onFileChange={file =>
+                            handleInfantDocumentUpload(
+                              infantIdx,
+                              'passportCover',
+                              file
+                            )
+                          }
+                          fieldKey={`infant_${infantIdx}_passportCover`}
+                        />
+                      </div>
+                      <div className='document-upload-group'>
+                        <label>Pancard</label>
+                        <FileUpload
+                          file={infant.nationalIdCard}
+                          onFileChange={file =>
+                            handleInfantDocumentUpload(
+                              infantIdx,
+                              'nationalIdCard',
+                              file
+                            )
+                          }
+                          fieldKey={`infant_${infantIdx}_nationalIdCard`}
+                        />
+                      </div>
+                      <div className='document-upload-group'>
+                        <label>
+                          Birth Certificate{' '}
+                          <span className='required'>*</span>
+                        </label>
+                        <FileUpload
+                          file={infant.birthCertificate}
+                          onFileChange={file =>
+                            handleInfantDocumentUpload(
+                              infantIdx,
+                              'birthCertificate',
+                              file
+                            )
+                          }
+                          error={
+                            errors[`infant_${infantIdx}_birthCertificate`]
+                          }
+                          fieldKey={`infant_${infantIdx}_birthCertificate`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
           </div>
 
           {/* Right Sidebar - Order Summary */}

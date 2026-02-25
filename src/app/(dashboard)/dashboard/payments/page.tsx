@@ -262,7 +262,7 @@ export default function PaymentsPage() {
           'Passport Last Page': 'N/A',
           'Passport Cover': 'N/A',
           'Pancard': 'N/A',
-          'Birth Certificates': 'N/A',
+          'Birth Certificate': 'N/A',
           'Customer Notes': payment.customer_notes || '',
           'Admin Notes': payment.notes || '',
           'Created At': payment.created_at
@@ -303,14 +303,7 @@ export default function PaymentsPage() {
             'Passport Last Page': documents.passportLastPage || 'N/A',
             'Passport Cover': documents.passportCover || 'N/A',
             'Pancard': documents.nationalIdCard || 'N/A',
-            'Birth Certificates':
-              (documents.birthCertificates?.length
-                ? documents.birthCertificates
-                    .map((u, i) => `Infant ${i + 1}: ${u}`)
-                    .join(' | ')
-                : documents.birthCertificate
-                  ? `Infant 1: ${documents.birthCertificate}`
-                  : 'N/A') || 'N/A',
+            'Birth Certificate': documents.birthCertificate || 'N/A',
             'Customer Notes': payment.customer_notes || '',
             'Admin Notes': payment.notes || '',
             'Created At': payment.created_at
@@ -400,7 +393,7 @@ export default function PaymentsPage() {
             'Passport Last Page': 'N/A',
             'Passport Cover': 'N/A',
             'Pancard': 'N/A',
-            'Birth Certificates': 'N/A',
+            'Birth Certificate': 'N/A',
             'Customer Notes': payment.customer_notes || '',
             'Admin Notes': payment.notes || '',
             'Created At': payment.created_at
@@ -442,14 +435,7 @@ export default function PaymentsPage() {
               'Passport Last Page': documents.passportLastPage || 'N/A',
               'Passport Cover': documents.passportCover || 'N/A',
               'Pancard': documents.nationalIdCard || 'N/A',
-              'Birth Certificates':
-                (documents.birthCertificates?.length
-                  ? documents.birthCertificates
-                      .map((u, i) => `Infant ${i + 1}: ${u}`)
-                      .join(' | ')
-                  : documents.birthCertificate
-                    ? `Infant 1: ${documents.birthCertificate}`
-                    : 'N/A') || 'N/A',
+              'Birth Certificate': documents.birthCertificate || 'N/A',
               'Customer Notes': payment.customer_notes || '',
               'Admin Notes': payment.notes || '',
               'Created At': payment.created_at
@@ -881,8 +867,6 @@ export default function PaymentsPage() {
                             documents.passportLastPage ||
                             documents.passportCover ||
                             documents.nationalIdCard ||
-                            (documents.birthCertificates &&
-                              documents.birthCertificates.length > 0) ||
                             documents.birthCertificate) && (
                             <div
                               style={{
@@ -1110,91 +1094,54 @@ export default function PaymentsPage() {
                                     </a>
                                   </div>
                                 )}
-                                {(documents.birthCertificates || []).map(
-                                  (url, i) =>
-                                    url && (
-                                      <div
-                                        key={i}
-                                        style={{
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          gap: '8px',
-                                        }}
-                                      >
-                                        <strong
-                                          style={{
-                                            fontSize: '11px',
-                                            color: 'var(--text-muted)',
-                                          }}
-                                        >
-                                          Birth Certificate (Infant {i + 1})
-                                        </strong>
-                                        <a
-                                          href={url}
-                                          target='_blank'
-                                          rel='noopener noreferrer'
-                                          style={{
-                                            display: 'block',
-                                            overflow: 'hidden',
-                                            borderRadius: '6px',
-                                            border: '1px solid var(--border)',
-                                          }}
-                                        >
-                                          <img
-                                            src={url}
-                                            alt={`Birth Certificate Infant ${i + 1}`}
-                                            style={{
-                                              width: '100%',
-                                              height: '120px',
-                                              objectFit: 'cover',
-                                              display: 'block',
-                                            }}
-                                          />
-                                        </a>
-                                      </div>
-                                    )
-                                )}
-                                {!documents.birthCertificates?.length &&
-                                  documents.birthCertificate && (
-                                    <div
+                                {(documents.birthCertificate ||
+                                  (documents.birthCertificates &&
+                                    documents.birthCertificates[0])) && (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '8px',
+                                    }}
+                                  >
+                                    <strong
                                       style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '8px',
+                                        fontSize: '11px',
+                                        color: 'var(--text-muted)',
                                       }}
                                     >
-                                      <strong
+                                      Birth Certificate
+                                    </strong>
+                                    <a
+                                      href={
+                                        documents.birthCertificate ||
+                                        documents.birthCertificates?.[0]
+                                      }
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      style={{
+                                        display: 'block',
+                                        overflow: 'hidden',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--border)',
+                                      }}
+                                    >
+                                      <img
+                                        src={
+                                          documents.birthCertificate ||
+                                          documents.birthCertificates?.[0]
+                                        }
+                                        alt='Birth Certificate'
                                         style={{
-                                          fontSize: '11px',
-                                          color: 'var(--text-muted)',
-                                        }}
-                                      >
-                                        Birth Certificate (Infant 1)
-                                      </strong>
-                                      <a
-                                        href={documents.birthCertificate}
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        style={{
+                                          width: '100%',
+                                          height: '120px',
+                                          objectFit: 'cover',
                                           display: 'block',
-                                          overflow: 'hidden',
-                                          borderRadius: '6px',
-                                          border: '1px solid var(--border)',
                                         }}
-                                      >
-                                        <img
-                                          src={documents.birthCertificate}
-                                          alt='Birth Certificate'
-                                          style={{
-                                            width: '100%',
-                                            height: '120px',
-                                            objectFit: 'cover',
-                                            display: 'block',
-                                          }}
-                                        />
-                                      </a>
-                                    </div>
-                                  )}
+                                      />
+                                    </a>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -1208,6 +1155,294 @@ export default function PaymentsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Infant Documents Section */}
+              {selectedPayment.infant_documents &&
+                Array.isArray(selectedPayment.infant_documents) &&
+                selectedPayment.infant_documents.length > 0 && (
+                  <div className='detail_section'>
+                    <h4 className='detail_section_title'>
+                      Infant Documents
+                    </h4>
+                    {selectedPayment.infant_documents.map(
+                      (infantDocs: any, idx: number) => (
+                        <div
+                          key={idx}
+                          style={{
+                            marginBottom: '16px',
+                            padding: '12px',
+                            backgroundColor: 'var(--panel-2)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                          }}
+                        >
+                          <h5
+                            style={{
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              color: 'var(--text)',
+                              margin: '0 0 12px 0',
+                              paddingBottom: '8px',
+                              width: 'max-content',
+                              borderBottom: '2px solid var(--accent)',
+                            }}
+                          >
+                            Infant {idx + 1} Documents
+                          </h5>
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(2, 1fr)',
+                              gap: '12px',
+                              marginTop: '12px',
+                            }}
+                          >
+                            {infantDocs.applicantPhoto && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                  }}
+                                >
+                                  Applicant Photo
+                                </strong>
+                                <a
+                                  href={infantDocs.applicantPhoto}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                  }}
+                                >
+                                  <img
+                                    src={infantDocs.applicantPhoto}
+                                    alt='Applicant Photo'
+                                    style={{
+                                      width: '100%',
+                                      height: '120px',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {infantDocs.passportMainCopy && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                  }}
+                                >
+                                  Passport Main Copy
+                                </strong>
+                                <a
+                                  href={infantDocs.passportMainCopy}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                  }}
+                                >
+                                  <img
+                                    src={infantDocs.passportMainCopy}
+                                    alt='Passport Main Copy'
+                                    style={{
+                                      width: '100%',
+                                      height: '120px',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {infantDocs.passportLastPage && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                  }}
+                                >
+                                  Passport Last Page
+                                </strong>
+                                <a
+                                  href={infantDocs.passportLastPage}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                  }}
+                                >
+                                  <img
+                                    src={infantDocs.passportLastPage}
+                                    alt='Passport Last Page'
+                                    style={{
+                                      width: '100%',
+                                      height: '120px',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {infantDocs.passportCover && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                  }}
+                                >
+                                  Passport Cover
+                                </strong>
+                                <a
+                                  href={infantDocs.passportCover}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                  }}
+                                >
+                                  <img
+                                    src={infantDocs.passportCover}
+                                    alt='Passport Cover'
+                                    style={{
+                                      width: '100%',
+                                      height: '120px',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {infantDocs.nationalIdCard && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                  }}
+                                >
+                                  Pancard
+                                </strong>
+                                <a
+                                  href={infantDocs.nationalIdCard}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                  }}
+                                >
+                                  <img
+                                    src={infantDocs.nationalIdCard}
+                                    alt='Pancard'
+                                    style={{
+                                      width: '100%',
+                                      height: '120px',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {infantDocs.birthCertificate && (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px',
+                                }}
+                              >
+                                <strong
+                                  style={{
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                  }}
+                                >
+                                  Birth Certificate
+                                </strong>
+                                <a
+                                  href={infantDocs.birthCertificate}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)',
+                                  }}
+                                >
+                                  <img
+                                    src={infantDocs.birthCertificate}
+                                    alt='Birth Certificate'
+                                    style={{
+                                      width: '100%',
+                                      height: '120px',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                    }}
+                                  />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
 
               {/* Cart Items / Package Details Section */}
               {selectedPayment.cart_items &&
