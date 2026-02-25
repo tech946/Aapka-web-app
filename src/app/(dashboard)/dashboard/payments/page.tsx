@@ -875,7 +875,7 @@ export default function PaymentsPage() {
                             documents.passportMainCopy ||
                             documents.passportLastPage ||
                             documents.passportCover ||
-                            documents.nationalIdCard ||
+                            (idx < totalAdults && documents.nationalIdCard) ||
                             documents.birthCertificate) && (
                             <div
                               style={{
@@ -1063,7 +1063,7 @@ export default function PaymentsPage() {
                                     </a>
                                   </div>
                                 )}
-                                {documents.nationalIdCard && (
+                                {idx < totalAdults && documents.nationalIdCard && (
                                   <div
                                     style={{
                                       display: 'flex',
@@ -1356,46 +1356,6 @@ export default function PaymentsPage() {
                                   <img
                                     src={infantDocs.passportCover}
                                     alt='Passport Cover'
-                                    style={{
-                                      width: '100%',
-                                      height: '120px',
-                                      objectFit: 'cover',
-                                      display: 'block',
-                                    }}
-                                  />
-                                </a>
-                              </div>
-                            )}
-                            {infantDocs.nationalIdCard && (
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '8px',
-                                }}
-                              >
-                                <strong
-                                  style={{
-                                    fontSize: '11px',
-                                    color: 'var(--text-muted)',
-                                  }}
-                                >
-                                  Pancard
-                                </strong>
-                                <a
-                                  href={infantDocs.nationalIdCard}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                  style={{
-                                    display: 'block',
-                                    overflow: 'hidden',
-                                    borderRadius: '6px',
-                                    border: '1px solid var(--border)',
-                                  }}
-                                >
-                                  <img
-                                    src={infantDocs.nationalIdCard}
-                                    alt='Pancard'
                                     style={{
                                       width: '100%',
                                       height: '120px',

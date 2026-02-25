@@ -61,8 +61,8 @@ interface InfantDocumentData {
   passportMainCopy: string | null;
   passportLastPage: string | null;
   passportCover: string | null;
-  nationalIdCard: string | null;
   birthCertificate: string | null;
+  // Pancard not collected for infants
 }
 
 interface BookingRequest {
@@ -226,7 +226,6 @@ export async function POST(req: NextRequest) {
       passportMainCopy: string | null;
       passportLastPage: string | null;
       passportCover: string | null;
-      nationalIdCard: string | null;
       birthCertificate: string | null;
     }> = [];
 
@@ -258,12 +257,6 @@ export async function POST(req: NextRequest) {
             'bookings/documents'
           );
         } else infantDocs.passportCover = null;
-        if (infant.nationalIdCard) {
-          infantDocs.nationalIdCard = await uploadBase64ToSupabase(
-            infant.nationalIdCard,
-            'bookings/documents'
-          );
-        } else infantDocs.nationalIdCard = null;
         if (infant.birthCertificate) {
           infantDocs.birthCertificate = await uploadBase64ToSupabase(
             infant.birthCertificate,

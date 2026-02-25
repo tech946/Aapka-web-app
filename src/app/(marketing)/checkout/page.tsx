@@ -50,8 +50,8 @@ interface InfantDocuments {
   passportMainCopy: File | null;
   passportLastPage: File | null;
   passportCover: File | null;
-  nationalIdCard: File | null;
   birthCertificate: File | null;
+  // Pancard not collected for infants
 }
 
 export default function CheckoutPage() {
@@ -160,7 +160,6 @@ export default function CheckoutPage() {
       passportMainCopy: null,
       passportLastPage: null,
       passportCover: null,
-      nationalIdCard: null,
       birthCertificate: null,
     }))
   );
@@ -176,7 +175,6 @@ export default function CheckoutPage() {
           passportMainCopy: null,
           passportLastPage: null,
           passportCover: null,
-          nationalIdCard: null,
           birthCertificate: null,
         }
       );
@@ -354,7 +352,6 @@ export default function CheckoutPage() {
         passportMainCopy: null,
         passportLastPage: null,
         passportCover: null,
-        nationalIdCard: null,
         birthCertificate: null,
       };
       updated[infantIndex] = { ...updated[infantIndex], [field]: file };
@@ -606,9 +603,6 @@ export default function CheckoutPage() {
             : null,
           passportCover: infant.passportCover
             ? await fileToBase64(infant.passportCover)
-            : null,
-          nationalIdCard: infant.nationalIdCard
-            ? await fileToBase64(infant.nationalIdCard)
             : null,
           birthCertificate: infant.birthCertificate
             ? await fileToBase64(infant.birthCertificate)
@@ -1284,24 +1278,26 @@ export default function CheckoutPage() {
                               />
                             </div>
 
-                            {/* Pancard */}
-                            <div className='document-upload-group'>
-                              <label>Pancard</label>
-                              <FileUpload
-                                file={passenger.nationalIdCard}
-                                onFileChange={file =>
-                                  handleFileUpload(
-                                    index,
-                                    'nationalIdCard',
-                                    file
-                                  )
-                                }
-                                error={
-                                  errors[`passenger_${index}_nationalIdCard`]
-                                }
-                                fieldKey={`passenger_${index}_nationalIdCard`}
-                              />
-                            </div>
+                            {/* Pancard - adults only */}
+                            {index < totalAdults && (
+                              <div className='document-upload-group'>
+                                <label>Pancard</label>
+                                <FileUpload
+                                  file={passenger.nationalIdCard}
+                                  onFileChange={file =>
+                                    handleFileUpload(
+                                      index,
+                                      'nationalIdCard',
+                                      file
+                                    )
+                                  }
+                                  error={
+                                    errors[`passenger_${index}_nationalIdCard`]
+                                  }
+                                  fieldKey={`passenger_${index}_nationalIdCard`}
+                                />
+                              </div>
+                            )}
 
                             {/* Birth Certificate - for children only */}
                             {index >= totalAdults && (
@@ -1420,20 +1416,6 @@ export default function CheckoutPage() {
                             )
                           }
                           fieldKey={`infant_${infantIdx}_passportCover`}
-                        />
-                      </div>
-                      <div className='document-upload-group'>
-                        <label>Pancard</label>
-                        <FileUpload
-                          file={infant.nationalIdCard}
-                          onFileChange={file =>
-                            handleInfantDocumentUpload(
-                              infantIdx,
-                              'nationalIdCard',
-                              file
-                            )
-                          }
-                          fieldKey={`infant_${infantIdx}_nationalIdCard`}
                         />
                       </div>
                       <div className='document-upload-group'>
