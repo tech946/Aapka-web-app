@@ -31,6 +31,10 @@ export interface CartItemStorage {
   referralCode?: string;            // The actual referral code (for tracking)
   referralDiscountApplied?: boolean; // true if discount link, false if commission link
   referralDiscountPercentage?: number; // Discount % from the referral (locked at creation)
+  // Add-ons (offer packages)
+  addonDeals?: string[];
+  addonHotelServices?: string[];
+  addonPrivateTransfers?: string[];
 }
 
 // Full cart item with validated prices from server
@@ -112,6 +116,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             referralId: item.referralId,
             referralDiscountApplied: item.referralDiscountApplied ?? false,
             referralDiscountPercentage: item.referralDiscountPercentage ?? 0,
+            // Add-ons (offer packages)
+            addonDeals: item.addonDeals,
+            addonHotelServices: item.addonHotelServices,
+            addonPrivateTransfers: item.addonPrivateTransfers,
           }));
 
           const response = await fetch('/api/cart/validate', {
@@ -250,6 +258,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           referralCode: item.referralCode,
           referralDiscountApplied: item.referralDiscountApplied,
           referralDiscountPercentage: item.referralDiscountPercentage,
+          addonDeals: item.addonDeals,
+          addonHotelServices: item.addonHotelServices,
+          addonPrivateTransfers: item.addonPrivateTransfers,
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
       } catch (error) {
@@ -286,6 +297,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           referralCode: item.referralCode ?? updated[existingIndex].referralCode,
           referralDiscountApplied: item.referralDiscountApplied ?? updated[existingIndex].referralDiscountApplied,
           referralDiscountPercentage: item.referralDiscountPercentage ?? updated[existingIndex].referralDiscountPercentage,
+          addonDeals: item.addonDeals ?? updated[existingIndex].addonDeals,
+          addonHotelServices: item.addonHotelServices ?? updated[existingIndex].addonHotelServices,
+          addonPrivateTransfers: item.addonPrivateTransfers ?? updated[existingIndex].addonPrivateTransfers,
           validated: false, // Mark as needing validation
         };
         // Validate after update

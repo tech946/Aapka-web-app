@@ -1519,6 +1519,59 @@ export default function PaymentsPage() {
                                         </span>
                                       </div>
                                     )}
+                                    {/* Add-ons for offer packages */}
+                                    {(cartItem.addonDeals ||
+                                      cartItem.addonHotelServices ||
+                                      cartItem.addonPrivateTransfers) && (
+                                      <div
+                                        className='detail_item'
+                                        style={{ gridColumn: '1 / -1' }}
+                                      >
+                                        <strong>Add-ons:</strong>
+                                        <div
+                                          style={{
+                                            marginTop: '6px',
+                                            fontSize: '13px',
+                                            color: 'var(--text-muted)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '4px',
+                                          }}
+                                        >
+                                          {Array.isArray(cartItem.addonDeals) &&
+                                            cartItem.addonDeals.length > 0 && (
+                                              <span>
+                                                Deals:{' '}
+                                                {cartItem.addonDeals.join(', ')}
+                                              </span>
+                                            )}
+                                          {Array.isArray(
+                                            cartItem.addonHotelServices
+                                          ) &&
+                                            cartItem.addonHotelServices
+                                              .length > 0 && (
+                                              <span>
+                                                Hotel Services:{' '}
+                                                {cartItem.addonHotelServices.join(
+                                                  ', '
+                                                )}
+                                              </span>
+                                            )}
+                                          {Array.isArray(
+                                            cartItem.addonPrivateTransfers
+                                          ) &&
+                                            cartItem.addonPrivateTransfers
+                                              .length > 0 && (
+                                              <span>
+                                                Private Transfers:{' '}
+                                                {cartItem.addonPrivateTransfers.join(
+                                                  ', '
+                                                )}
+                                              </span>
+                                            )}
+                                        </div>
+                                      </div>
+                                    )}
                                   </>
                                 ) : (
                                   <>

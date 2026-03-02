@@ -1,6 +1,7 @@
 'use client';
 
 import { X, Users, Calendar, ChevronDown, Plus, Minus } from 'lucide-react';
+import { AddonsSection } from '@/components/marketing/AddonsModal/AddonsSection';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
@@ -72,6 +73,15 @@ interface BookingModalProps {
   dateRangesReady: boolean;
   // Actions
   handleAddToCart: () => void;
+  // Add-ons (offer packages only)
+  showAddons?: boolean;
+  addonDeals?: string[];
+  addonHotelServices?: string[];
+  addonPrivateTransfers?: string[];
+  onAddonDealsChange?: (ids: string[]) => void;
+  onAddonHotelServicesChange?: (ids: string[]) => void;
+  onAddonPrivateTransfersChange?: (ids: string[]) => void;
+  addonNights?: number;
 }
 
 export default function BookingModal({
@@ -129,6 +139,14 @@ export default function BookingModal({
   loading,
   dateRangesReady,
   handleAddToCart,
+  showAddons = false,
+  addonDeals = [],
+  addonHotelServices = [],
+  addonPrivateTransfers = [],
+  onAddonDealsChange,
+  onAddonHotelServicesChange,
+  onAddonPrivateTransfersChange,
+  addonNights = 0,
 }: BookingModalProps) {
   if (!isOpen) return null;
 
@@ -583,6 +601,20 @@ export default function BookingModal({
             )}
           </div>
 
+          {/* Add-ons (Offer Packages only) - shown after date selector */}
+          {showAddons && onAddonDealsChange && onAddonHotelServicesChange && onAddonPrivateTransfersChange && (
+            <AddonsSection
+              selectedDeals={addonDeals}
+              selectedServices={addonHotelServices}
+              selectedTransfers={addonPrivateTransfers}
+              onSelectDeals={onAddonDealsChange}
+              onSelectServices={onAddonHotelServicesChange}
+              onSelectTransfers={onAddonPrivateTransfersChange}
+              nights={addonNights}
+              isMobile={isMobile}
+            />
+          )}
+
           {/* Price Section */}
           <div className={priceSectionClass}>
             {hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
@@ -610,7 +642,7 @@ export default function BookingModal({
                 TOTAL
               </span>
               <span className={`${isMobile ? 'mobile-booking-price-amount' : 'booking-price-amount'} ${isDiscountActive || (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) ? 'discounted' : ''}`}>
-                {formatPrice(calculatedPrice !== null ? calculatedPrice : pkg.package_price)}
+                {formatPrice(calculatedPrice !== null ? calculatedPrice : pkg.package_price || 0)}
               </span>
             </div>
           </div>

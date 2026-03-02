@@ -308,6 +308,39 @@
   margin: 0.25rem 0;
 }
 
+.package-addons {
+  margin-top: 0.25rem;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 0.8rem;
+}
+
+.package-addons-label {
+  font-weight: 600;
+  color: #111827;
+  margin-right: 4px;
+}
+
+.package-addon-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(255, 76, 0, 0.12);
+  color: #121212;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.package-addon-badge-muted {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
 .package-price {
   font-size: 1.1rem;
   font-weight: 600;
@@ -589,5 +622,26 @@
   }
   .summary-package-item {
     flex-direction: column;
+  }
+  /* Add-on badges: full-width stacked layout on mobile */
+  .package-addons {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+    max-width: none;
+  }
+  .package-addons-label {
+    margin-right: 0;
+    margin-bottom: 2px;
+  }
+  .package-addon-badge {
+    width: 100%;
+    max-width: 100%;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    box-sizing: border-box;
+    display: block;
   }
 }

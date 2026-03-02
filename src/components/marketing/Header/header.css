@@ -695,22 +695,23 @@ header,
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
+@media (max-width: 991px) {
   .mobile-header-actions {
-    display: flex;
+    display: flex !important;
   }
 
   .mobile-menu-button {
-    display: flex;
+    display: flex !important;
   }
 
-  .desktop-nav {
-    display: none;
+  .navbar.desktop-nav {
+    display: none !important;
   }
 
   .header__container {
-    padding-inline: 16px;
+    padding: 12px 16px;
   }
+
   .header__container img {
     width: 60px;
   }
@@ -954,7 +955,7 @@ header,
   display: block;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 992px) {
   .mobile-sidebar-overlay {
     display: none;
   }

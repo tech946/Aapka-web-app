@@ -160,6 +160,10 @@ export default function PackageDetailsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralDiscountAmount, setReferralDiscountAmount] = useState<number | null>(null);
   const [priceBeforeReferralDiscount, setPriceBeforeReferralDiscount] = useState<number | null>(null);
+  /* Add-ons (offer packages) */
+  const [addonDeals, setAddonDeals] = useState<string[]>([]);
+  const [addonHotelServices, setAddonHotelServices] = useState<string[]>([]);
+  const [addonPrivateTransfers, setAddonPrivateTransfers] = useState<string[]>([]);
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -1158,6 +1162,9 @@ export default function PackageDetailsPage() {
       referralCode: referralCode || undefined,
       referralDiscountApplied: referralData?.linkType === 'discount',
       referralDiscountPercentage: referralData?.discountPercentage,
+      addonDeals: slug === 'offer-packages' && addonDeals.length > 0 ? addonDeals : undefined,
+      addonHotelServices: slug === 'offer-packages' && addonHotelServices.length > 0 ? addonHotelServices : undefined,
+      addonPrivateTransfers: slug === 'offer-packages' && addonPrivateTransfers.length > 0 ? addonPrivateTransfers : undefined,
     };
 
     addToCart(cartItem);
@@ -1645,6 +1652,14 @@ export default function PackageDetailsPage() {
         loading={loading}
         dateRangesReady={dateRangesReady}
         handleAddToCart={handleAddToCart}
+        showAddons={slug === 'offer-packages'}
+        addonDeals={addonDeals}
+        addonHotelServices={addonHotelServices}
+        addonPrivateTransfers={addonPrivateTransfers}
+        onAddonDealsChange={setAddonDeals}
+        onAddonHotelServicesChange={setAddonHotelServices}
+        onAddonPrivateTransfersChange={setAddonPrivateTransfers}
+        addonNights={pkg?.package_nights ?? 0}
       />
 
       {/* Scroll to Top Button */}

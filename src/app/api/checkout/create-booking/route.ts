@@ -80,6 +80,10 @@ interface BookingRequest {
     referralCode?: string;
     referralDiscountApplied?: boolean;
     referralDiscountPercentage?: number;
+    // Add-ons (offer packages)
+    addonDeals?: string[] | null;
+    addonHotelServices?: string[] | null;
+    addonPrivateTransfers?: string[] | null;
   }>;
   passengers: PassengerData[];
   infantDocuments?: InfantDocumentData[];

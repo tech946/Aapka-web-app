@@ -24,6 +24,77 @@ import {
 import { parseDateStringToLocal } from '@/lib/utils';
 import './checkout.css';
 
+type AddonNameMap = Record<string, string>;
+
+let addonNamesCache: AddonNameMap | null = null;
+let addonNamesPromise: Promise<AddonNameMap> | null = null;
+
+async function loadAddonNames(): Promise<AddonNameMap> {
+  if (addonNamesCache) return addonNamesCache;
+  if (!addonNamesPromise) {
+    addonNamesPromise = (async () => {
+      const map: AddonNameMap = {};
+      try {
+        const [dealsRes, servicesRes, transfersRes] = await Promise.all([
+          fetch('/api/website/addon-deals'),
+          fetch('/api/website/addon-hotel-services'),
+          fetch('/api/website/addon-private-transfers'),
+        ]);
+
+        if (dealsRes.ok) {
+          const dealsData: any = await dealsRes.json();
+          if (Array.isArray(dealsData?.addon_deals)) {
+            for (const d of dealsData.addon_deals) {
+              if (!d?.id || !d?.name) continue;
+              const label =
+                d.category_name && typeof d.category_name === 'string'
+                  ? `${d.name} [${d.category_name}]`
+                  : d.name;
+              map[d.id] = label;
+            }
+          }
+        }
+
+        if (servicesRes.ok) {
+          const servicesData: any = await servicesRes.json();
+          if (Array.isArray(servicesData?.addon_hotel_services)) {
+            for (const s of servicesData.addon_hotel_services) {
+              if (!s?.id || !s?.name) continue;
+              map[s.id] = s.name;
+            }
+          }
+        }
+
+        if (transfersRes.ok) {
+          const transfersData: any = await transfersRes.json();
+          if (Array.isArray(transfersData?.addon_private_transfers)) {
+            for (const t of transfersData.addon_private_transfers) {
+              if (!t?.id || !t?.name) continue;
+              let extra = '';
+              if (t.pax_type === 'fixed' && t.fixed_pax) {
+                extra = ` [${t.fixed_pax} pax]`;
+              } else if (
+                t.pax_type === 'min_max' &&
+                t.min_pax != null &&
+                t.max_pax != null
+              ) {
+                extra = ` [${t.min_pax}-${t.max_pax} pax]`;
+              }
+              map[t.id] = `${t.name}${extra}`;
+            }
+          }
+        }
+      } catch {
+        // Ignore network errors; map will just be whatever we managed to fill
+      }
+
+      addonNamesCache = map;
+      return map;
+    })();
+  }
+  return addonNamesPromise;
+}
+
 interface PassengerData {
   salutation: string;
   firstName: string;
@@ -63,6 +134,7 @@ export default function CheckoutPage() {
   const [paymentType, setPaymentType] = useState<'half' | 'full'>('full');
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number>(0);
+  const [addonNames, setAddonNames] = useState<AddonNameMap>({});
 
   // Check if any cart item is a tour (not a package)
   // Tours typically have "tour" in the category slug/name
@@ -101,6 +173,28 @@ export default function CheckoutPage() {
 
   // Check if any cart item has visa selected
   const hasVisaSelected = cartItems.some(item => item.withVisa === true);
+
+  useEffect(() => {
+    if (cartItems.length === 0) return;
+    const hasOfferAddons = cartItems.some(item => {
+      if (item.categorySlug !== 'offer-packages') return false;
+      const total =
+        (item.addonDeals?.length || 0) +
+        (item.addonHotelServices?.length || 0) +
+        (item.addonPrivateTransfers?.length || 0);
+      return total > 0;
+    });
+    if (!hasOfferAddons) return;
+
+    let active = true;
+    loadAddonNames().then(map => {
+      if (active) setAddonNames(map);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [cartItems]);
 
   // For tours: only full payment. For packages/offer packages: allow half or full
   // Update payment type if cart changes and becomes a tour
@@ -644,6 +738,10 @@ export default function CheckoutPage() {
             isSoloTraveller: item.isSoloTraveller ?? false,
             soloTravellerGender: item.soloTravellerGender ?? null,
             soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
+            // Add-ons (offer packages) - stored for booking reference, not pricing
+            addonDeals: item.addonDeals && item.addonDeals.length > 0 ? item.addonDeals : null,
+            addonHotelServices: item.addonHotelServices && item.addonHotelServices.length > 0 ? item.addonHotelServices : null,
+            addonPrivateTransfers: item.addonPrivateTransfers && item.addonPrivateTransfers.length > 0 ? item.addonPrivateTransfers : null,
           })),
           passengers: passengersWithBase64,
           infantDocuments: infantDocumentsBase64,
@@ -1485,6 +1583,41 @@ export default function CheckoutPage() {
                                 : ''
                             }`}
                       </p>
+                      {(() => {
+                        if (item.categorySlug !== 'offer-packages') return null;
+                        const ids: string[] = [
+                          ...(item.addonDeals || []),
+                          ...(item.addonHotelServices || []),
+                          ...(item.addonPrivateTransfers || []),
+                        ];
+                        if (ids.length === 0) return null;
+                        const labels = ids
+                          .map(id => addonNames[id])
+                          .filter((name): name is string => Boolean(name));
+                        if (labels.length === 0) {
+                          return (
+                            <div className='package-addons'>
+                              <span className='package-addons-label'>Offer add-ons:</span>
+                              <span className='package-addon-badge package-addon-badge-muted'>
+                                {ids.length} selected
+                              </span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className='package-addons'>
+                            <span className='package-addons-label'>Offer add-ons:</span>
+                            {labels.map(label => (
+                              <span
+                                key={label}
+                                className='package-addon-badge'
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {item.hasActiveDeal && (
                         <span className='checkout-discount-badge' style={{ 
                           background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
