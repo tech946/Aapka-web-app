@@ -4,7 +4,7 @@ import { encrypt } from '@/lib/ccavenue-crypto';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const OMAN_VISA_AMOUNT_AED = 150;
+const OMAN_VISA_AMOUNT_AED = 1; // TODO: change back to 150 for production
 
 export async function POST(req: NextRequest) {
   try {

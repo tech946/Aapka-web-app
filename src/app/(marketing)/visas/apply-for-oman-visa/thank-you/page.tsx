@@ -13,7 +13,7 @@ export default function OmanVisaThankYouPage() {
         </div>
         <h1>Oman Visa Enquiry Submitted</h1>
         <p className="oman-visa-thank-you-message">
-          Thank you for submitting your Oman visa application. Processing time is approximately 24 hours after we receive complete documents and payment confirmation (150 AED). Our team will contact you shortly.
+          Thank you for submitting your Oman visa application. Processing time is approximately 24 hours after we receive complete documents and payment confirmation (1 AED). Our team will contact you shortly.
         </p>
         <p className="oman-visa-thank-you-info">
           We have sent a confirmation email to your registered email address. If you have any questions, please contact us at{' '}

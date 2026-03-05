@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -125,7 +125,7 @@ interface InfantDocuments {
   // Pancard not collected for infants
 }
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
   const { cartItems, getTotalPrice, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1854,6 +1854,25 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className='checkout-page'>
+          <div className='checkout-container'>
+            <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+              <Loader2 size={32} className='spinning' style={{ margin: '0 auto 16px', display: 'block' }} />
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
 
