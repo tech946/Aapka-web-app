@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { Suspense, useState, useEffect, FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-export default function InfluencerRegisterPage() {
+function InfluencerRegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -160,5 +160,19 @@ export default function InfluencerRegisterPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function InfluencerRegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-xl border bg-card p-8 text-center">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
+      }
+    >
+      <InfluencerRegisterForm />
+    </Suspense>
   );
 }
