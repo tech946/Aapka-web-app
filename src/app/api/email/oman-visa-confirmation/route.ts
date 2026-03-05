@@ -68,7 +68,7 @@ function getAdminNotificationHtml(name: string, email: string, contact: string):
         <table role="presentation" style="max-width: 560px; width: 100%; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
           <tr>
             <td style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 24px; text-align: center;">
-              <h1 style="margin: 0; color: #fff; font-size: 22px; font-weight: 700;">New Oman Visa Application – 1 AED (Paid)</h1>
+              <h1 style="margin: 0; color: #fff; font-size: 22px; font-weight: 700;">New Oman Visa Application – 150 AED (Paid)</h1>
             </td>
           </tr>
           <tr>
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       }),
       sendEmail({
         to: ADMIN_EMAIL,
-        subject: `New Oman Visa Application (Paid): ${name} – 1 AED`,
+        subject: `New Oman Visa Application (Paid): ${name} – 150 AED`,
         html: getAdminNotificationHtml(name, email, contact),
       }),
     ]);
