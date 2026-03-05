@@ -4,7 +4,7 @@ import { encrypt } from '@/lib/ccavenue-crypto';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const OMAN_VISA_AMOUNT_AED = 0.01; // Testing: normally 150
+const OMAN_VISA_AMOUNT_AED = 1; // Testing: use 1 AED (0.01 often rejected by gateways); normally 150
 
 export async function POST(req: NextRequest) {
   try {

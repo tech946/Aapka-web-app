@@ -11,7 +11,7 @@ const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/jpg,image/png,image/webp';
 const ACCEPTED_DOC_TYPES =
   'image/jpeg,image/jpg,image/png,image/webp,application/pdf';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const VISA_FEE_AED = 0.01; // Testing: normally 150
+const VISA_FEE_AED = 1; // Testing: use 1 AED (0.01 often rejected); normally 150
 
 const PURPOSE_OPTIONS = [
   { value: 'Tourism', label: 'Tourism' },
