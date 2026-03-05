@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, FileText, Camera, Upload, Shield } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,7 +11,7 @@ const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/jpg,image/png,image/webp';
 const ACCEPTED_DOC_TYPES =
   'image/jpeg,image/jpg,image/png,image/webp,application/pdf';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const VISA_FEE_AED = 150;
+const VISA_FEE_AED = 0.01; // Testing: normally 150
 
 const PURPOSE_OPTIONS = [
   { value: 'Tourism', label: 'Tourism' },
@@ -27,7 +27,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   payment_processing_failed: 'Payment processing failed. Please try again.',
 };
 
-export default function OmanVisaApplyPage() {
+function OmanVisaApplyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -212,7 +212,7 @@ export default function OmanVisaApplyPage() {
               depends on immigration)
             </li>
             <li>
-              <strong>Visa Fees:</strong> 150 AED
+              <strong>Visa Fees:</strong> {VISA_FEE_AED} AED
             </li>
             <li>
               <strong>Payment Type:</strong> Non-Refundable
@@ -501,7 +501,7 @@ export default function OmanVisaApplyPage() {
                 regulations.
               </li>
               <li>
-                Visa fees (150 AED) are strictly non-refundable, even in case of
+                Visa fees ({VISA_FEE_AED} AED) are strictly non-refundable, even in case of
                 rejection.
               </li>
               <li>
@@ -608,5 +608,25 @@ export default function OmanVisaApplyPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function OmanVisaApplyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className='oman-visa-page'>
+          <div className='oman-visa-container'>
+            <div className='oman-visa-header'>
+              <div className='animate-pulse' style={{ color: '#6b7280' }}>
+                Loading...
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <OmanVisaApplyContent />
+    </Suspense>
   );
 }
