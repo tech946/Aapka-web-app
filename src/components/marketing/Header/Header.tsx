@@ -340,7 +340,7 @@ export default function Header() {
                     pathname === '/visas/apply-for-oman-visa' ? 'active' : ''
                   }`}
                 >
-                  Apply for Oman Visa
+                  Apply for Oman Tourist Visa
                 </Link>
               </li>
               {/* <li
@@ -594,7 +594,7 @@ export default function Header() {
               }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Apply for Oman Visa
+              Apply for Oman Tourist Visa
             </Link>
 
             {/* <Link

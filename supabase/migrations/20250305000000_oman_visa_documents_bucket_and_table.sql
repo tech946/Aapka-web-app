@@ -27,13 +27,8 @@ CREATE TABLE IF NOT EXISTS oman_visa_enquiries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name_as_per_passport VARCHAR(255),
   nationality VARCHAR(100),
-  date_of_birth DATE,
-  passport_number VARCHAR(50),
-  passport_issue_date DATE,
-  passport_expiry_date DATE,
   contact_number VARCHAR(50),
   email VARCHAR(255),
-  current_address TEXT,
   expected_travel_date DATE,
   purpose_of_visit VARCHAR(100),
   duration_of_stay VARCHAR(50),
@@ -48,12 +43,8 @@ CREATE TABLE IF NOT EXISTS oman_visa_enquiries (
 -- Add any missing columns (for projects that had older schema)
 ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS full_name_as_per_passport VARCHAR(255);
 ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS nationality VARCHAR(100);
-ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS date_of_birth DATE;
-ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS passport_number VARCHAR(50);
-ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS passport_issue_date DATE;
-ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS passport_expiry_date DATE;
 ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS contact_number VARCHAR(50);
-ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS current_address TEXT;
+ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS email VARCHAR(255);
 ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS expected_travel_date DATE;
 ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS purpose_of_visit VARCHAR(100);
 ALTER TABLE oman_visa_enquiries ADD COLUMN IF NOT EXISTS duration_of_stay VARCHAR(50);

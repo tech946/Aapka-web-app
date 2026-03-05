@@ -72,19 +72,75 @@ async function handleCallback(req: NextRequest) {
     const orderStatus = data.order_status;
     const orderId = data.order_id;
     const amount = data.amount;
-    const currency = data.currency || 'AED'; // Get currency from response
+    const currency = data.currency || 'AED';
     const bookingId = data.merchant_param1 || '';
     const paymentType = data.merchant_param2 || 'full';
     const trackingId = data.tracking_id || '';
 
     if (orderStatus !== 'Success') {
-      // Payment failed
+      if (paymentType === 'oman_visa') {
+        return NextResponse.redirect(
+          new URL('/visas/apply-for-oman-visa?error=payment_failed', req.nextUrl.origin)
+        );
+      }
       return NextResponse.redirect(
         new URL(
           `/checkout?error=payment_failed&bookingId=${bookingId}`,
           req.nextUrl.origin
         )
       );
+    }
+
+    // Oman visa payment success – complete via CRM, send emails, redirect to thank you
+    if (paymentType === 'oman_visa') {
+      const paymentAmount = parseFloat(amount || '0');
+      const apiKey = process.env.WEBSITE_API_KEY?.trim();
+      const crmBase = process.env.CRM_API_URL || 'https://crm.aapkatourism.com';
+      const completeUrl = `${crmBase.replace(/\/$/, '')}/api/website/oman-visa-enquiry/complete-payment`;
+
+      try {
+        const completeRes = await fetch(completeUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey || '',
+          },
+          body: JSON.stringify({
+            order_id: orderId,
+            payment_transaction_id: trackingId || orderId,
+            payment_amount: paymentAmount,
+            payment_currency: currency,
+          }),
+        });
+
+        const completeData = await completeRes.json();
+
+        if (!completeRes.ok || !completeData.success) {
+          console.error('Oman visa complete-payment failed:', completeData);
+          return NextResponse.redirect(
+            new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin)
+          );
+        }
+
+        // Send emails in background
+        const emailApiUrl = `${req.nextUrl.origin}/api/email/oman-visa-confirmation`;
+        fetch(emailApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: completeData.name,
+            email: completeData.email,
+            contact: completeData.contact || '',
+          }),
+        }).catch((e) => console.error('Oman visa email error:', e));
+
+        return NextResponse.redirect(new URL('/visas/apply-for-oman-visa/thank-you', req.nextUrl.origin));
+      } catch (omanErr: unknown) {
+        console.error('Oman visa callback error:', omanErr);
+        return NextResponse.redirect(
+          new URL('/visas/apply-for-oman-visa?error=payment_processing_failed', req.nextUrl.origin)
+        );
+      }
     }
 
     // Update booking with payment details
