@@ -19,6 +19,8 @@
 .oman-visa-thank-you-icon {
   color: #10b981;
   margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
 }
 
 .oman-visa-thank-you-container h1 {

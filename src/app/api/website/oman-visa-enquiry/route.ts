@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/nodemailer';
 import { isEmailConfigured } from '@/lib/nodemailer';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { randomUUID } from 'crypto';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -115,6 +117,79 @@ function getAdminNotificationEmailHtml(name: string, email: string, contact: str
   `;
 }
 
+const BUCKET_NAME = 'documents';
+
+async function storeOmanVisaLocally(
+  formData: FormData,
+  passportFront: FormDataEntryValue | null,
+  passportInside: FormDataEntryValue | null,
+  photograph: FormDataEntryValue | null
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const enquiryId = randomUUID();
+    const prefix = `oman-visa/${enquiryId}`;
+
+    const uploadFile = async (file: FormDataEntryValue, name: string): Promise<string | null> => {
+      if (!(file instanceof Blob) || file.size === 0) return null;
+      const ext = file.name?.split('.').pop() || (file.type?.includes('pdf') ? 'pdf' : 'jpg');
+      const path = `${prefix}/${name}.${ext}`;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const { data, error } = await supabaseAdmin.storage
+        .from(BUCKET_NAME)
+        .upload(path, buffer, { contentType: file.type || 'application/octet-stream', upsert: false });
+      if (error) {
+        console.error(`Oman visa: failed to upload ${name}:`, error);
+        return null;
+      }
+      const { data: urlData } = supabaseAdmin.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+      return urlData.publicUrl;
+    };
+
+    const [passportFrontUrl, passportInsideUrl, photographUrl] = await Promise.all([
+      passportFront ? uploadFile(passportFront, 'passport_front') : null,
+      passportInside ? uploadFile(passportInside, 'passport_inside') : null,
+      photograph ? uploadFile(photograph, 'photograph') : null,
+    ]);
+
+    const getStr = (k: string) => (formData.get(k) as string)?.trim() || null;
+    const getDate = (k: string) => {
+      const v = getStr(k);
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+    };
+
+    const { error } = await supabaseAdmin.from('oman_visa_enquiries').insert({
+      full_name_as_per_passport: getStr('full_name_as_per_passport'),
+      nationality: getStr('nationality'),
+      date_of_birth: getDate('date_of_birth'),
+      passport_number: getStr('passport_number'),
+      passport_issue_date: getDate('passport_issue_date'),
+      passport_expiry_date: getDate('passport_expiry_date'),
+      contact_number: getStr('contact_number'),
+      email: getStr('email'),
+      current_address: getStr('current_address'),
+      expected_travel_date: getDate('expected_travel_date'),
+      purpose_of_visit: getStr('purpose_of_visit'),
+      duration_of_stay: getStr('duration_of_stay'),
+      passport_front_url: passportFrontUrl,
+      passport_inside_url: passportInsideUrl,
+      photograph_url: photographUrl,
+      declaration_accepted: getStr('declaration_accepted') === 'true',
+      status: 'new',
+    });
+
+    if (error) {
+      console.error('Oman visa: failed to insert enquiry:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: unknown) {
+    console.error('Oman visa fallback error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'Storage failed' };
+  }
+}
+
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, {
     status: 200,
@@ -157,37 +232,56 @@ export async function POST(req: NextRequest) {
       body: forwardFormData,
     });
 
-    if (response.status === 405) {
-      console.error('CRM returned 405 - ensure CRM is deployed and route exists. If testing locally, set CRM_API_URL=http://localhost:3001 in web app .env.local');
-    }
-
     const responseText = await response.text();
     let data: { success?: boolean; error?: string; details?: string } = {};
     try {
       data = responseText ? JSON.parse(responseText) : {};
     } catch {
-      console.error('CRM response (not JSON):', responseText?.substring(0, 500));
-      return NextResponse.json(
-        {
-          error: `CRM returned invalid response (${response.status})`,
-          details: responseText?.substring(0, 200) || 'Empty or non-JSON body',
-        },
-        { status: 502 }
-      );
-    }
-
-    if (!response.ok) {
-      const errMsg = data.error || data.details || `CRM returned ${response.status}`;
-      console.error('CRM Oman visa error:', { status: response.status, error: data.error, details: data.details });
-      return NextResponse.json(
-        { error: errMsg, details: data.details },
-        { status: response.status }
-      );
+      if (response.ok) {
+        data = {};
+      }
     }
 
     const name = (formData.get('full_name_as_per_passport') as string)?.trim();
     const email = (formData.get('email') as string)?.trim();
     const contact = (formData.get('contact_number') as string)?.trim();
+
+    // When CRM returns 405 or other error, fallback to storing in web app Supabase
+    if (!response.ok) {
+      console.warn('CRM Oman visa returned', response.status, '- falling back to local Supabase storage');
+      const stored = await storeOmanVisaLocally(formData, passportFront, passportInside, photograph);
+      if (!stored.success) {
+        return NextResponse.json(
+          { error: stored.error || 'Failed to submit application' },
+          { status: 500 }
+        );
+      }
+      if (name && email && isEmailConfigured()) {
+        await Promise.allSettled([
+          sendEmail({
+            to: email,
+            subject: 'Oman Visa Application Received - Aapka Tourism',
+            html: getOmanVisaConfirmationEmailHtml(name),
+          }),
+          sendEmail({
+            to: ADMIN_EMAIL,
+            subject: `New Oman Visa Application: ${name} – 150 AED`,
+            html: getAdminNotificationEmailHtml(name, email, contact || ''),
+          }),
+        ]);
+      }
+      return NextResponse.json(
+        { success: true, message: 'Application submitted successfully' },
+        {
+          status: 201,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, x-api-key, Authorization',
+          },
+        }
+      );
+    }
 
     if (data.success && name && email && isEmailConfigured()) {
       await Promise.allSettled([
