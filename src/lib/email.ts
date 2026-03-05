@@ -1,10 +1,5 @@
-import { Resend } from 'resend';
 import { parseDateStringToLocal } from '@/lib/utils';
-
-// Initialize Resend only if API key is available
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+import { sendEmail, isEmailConfigured } from '@/lib/nodemailer';
 
 // Helper function for currency formatting
 function formatCurrency(amount: number, currency: string): string {
@@ -589,17 +584,16 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
   );
 
   try {
-    // Check if Resend is configured
-    console.log(`📧 [EMAIL] Checking Resend configuration...`);
-    const hasResend = !!resend;
-    const hasApiKey = !!process.env.RESEND_API_KEY;
+    // Check if SMTP is configured
+    console.log(`📧 [EMAIL] Checking SMTP configuration...`);
+    const configured = isEmailConfigured();
     console.log(
-      `📧 [EMAIL] Resend instance: ${hasResend ? '✅' : '❌'}, API Key: ${hasApiKey ? '✅' : '❌'}`
+      `📧 [EMAIL] Nodemailer/SMTP: ${configured ? '✅' : '❌'}`
     );
 
-    if (!resend || !process.env.RESEND_API_KEY) {
+    if (!configured) {
       console.error(
-        '❌ [EMAIL] Email service is disabled - RESEND_API_KEY not configured'
+        '❌ [EMAIL] Email service is disabled - SMTP_HOST, SMTP_USER, SMTP_PASS not configured'
       );
       return { success: false, error: 'Email service not configured' };
     }
@@ -624,24 +618,23 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
 
     // Send email to customer
     if (customerEmail) {
-      try {
-        console.log(
-          `📧 [EMAIL] Sending customer confirmation email to: ${customerEmail}`
-        );
-        const customerEmailResult = await resend.emails.send({
-          from: 'Aapka Tourism <noreply@aapkatourism.com>',
-          to: customerEmail,
-          subject: customerEmailSubject,
-          html: getCustomerEmailTemplate(data),
-        });
+      console.log(
+        `📧 [EMAIL] Sending customer confirmation email to: ${customerEmail}`
+      );
+      const customerEmailResult = await sendEmail({
+        to: customerEmail,
+        subject: customerEmailSubject,
+        html: getCustomerEmailTemplate(data),
+      });
 
-        results.customerEmailId = customerEmailResult.data?.id;
+      if (customerEmailResult.success) {
+        results.customerEmailId = customerEmailResult.messageId;
         console.log(
           `✅ [EMAIL] Customer booking confirmation email sent successfully!`
         );
-        console.log(`✅ [EMAIL] Customer Email ID: ${results.customerEmailId}`);
-      } catch (customerError: any) {
-        const errorMsg = `Failed to send customer email: ${customerError.message}`;
+        console.log(`✅ [EMAIL] Message ID: ${results.customerEmailId}`);
+      } else {
+        const errorMsg = `Failed to send customer email: ${customerEmailResult.error}`;
         console.error(`❌ [EMAIL] ${errorMsg}`);
         errors.push(errorMsg);
       }
@@ -652,24 +645,23 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
     }
 
     // Send email to internal team
-    try {
-      console.log(
-        `📧 [EMAIL] Sending internal notification email to: ${internalRecipientEmail}`
-      );
-      const internalEmailResult = await resend.emails.send({
-        from: 'Aapka Tourism <noreply@aapkatourism.com>',
-        to: internalRecipientEmail,
-        subject: internalEmailSubject,
-        html: getInternalEmailTemplate(data),
-      });
+    console.log(
+      `📧 [EMAIL] Sending internal notification email to: ${internalRecipientEmail}`
+    );
+    const internalEmailResult = await sendEmail({
+      to: internalRecipientEmail,
+      subject: internalEmailSubject,
+      html: getInternalEmailTemplate(data),
+    });
 
-      results.internalEmailId = internalEmailResult.data?.id;
+    if (internalEmailResult.success) {
+      results.internalEmailId = internalEmailResult.messageId;
       console.log(
         `✅ [EMAIL] Internal booking notification email sent successfully!`
       );
-      console.log(`✅ [EMAIL] Internal Email ID: ${results.internalEmailId}`);
-    } catch (internalError: any) {
-      const errorMsg = `Failed to send internal email: ${internalError.message}`;
+      console.log(`✅ [EMAIL] Message ID: ${results.internalEmailId}`);
+    } else {
+      const errorMsg = `Failed to send internal email: ${internalEmailResult.error}`;
       console.error(`❌ [EMAIL] ${errorMsg}`);
       errors.push(errorMsg);
     }

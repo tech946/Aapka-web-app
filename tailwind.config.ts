@@ -11,8 +11,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-manrope)', 'Manrope', 'system-ui', 'sans-serif'],
-        manrope: ['var(--font-manrope)', 'Manrope', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        inter: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         fraunces: ['var(--font-fraunces)', 'Fraunces', 'serif'],
         heading: ['var(--font-fraunces)', 'Fraunces', 'serif'],
       },

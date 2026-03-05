@@ -69,6 +69,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    await createInfluencerReferralConversion(bookingId, amountInRupees);
+
     // Approve commissions for this booking (if referral exists and discount was not applied)
     try {
       const { data: booking } = await supabaseAdmin
@@ -217,6 +219,8 @@ export async function GET(req: NextRequest) {
         )
       );
     }
+
+    await createInfluencerReferralConversion(bookingId, amountInRupees);
 
     // Approve commissions for this booking (if referral exists and discount was not applied)
     try {
@@ -451,7 +455,7 @@ async function sendBookingEmails(
       console.log(
         `✅ [SEND EMAILS] Booking confirmation email sent successfully for Booking #${emailData.bookingId}`
       );
-      console.log(`✅ [SEND EMAILS] Resend Email ID: ${emailResult.internalEmailId}`);
+      console.log(`✅ [SEND EMAILS] Internal Email Message ID: ${emailResult.internalEmailId}`);
     } else {
       console.error(
         `❌ [SEND EMAILS] Failed to send booking confirmation email for Booking #${emailData.bookingId}`
@@ -462,6 +466,57 @@ async function sendBookingEmails(
     console.error(`❌ [SEND EMAILS] Unexpected error in sendBookingEmails for Booking #${bookingId}:`, error);
     console.error(`❌ [SEND EMAILS] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
     // Don't throw - we don't want to block the payment flow
+  }
+}
+
+// Create influencer referral conversion when booking has influencer_referral_code
+async function createInfluencerReferralConversion(
+  bookingId: string,
+  paymentAmount: number
+): Promise<void> {
+  try {
+    const { data: booking } = await supabaseAdmin
+      .from('bookings')
+      .select('influencer_referral_code, payment_amount')
+      .eq('id', bookingId)
+      .single();
+
+    if (!booking?.influencer_referral_code) return;
+
+    const refCode = booking.influencer_referral_code;
+    const paymentAmt =
+      parseFloat(booking.payment_amount || String(paymentAmount)) || paymentAmount;
+
+    const { data: link } = await supabaseAdmin
+      .from('influencer_referral_links')
+      .select('id, influencer_id, entity_id')
+      .eq('referral_code', refCode)
+      .single();
+
+    if (!link) return;
+
+    const { data: commission } = await supabaseAdmin
+      .from('referral_commissions')
+      .select('commission_percent')
+      .eq('entity_type', 'package')
+      .eq('entity_id', link.entity_id)
+      .eq('is_active', true)
+      .single();
+
+    const commissionPercent = parseFloat(commission?.commission_percent || '0') || 0;
+    const commissionAmount = (paymentAmt * commissionPercent) / 100;
+
+    await supabaseAdmin.from('referral_conversions').insert({
+      referral_code: refCode,
+      influencer_id: link.influencer_id,
+      booking_id: bookingId,
+      payment_amount: paymentAmt,
+      commission_percent: commissionPercent,
+      commission_amount: commissionAmount,
+      status: 'pending',
+    });
+  } catch (err) {
+    console.error('[INFLUENCER] Error creating conversion:', err);
   }
 }
 

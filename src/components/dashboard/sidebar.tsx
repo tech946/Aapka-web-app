@@ -252,6 +252,9 @@ export function Sidebar() {
               </svg>
               <span>Deals of the Day</span>
             </Link>
+
+            {/* Influencers (collapsible) */}
+            <InfluencersSidebar pathname={pathname} />
           </>
         )}
 
@@ -269,6 +272,129 @@ export function Sidebar() {
         )}
       </div>
     </div>
+  );
+}
+
+function InfluencersSidebar({ pathname }: { pathname: string }) {
+  const isInfluencers = pathname.startsWith('/dashboard/influencers');
+  const [expanded, setExpanded] = useState(isInfluencers);
+
+  useEffect(() => {
+    if (isInfluencers) setExpanded(true);
+  }, [isInfluencers]);
+
+  const InfluencerIcon = () => (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='24'
+      height='24'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      className='lucide lucide-megaphone w-16 h-16'
+      aria-hidden='true'
+    >
+      <path d='m3 11 18-5v12L3 14v-3z'></path>
+      <path d='M11.6 16.8a3 3 0 1 1-5.8-1.6'></path>
+    </svg>
+  );
+
+  const FolderIcon = () => (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='20'
+      height='20'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      className='lucide lucide-folder'
+      aria-hidden='true'
+    >
+      <path d='M3 7h5l2 3h11v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'></path>
+    </svg>
+  );
+
+  const items = [
+    { href: '/dashboard/influencers', label: 'Manage Influencers' },
+    { href: '/dashboard/influencers/invite', label: 'Send Invitations' },
+    {
+      href: '/dashboard/influencers/commissions',
+      label: 'Commission Settings',
+    },
+    {
+      href: '/dashboard/influencers/conversions',
+      label: 'Referral Conversions',
+    },
+    {
+      href: '/dashboard/influencers/withdrawals',
+      label: 'Withdrawal Requests',
+    },
+  ];
+
+  return (
+    <>
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className={`sidebar_item ${isInfluencers ? 'active' : ''}`}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <InfluencerIcon />
+        <span>Influencers</span>
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          width='16'
+          height='16'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='2'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          style={{
+            marginLeft: 'auto',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+            flexShrink: 0,
+          }}
+          aria-hidden='true'
+        >
+          <path d='m6 9 6 6 6-6' />
+        </svg>
+      </button>
+      {expanded && (
+        <div style={{ paddingLeft: 24 }}>
+          {items.map(item => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`sidebar_item ${isActive ? 'active' : ''}`}
+              >
+                <FolderIcon />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }
 

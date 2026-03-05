@@ -328,6 +328,23 @@ export default function Header() {
                   Submit your enquiry
                 </Link>
               </li>
+              {/* Oman visa link hidden for now
+              <li
+                ref={el => {
+                  linkRefs.current['/visas/apply-for-oman-visa'] = el;
+                }}
+                className={pathname === '/visas/apply-for-oman-visa' ? 'active' : ''}
+              >
+                <Link
+                  href='/visas/apply-for-oman-visa'
+                  className={`header-nav-link ${
+                    pathname === '/visas/apply-for-oman-visa' ? 'active' : ''
+                  }`}
+                >
+                  Apply for Oman Visa
+                </Link>
+              </li>
+              */}
               {/* <li
                 ref={el => {
                   linkRefs.current['/contact'] = el;
@@ -571,6 +588,18 @@ export default function Header() {
             >
               Submit your enquiry
             </Link>
+
+            {/* Oman visa link hidden for now
+            <Link
+              href='/visas/apply-for-oman-visa'
+              className={`mobile-sidebar-link ${
+                pathname === '/visas/apply-for-oman-visa' ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Apply for Oman Visa
+            </Link>
+            */}
 
             {/* <Link
               href='/contact'

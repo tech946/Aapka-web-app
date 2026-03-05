@@ -113,6 +113,51 @@ async function handleCallback(req: NextRequest) {
       );
     }
 
+    // Create influencer referral conversion (when customer paid via influencer link)
+    try {
+      const { data: bookingForInfluencer } = await supabaseAdmin
+        .from('bookings')
+        .select('influencer_referral_code, payment_amount, payment_amount_currency')
+        .eq('id', bookingId)
+        .single();
+
+      if (bookingForInfluencer?.influencer_referral_code) {
+        const refCode = bookingForInfluencer.influencer_referral_code;
+        const paymentAmt = parseFloat(bookingForInfluencer.payment_amount || String(paymentAmount)) || paymentAmount;
+
+        const { data: link } = await supabaseAdmin
+          .from('influencer_referral_links')
+          .select('id, influencer_id, entity_id')
+          .eq('referral_code', refCode)
+          .single();
+
+        if (link) {
+          const { data: commission } = await supabaseAdmin
+            .from('referral_commissions')
+            .select('commission_percent')
+            .eq('entity_type', 'package')
+            .eq('entity_id', link.entity_id)
+            .eq('is_active', true)
+            .single();
+
+          const commissionPercent = parseFloat(commission?.commission_percent || '0') || 0;
+          const commissionAmount = (paymentAmt * commissionPercent) / 100;
+
+          await supabaseAdmin.from('referral_conversions').insert({
+            referral_code: refCode,
+            influencer_id: link.influencer_id,
+            booking_id: bookingId,
+            payment_amount: paymentAmt,
+            commission_percent: commissionPercent,
+            commission_amount: commissionAmount,
+            status: 'pending',
+          });
+        }
+      }
+    } catch (influencerErr) {
+      console.error('[INFLUENCER] Error creating conversion:', influencerErr);
+    }
+
     // Approve commissions for this booking (if referral exists and discount was not applied)
     try {
       const { data: booking } = await supabaseAdmin

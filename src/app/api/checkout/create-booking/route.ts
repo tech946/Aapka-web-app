@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { REFERRAL_COOKIE_NAME } from '@/lib/influencer-referral';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -299,6 +301,16 @@ export async function POST(req: NextRequest) {
     const referralId = referralItem?.referralId || null;
     const referralDiscountApplied = referralItem?.referralDiscountApplied || false;
 
+    // Influencer referral: read from cookie (set when customer clicked /ref/CODE)
+    let influencerReferralCode: string | null = null;
+    try {
+      const cookieStore = cookies();
+      const refCookie = cookieStore.get(REFERRAL_COOKIE_NAME);
+      if (refCookie?.value) influencerReferralCode = refCookie.value;
+    } catch {
+      // Ignore if cookies unavailable
+    }
+
     const bookingData: any = {
       package_ids: packageIds,
       total_amount: totalAmount,
@@ -316,6 +328,8 @@ export async function POST(req: NextRequest) {
         soloItem?.soloTravellerShareConsent ?? false,
       // Referral tracking (for agent commission system)
       referral_id: referralId,
+      // Influencer referral (from cookie, for commission on payment)
+      ...(influencerReferralCode && { influencer_referral_code: influencerReferralCode }),
     };
 
     // Add payment fields if provided

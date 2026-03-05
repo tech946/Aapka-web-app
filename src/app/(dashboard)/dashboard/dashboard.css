@@ -943,6 +943,16 @@
   display: inline-block;
 }
 
+/* Invite page compact spacing */
+.invite_page .invite_form_section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+}
+.invite_page .invite_section_title {
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
 /* Form Grid Layout */
 .form_grid {
   display: grid;

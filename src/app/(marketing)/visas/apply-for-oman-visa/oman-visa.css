@@ -1,0 +1,338 @@
+.oman-visa-page {
+  background: #f5f5f5;
+  padding: 3rem 0;
+  min-height: calc(100vh - 200px);
+}
+
+.oman-visa-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.oman-visa-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.oman-visa-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #f97316;
+  margin: 0 0 1rem 0;
+}
+
+.oman-visa-intro {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.oman-visa-info-box {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.oman-visa-info-box li{
+  list-style:disc;
+}
+.oman-visa-info-box h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  color: #9a3412;
+}
+
+.oman-visa-info-box ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.oman-visa-note {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.9rem;
+  color: #92400e;
+  font-style: italic;
+}
+
+.oman-visa-form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.oman-visa-form-group textarea {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 64px;
+}
+
+.oman-visa-payment-box .oman-visa-fee {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.oman-visa-payment-box ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #4b5563;
+  list-style: disc;
+}
+.oman-visa-section ol{
+  list-style: decimal;
+}
+.oman-visa-section ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.oman-visa-declaration .oman-visa-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.oman-visa-declaration .oman-visa-checkbox input {
+  margin-top: 0.25rem;
+  accent-color: #f97316;
+}
+
+.oman-visa-footer-security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.oman-visa-form {
+  background: white;
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.oman-visa-section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.oman-visa-section:last-of-type {
+  border-bottom: none;
+}
+
+.oman-visa-section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f97316;
+}
+
+.oman-visa-form-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+}
+
+.oman-visa-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oman-visa-form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.oman-visa-form-group input[type='text'],
+.oman-visa-form-group input[type='email'],
+.oman-visa-form-group input[type='tel'],
+.oman-visa-form-group input[type='date'],
+.oman-visa-form-group select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.oman-visa-country-select button {
+  min-height: 38px !important;
+  padding: 0.5rem 0.6rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 6px !important;
+}
+
+.oman-visa-form-group input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.oman-visa-form-group input.error {
+  border-color: #dc2626;
+}
+
+.oman-visa-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.oman-visa-doc-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: -0.5rem 0 1rem 0;
+}
+
+.oman-visa-docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.oman-visa-doc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.oman-visa-doc-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .oman-visa-docs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oman-visa-doc-group label {
+    white-space: normal;
+  }
+}
+
+.oman-visa-file-wrap {
+  position: relative;
+}
+
+.oman-visa-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.oman-visa-file-display {
+  padding: 1.25rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.oman-visa-file-wrap:hover .oman-visa-file-display,
+.oman-visa-file-input:focus + .oman-visa-file-display {
+  border-color: #f97316;
+  background: #fff7ed;
+}
+
+.oman-visa-file-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.oman-visa-file-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.oman-visa-form-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.oman-visa-submit-btn {
+  background: #f97316;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 260px;
+}
+
+.oman-visa-submit-btn:hover:not(:disabled) {
+  background: #ea580c;
+}
+
+.oman-visa-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.oman-visa-spin {
+  animation: oman-visa-spin 1s linear infinite;
+}
+
+@keyframes oman-visa-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (min-width: 640px) {
+  .oman-visa-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .oman-visa-form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
