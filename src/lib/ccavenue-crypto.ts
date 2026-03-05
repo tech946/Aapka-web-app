@@ -69,21 +69,17 @@ export function redirectResponseToJson(
     throw new Error('CCAvenue encrypted response is required');
   }
 
-  // Decrypt the response
-  let ccavResponse = decrypt(response, workingKey);
+  const ccavResponse = decrypt(response, workingKey);
+  const result: Record<string, string> = {};
 
-  // Parse the response string (format: key=value&key=value)
-  const responseArray = ccavResponse.split('&');
-  const stringify = JSON.stringify(responseArray);
-  const removeQ = stringify.replace(/['"]+/g, '');
-  const removeS = removeQ.replace(/[[\]]/g, '');
-
-  // Convert to object
-  return removeS
-    .split(',')
-    .reduce((o: Record<string, string>, pair: string) => {
-      const [key, value] = pair.split('=');
-      o[key] = value;
-      return o;
-    }, {});
+  // Parse key=value&key=value (values may contain commas or =)
+  for (const pair of ccavResponse.split('&')) {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex >= 0) {
+      const key = pair.slice(0, eqIndex).trim();
+      const value = pair.slice(eqIndex + 1).trim();
+      if (key) result[key] = value;
+    }
+  }
+  return result;
 }

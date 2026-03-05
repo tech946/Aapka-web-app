@@ -71,7 +71,7 @@ async function handleCallback(req: NextRequest) {
     // Use the guide's method to decrypt and parse response
     const data = redirectResponseToJson(encryptedResponse, workingKey);
 
-    const orderStatus = data.order_status;
+    const orderStatus = data.order_status || '';
     const orderId = data.order_id;
     const amount = data.amount;
     const currency = data.currency || 'AED';
@@ -79,7 +79,13 @@ async function handleCallback(req: NextRequest) {
     const paymentType = data.merchant_param2 || 'full';
     const trackingId = data.tracking_id || '';
 
-    if (orderStatus !== 'Success') {
+    const isSuccess = orderStatus.trim().toLowerCase() === 'success';
+    if (!isSuccess) {
+      console.warn('[CCAVENUE] Payment not successful:', {
+        order_status: orderStatus,
+        failure_message: data.failure_message,
+        status_message: data.status_message,
+      });
       // Oman visa: by paymentType or by order ID prefix (OV) from CRM
       const isOmanVisa =
         paymentType === 'oman_visa' ||
