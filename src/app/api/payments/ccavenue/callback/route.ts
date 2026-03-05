@@ -71,15 +71,25 @@ async function handleCallback(req: NextRequest) {
     // Use the guide's method to decrypt and parse response
     const data = redirectResponseToJson(encryptedResponse, workingKey);
 
-    const orderStatus = data.order_status || '';
-    const orderId = data.order_id;
-    const amount = data.amount;
-    const currency = data.currency || 'AED';
-    const bookingId = data.merchant_param1 || '';
-    const paymentType = data.merchant_param2 || 'full';
-    const trackingId = data.tracking_id || '';
+    // CCAvenue may return different key casings (order_id, Order_Id, order_status, etc.)
+    const get = (keys: string[]) => {
+      for (const k of keys) {
+        const v = data[k];
+        if (v != null && String(v).trim()) return String(v).trim();
+      }
+      return '';
+    };
+    const orderStatus = get(['order_status', 'Order_Status']) || '';
+    const orderId = get(['order_id', 'Order_Id']);
+    const amount = get(['amount', 'Amount']) || '';
+    const currency = get(['currency', 'Currency']) || 'AED';
+    const bookingId = get(['merchant_param1', 'Merchant_Param1']);
+    const paymentType = get(['merchant_param2', 'Merchant_Param2']) || 'full';
+    const trackingId = get(['tracking_id', 'Tracking_Id']);
 
-    const isSuccess = orderStatus.trim().toLowerCase() === 'success';
+    console.log('[CCAVENUE] Parsed response:', { orderStatus, orderId: orderId || '(empty)', bookingId: bookingId || '(empty)', paymentType, isOmanStyle: (orderId || bookingId).toUpperCase().startsWith('OV') });
+
+    const isSuccess = orderStatus.toLowerCase() === 'success';
     if (!isSuccess) {
       console.warn('[CCAVENUE] Payment not successful:', {
         order_status: orderStatus,
@@ -106,48 +116,92 @@ async function handleCallback(req: NextRequest) {
     }
 
     // Oman visa payment success – complete via CRM, send emails, redirect to thank you
-    if (paymentType === 'oman_visa') {
+    // Use paymentType, OV prefix from merchant_param1, or order_id (merchant_param2 can be lost in CCAvenue)
+    const ovId = (orderId || bookingId || '').toString().toUpperCase();
+    const isOmanVisaSuccess =
+      paymentType === 'oman_visa' || ovId.startsWith('OV');
+    if (isOmanVisaSuccess) {
       const paymentAmount = parseFloat(amount || '0');
       const apiKey = process.env.WEBSITE_API_KEY?.trim();
       const crmBase = process.env.CRM_API_URL || 'https://crm.aapkatourism.com';
       const completeUrl = `${crmBase.replace(/\/$/, '')}/api/website/oman-visa-enquiry/complete-payment`;
+      // Use order_id from CCAvenue response; fallback to merchant_param1 (we set both to OV... for Oman visa)
+      const orderIdForCrm = orderId || bookingId || '';
+
+      if (!orderIdForCrm) {
+        console.error('[OMAN VISA] Missing order_id and merchant_param1 in CCAvenue response. Raw keys:', Object.keys(data));
+        return NextResponse.redirect(
+          new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
+          { status: 302 }
+        );
+      }
+
+      if (!apiKey) {
+        console.error('[OMAN VISA] WEBSITE_API_KEY not configured');
+        return NextResponse.redirect(
+          new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
+          { status: 302 }
+        );
+      }
 
       try {
+        const completePayload = {
+          order_id: orderIdForCrm,
+          payment_transaction_id: trackingId || orderIdForCrm,
+          payment_amount: paymentAmount,
+          payment_currency: currency,
+        };
+        console.log('[OMAN VISA] Calling complete-payment:', { order_id: orderIdForCrm, url: completeUrl });
+
         const completeRes = await fetch(completeUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-api-key': apiKey || '',
           },
-          body: JSON.stringify({
-            order_id: orderId,
-            payment_transaction_id: trackingId || orderId,
-            payment_amount: paymentAmount,
-            payment_currency: currency,
-          }),
+          body: JSON.stringify(completePayload),
         });
 
-        const completeData = await completeRes.json();
+        const responseText = await completeRes.text();
+        let completeData: { success?: boolean; name?: string; email?: string; contact?: string; error?: string } = {};
+        try {
+          completeData = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          console.error('[OMAN VISA] complete-payment returned non-JSON:', responseText?.substring(0, 300));
+        }
 
         if (!completeRes.ok || !completeData.success) {
-          console.error('Oman visa complete-payment failed:', completeData);
+          console.error('Oman visa complete-payment failed:', {
+            status: completeRes.status,
+            completeData,
+            orderIdForCrm,
+          });
           return NextResponse.redirect(
             new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
             { status: 302 }
           );
         }
 
-        // Send emails in background
+        // Await email so it is sent before redirect (fire-and-forget can get cancelled)
         const emailApiUrl = `${req.nextUrl.origin}/api/email/oman-visa-confirmation`;
-        fetch(emailApiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: completeData.name,
-            email: completeData.email,
-            contact: completeData.contact || '',
-          }),
-        }).catch((e) => console.error('Oman visa email error:', e));
+        try {
+          const emailRes = await fetch(emailApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: completeData.name,
+              email: completeData.email,
+              contact: completeData.contact || '',
+            }),
+          });
+          if (!emailRes.ok) {
+            const errText = await emailRes.text();
+            console.error('Oman visa email API error:', emailRes.status, errText);
+          }
+        } catch (emailErr) {
+          console.error('Oman visa email error:', emailErr);
+          // Still redirect – user has paid and record is saved
+        }
 
         return NextResponse.redirect(
           new URL('/visas/apply-for-oman-visa/thank-you', req.nextUrl.origin),

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useCart } from '@/context/CartContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -309,12 +309,14 @@ export default function CheckoutPage() {
     }
   }, [cartItems]);
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (unless we have an error param from payment callback – e.g. Oman visa users)
+  const searchParams = useSearchParams();
+  const hasPaymentError = !!searchParams?.get('error');
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && !hasPaymentError) {
       router.push('/cart');
     }
-  }, [cartItems, router]);
+  }, [cartItems, router, hasPaymentError]);
 
   // Document display logic:
   // - For tours: never show documents
@@ -918,7 +920,33 @@ export default function CheckoutPage() {
   };
 
   if (cartItems.length === 0) {
-    return null; // Will redirect
+    if (hasPaymentError) {
+      // Payment callback sent user here with error (e.g. Oman visa user, decryption failed)
+      const err = searchParams?.get('error') || 'payment_failed';
+      const msg =
+        err === 'payment_cancelled'
+          ? 'Payment was cancelled.'
+          : err === 'payment_processing_failed'
+            ? 'Payment processing failed. Please try again.'
+            : 'Payment could not be completed. Please try again.';
+      return (
+        <div className='checkout-page'>
+          <div className='checkout-container' style={{ textAlign: 'center', padding: '48px 24px' }}>
+            <h2>Payment Error</h2>
+            <p style={{ marginBottom: 24 }}>{msg}</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link href='/visas/apply-for-oman-visa' className='checkout-back-button'>
+                Oman Visa Application
+              </Link>
+              <Link href='/' className='checkout-back-button'>
+                Back to Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null; // Will redirect to cart
   }
 
   return (
