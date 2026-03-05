@@ -191,9 +191,7 @@ function OmanVisaApplyContent() {
       <div className='oman-visa-container'>
         {/* Header / Introduction */}
         <div className='oman-visa-header'>
-          <h1 className='oman-visa-title'>
-            Apply for Oman Tourist Visa – 24 Hours Processing
-          </h1>
+          <h1 className='oman-visa-title'>Apply for Oman Tourist Visa</h1>
           <p className='oman-visa-intro'>
             Apply for your Oman Visa online in just a few simple steps. Fast
             processing, secure submission, and professional assistance.
@@ -501,8 +499,8 @@ function OmanVisaApplyContent() {
                 regulations.
               </li>
               <li>
-                Visa fees ({VISA_FEE_AED} AED) are strictly non-refundable, even in case of
-                rejection.
+                Visa fees ({VISA_FEE_AED} AED) are strictly non-refundable, even
+                in case of rejection.
               </li>
               <li>
                 Processing time is approximately 24 hours after submission of
