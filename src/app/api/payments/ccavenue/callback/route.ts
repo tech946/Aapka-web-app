@@ -50,7 +50,8 @@ async function handleCallback(req: NextRequest) {
 
     if (!encryptedResponse) {
       return NextResponse.redirect(
-        new URL('/checkout?error=payment_failed', req.nextUrl.origin)
+        new URL('/checkout?error=payment_failed', req.nextUrl.origin),
+        { status: 302 }
       );
     }
 
@@ -62,7 +63,8 @@ async function handleCallback(req: NextRequest) {
 
     if (!workingKey) {
       return NextResponse.redirect(
-        new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin)
+        new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin),
+        { status: 302 }
       );
     }
 
@@ -78,16 +80,22 @@ async function handleCallback(req: NextRequest) {
     const trackingId = data.tracking_id || '';
 
     if (orderStatus !== 'Success') {
-      if (paymentType === 'oman_visa') {
+      // Oman visa: by paymentType or by order ID prefix (OV) from CRM
+      const isOmanVisa =
+        paymentType === 'oman_visa' ||
+        (bookingId && bookingId.toUpperCase().startsWith('OV'));
+      if (isOmanVisa) {
         return NextResponse.redirect(
-          new URL('/visas/apply-for-oman-visa?error=payment_failed', req.nextUrl.origin)
+          new URL('/visas/apply-for-oman-visa?error=payment_failed', req.nextUrl.origin),
+          { status: 302 }
         );
       }
       return NextResponse.redirect(
         new URL(
           `/checkout?error=payment_failed&bookingId=${bookingId}`,
           req.nextUrl.origin
-        )
+        ),
+        { status: 302 }
       );
     }
 
@@ -118,7 +126,8 @@ async function handleCallback(req: NextRequest) {
         if (!completeRes.ok || !completeData.success) {
           console.error('Oman visa complete-payment failed:', completeData);
           return NextResponse.redirect(
-            new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin)
+            new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
+            { status: 302 }
           );
         }
 
@@ -134,11 +143,15 @@ async function handleCallback(req: NextRequest) {
           }),
         }).catch((e) => console.error('Oman visa email error:', e));
 
-        return NextResponse.redirect(new URL('/visas/apply-for-oman-visa/thank-you', req.nextUrl.origin));
+        return NextResponse.redirect(
+          new URL('/visas/apply-for-oman-visa/thank-you', req.nextUrl.origin),
+          { status: 302 }
+        );
       } catch (omanErr: unknown) {
         console.error('Oman visa callback error:', omanErr);
         return NextResponse.redirect(
-          new URL('/visas/apply-for-oman-visa?error=payment_processing_failed', req.nextUrl.origin)
+          new URL('/visas/apply-for-oman-visa?error=payment_processing_failed', req.nextUrl.origin),
+          { status: 302 }
         );
       }
     }
@@ -165,7 +178,8 @@ async function handleCallback(req: NextRequest) {
         new URL(
           `/checkout?error=payment_verified_but_update_failed&bookingId=${bookingId}`,
           req.nextUrl.origin
-        )
+        ),
+        { status: 302 }
       );
     }
 
@@ -304,10 +318,13 @@ async function handleCallback(req: NextRequest) {
     });
 
     // Redirect to thank you page (no params needed)
-    return NextResponse.redirect(new URL('/thank-you', req.nextUrl.origin));
+    return NextResponse.redirect(new URL('/thank-you', req.nextUrl.origin), {
+      status: 302,
+    });
   } catch (error: any) {
     return NextResponse.redirect(
-      new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin)
+      new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin),
+      { status: 302 }
     );
   }
 }
