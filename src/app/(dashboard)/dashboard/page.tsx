@@ -3,8 +3,10 @@ import { redirect } from 'next/navigation';
 import { hasRoleId } from '@/lib/roles';
 import { RoleId } from '@/types/roles';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -14,7 +16,10 @@ export default async function DashboardPage() {
   }
 
   // Content Editor: redirect to blog management (their only access)
-  const isContentEditor = await hasRoleId(session.user.id, RoleId.CONTENT_EDITOR);
+  const isContentEditor = await hasRoleId(
+    session.user.id,
+    RoleId.CONTENT_EDITOR
+  );
   if (isContentEditor) {
     redirect('/dashboard/blog-management');
   }
