@@ -108,57 +108,57 @@ export default function InfluencerWalletPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-2">Wallet</h1>
-      <p className="text-muted-foreground mb-6">
-        Request withdrawals to your bank account or UPI
-      </p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Wallet</h1>
+        <p className="text-muted-foreground mt-1">
+          Request withdrawals to your bank account or UPI
+        </p>
+      </div>
 
-      <div className="rounded-lg border bg-card p-6 mb-6 flex items-center gap-4">
-        <div className="p-3 rounded-full bg-primary/10 text-primary">
-          <Wallet className="w-8 h-8" />
+      <div className="rounded-xl border bg-card p-6 shadow-sm card-accent flex flex-col sm:flex-row items-start sm:items-center gap-6 border-[#ff4c00]/20 bg-gradient-to-br from-[#ff4c00]/5 to-transparent">
+        <div className="p-4 rounded-xl bg-[#ff4c00]/15 text-[#ff4c00]">
+          <Wallet className="w-10 h-10" />
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Available Balance</p>
-          <p className="text-2xl font-bold">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-muted-foreground">Available Balance</p>
+          <p className="text-3xl font-bold mt-1">
             ₹{(data?.available_balance ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             Min withdrawal: ₹{MIN_WITHDRAWAL}
           </p>
         </div>
-        <div className="ml-auto">
-          <button
-            onClick={() => setShowForm(!showForm)}
-            disabled={(data?.available_balance ?? 0) < MIN_WITHDRAWAL}
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 disabled:opacity-50"
-          >
-            Request Withdrawal
-          </button>
-        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          disabled={(data?.available_balance ?? 0) < MIN_WITHDRAWAL}
+          className="btn-accent px-6 py-3 rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+        >
+          Request Withdrawal
+        </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-lg border bg-card p-6 mb-6 space-y-4">
-          <h3 className="font-medium">Withdrawal Request</h3>
+        <form onSubmit={handleSubmit} className="rounded-xl border bg-card p-6 shadow-sm card-accent space-y-5">
+          <h3 className="font-semibold text-lg">Withdrawal Request</h3>
           <div>
-            <label className="block text-sm font-medium mb-1">Amount (₹)</label>
+            <label className="block text-sm font-medium mb-2">Amount (₹)</label>
             <input
               type="number"
               min={MIN_WITHDRAWAL}
               max={data?.available_balance ?? 0}
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              className="w-full max-w-xs rounded border px-3 py-2"
+              className="input-focus w-full max-w-xs rounded-xl border border-input bg-background px-4 py-3 text-sm"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Payment Method</label>
+            <label className="block text-sm font-medium mb-2">Payment Method</label>
             <select
               value={method}
               onChange={e => setMethod(e.target.value as 'upi' | 'bank_transfer')}
-              className="rounded border px-3 py-2"
+              className="input-focus rounded-xl border border-input bg-background px-4 py-3 text-sm max-w-xs"
             >
               <option value="upi">UPI</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -166,60 +166,60 @@ export default function InfluencerWalletPage() {
           </div>
           {method === 'upi' && (
             <div>
-              <label className="block text-sm font-medium mb-1">UPI ID</label>
+              <label className="block text-sm font-medium mb-2">UPI ID</label>
               <input
                 type="text"
                 value={upiId}
                 onChange={e => setUpiId(e.target.value)}
                 placeholder="yourname@upi"
-                className="w-full max-w-xs rounded border px-3 py-2"
+                className="input-focus w-full max-w-xs rounded-xl border border-input bg-background px-4 py-3 text-sm"
               />
             </div>
           )}
           {method === 'bank_transfer' && (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">Account Name</label>
+                <label className="block text-sm font-medium mb-2">Account Name</label>
                 <input
                   type="text"
                   value={bankName}
                   onChange={e => setBankName(e.target.value)}
-                  className="w-full max-w-xs rounded border px-3 py-2"
+                  className="input-focus w-full max-w-xs rounded-xl border border-input bg-background px-4 py-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Account Number</label>
+                <label className="block text-sm font-medium mb-2">Account Number</label>
                 <input
                   type="text"
                   value={bankNumber}
                   onChange={e => setBankNumber(e.target.value)}
-                  className="w-full max-w-xs rounded border px-3 py-2"
+                  className="input-focus w-full max-w-xs rounded-xl border border-input bg-background px-4 py-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">IFSC Code</label>
+                <label className="block text-sm font-medium mb-2">IFSC Code</label>
                 <input
                   type="text"
                   value={ifsc}
                   onChange={e => setIfsc(e.target.value)}
                   placeholder="SBIN0001234"
-                  className="w-full max-w-xs rounded border px-3 py-2"
+                  className="input-focus w-full max-w-xs rounded-xl border border-input bg-background px-4 py-3 text-sm"
                 />
               </div>
             </>
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 disabled:opacity-50"
+              className="btn-accent px-6 py-3 rounded-xl text-sm font-medium disabled:opacity-50"
             >
               {submitting ? 'Submitting...' : 'Submit Request'}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded border text-sm"
+              className="px-6 py-3 rounded-xl border border-input text-sm font-medium hover:bg-muted/50 transition-colors"
             >
               Cancel
             </button>
@@ -227,41 +227,40 @@ export default function InfluencerWalletPage() {
         </form>
       )}
 
-      <div className="rounded-lg border overflow-hidden">
-        <h3 className="p-3 font-medium bg-muted/50">Withdrawal History</h3>
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm card-accent">
+        <div className="px-6 py-4 border-b bg-muted/30">
+          <h3 className="font-semibold">Withdrawal History</h3>
+        </div>
         <table className="w-full">
           <thead className="bg-muted/30">
             <tr>
-              <th className="text-left p-3 font-medium">Amount</th>
-              <th className="text-left p-3 font-medium">Status</th>
-              <th className="text-left p-3 font-medium">Requested</th>
+              <th className="text-left p-4 font-medium text-sm">Amount</th>
+              <th className="text-left p-4 font-medium text-sm">Status</th>
+              <th className="text-left p-4 font-medium text-sm">Requested</th>
             </tr>
           </thead>
           <tbody>
             {!data?.withdrawals?.length ? (
               <tr>
-                <td colSpan={3} className="p-6 text-center text-muted-foreground">
+                <td colSpan={3} className="p-12 text-center text-muted-foreground">
                   No withdrawals yet
                 </td>
               </tr>
             ) : (
               data.withdrawals.map(w => (
-                <tr key={w.id} className="border-t">
-                  <td className="p-3">₹{parseFloat(String(w.amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td className="p-3">
+                <tr key={w.id} className="border-t hover:bg-muted/20 transition-colors">
+                  <td className="p-4 font-medium">₹{parseFloat(String(w.amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td className="p-4">
                     <span
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        w.status === 'paid'
-                          ? 'bg-green-100 text-green-800'
-                          : w.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
+                      className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                        w.status === 'paid' ? 'badge-paid' :
+                        w.status === 'rejected' ? 'badge-rejected' : 'badge-pending'
                       }`}
                     >
                       {w.status}
                     </span>
                   </td>
-                  <td className="p-3 text-sm text-muted-foreground">
+                  <td className="p-4 text-sm text-muted-foreground">
                     {format(new Date(w.requested_at), 'MMM d, yyyy')}
                   </td>
                 </tr>

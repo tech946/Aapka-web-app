@@ -257,7 +257,7 @@
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-family: 'Manrope', var(--font-manrope), system-ui, sans-serif;
+  font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
   font-weight: 500;
   font-size: 14px;
   color: var(--text);
@@ -333,7 +333,7 @@
 }
 
 .header .header_left .dropdown-title h3 {
-  font-family: 'Manrope', var(--font-manrope), system-ui, sans-serif;
+  font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
@@ -427,7 +427,7 @@
 }
 
 .header .header_left .option-text {
-  font-family: 'Manrope', var(--font-manrope), system-ui, sans-serif;
+  font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
   font-size: 14px;
   color: var(--text);
   margin: 0;

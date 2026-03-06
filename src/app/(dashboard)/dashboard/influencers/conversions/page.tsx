@@ -103,8 +103,8 @@ export default function InfluencerConversionsPage() {
             <tr>
               <th>Influencer</th>
               <th>Booking</th>
-              <th style={{ textAlign: 'right' }}>Payment</th>
-              <th style={{ textAlign: 'right' }}>Commission</th>
+              <th className="table_cell_right">Payment</th>
+              <th className="table_cell_right">Commission</th>
               <th>Status</th>
               <th>Date</th>
               <th>Actions</th>
@@ -119,12 +119,12 @@ export default function InfluencerConversionsPage() {
               conversions.map(row => (
                 <tr key={row.id}>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{row.influencers?.name || '—'}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.influencers?.email || ''}</div>
+                    <div className="table_cell_name">{row.influencers?.name || '—'}</div>
+                    <div className="table_cell_email">{row.influencers?.email || ''}</div>
                   </td>
-                  <td style={{ fontSize: 13, fontFamily: 'monospace' }}>{row.booking_id?.slice(0, 8)}...</td>
-                  <td style={{ textAlign: 'right' }}>₹{parseFloat(String(row.payment_amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                  <td style={{ textAlign: 'right' }}>₹{parseFloat(String(row.commission_amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td className="table_cell_mono">{row.booking_id?.slice(0, 8)}...</td>
+                  <td className="table_cell_right">₹{parseFloat(String(row.payment_amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td className="table_cell_right">₹{parseFloat(String(row.commission_amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                   <td>
                     <span className={`deal-status-badge ${
                       row.status === 'paid' ? 'deal-status-active' :
@@ -134,12 +134,12 @@ export default function InfluencerConversionsPage() {
                       {row.status}
                     </span>
                   </td>
-                  <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{format(new Date(row.created_at), 'MMM d, yyyy')}</td>
+                  <td className="table_cell_muted">{format(new Date(row.created_at), 'MMM d, yyyy')}</td>
                   <td>
                     {row.status === 'pending' && (
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div className="table_actions_row">
                         <button onClick={() => handleAction(row.id, 'approve')} disabled={!!acting} className="table_action_btn deal-action-edit" title="Approve">
-                          {acting === row.id ? <Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Check size={16} />}
+                          {acting === row.id ? <Loader2 size={16} className="spinner_inline" /> : <Check size={16} />}
                         </button>
                         <button onClick={() => handleAction(row.id, 'reject')} disabled={!!acting} className="table_action_btn table_action_delete" title="Reject">
                           <X size={16} />

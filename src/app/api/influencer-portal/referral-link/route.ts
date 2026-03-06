@@ -16,7 +16,7 @@ function generateReferralCode(influencerName: string, packageId: string): string
 }
 
 async function getInfluencer() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return null;
 

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 const MIN_WITHDRAWAL = 500;
 
 async function getInfluencerId() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return null;
 

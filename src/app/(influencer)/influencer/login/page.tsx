@@ -37,45 +37,48 @@ export default function InfluencerLoginPage() {
   };
 
   return (
-    <div className="rounded-xl border bg-card p-8 shadow-sm">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-semibold">Influencer Portal</h1>
+    <div className="rounded-2xl border bg-card p-8 shadow-lg card-accent">
+      <div className="text-center mb-8">
+        <div className="inline-flex w-14 h-14 rounded-2xl bg-[#ff4c00]/15 items-center justify-center mb-4">
+          <span className="text-2xl font-bold text-[#ff4c00]">AT</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">Influencer Portal</h1>
         <p className="text-muted-foreground text-sm mt-1">Log in to your account</p>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
+          <label className="block text-sm font-medium mb-2">Email</label>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
             disabled={isLoading}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
+          <label className="block text-sm font-medium mb-2">Password</label>
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
             disabled={isLoading}
           />
         </div>
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50"
+          className="btn-accent w-full py-3 rounded-xl font-medium disabled:opacity-50"
         >
           {isLoading ? 'Logging in...' : 'Log In'}
         </button>
       </form>
-      <p className="text-center text-sm text-muted-foreground mt-4">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         Not an influencer?{' '}
-        <Link href="/" className="text-primary hover:underline">
+        <Link href="/" className="font-medium text-[#ff4c00] hover:underline">
           Go to main site
         </Link>
       </p>

@@ -36,64 +36,67 @@ export default function InfluencerEarningsPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-2">Earnings</h1>
-      <p className="text-muted-foreground mb-6">
-        All your referral conversions and commissions
-      </p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Earnings</h1>
+        <p className="text-muted-foreground mt-1">
+          All your referral conversions and commissions
+        </p>
+      </div>
 
-      <div className="rounded-lg border overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left p-3 font-medium">Package</th>
-              <th className="text-right p-3 font-medium">Customer Paid</th>
-              <th className="text-right p-3 font-medium">Commission</th>
-              <th className="text-left p-3 font-medium">Status</th>
-              <th className="text-left p-3 font-medium">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {earnings.length === 0 ? (
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm card-accent">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-muted/40">
               <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">
-                  No earnings yet. Share your referral links to get started!
-                </td>
+                <th className="text-left p-4 font-medium text-sm">Package</th>
+                <th className="text-right p-4 font-medium text-sm">Customer Paid</th>
+                <th className="text-right p-4 font-medium text-sm">Commission</th>
+                <th className="text-left p-4 font-medium text-sm">Status</th>
+                <th className="text-left p-4 font-medium text-sm">Date</th>
               </tr>
-            ) : (
-              earnings.map(row => (
-                <tr key={row.id} className="border-t">
-                  <td className="p-3">{row.package_name}</td>
-                  <td className="p-3 text-right">
-                    ₹{row.payment_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="p-3 text-right">
-                    ₹{row.commission_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}{' '}
-                    <span className="text-muted-foreground text-xs">({row.commission_percent}%)</span>
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        row.status === 'paid'
-                          ? 'bg-green-100 text-green-800'
-                          : row.status === 'approved'
-                            ? 'bg-blue-100 text-blue-800'
-                            : row.status === 'rejected'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-sm text-muted-foreground">
-                    {format(new Date(row.created_at), 'MMM d, yyyy')}
+            </thead>
+            <tbody>
+              {earnings.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-muted-foreground">No earnings yet</p>
+                      <p className="text-sm text-muted-foreground">Share your referral links to get started!</p>
+                    </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                earnings.map(row => (
+                  <tr key={row.id} className="border-t hover:bg-muted/20 transition-colors">
+                    <td className="p-4 font-medium">{row.package_name}</td>
+                    <td className="p-4 text-right">
+                      ₹{row.payment_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="p-4 text-right">
+                      <span className="font-semibold text-[#ff4c00]">₹{row.commission_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-muted-foreground text-xs ml-1">({row.commission_percent}%)</span>
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                          row.status === 'paid' ? 'badge-paid' :
+                          row.status === 'approved' ? 'badge-approved' :
+                          row.status === 'rejected' ? 'badge-rejected' : 'badge-pending'
+                        }`}
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {format(new Date(row.created_at), 'MMM d, yyyy')}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

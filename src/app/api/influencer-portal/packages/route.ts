@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function getInfluencerId() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return null;
 
@@ -33,8 +33,7 @@ export async function GET() {
     const [packagesRes, commissionsRes, linksRes] = await Promise.all([
       supabaseAdmin
         .from('packages')
-        .select('package_id, package_name, thumbnail_image')
-        .eq('status', 'active')
+        .select('package_id, package_name, thumbnail_image, status')
         .order('package_name'),
       supabaseAdmin
         .from('referral_commissions')
@@ -47,27 +46,33 @@ export async function GET() {
         .eq('entity_type', 'package'),
     ]);
 
+    const normalizeId = (id: unknown) => String(id ?? '').toLowerCase().trim();
     const commissionsMap = new Map<string, { percent: number; is_active: boolean }>();
     (commissionsRes.data || []).forEach((c: any) => {
-      if (c.is_active) {
-        commissionsMap.set(c.entity_id, {
-          percent: parseFloat(c.commission_percent) || 0,
-          is_active: c.is_active,
-        });
+      if (c.is_active !== false) {
+        const percent = Number(c.commission_percent);
+        const pct = !Number.isNaN(percent) ? percent : 0;
+        if (pct > 0) {
+          commissionsMap.set(normalizeId(c.entity_id), {
+            percent: pct,
+            is_active: c.is_active !== false,
+          });
+        }
       }
     });
 
     const linksMap = new Map<string, { code: string; clicks: number }>();
     (linksRes.data || []).forEach((l: any) => {
-      linksMap.set(l.entity_id, {
+      linksMap.set(normalizeId(l.entity_id), {
         code: l.referral_code,
         clicks: l.clicks || 0,
       });
     });
 
     const packages = (packagesRes.data || []).map((p: any) => {
-      const comm = commissionsMap.get(p.package_id);
-      const link = linksMap.get(p.package_id);
+      const pkgId = normalizeId(p.package_id);
+      const comm = commissionsMap.get(pkgId);
+      const link = linksMap.get(pkgId);
       return {
         package_id: p.package_id,
         package_name: p.package_name,

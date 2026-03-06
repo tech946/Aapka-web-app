@@ -39,7 +39,7 @@
 }
 
 .packages-found-label {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 18px;
   font-weight: 600;
   color: #111827;
@@ -47,14 +47,14 @@
 }
 
 .packages-found-value {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 18px;
   font-weight: 700;
   color: #fd6b06;
 }
 
 .filter-section-title {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 18px;
   font-weight: 600;
   color: #111827;
@@ -73,7 +73,7 @@
   border: 1px solid #e5e7eb;
   background: #fff;
   cursor: pointer;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 500;
   color: #111827;
@@ -244,7 +244,7 @@
 }
 
 .suites-card-title {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 18px;
   font-weight: 500;
   color: #1a1a1a;
@@ -253,7 +253,7 @@
 }
 
 .suites-card-destinations {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 15px;
   color: #6b7280;
   margin-bottom: 12px;
@@ -275,7 +275,7 @@
   padding: 5px 14px;
   margin-bottom: 14px;
   width: fit-content;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .suites-card-price {
@@ -283,14 +283,14 @@
 }
 
 .suites-price-amount {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 20px;
   font-weight: 700;
   color: #1a1a1a;
 }
 
 .suites-price-label {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 400;
   color: #6b7280;
@@ -300,7 +300,7 @@
   display: inline-block;
   background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   color: #fff;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 11px;
   font-weight: 600;
   padding: 4px 10px;
@@ -323,7 +323,7 @@
   background: #ea580c;
   border: none;
   color: white;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -357,7 +357,7 @@
   border-radius: 0;
   background: #fff;
   cursor: pointer;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 500;
   min-width: 150px;
@@ -432,7 +432,7 @@
   border: none;
   background: #fff;
   cursor: pointer;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 500;
   color: #111827;
@@ -554,7 +554,7 @@
   color: #fff;
   padding: 6px 14px;
   border-radius: 0;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 12px;
   font-weight: 700;
   z-index: 6;
@@ -584,7 +584,7 @@
   color: #fff;
   padding: 4px 10px;
   border-radius: 0;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 11px;
   font-weight: 600;
   z-index: 5;
@@ -604,7 +604,7 @@
   color: #111827;
   padding: 6px 12px;
   border-radius: 0;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 13px;
   font-weight: 600;
   z-index: 5;
@@ -688,7 +688,7 @@
 }
 
 .package-name {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 20px;
   font-weight: 500;
   color: #111827;
@@ -704,8 +704,8 @@
 
 .package-subtitle {
   font-family:
-    'Manrope',
-    var(--font-manrope),
+    'Inter',
+    var(--font-inter),
     system-ui,
     -apple-system,
     sans-serif !important;
@@ -727,7 +727,7 @@
   padding: 6px 12px;
   background: #10b981;
   color: #fff;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 13px;
   font-weight: 600;
   border-radius: 0;
@@ -744,7 +744,7 @@
 }
 
 .package-price {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 26px;
   font-weight: 700;
   color: #111827;
@@ -752,14 +752,14 @@
 }
 
 .package-price-label {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 500;
   color: #6b7280;
 }
 
 .package-timestamp {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 12px;
   font-weight: 400;
   color: #9ca3af;
@@ -767,7 +767,7 @@
 }
 
 .package-itinerary-summary {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 13px;
   font-weight: 400;
   color: #4b5563;
@@ -790,7 +790,7 @@
   background: rgba(255, 255, 255, 0.98);
   color: #111827;
   text-decoration: none;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 15px;
   font-weight: 600;
   border-radius: 0;
@@ -830,7 +830,7 @@
   padding: 48px 24px;
   text-align: center;
   color: #6b7280;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   font-weight: 500;
 }
@@ -855,7 +855,7 @@
   border-radius: 0;
   background: #fff;
   cursor: pointer;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -873,7 +873,7 @@
 }
 
 .pagination-info {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   color: #6b7280;
   font-weight: 500;

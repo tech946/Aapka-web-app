@@ -80,7 +80,8 @@ export async function getUserWithRoles(userId: string): Promise<UserWithRoles | 
 
 export async function hasRoleId(userId: string, roleId: number): Promise<boolean> {
   const roles = await getUserRoles(userId);
-  return roles.some((ur) => ur.role_id === roleId && ur.is_active);
+  const targetId = Number(roleId);
+  return roles.some((ur) => Number(ur.role_id) === targetId && ur.is_active !== false);
 }
 
 export async function assignRole(

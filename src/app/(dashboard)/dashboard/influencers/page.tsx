@@ -93,9 +93,9 @@ export default function InfluencersPage() {
               <th>Name</th>
               <th>Email</th>
               <th>Status</th>
-              <th style={{ textAlign: 'right' }}>Total Earned</th>
-              <th style={{ textAlign: 'right' }}>Available</th>
-              <th style={{ textAlign: 'right' }}>Pending</th>
+              <th className="table_cell_right">Total Earned</th>
+              <th className="table_cell_right">Available</th>
+              <th className="table_cell_right">Pending</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -104,7 +104,7 @@ export default function InfluencersPage() {
               <tr>
                 <td colSpan={7} className="table_empty">
                   No influencers yet.{' '}
-                  <Link href="/dashboard/influencers/invite" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                  <Link href="/dashboard/influencers/invite" className="invite_empty_link">
                     Send your first invitation
                   </Link>
                 </td>
@@ -112,20 +112,20 @@ export default function InfluencersPage() {
             ) : (
               rows.map(row => (
                 <tr key={row.id}>
-                  <td style={{ fontWeight: 600 }}>{row.name || '—'}</td>
+                  <td className="table_cell_name">{row.name || '—'}</td>
                   <td>{row.email}</td>
                   <td>
                     <span className={`deal-status-badge ${row.status === 'active' ? 'deal-status-active' : 'deal-status-inactive'}`}>
                       {row.status}
                     </span>
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="table_cell_right">
                     ₹{row.total_earned.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="table_cell_right">
                     ₹{row.available_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="table_cell_right">
                     ₹{row.pending_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
                   <td>

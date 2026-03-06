@@ -13,8 +13,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         inter: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-        fraunces: ['var(--font-fraunces)', 'Fraunces', 'serif'],
-        heading: ['var(--font-fraunces)', 'Fraunces', 'serif'],
+        heading: ['var(--font-work-sans)', 'Work Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

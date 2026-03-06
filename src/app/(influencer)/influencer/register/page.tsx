@@ -72,18 +72,24 @@ function InfluencerRegisterForm() {
 
   if (tokenValid === null) {
     return (
-      <div className="rounded-xl border bg-card p-8 text-center">
-        <div className="animate-pulse text-muted-foreground">Validating invitation...</div>
+      <div className="rounded-2xl border bg-card p-8 text-center card-accent">
+        <div className="animate-pulse text-muted-foreground flex items-center justify-center gap-2">
+          <span className="inline-block w-4 h-4 rounded-full bg-[#ff4c00]/30 animate-pulse" />
+          Validating invitation...
+        </div>
       </div>
     );
   }
 
   if (!tokenValid || !token) {
     return (
-      <div className="rounded-xl border bg-card p-8 text-center">
+      <div className="rounded-2xl border bg-card p-8 text-center card-accent">
+        <div className="w-14 h-14 rounded-2xl bg-destructive/15 flex items-center justify-center mx-auto mb-4">
+          <span className="text-2xl">⚠</span>
+        </div>
         <h2 className="text-lg font-semibold text-destructive">Invalid or expired link</h2>
         <p className="text-muted-foreground mt-2">This invitation link is invalid or has expired.</p>
-        <Link href="/influencer/login" className="mt-4 inline-block text-primary hover:underline">
+        <Link href="/influencer/login" className="mt-6 inline-flex items-center font-medium text-[#ff4c00] hover:underline">
           Go to login
         </Link>
       </div>
@@ -91,56 +97,59 @@ function InfluencerRegisterForm() {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-8 shadow-sm">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-semibold">Complete Registration</h1>
+    <div className="rounded-2xl border bg-card p-8 shadow-lg card-accent">
+      <div className="text-center mb-8">
+        <div className="inline-flex w-14 h-14 rounded-2xl bg-[#ff4c00]/15 items-center justify-center mb-4">
+          <span className="text-2xl font-bold text-[#ff4c00]">AT</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">Complete Registration</h1>
         <p className="text-muted-foreground text-sm mt-1">Create your influencer account</p>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium mb-1">Name *</label>
+          <label className="block text-sm font-medium mb-2">Name *</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Your name"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
             disabled={isLoading}
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Phone (optional)</label>
+          <label className="block text-sm font-medium mb-2">Phone (optional)</label>
           <input
             type="tel"
             value={phone}
             onChange={e => setPhone(e.target.value)}
             placeholder="+91 98765 43210"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
             disabled={isLoading}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Password *</label>
+          <label className="block text-sm font-medium mb-2">Password *</label>
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="Min 8 characters"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
             disabled={isLoading}
             minLength={8}
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Confirm Password *</label>
+          <label className="block text-sm font-medium mb-2">Confirm Password *</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
+            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
             disabled={isLoading}
             required
           />
@@ -148,14 +157,14 @@ function InfluencerRegisterForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50"
+          className="btn-accent w-full py-3 rounded-xl font-medium disabled:opacity-50"
         >
           {isLoading ? 'Creating account...' : 'Create Account'}
         </button>
       </form>
-      <p className="text-center text-sm text-muted-foreground mt-4">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         Already have an account?{' '}
-        <Link href="/influencer/login" className="text-primary hover:underline">
+        <Link href="/influencer/login" className="font-medium text-[#ff4c00] hover:underline">
           Log in
         </Link>
       </p>
@@ -167,7 +176,7 @@ export default function InfluencerRegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="rounded-xl border bg-card p-8 text-center">
+        <div className="rounded-2xl border bg-card p-8 text-center card-accent">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
       }

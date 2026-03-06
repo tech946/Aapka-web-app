@@ -65,73 +65,80 @@ export default function InfluencerProfilePage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-2">Profile</h1>
-      <p className="text-muted-foreground mb-6">
-        Update your details and payment information for withdrawals
-      </p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
+        <p className="text-muted-foreground mt-1">
+          Update your details and payment information for withdrawals
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full rounded border px-3 py-2"
-            placeholder="Your name"
-          />
+      <form onSubmit={handleSubmit} className="max-w-xl">
+        <div className="rounded-xl border bg-card p-6 shadow-sm card-accent space-y-5">
+          <h3 className="font-semibold text-lg">Personal Info</h3>
+          <div>
+            <label className="block text-sm font-medium mb-2">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
+              placeholder="Your name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Phone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
+              placeholder="+91 98765 43210"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Phone</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            className="w-full rounded border px-3 py-2"
-            placeholder="+91 98765 43210"
-          />
-        </div>
-        <div className="pt-4 border-t">
-          <h3 className="font-medium mb-3">Withdrawal Details</h3>
-          <div className="space-y-3">
+
+        <div className="rounded-xl border bg-card p-6 shadow-sm card-accent mt-6">
+          <h3 className="font-semibold text-lg mb-5">Withdrawal Details</h3>
+          <p className="text-sm text-muted-foreground mb-5">Add UPI or bank details to receive payouts</p>
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-1">UPI ID</label>
+              <label className="block text-sm font-medium mb-2">UPI ID</label>
               <input
                 type="text"
                 value={upiId}
                 onChange={e => setUpiId(e.target.value)}
-                className="w-full rounded border px-3 py-2"
+                className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
                 placeholder="yourname@upi"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Bank Account Name</label>
+              <label className="block text-sm font-medium mb-2">Bank Account Name</label>
               <input
                 type="text"
                 value={bankName}
                 onChange={e => setBankName(e.target.value)}
-                className="w-full rounded border px-3 py-2"
+                className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
                 placeholder="Account holder name"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Account Number</label>
+              <label className="block text-sm font-medium mb-2">Account Number</label>
               <input
                 type="text"
                 value={bankNumber}
                 onChange={e => setBankNumber(e.target.value)}
-                className="w-full rounded border px-3 py-2"
+                className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
                 placeholder="Bank account number"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">IFSC Code</label>
+              <label className="block text-sm font-medium mb-2">IFSC Code</label>
               <input
                 type="text"
                 value={ifsc}
                 onChange={e => setIfsc(e.target.value)}
-                className="w-full rounded border px-3 py-2"
+                className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
                 placeholder="SBIN0001234"
               />
             </div>
@@ -140,7 +147,7 @@ export default function InfluencerProfilePage() {
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 disabled:opacity-50"
+          className="btn-accent mt-6 px-6 py-3 rounded-xl text-sm font-medium disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>

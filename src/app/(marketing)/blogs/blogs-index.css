@@ -26,7 +26,7 @@
 }
 
 .blogs-index-title {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-work-sans), 'Work Sans', system-ui, sans-serif;
   font-size: clamp(36px, 5vw, 52px);
   font-weight: 700;
   color: #121212;
@@ -36,7 +36,7 @@
 }
 
 .blogs-index-subtitle {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 18px;
   font-weight: 400;
   color: #6b7280;

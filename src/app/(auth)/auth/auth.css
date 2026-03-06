@@ -133,8 +133,8 @@
   color: #333333;
   margin-bottom: 8px;
   font-family:
-    'Manrope',
-    var(--font-manrope),
+    'Inter',
+    var(--font-inter),
     system-ui,
     -apple-system,
     sans-serif;
@@ -205,8 +205,8 @@
   cursor: pointer;
   margin-bottom: 16px;
   font-family:
-    'Manrope',
-    var(--font-manrope),
+    'Inter',
+    var(--font-inter),
     system-ui,
     -apple-system,
     sans-serif;
@@ -237,8 +237,8 @@
   align-items: center;
   justify-content: center;
   font-family:
-    'Manrope',
-    var(--font-manrope),
+    'Inter',
+    var(--font-inter),
     system-ui,
     -apple-system,
     sans-serif;
@@ -291,8 +291,8 @@
   margin: 0;
   line-height: 1.4;
   font-family:
-    'Manrope',
-    var(--font-manrope),
+    'Inter',
+    var(--font-inter),
     system-ui,
     -apple-system,
     sans-serif;

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 async function requireSuperAdmin(): Promise<
   { error: string; status: number } | { session: { user: { id: string } } }
 > {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

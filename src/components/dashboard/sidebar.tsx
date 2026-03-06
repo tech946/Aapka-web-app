@@ -338,20 +338,11 @@ function InfluencersSidebar({ pathname }: { pathname: string }) {
   ];
 
   return (
-    <>
+    <div className="influencer_sidebar_wrapper">
       <button
+        type="button"
         onClick={() => setExpanded(e => !e)}
-        className={`sidebar_item ${isInfluencers ? 'active' : ''}`}
-        style={{
-          width: '100%',
-          textAlign: 'left',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}
+        className={`sidebar_item influencer_sidebar_toggle ${isInfluencers ? 'active' : ''}`}
       >
         <InfluencerIcon />
         <span>Influencers</span>
@@ -365,22 +356,19 @@ function InfluencersSidebar({ pathname }: { pathname: string }) {
           strokeWidth='2'
           strokeLinecap='round'
           strokeLinejoin='round'
-          style={{
-            marginLeft: 'auto',
-            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease',
-            flexShrink: 0,
-          }}
+          className={`influencer_sidebar_chevron ${expanded ? 'expanded' : ''}`}
           aria-hidden='true'
         >
           <path d='m6 9 6 6 6-6' />
         </svg>
       </button>
       {expanded && (
-        <div style={{ paddingLeft: 24 }}>
+        <div className="influencer_sidebar_submenu">
           {items.map(item => {
             const isActive =
-              pathname === item.href || pathname.startsWith(item.href + '/');
+              item.href === '/dashboard/influencers'
+                ? pathname === '/dashboard/influencers'
+                : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
@@ -394,7 +382,7 @@ function InfluencersSidebar({ pathname }: { pathname: string }) {
           })}
         </div>
       )}
-    </>
+    </div>
   );
 }
 

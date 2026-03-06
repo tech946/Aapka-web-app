@@ -45,7 +45,7 @@
 }
 
 .blog-category-title {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-work-sans), 'Work Sans', system-ui, sans-serif;
   font-size: clamp(32px, 4.5vw, 44px);
   font-weight: 700;
   color: #121212;
@@ -55,7 +55,7 @@
 }
 
 .blog-category-count {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   font-weight: 500;
   color: #6b7280;

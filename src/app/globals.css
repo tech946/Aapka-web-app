@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    --font-manrope: var(--font-inter);
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -69,10 +68,10 @@
     font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif;
   }
   
-  /* Headings - Fraunces */
+  /* Headings - Work Sans */
   h1, h2, h3, h4, h5, h6,
   .heading, [class*="heading"], [class*="title"], [class*="Title"] {
-    font-family: 'Fraunces', var(--font-fraunces), serif !important;
+    font-family: 'Work Sans', var(--font-work-sans), system-ui, sans-serif !important;
     font-weight: 600;
   }
   

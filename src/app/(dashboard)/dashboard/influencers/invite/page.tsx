@@ -79,33 +79,35 @@ export default function InviteInfluencersPage() {
       </div>
 
       <div className="form_section invite_form_section">
-        <form onSubmit={handleSubmit} className="form_grid" style={{ maxWidth: 560, marginBottom: 0 }}>
-          <div className="form_row full_width" style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-end', marginBottom: 0 }}>
-            <div className="form_row" style={{ flex: 1 }}>
-              <label>Email address</label>
-              <input
-                type="email"
-                placeholder="influencer@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                disabled={sending}
-              />
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-sm invite_form_card">
+          <form onSubmit={handleSubmit} className="form_grid">
+            <div className="form_row full_width invite_form_row">
+              <div className="form_row">
+                <label>Email address</label>
+                <input
+                  type="email"
+                  placeholder="influencer@example.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  disabled={sending}
+                />
+              </div>
+              <button type="submit" disabled={sending} className="btn_primary invite_submit_btn">
+                {sending ? <Loader2 size={18} className="spinner_inline" /> : <><Mail size={18} /> Send Invite</>}
+              </button>
             </div>
-            <button type="submit" disabled={sending} className="btn_primary" style={{ height: 42, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              {sending ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : <><Mail size={18} /> Send Invite</>}
-            </button>
-          </div>
-        </form>
+          </form>
 
-        {lastRegisterUrl && (
-          <div style={{ padding: 12, background: 'var(--panel-2)', border: '1px solid var(--border)', borderRadius: 8, marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Manual link (email not configured):</span>
-            <code style={{ flex: 1, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lastRegisterUrl}</code>
-            <button onClick={() => copyUrl(lastRegisterUrl)} className="table_action_btn" title="Copy">
-              <Copy size={16} />
-            </button>
-          </div>
-        )}
+          {lastRegisterUrl && (
+            <div className="invite_manual_link">
+              <span>Manual link (email not configured):</span>
+              <code>{lastRegisterUrl}</code>
+              <button onClick={() => copyUrl(lastRegisterUrl)} className="table_action_btn" title="Copy">
+                <Copy size={16} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <h3 className="section_title invite_section_title">Sent Invitations</h3>
@@ -123,7 +125,7 @@ export default function InviteInfluencersPage() {
             {loading ? (
               <tr>
                 <td colSpan={4} className="table_loading">
-                  <div className="dashboard_loader_spinner" style={{ margin: '20px auto' }} />
+                  <div className="dashboard_loader_spinner loader_cell_spinner" />
                 </td>
               </tr>
             ) : invitations.length === 0 ? (
@@ -144,8 +146,8 @@ export default function InviteInfluencersPage() {
                       {inv.status}
                     </span>
                   </td>
-                  <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{format(new Date(inv.expires_at), 'MMM d, yyyy')}</td>
-                  <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{format(new Date(inv.created_at), 'MMM d, yyyy')}</td>
+                  <td className="table_cell_muted">{format(new Date(inv.expires_at), 'MMM d, yyyy')}</td>
+                  <td className="table_cell_muted">{format(new Date(inv.created_at), 'MMM d, yyyy')}</td>
                 </tr>
               ))
             )}

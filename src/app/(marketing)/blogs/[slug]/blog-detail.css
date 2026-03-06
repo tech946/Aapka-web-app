@@ -89,7 +89,7 @@
 }
 
 .blog-detail-title {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-work-sans), 'Work Sans', system-ui, sans-serif;
   font-size: clamp(32px, 4.5vw, 44px);
   font-weight: 700;
   line-height: 1.2;

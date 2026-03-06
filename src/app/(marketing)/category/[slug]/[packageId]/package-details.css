@@ -96,7 +96,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-title {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 36px;
   font-weight: 400;
   color: #000;
@@ -112,14 +112,14 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-current {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 18px;
   font-weight: 600;
   color: #111;
 }
 
 .package-hero-price-original {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 18px;
   font-weight: 400;
   color: #9ca3af;
@@ -132,7 +132,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   padding: 6px 12px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 12px;
   font-weight: 600;
   border-radius: 6px;
@@ -142,7 +142,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-description {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   line-height: 1.6;
   color: #374151;
@@ -150,7 +150,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-add-to-cart-button {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   font-weight: 600;
   color: #fff;
@@ -198,7 +198,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-label {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   font-weight: 600;
   color: #000;
@@ -208,7 +208,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-age {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 13px;
   color: #6b7280;
   font-weight: 400;
@@ -216,7 +216,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-amount {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 18px;
   font-weight: 600;
   color: #000;
@@ -228,7 +228,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-original {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 14px;
   font-weight: 400;
   color: #9ca3af;
@@ -237,7 +237,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-discount {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 13px;
   color: #16a34a;
   font-weight: 500;
@@ -818,7 +818,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   border-radius: 0;
   background: transparent;
   color: #374151;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -1256,7 +1256,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-section h2 {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 28px;
   font-weight: 600;
   color: #111827;
@@ -1266,7 +1266,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-section p {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   line-height: 1.8;
   color: #121212;
@@ -1274,7 +1274,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-html-content {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   line-height: 1.8;
   color: #121212;
@@ -1336,7 +1336,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .itinerary-heading {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 20px;
   font-weight: 600;
   color: #111827;
@@ -1358,7 +1358,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .itinerary-description {
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
   font-size: 16px;
   line-height: 1.8;
   color: #121212;
@@ -1487,7 +1487,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .desktop-booking-modal-title {
-  font-family: var(--font-fraunces);
+  font-family: var(--font-work-sans);
   font-size: 18px;
   font-weight: 400;
   color: #111827;
@@ -1602,7 +1602,7 @@ width: 24px;
   color: #fd6b06;
   letter-spacing: -0.02em;
   line-height: 1;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .desktop-booking-modal-content .booking-price-section .booking-price-amount.discounted {
@@ -1615,7 +1615,7 @@ width: 24px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .desktop-booking-modal-content .input-selectors {
@@ -1725,7 +1725,7 @@ width: 24px;
   font-weight: 500;
   color: #111827;
   cursor: pointer;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .solo-checkbox input[type="checkbox"] {
@@ -1777,7 +1777,7 @@ width: 24px;
   color: #111827;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .solo-pill:hover {
@@ -1799,7 +1799,7 @@ width: 24px;
   font-size: 13px;
   line-height: 1.5;
   color: #374151;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .solo-consent input[type="checkbox"] {
@@ -1847,7 +1847,7 @@ width: 24px;
   font-size: 14px;
   font-weight: 600;
   color: #111827;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .visa-checkbox {
@@ -1858,7 +1858,7 @@ width: 24px;
   font-weight: 500;
   color: #111827;
   cursor: pointer;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .visa-checkbox input[type="checkbox"] {
@@ -1893,7 +1893,7 @@ width: 24px;
   font-size: 13px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .visa-counter-controls {
@@ -1932,7 +1932,7 @@ width: 24px;
   font-size: 13px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .solo-consent input {
@@ -2081,14 +2081,14 @@ width: 24px;
   font-size: 14px;
   color: #111827;
   font-weight: 500;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .person-age-info {
   font-size: 12px;
   color: #6b7280;
   font-weight: 400;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 .person-counter {
@@ -2144,7 +2144,7 @@ width: 24px;
   font-size: 15px;
   font-weight: 600;
   color: #111827;
-  font-family: var(--font-manrope);
+  font-family: var(--font-inter);
 }
 
 /* Dates Dropdown */
@@ -2729,7 +2729,7 @@ width: 24px;
   }
 
   .mobile-booking-modal-title {
-    font-family: var(--font-fraunces);
+    font-family: var(--font-work-sans);
     font-size: 22px;
     font-weight: 700;
     color: #111827;
@@ -2795,7 +2795,7 @@ width: 24px;
     font-weight: 700;
     color: #fd6b06;
     line-height: 1;
-    font-family: var(--font-manrope);
+    font-family: var(--font-inter);
   }
 
   .mobile-booking-price-amount.discounted {
@@ -2808,7 +2808,7 @@ width: 24px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-family: var(--font-manrope);
+    font-family: var(--font-inter);
   }
 
   .mobile-input-selectors {

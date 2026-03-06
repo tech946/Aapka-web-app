@@ -62,49 +62,69 @@ export default function InfluencerPackagesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className='flex items-center justify-center py-12'>
+        <Loader2 className='w-8 h-8 animate-spin text-muted-foreground' />
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-2">Packages</h1>
-      <p className="text-muted-foreground mb-6">
-        Get your unique referral link for each package. Share with your audience to earn commission.
-      </p>
+    <div className='space-y-8'>
+      <div>
+        <h1 className='text-3xl font-semibold tracking-tight'>Packages</h1>
+        <p className='text-muted-foreground mt-1'>
+          Get your unique referral link for each package. Share with your
+          audience to earn commission.
+        </p>
+      </div>
 
       {packages.length === 0 ? (
-        <p className="text-muted-foreground">No packages with commission available. Check back later.</p>
+        <div className='rounded-xl border bg-card p-12 text-center card-accent'>
+          <p className='text-muted-foreground'>
+            No packages with commission available.
+          </p>
+          <p className='text-sm text-muted-foreground mt-1'>
+            Check back later.
+          </p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className='grid gap-6 sm:grid-cols-1'>
           {packages.map(pkg => (
             <div
               key={pkg.package_id}
-              className="rounded-lg border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-4"
+              className='pkg-card flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 p-5 sm:p-6'
             >
-              <div className="flex-1">
-                <h3 className="font-medium">{pkg.package_name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Commission: {pkg.commission_percent}% • Clicks: {pkg.clicks}
-                </p>
+              {pkg.thumbnail_image ? (
+                <img
+                  src={pkg.thumbnail_image}
+                  alt={pkg.package_name}
+                  className='pkg-card-thumb shrink-0'
+                />
+              ) : null}
+
+              <div className='flex-1 min-w-0'>
+                <h3 className='pkg-card-title line-clamp-2'>
+                  {pkg.package_name}
+                </h3>
+                <div className='pkg-card-meta'>
+                  <span>Commission {pkg.commission_percent}%</span>
+                  <span className='pkg-card-meta-dot' aria-hidden />
+                  <span>{pkg.clicks} clicks</span>
+                </div>
                 {pkg.referral_code && (
-                  <p className="text-xs text-muted-foreground mt-1 font-mono">
-                    Code: {pkg.referral_code}
-                  </p>
+                  <span className='pkg-card-code'>{pkg.referral_code}</span>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className='flex gap-2 shrink-0'>
                 <button
                   onClick={() => getLink(pkg)}
                   disabled={!!generating}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 disabled:opacity-50"
+                  className='pkg-card-copy-btn btn-accent disabled:opacity-50'
                 >
                   {generating === pkg.package_id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className='w-4 h-4 animate-spin' />
                   ) : (
-                    <Link2 className="w-4 h-4" />
+                    <Link2 className='w-4 h-4' />
                   )}
                   {pkg.referral_code ? 'Copy Link' : 'Get Referral Link'}
                 </button>
@@ -115,10 +135,10 @@ export default function InfluencerPackagesPage() {
                         `${typeof window !== 'undefined' ? window.location.origin : ''}/ref/${pkg.referral_code}`
                       )
                     }
-                    className="p-2 rounded border hover:bg-muted"
-                    title="Copy"
+                    className='pkg-card-copy-icon'
+                    title='Copy link'
                   >
-                    <Copy className="w-4 h-4" />
+                    <Copy className='w-4 h-4' />
                   </button>
                 )}
               </div>

@@ -144,8 +144,8 @@ function PackageCommissionRow({
   return (
     <tr>
       <td>
-        <span style={{ fontWeight: 600 }}>{pkg.package_name}</span>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
+        <span className="commission_pkg_name">{pkg.package_name}</span>
+        <span className="commission_pkg_id">
           ({pkg.package_id.slice(0, 8)}...)
         </span>
       </td>
@@ -157,16 +157,15 @@ function PackageCommissionRow({
           step={0.5}
           value={percent}
           onChange={e => setPercent(e.target.value)}
-          style={{ width: 100, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--panel-2)', color: 'var(--text)' }}
+          className="commission_input"
         />
       </td>
       <td>
-        <label className="status_toggle_wrapper" style={{ cursor: 'pointer' }}>
+        <label className="status_toggle_wrapper commission_toggle_label">
           <input
             type="checkbox"
             checked={isActive}
             onChange={e => setIsActive(e.target.checked)}
-            style={{ accentColor: 'var(--accent)' }}
           />
           <span className="status_toggle_label">Yes</span>
         </label>
@@ -175,10 +174,9 @@ function PackageCommissionRow({
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="btn_primary btn_small"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          className="btn_primary btn_small commission_save_btn"
         >
-          {saving ? <Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> : <><Save size={16} /> Save</>}
+          {saving ? <Loader2 size={16} className="spinner_inline" /> : <><Save size={16} /> Save</>}
         </button>
       </td>
     </tr>

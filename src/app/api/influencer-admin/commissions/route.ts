@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function requireSuperAdmin() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -17,7 +17,7 @@ async function requireSuperAdmin() {
   }
   const isSuperAdmin = await hasRoleId(session.user.id, RoleId.SUPER_ADMIN);
   if (!isSuperAdmin) {
-    return { error: 'Forbidden', status: 403 };
+    return { error: 'Forbidden: Super Admin role required', status: 403 };
   }
   return null;
 }
@@ -47,17 +47,19 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const normalizeId = (id: unknown) => String(id ?? '').toLowerCase().trim();
     const commissionsMap = new Map<string, { id: string; commission_percent: number; is_active: boolean }>();
     (commissionsRes.data || []).forEach((c: any) => {
-      commissionsMap.set(`${c.entity_type}:${c.entity_id}`, {
+      const key = `${String(c.entity_type || '').toLowerCase()}:${normalizeId(c.entity_id)}`;
+      commissionsMap.set(key, {
         id: c.id,
-        commission_percent: parseFloat(c.commission_percent) || 0,
-        is_active: c.is_active ?? true,
+        commission_percent: Number(c.commission_percent) || 0,
+        is_active: c.is_active !== false,
       });
     });
 
     const packages = (packagesRes.data || []).map((p: any) => {
-      const key = `package:${p.package_id}`;
+      const key = `package:${normalizeId(p.package_id)}`;
       const comm = commissionsMap.get(key);
       return {
         package_id: p.package_id,

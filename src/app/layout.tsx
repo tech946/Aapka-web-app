@@ -2,7 +2,7 @@ import type React from 'react';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Inter, Fraunces } from 'next/font/google';
+import { Inter, Work_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
 import 'antd/dist/reset.css';
@@ -18,12 +18,10 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-const fraunces = Fraunces({
+const workSans = Work_Sans({
   subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-fraunces',
-  style: ['normal', 'italic'],
-  opticalSizing: true,
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-work-sans',
 });
 
 export const metadata: Metadata = {
@@ -32,7 +30,7 @@ export const metadata: Metadata = {
     "With 10 years of experience in the travel industry and deep knowledge of Dubai's culture, attractions, and hidden gems, our expert guides ensure you get the most authentic and memorable experience possible. We don't just show you Dubai - we help you live it.",
   generator: 'aapka-tourism.com',
   other: {
-    'google-fonts': 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Inter:wght@300;400;500;600;700&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap',
+    'google-fonts': 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap',
   },
 };
 
@@ -42,12 +40,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en' suppressHydrationWarning className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang='en' suppressHydrationWarning className={`${inter.variable} ${workSans.variable}`}>
       <head>
         <link rel='preconnect' href='https://fonts.googleapis.com' />
         <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='' />
         <link
-          href='https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Inter:wght@300;400;500;600;700&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap'
+          href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap'
           rel='stylesheet'
         />
       </head>

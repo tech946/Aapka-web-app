@@ -1,21 +1,27 @@
 import BannerSection from './BannerSection';
 import EleganceSection from './EleganceSection';
-import SuitesSection from './SuitesSection';
+import OfferPackagesSection from './OfferPackagesSection';
+import ToursSection from './ToursSection';
 import BlogsSection from './BlogsSection';
 import TestimonialsSection from './TestimonialsSection';
+import TourActivitiesSection from './TourActivitiesSection';
+import FAQSection from './FAQSection';
 import SocialGrid from './SocialGrid';
 
 export default function Home() {
   return (
     <div>
       <BannerSection />
-      <SuitesSection />
+      <OfferPackagesSection />
+      <ToursSection />
       <EleganceSection />
       <BlogsSection />
       {/* <PromotionalSection /> */}
       {/* <DealsOfTheDaySection /> */}
       <TestimonialsSection />
-      <SocialGrid />
+      <TourActivitiesSection />
+      <FAQSection />
+      {/* <SocialGrid /> */}
     </div>
   );
 }

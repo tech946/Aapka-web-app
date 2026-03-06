@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import { format } from 'date-fns';
+import { useSliderDrag } from '@/lib/use-slider-drag';
 import './home.css';
 
 interface BlogPost {
@@ -76,13 +77,20 @@ export default function BlogsSection() {
     });
   }, [currentIndex, blogs.length, cardsPerView]);
 
-  const nextSlide = () => {
-    if (currentIndex < maxIndex) setCurrentIndex((p) => Math.min(p + 1, maxIndex));
+  const totalSlides = Math.max(1, Math.ceil(blogs.length / cardsPerView));
+  const currentSlide =
+    totalSlides <= 1 ? 0 : Math.floor(currentIndex / cardsPerView);
+
+  const goToSlide = (slideIndex: number) => {
+    setCurrentIndex(Math.min(slideIndex * cardsPerView, maxIndex));
   };
 
-  const prevSlide = () => {
-    if (currentIndex > 0) setCurrentIndex((p) => Math.max(p - 1, 0));
-  };
+  const sliderDrag = useSliderDrag({
+    onSwipeLeft: () =>
+      setCurrentIndex((p) => Math.min(maxIndex, p + cardsPerView)),
+    onSwipeRight: () =>
+      setCurrentIndex((p) => Math.max(0, p - cardsPerView)),
+  });
 
   if (loading) {
     return (
@@ -101,26 +109,34 @@ export default function BlogsSection() {
   return (
     <section className="blogs-section">
       <div className="container">
-        <header className="blogs-section-header">
-          <h2 className="blogs-section-title">Latest Travel Blogs</h2>
-          <p className="blogs-section-subtitle">
-          Discover tips, guides, and inspiration for your next adventure
-          </p>
+        <header className="blogs-header">
+          <div className="blogs-badge-pill">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              className="blogs-badge-icon"
+            >
+              <path
+                d="M8 0L9.81019 6.18981L16 8L9.81019 9.81019L8 16L6.18981 9.81019L0 8L6.18981 6.18981L8 0Z"
+                fill="currentColor"
+              />
+            </svg>
+            <span>Travel Blog</span>
+          </div>
+          <h2 className="blogs-heading">
+            Discover tips, guides, and inspiration for your next adventure.
+          </h2>
         </header>
 
         <div className="blogs-slider-container">
-          {blogs.length > cardsPerView && (
-            <button
-              className={`blogs-nav-btn blogs-nav-prev ${currentIndex === 0 ? 'disabled' : ''}`}
-              onClick={prevSlide}
-              disabled={currentIndex === 0}
-              aria-label="Previous"
-            >
-              <ChevronLeft size={24} />
-            </button>
-          )}
-
-          <div className="blogs-slider-wrapper" ref={sliderRef}>
+          <div
+            className="blogs-slider-wrapper"
+            ref={sliderRef}
+            onTouchStart={sliderDrag.onTouchStart}
+            onTouchEnd={sliderDrag.onTouchEnd}
+          >
             <div
               className={`blogs-cards-track ${blogs.length < cardsPerView ? 'centered' : ''}`}
               ref={cardsRef}
@@ -151,50 +167,51 @@ export default function BlogsSection() {
                       </div>
                     </div>
                     <div className="blogs-card-content">
-                      {blog.blog_categories && (
-                        <span className="blogs-card-category">
-                          {blog.blog_categories.name}
-                        </span>
-                      )}
+                      <div className="blogs-card-meta">
+                        {(blog.published_at || blog.created_at) && (
+                          <span className="blogs-card-date">
+                            {format(
+                              new Date(blog.published_at || blog.created_at || ''),
+                              'MMMM d, yyyy'
+                            )}
+                          </span>
+                        )}
+                        <span className="blogs-card-read-time">5 min read</span>
+                      </div>
                       <h3 className="blogs-card-title">{blog.title}</h3>
                       {blog.excerpt && (
                         <p className="blogs-card-excerpt">
-                          {blog.excerpt.slice(0, 100)}
-                          {blog.excerpt.length > 100 ? '...' : ''}
+                          {blog.excerpt.slice(0, 120)}
+                          {blog.excerpt.length > 120 ? '...' : ''}
                         </p>
                       )}
-                      {(blog.published_at || blog.created_at) && (
-                        <span className="blogs-card-date">
-                          <Calendar size={14} />
-                          {format(
-                            new Date(blog.published_at || blog.created_at || ''),
-                            'MMM d, yyyy'
-                          )}
-                        </span>
-                      )}
-                      <span className="blogs-read-more">Read more →</span>
+                      <span className="blogs-read-article-btn">Read Article</span>
                     </div>
                   </Link>
                 </div>
               ))}
             </div>
           </div>
-
-          {blogs.length > cardsPerView && (
-            <button
-              className={`blogs-nav-btn blogs-nav-next ${currentIndex >= maxIndex ? 'disabled' : ''}`}
-              onClick={nextSlide}
-              disabled={currentIndex >= maxIndex}
-              aria-label="Next"
-            >
-              <ChevronRight size={24} />
-            </button>
-          )}
         </div>
+
+        {totalSlides > 1 && (
+          <div className="blogs-slider-dots">
+            {Array.from({ length: totalSlides }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`blogs-slider-dot ${i === currentSlide ? 'active' : ''}`}
+                onClick={() => goToSlide(i)}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
 
         <div className="blogs-view-all">
           <Link href="/blogs" className="blogs-view-all-link">
             View all blogs
+            <ArrowRight size={20} className="blogs-view-all-icon" />
           </Link>
         </div>
       </div>

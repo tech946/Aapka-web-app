@@ -108,7 +108,7 @@ export default function InfluencerWithdrawalsPage() {
           <thead>
             <tr>
               <th>Influencer</th>
-              <th style={{ textAlign: 'right' }}>Amount</th>
+              <th className="table_cell_right">Amount</th>
               <th>Payment Details</th>
               <th>Status</th>
               <th>Requested</th>
@@ -124,13 +124,13 @@ export default function InfluencerWithdrawalsPage() {
               withdrawals.map(row => (
                 <tr key={row.id}>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{row.influencers?.name || '—'}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.influencers?.email || ''}</div>
+                    <div className="table_cell_name">{row.influencers?.name || '—'}</div>
+                    <div className="table_cell_email">{row.influencers?.email || ''}</div>
                   </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                  <td className="table_cell_right table_cell_name">
                     ₹{parseFloat(String(row.amount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </td>
-                  <td style={{ fontSize: 13 }}>
+                  <td className="table_cell_mono">
                     {row.payment_method === 'upi' ? (
                       <>UPI: {row.upi_id || '—'}</>
                     ) : (
@@ -145,15 +145,15 @@ export default function InfluencerWithdrawalsPage() {
                       {row.status}
                     </span>
                   </td>
-                  <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{format(new Date(row.requested_at), 'MMM d, yyyy')}</td>
+                  <td className="table_cell_muted">{format(new Date(row.requested_at), 'MMM d, yyyy')}</td>
                   <td>
                     {row.status === 'pending' && (
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div className="table_actions_row">
                         <button onClick={() => setNotesModal({ id: row.id, notes: '' })} className="btn_primary btn_small">
                           Mark Paid
                         </button>
                         <button onClick={() => handleAction(row.id, 'reject')} disabled={!!acting} className="table_action_btn table_action_delete" title="Reject">
-                          {acting === row.id ? <Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> : <X size={16} />}
+                          {acting === row.id ? <Loader2 size={16} className="spinner_inline" /> : <X size={16} />}
                         </button>
                       </div>
                     )}
@@ -167,12 +167,12 @@ export default function InfluencerWithdrawalsPage() {
 
       {notesModal && (
         <div className="modal_overlay" onClick={() => setNotesModal(null)}>
-          <div className="modal" style={{ maxWidth: 450 }} onClick={e => e.stopPropagation()}>
+          <div className="modal modal_notes" onClick={e => e.stopPropagation()}>
             <div className="modal_header">
-              <h4 style={{ margin: 0 }}>Mark as Paid</h4>
+              <h4 className="modal_notes_title">Mark as Paid</h4>
             </div>
             <div className="modal_body">
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>
+              <p className="modal_notes_desc">
                 Add transaction reference or notes (optional)
               </p>
               <div className="form_row">
@@ -180,7 +180,7 @@ export default function InfluencerWithdrawalsPage() {
                   value={notesModal.notes}
                   onChange={e => setNotesModal({ ...notesModal, notes: e.target.value })}
                   placeholder="e.g. NEFT Ref: 123456789"
-                  style={{ minHeight: 80 }}
+                  className="modal_notes_textarea"
                 />
               </div>
             </div>

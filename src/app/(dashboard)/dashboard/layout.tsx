@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Sidebar, Header, Main } from '@/components/dashboard';
 import { ContentEditorGuard } from '@/components/dashboard/ContentEditorGuard';
 import { DashboardLoader } from '@/components/dashboard/DashboardLoader';
 import { useUserRoles } from '@/hooks/use-roles';
 import './dashboard.css';
+import '@/app/(influencer)/influencer/influencer.css';
 
 export default function DashboardLayout({
   children,
@@ -14,6 +15,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isInfluencerSection = pathname?.startsWith('/dashboard/influencers');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, loading } = useUserRoles();
   const hadLoadingRef = useRef(false);
@@ -41,7 +44,7 @@ export default function DashboardLayout({
         <Sidebar />
 
         {/* Main content area */}
-        <div className='main-content'>
+        <div className={`main-content ${isInfluencerSection ? 'influencer-section' : ''}`}>
           {/* Header */}
           <Header />
 
