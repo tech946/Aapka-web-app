@@ -31,11 +31,17 @@ export function isEmailConfigured(): boolean {
   return !!transporter;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+}
+
 export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
   from?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<{
@@ -57,6 +63,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
       to,
       subject: options.subject,
       html: options.html,
+      attachments: options.attachments,
     });
 
     return {

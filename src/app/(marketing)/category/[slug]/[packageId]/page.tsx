@@ -25,7 +25,10 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
+import {
+  usesBookingSlots,
+  usesFlexibleDatePackages,
+} from '@/lib/package-config';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import BookingModal from '@/components/marketing/BookingModal';
 import {
@@ -33,13 +36,17 @@ import {
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
-import { parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
+import {
+  parseDateStringToLocal,
+  getEarliestAvailableDateMonth,
+} from '@/lib/utils';
 import { gsap } from 'gsap';
 import 'react-day-picker/dist/style.css';
 import '../../packages.css';
 import './package-details.css';
 import PackageGallery from './PackageGallery';
 import PackageDetailsTabs from './PackageDetailsTabs';
+import PdfDownloadModal from '@/components/marketing/PdfDownloadModal/PdfDownloadModal';
 
 interface DateRange {
   id: string;
@@ -105,6 +112,7 @@ interface Package {
   end_date?: string | null;
   thumbnail_image?: string | null;
   gallery?: string[] | null;
+  pdf_url?: string | null;
   created_at?: string | null;
 }
 
@@ -145,8 +153,10 @@ export default function PackageDetailsPage() {
   const [visaForChildren, setVisaForChildren] = useState(0);
   const [visaForInfants, setVisaForInfants] = useState(0);
   const [isAgent, setIsAgent] = useState(false);
-  const [hasActiveAgentSubscription, setHasActiveAgentSubscription] = useState(false);
-  
+  const [hasActiveAgentSubscription, setHasActiveAgentSubscription] =
+    useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+
   // Referral tracking state (for customers arriving via agent's referral link)
   const [referralData, setReferralData] = useState<{
     id: string;
@@ -158,19 +168,24 @@ export default function PackageDetailsPage() {
   } | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
-  const [referralDiscountAmount, setReferralDiscountAmount] = useState<number | null>(null);
-  const [priceBeforeReferralDiscount, setPriceBeforeReferralDiscount] = useState<number | null>(null);
+  const [referralDiscountAmount, setReferralDiscountAmount] = useState<
+    number | null
+  >(null);
+  const [priceBeforeReferralDiscount, setPriceBeforeReferralDiscount] =
+    useState<number | null>(null);
   /* Add-ons (offer packages) */
   const [addonDeals, setAddonDeals] = useState<string[]>([]);
   const [addonHotelServices, setAddonHotelServices] = useState<string[]>([]);
-  const [addonPrivateTransfers, setAddonPrivateTransfers] = useState<string[]>([]);
+  const [addonPrivateTransfers, setAddonPrivateTransfers] = useState<string[]>(
+    []
+  );
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
   useEffect(() => {
     if (isSoloTraveller) return; // Don't override solo traveller's 1 adult
     if (!pkg) return; // Wait for package to load
-    
+
     const minAdults = pkg.min_adults || 1;
     if (persons.adult < minAdults) {
       setPersons(prev => ({ ...prev, adult: minAdults }));
@@ -187,12 +202,16 @@ export default function PackageDetailsPage() {
   }, [isSoloTraveller, withVisa, visaForAdults]);
 
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
-  const [agentDiscountAmount, setAgentDiscountAmount] = useState<number | null>(null);
-  const [priceBeforeAgentDiscount, setPriceBeforeAgentDiscount] = useState<number | null>(null);
+  const [agentDiscountAmount, setAgentDiscountAmount] = useState<number | null>(
+    null
+  );
+  const [priceBeforeAgentDiscount, setPriceBeforeAgentDiscount] = useState<
+    number | null
+  >(null);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   // Note: Date ranges are now stored in pkg.date_ranges directly (no separate state needed)
-  
+
   // Discount state
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [discountTimeLeft, setDiscountTimeLeft] = useState<string>('');
@@ -218,16 +237,18 @@ export default function PackageDetailsPage() {
   // Detect and validate referral code from URL params
   // Track if we've already validated this ref to prevent re-validation
   const validatedRefRef = useRef<string | null>(null);
-  
+
   useEffect(() => {
     const ref = searchParams.get('ref');
-    
+
     // Skip if no ref, already validated this ref, or already have referral data
     if (!ref || referralData || validatedRefRef.current === ref) return;
 
     // Only proceed if we have a valid-looking referral code
     // New format: r_[32 hex chars] or legacy: AGT-XXX-[16 hex]-[timestamp]
-    const isValidFormat = /^r_[a-f0-9]{32}$/.test(ref) || /^AGT-[A-Z0-9]+-[a-f0-9]{16}-[a-z0-9]+$/.test(ref);
+    const isValidFormat =
+      /^r_[a-f0-9]{32}$/.test(ref) ||
+      /^AGT-[A-Z0-9]+-[a-f0-9]{16}-[a-z0-9]+$/.test(ref);
     if (!isValidFormat) return;
 
     // Mark this ref as being validated to prevent duplicate calls
@@ -241,9 +262,9 @@ export default function PackageDetailsPage() {
         const response = await fetch('/api/agent-referrals/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             referralCode: ref,
-            packageId: pkg?.package_id 
+            packageId: pkg?.package_id,
           }),
         });
 
@@ -258,10 +279,15 @@ export default function PackageDetailsPage() {
             discountPercentage: result.referral.discountPercentage || 0,
             showDiscount: result.referral.showDiscount || false,
           });
-          
+
           // Show toast based on link type
-          if (result.referral.linkType === 'discount' && result.referral.discountPercentage > 0) {
-            toast.success(`You have a ${result.referral.discountPercentage}% discount via agent referral!`);
+          if (
+            result.referral.linkType === 'discount' &&
+            result.referral.discountPercentage > 0
+          ) {
+            toast.success(
+              `You have a ${result.referral.discountPercentage}% discount via agent referral!`
+            );
           }
         } else {
           // Invalid referral - clear it
@@ -290,14 +316,21 @@ export default function PackageDetailsPage() {
   // Set month to earliest available date when flexible date package loads
   // But only if no date is selected from URL params
   useEffect(() => {
-    if (slug === 'flexible-date-packages' && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0) {
+    if (
+      slug === 'flexible-date-packages' &&
+      pkg &&
+      pkg.package_id &&
+      pkg.date_ranges &&
+      Array.isArray(pkg.date_ranges) &&
+      pkg.date_ranges.length > 0
+    ) {
       // Check if there's a date in URL params - if so, don't override the month
       const dateParam = searchParams.get('date');
       if (dateParam) {
         // Date will be set from URL params in another effect, skip setting month here
         return;
       }
-      
+
       const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
       if (earliestMonth) {
         setMonth(earliestMonth);
@@ -306,38 +339,41 @@ export default function PackageDetailsPage() {
   }, [slug, pkg?.package_id, pkg?.date_ranges, searchParams]);
 
   // Helper function to find the date range that contains a given date
-  const findDateRangeForDate = useCallback((dateStr: string): DateRange | null => {
-    if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges)) return null;
-    const targetDate = new Date(dateStr);
-    targetDate.setHours(0, 0, 0, 0); // Normalize to midnight for accurate comparison
-    
-    // First check for sold out ranges (they take priority)
-    for (const range of pkg.date_ranges) {
-      if (!range.isSoldOut) continue;
-      const fromDate = new Date(range.fromDate);
-      const toDate = new Date(range.toDate);
-      fromDate.setHours(0, 0, 0, 0);
-      toDate.setHours(0, 0, 0, 0);
-      
-      if (targetDate >= fromDate && targetDate <= toDate) {
-        return range; // Return sold out range immediately
+  const findDateRangeForDate = useCallback(
+    (dateStr: string): DateRange | null => {
+      if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges)) return null;
+      const targetDate = new Date(dateStr);
+      targetDate.setHours(0, 0, 0, 0); // Normalize to midnight for accurate comparison
+
+      // First check for sold out ranges (they take priority)
+      for (const range of pkg.date_ranges) {
+        if (!range.isSoldOut) continue;
+        const fromDate = new Date(range.fromDate);
+        const toDate = new Date(range.toDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+
+        if (targetDate >= fromDate && targetDate <= toDate) {
+          return range; // Return sold out range immediately
+        }
       }
-    }
-    
-    // Then check for regular (non-sold-out) ranges
-    for (const range of pkg.date_ranges) {
-      if (range.isSoldOut) continue; // Skip sold out ranges (already checked)
-      const fromDate = new Date(range.fromDate);
-      const toDate = new Date(range.toDate);
-      fromDate.setHours(0, 0, 0, 0);
-      toDate.setHours(0, 0, 0, 0);
-      
-      if (targetDate >= fromDate && targetDate <= toDate) {
-        return range;
+
+      // Then check for regular (non-sold-out) ranges
+      for (const range of pkg.date_ranges) {
+        if (range.isSoldOut) continue; // Skip sold out ranges (already checked)
+        const fromDate = new Date(range.fromDate);
+        const toDate = new Date(range.toDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+
+        if (targetDate >= fromDate && targetDate <= toDate) {
+          return range;
+        }
       }
-    }
-    return null;
-  }, [pkg?.date_ranges]);
+      return null;
+    },
+    [pkg?.date_ranges]
+  );
 
   // Note: Flexible date data now comes from pkg.date_ranges (JSONB column in packages table)
   // No separate API fetch needed
@@ -351,7 +387,8 @@ export default function PackageDetailsPage() {
     }
 
     // Check if any discount amount is set
-    const hasDiscount = (pkg.adult_discount_amount && pkg.adult_discount_amount > 0) ||
+    const hasDiscount =
+      (pkg.adult_discount_amount && pkg.adult_discount_amount > 0) ||
       (pkg.child_discount_amount && pkg.child_discount_amount > 0) ||
       (pkg.infant_discount_amount && pkg.infant_discount_amount > 0);
 
@@ -381,7 +418,9 @@ export default function PackageDetailsPage() {
         // Calculate time left
         const diff = endDate.getTime() - now.getTime();
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const hours = Math.floor(
+          (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
@@ -400,7 +439,13 @@ export default function PackageDetailsPage() {
     checkDiscount();
     const interval = setInterval(checkDiscount, 1000);
     return () => clearInterval(interval);
-  }, [pkg?.discount_start_date, pkg?.discount_end_date, pkg?.adult_discount_amount, pkg?.child_discount_amount, pkg?.infant_discount_amount]);
+  }, [
+    pkg?.discount_start_date,
+    pkg?.discount_end_date,
+    pkg?.adult_discount_amount,
+    pkg?.child_discount_amount,
+    pkg?.infant_discount_amount,
+  ]);
 
   // Detect user location and initialize exchange rate on mount
   useEffect(() => {
@@ -429,37 +474,46 @@ export default function PackageDetailsPage() {
 
   // Get flexible date info from date_ranges - finds the range that contains the given date
   // Always show actual prices from date ranges
-  const getFlexibleDateInfo = useCallback((dateStr: string): {
-    adult_price: number;
-    child_price: number;
-    infant_price: number;
-    solo_traveller_price?: number | null;
-    is_sold_out: boolean;
-  } | null => {
-    const range = findDateRangeForDate(dateStr);
-    if (!range) return null;
-    // Always return actual prices from date ranges - no modification based on referral
-    return {
-      adult_price: range.adultPrice,
-      child_price: range.childPrice,
-      infant_price: range.infantPrice,
-      solo_traveller_price: range.soloTravellerPrice,
-      is_sold_out: range.isSoldOut,
-    };
-  }, [findDateRangeForDate]);
+  const getFlexibleDateInfo = useCallback(
+    (
+      dateStr: string
+    ): {
+      adult_price: number;
+      child_price: number;
+      infant_price: number;
+      solo_traveller_price?: number | null;
+      is_sold_out: boolean;
+    } | null => {
+      const range = findDateRangeForDate(dateStr);
+      if (!range) return null;
+      // Always return actual prices from date ranges - no modification based on referral
+      return {
+        adult_price: range.adultPrice,
+        child_price: range.childPrice,
+        infant_price: range.infantPrice,
+        solo_traveller_price: range.soloTravellerPrice,
+        is_sold_out: range.isSoldOut,
+      };
+    },
+    [findDateRangeForDate]
+  );
 
   // Get available dates - always show all dates from date ranges
   const getAvailableDates = useCallback((): string[] => {
     // For flexible date packages, generate all dates within the configured date ranges
     // Include ALL dates (both available and sold out) - the calendar will handle showing sold out status
-    if (slug === 'flexible-date-packages' && pkg?.date_ranges && pkg.date_ranges.length > 0) {
+    if (
+      slug === 'flexible-date-packages' &&
+      pkg?.date_ranges &&
+      pkg.date_ranges.length > 0
+    ) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const sixDaysFromNow = new Date(today);
       sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
 
       const allDates: string[] = [];
-      
+
       // Include ALL date ranges (both available and sold out)
       // The calendar component will handle showing sold out status
       for (const range of pkg.date_ranges) {
@@ -467,7 +521,7 @@ export default function PackageDetailsPage() {
         const toDate = new Date(range.toDate);
         fromDate.setHours(0, 0, 0, 0);
         toDate.setHours(0, 0, 0, 0);
-        
+
         // Generate all dates in this range (including sold out ranges)
         const currentDate = new Date(fromDate);
         while (currentDate <= toDate) {
@@ -477,7 +531,7 @@ export default function PackageDetailsPage() {
           currentDate.setDate(currentDate.getDate() + 1);
         }
       }
-      
+
       return [...new Set(allDates)].sort(); // Remove duplicates and sort
     }
 
@@ -509,7 +563,12 @@ export default function PackageDetailsPage() {
   useEffect(() => {
     if (!pkg) return; // Wait for package to load
     // For flexible date packages, also wait for date_ranges to be loaded
-    if (slug === 'flexible-date-packages' && (!pkg.date_ranges || !Array.isArray(pkg.date_ranges) || pkg.date_ranges.length === 0)) {
+    if (
+      slug === 'flexible-date-packages' &&
+      (!pkg.date_ranges ||
+        !Array.isArray(pkg.date_ranges) ||
+        pkg.date_ranges.length === 0)
+    ) {
       return; // Wait for date ranges to be available
     }
 
@@ -527,14 +586,14 @@ export default function PackageDetailsPage() {
         const availableDates = getAvailableDates();
         const matchedDate = availableDates.find(d => d === dateParam);
         const dateToSet = matchedDate || dateParam;
-        
+
         setSelectedDateString(dateToSet);
-        
+
         // Also parse and set as Date object for calendar display
         const parsedDate = parseDateStringToLocal(dateToSet);
         if (parsedDate) {
           setSelectedDate(parsedDate);
-          
+
           // Set month to show the selected date in calendar
           if (isFlexibleDatePackage) {
             setMonth(parsedDate);
@@ -562,11 +621,17 @@ export default function PackageDetailsPage() {
   }, [searchParams, pkg, category, slug, getAvailableDates, pkg?.date_ranges]);
 
   // Helper to get discounted price for a person type
-  const getDiscountedPrice = useCallback((basePrice: number | null | undefined, discountAmount: number | null | undefined): number => {
-    if (!basePrice) return 0;
-    if (!isDiscountActive || !discountAmount) return basePrice;
-    return Math.max(0, basePrice - discountAmount);
-  }, [isDiscountActive]);
+  const getDiscountedPrice = useCallback(
+    (
+      basePrice: number | null | undefined,
+      discountAmount: number | null | undefined
+    ): number => {
+      if (!basePrice) return 0;
+      if (!isDiscountActive || !discountAmount) return basePrice;
+      return Math.max(0, basePrice - discountAmount);
+    },
+    [isDiscountActive]
+  );
 
   // Calculate visa price
   const getVisaPrice = useCallback((): number => {
@@ -585,19 +650,29 @@ export default function PackageDetailsPage() {
   }, [pkg, withVisa, visaForAdults, visaForChildren, visaForInfants]);
 
   // Get the minimum prices from all available date ranges (for showing "starting from" price)
-  const getMinPricesFromRanges = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } | null => {
-    if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges) || pkg.date_ranges.length === 0) {
+  const getMinPricesFromRanges = useCallback((): {
+    adultPrice: number;
+    childPrice: number;
+    infantPrice: number;
+    soloTravellerPrice?: number | null;
+  } | null => {
+    if (
+      !pkg?.date_ranges ||
+      !Array.isArray(pkg.date_ranges) ||
+      pkg.date_ranges.length === 0
+    ) {
       return null;
     }
     // Find the minimum adult price from non-sold-out ranges
     const availableRanges = pkg.date_ranges.filter(r => !r.isSoldOut);
     if (availableRanges.length === 0) return null;
-    
+
     // Get the range with minimum adult price
-    const minRange = availableRanges.reduce((min, range) => 
-      (range.adultPrice < min.adultPrice) ? range : min
-    , availableRanges[0]);
-    
+    const minRange = availableRanges.reduce(
+      (min, range) => (range.adultPrice < min.adultPrice ? range : min),
+      availableRanges[0]
+    );
+
     return {
       adultPrice: minRange.adultPrice || 0,
       childPrice: minRange.childPrice || 0,
@@ -608,15 +683,27 @@ export default function PackageDetailsPage() {
 
   // Get prices for selected date (for flexible date packages) or package base prices
   // The discount is applied AFTER getting these base prices, not here
-  const getPricesForDate = useCallback((): { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null } => {
-    let basePrices: { adultPrice: number; childPrice: number; infantPrice: number; soloTravellerPrice?: number | null };
-    
+  const getPricesForDate = useCallback((): {
+    adultPrice: number;
+    childPrice: number;
+    infantPrice: number;
+    soloTravellerPrice?: number | null;
+  } => {
+    let basePrices: {
+      adultPrice: number;
+      childPrice: number;
+      infantPrice: number;
+      soloTravellerPrice?: number | null;
+    };
+
     // For flexible date packages, use date-specific pricing from date_ranges
     // Always return actual prices from date ranges
     if (slug === 'flexible-date-packages') {
       // Check if date is selected (either as string or Date object)
-      const dateToCheck = selectedDateString || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null);
-      
+      const dateToCheck =
+        selectedDateString ||
+        (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null);
+
       if (dateToCheck) {
         const dateInfo = getFlexibleDateInfo(dateToCheck);
         if (dateInfo) {
@@ -688,16 +775,37 @@ export default function PackageDetailsPage() {
       // Check if deal is currently active
       if (deal.is_active && now >= startDate && now <= endDate) {
         return {
-          adultPrice: deal.deal_adult_price !== null ? deal.deal_adult_price : basePrices.adultPrice,
-          childPrice: deal.deal_child_price !== null ? deal.deal_child_price : basePrices.childPrice,
-          infantPrice: deal.deal_infant_price !== null ? deal.deal_infant_price : basePrices.infantPrice,
-          soloTravellerPrice: deal.deal_solo_traveller_price !== null ? deal.deal_solo_traveller_price : basePrices.soloTravellerPrice,
+          adultPrice:
+            deal.deal_adult_price !== null
+              ? deal.deal_adult_price
+              : basePrices.adultPrice,
+          childPrice:
+            deal.deal_child_price !== null
+              ? deal.deal_child_price
+              : basePrices.childPrice,
+          infantPrice:
+            deal.deal_infant_price !== null
+              ? deal.deal_infant_price
+              : basePrices.infantPrice,
+          soloTravellerPrice:
+            deal.deal_solo_traveller_price !== null
+              ? deal.deal_solo_traveller_price
+              : basePrices.soloTravellerPrice,
         };
       }
     }
 
     return basePrices;
-  }, [slug, selectedDateString, selectedDate, pkg, pkg?.date_ranges, pkg?.active_deal, getFlexibleDateInfo, getMinPricesFromRanges]);
+  }, [
+    slug,
+    selectedDateString,
+    selectedDate,
+    pkg,
+    pkg?.date_ranges,
+    pkg?.active_deal,
+    getFlexibleDateInfo,
+    getMinPricesFromRanges,
+  ]);
 
   // Calculate original price (without discount)
   const getOriginalPrice = useCallback((): number | null => {
@@ -718,9 +826,18 @@ export default function PackageDetailsPage() {
       (persons.adult > 0 ? persons.adult * prices.adultPrice : 0) +
       (persons.child > 0 ? persons.child * prices.childPrice : 0) +
       (persons.infant > 0 ? persons.infant * prices.infantPrice : 0);
-    const basePrice = totalPrice === 0 ? (pkg.package_price || 0) : totalPrice;
+    const basePrice = totalPrice === 0 ? pkg.package_price || 0 : totalPrice;
     return basePrice ? basePrice + getVisaPrice() : null;
-  }, [pkg, persons.adult, persons.child, persons.infant, isSoloTraveller, getVisaPrice, getPricesForDate, slug]);
+  }, [
+    pkg,
+    persons.adult,
+    persons.child,
+    persons.infant,
+    isSoloTraveller,
+    getVisaPrice,
+    getPricesForDate,
+    slug,
+  ]);
 
   // Calculate price based on persons and selected date
   useEffect(() => {
@@ -741,7 +858,7 @@ export default function PackageDetailsPage() {
 
     // Get prices for selected date (for flexible date packages) or package base prices
     const prices = getPricesForDate();
-    
+
     // Apply discount if active (discounts apply to package-level prices, not date-specific)
     // For flexible date packages, we use date-specific prices without discount
     // For regular packages, apply discount to base prices
@@ -766,7 +883,7 @@ export default function PackageDetailsPage() {
     // For flexible date packages: use date-specific prices from date ranges
     // For other packages: use package base prices
     let totalPrice = 0;
-    
+
     // Always use the prices from getPricesForDate() which handles date-specific pricing
     // For flexible date packages, getPricesForDate() returns prices from the selected date's range
     // For other packages, it returns package base prices
@@ -777,30 +894,38 @@ export default function PackageDetailsPage() {
 
     // Only fall back to package_price if no per-person pricing and totalPrice is 0
     // This should only happen for non-flexible date packages
-    if (totalPrice === 0 && slug !== 'flexible-date-packages' && !pkg.adult_price && !pkg.child_price && !pkg.infant_price) {
+    if (
+      totalPrice === 0 &&
+      slug !== 'flexible-date-packages' &&
+      !pkg.adult_price &&
+      !pkg.child_price &&
+      !pkg.infant_price
+    ) {
       totalPrice = pkg.package_price || 0;
     }
-    
+
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
     let finalPrice = totalPrice + visaPrice;
-    
+
     // Apply discount logic:
     // Priority 1: Agent with active subscription gets agent discount
     // Priority 2: Customer via discount-type referral link gets referral discount
     // Note: These are mutually exclusive - agents can't use referral links
-    
+
     let discountAmount = 0;
     const agentDiscountPercentage = pkg?.agent_discount || 0;
-    
+
     // Check if user is an agent with active subscription
-    const shouldApplyAgentDiscount = hasActiveAgentSubscription && agentDiscountPercentage > 0;
-    
+    const shouldApplyAgentDiscount =
+      hasActiveAgentSubscription && agentDiscountPercentage > 0;
+
     // Check if customer came via discount-type referral link
-    const shouldApplyReferralDiscount = !hasActiveAgentSubscription && 
-      referralData?.linkType === 'discount' && 
+    const shouldApplyReferralDiscount =
+      !hasActiveAgentSubscription &&
+      referralData?.linkType === 'discount' &&
       referralData?.discountPercentage > 0;
-    
+
     if (shouldApplyAgentDiscount) {
       // Agent discount (for logged-in agents)
       setPriceBeforeAgentDiscount(finalPrice);
@@ -826,9 +951,25 @@ export default function PackageDetailsPage() {
       setReferralDiscountAmount(null);
       setPriceBeforeReferralDiscount(null);
     }
-    
+
     setCalculatedPrice(finalPrice);
-  }, [pkg, pkg?.date_ranges, persons.adult, persons.child, persons.infant, isSoloTraveller, isDiscountActive, getDiscountedPrice, getVisaPrice, getPricesForDate, slug, selectedDateString, selectedDate, hasActiveAgentSubscription, referralData]);
+  }, [
+    pkg,
+    pkg?.date_ranges,
+    persons.adult,
+    persons.child,
+    persons.infant,
+    isSoloTraveller,
+    isDiscountActive,
+    getDiscountedPrice,
+    getVisaPrice,
+    getPricesForDate,
+    slug,
+    selectedDateString,
+    selectedDate,
+    hasActiveAgentSubscription,
+    referralData,
+  ]);
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
@@ -842,7 +983,9 @@ export default function PackageDetailsPage() {
   // Check if user is an agent
   const checkAgentStatus = async () => {
     try {
-      const response = await fetch('/api/agent-subscription/check-agent-status');
+      const response = await fetch(
+        '/api/agent-subscription/check-agent-status'
+      );
       const result = await response.json();
       setIsAgent(result.isAgent || false);
       setHasActiveAgentSubscription(result.hasActiveSubscription || false);
@@ -853,7 +996,6 @@ export default function PackageDetailsPage() {
     }
   };
 
-
   const fetchPackage = async () => {
     try {
       setLoading(true);
@@ -863,7 +1005,7 @@ export default function PackageDetailsPage() {
       if (result.data) {
         // Process and normalize all package data to ensure consistency
         const packageData = { ...result.data };
-        
+
         // Parse date_ranges if it's a string (from JSONB column)
         if (packageData.date_ranges) {
           if (typeof packageData.date_ranges === 'string') {
@@ -881,14 +1023,17 @@ export default function PackageDetailsPage() {
         } else {
           packageData.date_ranges = null;
         }
-        
+
         // Ensure with_visa is a boolean
-        if (packageData.with_visa !== undefined && packageData.with_visa !== null) {
+        if (
+          packageData.with_visa !== undefined &&
+          packageData.with_visa !== null
+        ) {
           packageData.with_visa = Boolean(packageData.with_visa);
         } else {
           packageData.with_visa = false;
         }
-        
+
         // Ensure all numeric fields are properly set
         packageData.package_price = packageData.package_price || 0;
         packageData.adult_price = packageData.adult_price || 0;
@@ -898,7 +1043,7 @@ export default function PackageDetailsPage() {
         packageData.child_visa_price = packageData.child_visa_price || 0;
         packageData.infant_visa_price = packageData.infant_visa_price || 0;
         packageData.agent_discount = packageData.agent_discount || 0;
-        
+
         // Set package data - this will trigger re-renders of dependent components
         setPkg(packageData);
       } else {
@@ -908,11 +1053,16 @@ export default function PackageDetailsPage() {
       setLoading(false);
     }
   };
-  
+
   // Watch for date_ranges to become available (for flexible date packages)
   useEffect(() => {
     if (slug === 'flexible-date-packages') {
-      if (pkg && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0) {
+      if (
+        pkg &&
+        pkg.date_ranges &&
+        Array.isArray(pkg.date_ranges) &&
+        pkg.date_ranges.length > 0
+      ) {
         setDateRangesReady(true);
       } else {
         setDateRangesReady(false);
@@ -958,12 +1108,14 @@ export default function PackageDetailsPage() {
 
       // Enforce minimum adults from package setting
       if (type === 'adult' && newValue < minAdults) {
-        toast.error(`This package requires a minimum of ${minAdults} adult${minAdults > 1 ? 's' : ''}`);
+        toast.error(
+          `This package requires a minimum of ${minAdults} adult${minAdults > 1 ? 's' : ''}`
+        );
         return prev;
       }
 
       const updated = { ...prev, [type]: newValue };
-      
+
       // Update visa counts if they exceed new person counts
       if (withVisa) {
         if (type === 'adult' && visaForAdults > newValue) {
@@ -1040,7 +1192,9 @@ export default function PackageDetailsPage() {
     if (slug === 'flexible-date-packages') {
       // Disable dates after package end_date
       if (pkg?.end_date) {
-        const endDate = startOfDay(parseDateStringToLocal(pkg.end_date) || new Date(pkg.end_date));
+        const endDate = startOfDay(
+          parseDateStringToLocal(pkg.end_date) || new Date(pkg.end_date)
+        );
         if (checkDate > endDate) return true;
       }
 
@@ -1107,7 +1261,9 @@ export default function PackageDetailsPage() {
     } else {
       // Validate minimum adults based on package requirement
       if (persons.adult < minAdults) {
-        toast.error(`This package requires a minimum of ${minAdults} adult${minAdults > 1 ? 's' : ''}`);
+        toast.error(
+          `This package requires a minimum of ${minAdults} adult${minAdults > 1 ? 's' : ''}`
+        );
         return;
       }
 
@@ -1128,14 +1284,20 @@ export default function PackageDetailsPage() {
     const effectiveWithVisa = withVisa || hasVisaIncludedAtZero;
     const effectiveVisaForAdults = effectiveWithVisa
       ? hasVisaIncludedAtZero
-        ? isSoloTraveller ? 1 : persons.adult
+        ? isSoloTraveller
+          ? 1
+          : persons.adult
         : visaForAdults
       : 0;
     const effectiveVisaForChildren = effectiveWithVisa
-      ? hasVisaIncludedAtZero ? persons.child : visaForChildren
+      ? hasVisaIncludedAtZero
+        ? persons.child
+        : visaForChildren
       : 0;
     const effectiveVisaForInfants = effectiveWithVisa
-      ? hasVisaIncludedAtZero ? persons.infant : visaForInfants
+      ? hasVisaIncludedAtZero
+        ? persons.infant
+        : visaForInfants
       : 0;
 
     // Create cart item (only identifiers, prices will be validated server-side)
@@ -1162,9 +1324,18 @@ export default function PackageDetailsPage() {
       referralCode: referralCode || undefined,
       referralDiscountApplied: referralData?.linkType === 'discount',
       referralDiscountPercentage: referralData?.discountPercentage,
-      addonDeals: slug === 'offer-packages' && addonDeals.length > 0 ? addonDeals : undefined,
-      addonHotelServices: slug === 'offer-packages' && addonHotelServices.length > 0 ? addonHotelServices : undefined,
-      addonPrivateTransfers: slug === 'offer-packages' && addonPrivateTransfers.length > 0 ? addonPrivateTransfers : undefined,
+      addonDeals:
+        slug === 'offer-packages' && addonDeals.length > 0
+          ? addonDeals
+          : undefined,
+      addonHotelServices:
+        slug === 'offer-packages' && addonHotelServices.length > 0
+          ? addonHotelServices
+          : undefined,
+      addonPrivateTransfers:
+        slug === 'offer-packages' && addonPrivateTransfers.length > 0
+          ? addonPrivateTransfers
+          : undefined,
     };
 
     addToCart(cartItem);
@@ -1184,7 +1355,6 @@ export default function PackageDetailsPage() {
   const handleMobileAddToCartClick = () => {
     setShowMobileDrawer(true);
   };
-
 
   // Scroll to top button visibility and scrollbar visibility
   useEffect(() => {
@@ -1212,17 +1382,15 @@ export default function PackageDetailsPage() {
     };
   }, []);
 
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
 
   // GSAP hover animations for Add to Cart button
   useEffect(() => {
     const button = addToCartButtonRef.current;
     const icon = addToCartIconRef.current;
-    
+
     if (!button) return;
 
     const handleMouseEnter = () => {
@@ -1234,7 +1402,7 @@ export default function PackageDetailsPage() {
         duration: 0.4,
         ease: 'power2.out',
       });
-      
+
       if (icon) {
         gsap.to(icon, {
           scale: 1.15,
@@ -1243,7 +1411,6 @@ export default function PackageDetailsPage() {
           ease: 'back.out(1.7)',
         });
       }
-
     };
 
     const handleMouseLeave = () => {
@@ -1255,7 +1422,7 @@ export default function PackageDetailsPage() {
         duration: 0.3,
         ease: 'power2.out',
       });
-      
+
       if (icon) {
         gsap.to(icon, {
           scale: 1,
@@ -1264,8 +1431,6 @@ export default function PackageDetailsPage() {
           ease: 'power2.out',
         });
       }
-
-   
     };
 
     const handleMouseDown = () => {
@@ -1303,10 +1468,7 @@ export default function PackageDetailsPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
-      if (
-        datePickerRef.current &&
-        !datePickerRef.current.contains(target)
-      ) {
+      if (datePickerRef.current && !datePickerRef.current.contains(target)) {
         setShowDatePicker(false);
       }
       if (
@@ -1325,13 +1487,14 @@ export default function PackageDetailsPage() {
 
     // Use mousedown for desktop and touchstart for mobile
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    document.addEventListener('touchstart', handleClickOutside, {
+      passive: true,
+    });
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
-
 
   if (loading) {
     return (
@@ -1357,28 +1520,48 @@ export default function PackageDetailsPage() {
   }
 
   // Get images array
-  const images = (pkg.gallery && Array.isArray(pkg.gallery) && pkg.gallery.length > 0)
-    ? pkg.gallery
-    : (pkg.thumbnail_image && pkg.thumbnail_image.trim() ? [pkg.thumbnail_image] : []);
+  const images =
+    pkg.gallery && Array.isArray(pkg.gallery) && pkg.gallery.length > 0
+      ? pkg.gallery
+      : pkg.thumbnail_image && pkg.thumbnail_image.trim()
+        ? [pkg.thumbnail_image]
+        : [];
 
   // Calculate pricing for display
   const prices = getPricesForDate();
-  const hasPricing = prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
-  const currentPrice = calculatedPrice !== null ? calculatedPrice : (hasPricing ? 0 : (pkg.package_price || 0));
+  const hasPricing =
+    prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
+  const currentPrice =
+    calculatedPrice !== null
+      ? calculatedPrice
+      : hasPricing
+        ? 0
+        : pkg.package_price || 0;
   const originalPrice = getOriginalPrice();
-  
+
   // Determine which discount applies for display
-  const hasAnyDiscount = (hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0) || 
-                         (referralData?.showDiscount && referralDiscountAmount && referralDiscountAmount > 0);
-  const showOriginalPrice = (isDiscountActive && originalPrice !== null && originalPrice !== currentPrice) || hasAnyDiscount;
-  const displayOriginalPrice = priceBeforeAgentDiscount || priceBeforeReferralDiscount || originalPrice;
-  
+  const hasAnyDiscount =
+    (hasActiveAgentSubscription &&
+      agentDiscountAmount &&
+      agentDiscountAmount > 0) ||
+    (referralData?.showDiscount &&
+      referralDiscountAmount &&
+      referralDiscountAmount > 0);
+  const showOriginalPrice =
+    (isDiscountActive &&
+      originalPrice !== null &&
+      originalPrice !== currentPrice) ||
+    hasAnyDiscount;
+  const displayOriginalPrice =
+    priceBeforeAgentDiscount || priceBeforeReferralDiscount || originalPrice;
+
   // Get discount info for display
-  const discountLabel = hasActiveAgentSubscription && agentDiscountAmount 
-    ? `Agent Discount (${pkg.agent_discount}%)`
-    : referralData?.showDiscount && referralDiscountAmount
-    ? `Special Discount (${referralData.discountPercentage}%)`
-    : null;
+  const discountLabel =
+    hasActiveAgentSubscription && agentDiscountAmount
+      ? `Agent Discount (${pkg.agent_discount}%)`
+      : referralData?.showDiscount && referralDiscountAmount
+        ? `Special Discount (${referralData.discountPercentage}%)`
+        : null;
 
   return (
     <div className='package-details-page'>
@@ -1390,7 +1573,6 @@ export default function PackageDetailsPage() {
         {/* Product Details on Right */}
         <div className='package-hero-details'>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
-          
           <div className='package-hero-pricing'>
             <span className='package-hero-price-current'>
               {formatPrice(currentPrice)}
@@ -1405,157 +1587,229 @@ export default function PackageDetailsPage() {
                 {discountLabel}
               </span>
             )}
-      </div>
-
+          </div>
           {pkg.package_description && (
-            <p className='package-hero-description'>{pkg.package_description}</p>
+            <p className='package-hero-description'>
+              {pkg.package_description}
+            </p>
           )}
-
           {/* Price Breakdown */}
-      {(() => {
-        const prices = getPricesForDate();
-        const hasPricing = prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
-        
-        if (!hasPricing && !pkg.package_price) return null;
-        
-        // Calculate discounted prices if referral discount is active
-        const referralDiscountPercent = referralData?.linkType === 'discount' && referralData?.discountPercentage > 0 && !hasActiveAgentSubscription
-          ? referralData.discountPercentage
-          : 0;
-        const agentDiscountPercent = hasActiveAgentSubscription && (pkg?.agent_discount || 0) > 0
-          ? (pkg?.agent_discount || 0)
-          : 0;
-        const discountPercent = agentDiscountPercent || referralDiscountPercent;
-        
-        const getDiscountedUnitPrice = (price: number) => {
-          if (discountPercent <= 0) return price;
-          return Math.max(0, price - (price * discountPercent / 100));
-        };
-        
-        return (
+          {(() => {
+            const prices = getPricesForDate();
+            const hasPricing =
+              prices.adultPrice > 0 ||
+              prices.childPrice > 0 ||
+              prices.infantPrice > 0;
+
+            if (!hasPricing && !pkg.package_price) return null;
+
+            // Calculate discounted prices if referral discount is active
+            const referralDiscountPercent =
+              referralData?.linkType === 'discount' &&
+              referralData?.discountPercentage > 0 &&
+              !hasActiveAgentSubscription
+                ? referralData.discountPercentage
+                : 0;
+            const agentDiscountPercent =
+              hasActiveAgentSubscription && (pkg?.agent_discount || 0) > 0
+                ? pkg?.agent_discount || 0
+                : 0;
+            const discountPercent =
+              agentDiscountPercent || referralDiscountPercent;
+
+            const getDiscountedUnitPrice = (price: number) => {
+              if (discountPercent <= 0) return price;
+              return Math.max(0, price - (price * discountPercent) / 100);
+            };
+
+            return (
               <div className='package-hero-price-breakdown'>
                 {prices.adultPrice > 0 && (
                   <div className='package-hero-price-item'>
                     <span className='package-hero-price-item-label'>Adult</span>
-                    <span className='package-hero-price-item-age'>12+ Years</span>
+                    <span className='package-hero-price-item-age'>
+                      12+ Years
+                    </span>
                     {discountPercent > 0 ? (
                       <>
                         <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(getDiscountedUnitPrice(prices.adultPrice))}
+                          {formatPrice(
+                            getDiscountedUnitPrice(prices.adultPrice)
+                          )}
                         </span>
                         <span className='package-hero-price-item-original'>
                           {formatPrice(prices.adultPrice)}
                         </span>
                       </>
                     ) : (
-                    <span className='package-hero-price-item-amount'>
-                      {formatPrice(prices.adultPrice)}
-                    </span>
-                    )}
-                    {isDiscountActive && pkg.adult_discount_amount && pkg.adult_discount_amount > 0 && (
-                      <span className='package-hero-price-item-discount'>
-                        Save {formatPrice(pkg.adult_discount_amount)}
+                      <span className='package-hero-price-item-amount'>
+                        {formatPrice(prices.adultPrice)}
                       </span>
                     )}
+                    {isDiscountActive &&
+                      pkg.adult_discount_amount &&
+                      pkg.adult_discount_amount > 0 && (
+                        <span className='package-hero-price-item-discount'>
+                          Save {formatPrice(pkg.adult_discount_amount)}
+                        </span>
+                      )}
                   </div>
                 )}
                 {prices.childPrice > 0 && (
                   <div className='package-hero-price-item'>
                     <span className='package-hero-price-item-label'>Child</span>
-                    <span className='package-hero-price-item-age'>2-8 Years</span>
+                    <span className='package-hero-price-item-age'>
+                      2-8 Years
+                    </span>
                     {discountPercent > 0 ? (
                       <>
                         <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(getDiscountedUnitPrice(prices.childPrice))}
+                          {formatPrice(
+                            getDiscountedUnitPrice(prices.childPrice)
+                          )}
                         </span>
                         <span className='package-hero-price-item-original'>
                           {formatPrice(prices.childPrice)}
                         </span>
                       </>
                     ) : (
-                    <span className='package-hero-price-item-amount'>
-                      {formatPrice(prices.childPrice)}
-                    </span>
-                    )}
-                    {isDiscountActive && pkg.child_discount_amount && pkg.child_discount_amount > 0 && (
-                      <span className='package-hero-price-item-discount'>
-                        Save {formatPrice(pkg.child_discount_amount)}
+                      <span className='package-hero-price-item-amount'>
+                        {formatPrice(prices.childPrice)}
                       </span>
                     )}
+                    {isDiscountActive &&
+                      pkg.child_discount_amount &&
+                      pkg.child_discount_amount > 0 && (
+                        <span className='package-hero-price-item-discount'>
+                          Save {formatPrice(pkg.child_discount_amount)}
+                        </span>
+                      )}
                   </div>
                 )}
                 {prices.infantPrice > 0 && (
                   <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>Infant</span>
-                    <span className='package-hero-price-item-age'>&lt;2 Years</span>
+                    <span className='package-hero-price-item-label'>
+                      Infant
+                    </span>
+                    <span className='package-hero-price-item-age'>
+                      &lt;2 Years
+                    </span>
                     {discountPercent > 0 ? (
                       <>
                         <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(getDiscountedUnitPrice(prices.infantPrice))}
+                          {formatPrice(
+                            getDiscountedUnitPrice(prices.infantPrice)
+                          )}
                         </span>
                         <span className='package-hero-price-item-original'>
                           {formatPrice(prices.infantPrice)}
                         </span>
                       </>
                     ) : (
-                    <span className='package-hero-price-item-amount'>
-                      {formatPrice(prices.infantPrice)}
-                    </span>
-                    )}
-                    {isDiscountActive && pkg.infant_discount_amount && pkg.infant_discount_amount > 0 && (
-                      <span className='package-hero-price-item-discount'>
-                        Save {formatPrice(pkg.infant_discount_amount)}
+                      <span className='package-hero-price-item-amount'>
+                        {formatPrice(prices.infantPrice)}
                       </span>
                     )}
+                    {isDiscountActive &&
+                      pkg.infant_discount_amount &&
+                      pkg.infant_discount_amount > 0 && (
+                        <span className='package-hero-price-item-discount'>
+                          Save {formatPrice(pkg.infant_discount_amount)}
+                        </span>
+                      )}
                   </div>
                 )}
                 {!hasPricing && pkg.package_price && (
                   <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>Package Price</span>
+                    <span className='package-hero-price-item-label'>
+                      Package Price
+                    </span>
                     {discountPercent > 0 ? (
                       <>
                         <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(getDiscountedUnitPrice(pkg.package_price))}
+                          {formatPrice(
+                            getDiscountedUnitPrice(pkg.package_price)
+                          )}
                         </span>
                         <span className='package-hero-price-item-original'>
                           {formatPrice(pkg.package_price)}
                         </span>
                       </>
                     ) : (
-                    <span className='package-hero-price-item-amount'>
-                      {formatPrice(pkg.package_price)}
-                    </span>
+                      <span className='package-hero-price-item-amount'>
+                        {formatPrice(pkg.package_price)}
+                      </span>
                     )}
                   </div>
                 )}
+              </div>
+            );
+          })()}
+          <div className='package-hero-buttons'>
+            <button
+              ref={addToCartButtonRef}
+              className='package-hero-add-to-cart-button'
+              onClick={() => {
+                if (isMobile) {
+                  setShowMobileDrawer(true);
+                } else {
+                  setShowDesktopPopover(true);
+                }
+              }}
+            >
+              <ShoppingCartIcon ref={addToCartIconRef} size={24} />
+              Add to Cart
+            </button>
+            {pkg.pdf_url && pkg.pdf_url.trim() && (
+              <button
+                type='button'
+                className='package-hero-pdf-button'
+                onClick={() => setShowPdfModal(true)}
+              >
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='20'
+                  height='20'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                >
+                  <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
+                  <polyline points='14 2 14 8 20 8' />
+                  <line x1='16' y1='13' x2='8' y2='13' />
+                  <line x1='16' y1='17' x2='8' y2='17' />
+                  <polyline points='10 9 9 9 8 9' />
+                </svg>
+                Download PDF
+              </button>
+            )}
           </div>
-        );
-      })()}
-
-          <button
-            ref={addToCartButtonRef}
-            className='package-hero-add-to-cart-button'
-            onClick={() => {
-              if (isMobile) {
-                setShowMobileDrawer(true);
-              } else {
-                setShowDesktopPopover(true);
-              }
-            }}
-          >
-            <ShoppingCartIcon ref={addToCartIconRef} size={24} />
-            Add to Cart
-          </button>
-                  </div>
+          {pkg.pdf_url && pkg.pdf_url.trim() && (
+            <PdfDownloadModal
+              isOpen={showPdfModal}
+              onClose={() => setShowPdfModal(false)}
+              isMobile={isMobile}
+              packageName={pkg.package_name || 'Package'}
+              pdfUrl={pkg.pdf_url}
+              packageId={pkg.package_id}
+            />
+          )}
+        </div>
       </div>
-
 
       {/* Discount Banner */}
       {isDiscountActive && (
         <div className='discount-banner'>
           <div className='discount-banner-content'>
             <div className='discount-badge'>
-              <img src='/images/disocunt-ignite.svg' alt='Discount' className='discount-icon' />
+              <img
+                src='/images/disocunt-ignite.svg'
+                alt='Discount'
+                className='discount-icon'
+              />
               <span className='discount-label'>Limited Time Offer!</span>
             </div>
             <div className='discount-details'>
@@ -1570,11 +1824,13 @@ export default function PackageDetailsPage() {
                     Child: <strong>AED {pkg.child_discount_amount} OFF</strong>
                   </span>
                 )}
-                {pkg.infant_discount_amount && pkg.infant_discount_amount > 0 && (
-                  <span className='discount-item'>
-                    Infant: <strong>AED {pkg.infant_discount_amount} OFF</strong>
-                  </span>
-                )}
+                {pkg.infant_discount_amount &&
+                  pkg.infant_discount_amount > 0 && (
+                    <span className='discount-item'>
+                      Infant:{' '}
+                      <strong>AED {pkg.infant_discount_amount} OFF</strong>
+                    </span>
+                  )}
               </div>
               <div className='discount-timer'>
                 <span className='timer-label'>Ends in:</span>
@@ -1585,8 +1841,6 @@ export default function PackageDetailsPage() {
         </div>
       )}
 
-
-
       {/* Main Content with Tabs */}
       <PackageDetailsTabs pkg={pkg} />
 
@@ -1596,9 +1850,9 @@ export default function PackageDetailsPage() {
         onClose={() => {
           if (isMobile) {
             setShowMobileDrawer(false);
-                          } else {
+          } else {
             setShowDesktopPopover(false);
-                          }
+          }
         }}
         isMobile={isMobile}
         pkg={pkg}
@@ -1622,12 +1876,12 @@ export default function PackageDetailsPage() {
         setPersons={setPersons}
         updatePersonCount={updatePersonCount}
         getPersonsDisplayText={getPersonsDisplayText}
-                            selectedDate={selectedDate}
+        selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         selectedDateString={selectedDateString}
         handleDateStringSelect={handleDateStringSelect}
         handleDateSelect={handleDateSelect}
-                            month={month}
+        month={month}
         setMonth={setMonth}
         showPersonsDropdown={showPersonsDropdown}
         setShowPersonsDropdown={setShowPersonsDropdown}

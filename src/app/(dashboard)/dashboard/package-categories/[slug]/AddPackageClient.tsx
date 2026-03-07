@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import {
   uploadImageToSupabase,
   deleteImageFromSupabase,
+  uploadPdfToSupabase,
+  deletePdfFromSupabase,
 } from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
 import { parseDateStringToLocal } from '@/lib/utils';
@@ -92,6 +94,11 @@ export default function AddPackageClient({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // PDF state
+  const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [pdfFileName, setPdfFileName] = useState<string>('');
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   // Gallery images state
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
@@ -453,6 +460,113 @@ export default function AddPackageClient({
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className='form_row full_width'>
+                <label>PDF Brochure / Itinerary (Optional)</label>
+                <div
+                  style={{
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    backgroundColor: '#f9fafb',
+                    textAlign: 'center',
+                  }}
+                  onClick={() => pdfInputRef.current?.click()}
+                >
+                  <input
+                    ref={pdfInputRef}
+                    type='file'
+                    accept='application/pdf,.pdf'
+                    style={{ display: 'none' }}
+                    onChange={async e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.type !== 'application/pdf') {
+                        toast.error('Please select a PDF file');
+                        return;
+                      }
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error('PDF size should be less than 10MB');
+                        return;
+                      }
+                      setIsUploadingPdf(true);
+                      try {
+                        const url = await uploadPdfToSupabase(file, 'packages');
+                        if (pdfUrl) {
+                          try {
+                            await deletePdfFromSupabase(pdfUrl);
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }
+                        setPdfUrl(url);
+                        setPdfFileName(file.name);
+                        toast.success('PDF uploaded successfully');
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : 'Failed to upload PDF');
+                      } finally {
+                        setIsUploadingPdf(false);
+                        if (pdfInputRef.current) pdfInputRef.current.value = '';
+                      }
+                    }}
+                  />
+                  {isUploadingPdf ? (
+                    <p style={{ color: '#6b7280', margin: 0 }}>Uploading PDF...</p>
+                  ) : pdfUrl ? (
+                    <div style={{ width: '100%' }} onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                          <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='#dc2626' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
+                            <path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' />
+                            <polyline points='14 2 14 8 20 8' />
+                            <line x1='16' y1='13' x2='8' y2='13' />
+                            <line x1='16' y1='17' x2='8' y2='17' />
+                            <polyline points='10 9 9 9 8 9' />
+                          </svg>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, color: '#111827', margin: 0, fontSize: '14px' }}>{pdfFileName || 'PDF Document'}</p>
+                            <p style={{ color: '#6b7280', margin: 0, fontSize: '12px' }}>Uploaded successfully</p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                          <a
+                            href={pdfUrl}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            style={{ color: '#2563eb', textDecoration: 'none', fontSize: '13px', padding: '6px 12px', borderRadius: '6px', background: '#eff6ff', fontWeight: 500 }}
+                          >
+                            Open in new tab
+                          </a>
+                          <button
+                            type='button'
+                            onClick={() => pdfInputRef.current?.click()}
+                            style={{ color: '#6b7280', background: '#f3f4f6', border: '1px solid #d1d5db', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                          >
+                            Replace
+                          </button>
+                          <button
+                            type='button'
+                            onClick={() => { setPdfUrl(''); setPdfFileName(''); toast.success('PDF removed'); }}
+                            style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                      <iframe
+                        src={`${pdfUrl}#toolbar=0`}
+                        title='PDF Preview'
+                        style={{ width: '100%', height: '360px', border: '1px solid #e5e7eb', borderRadius: '8px', backgroundColor: '#fff' }}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ color: '#374151', margin: '0 0 4px', fontSize: '14px' }}>Click to upload PDF (Max 10MB)</p>
+                      <p style={{ color: '#6b7280', margin: 0, fontSize: '12px' }}>Brochure, itinerary, or other documents</p>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className='form_row full_width'>
@@ -1192,6 +1306,7 @@ export default function AddPackageClient({
                     itinerary: itinerary,
                     thumbnail_image: thumbnailImageUrl || undefined,
                     gallery: galleryImages.length > 0 ? galleryImages : undefined,
+                    pdf_url: pdfUrl || undefined,
                   };
 
                   // Add date-related fields based on package type
@@ -1285,6 +1400,11 @@ export default function AddPackageClient({
                   setGalleryImages([]);
                   if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
+                  }
+                  setPdfUrl('');
+                  setPdfFileName('');
+                  if (pdfInputRef.current) {
+                    pdfInputRef.current.value = '';
                   }
                 });
                 

@@ -690,3 +690,93 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
     };
   }
 }
+
+// PDF Brochure Download Email
+export interface PdfBrochureEmailData {
+  customerName: string;
+  customerEmail: string;
+  packageName: string;
+  pdfUrl: string;
+}
+
+function getPdfBrochureEmailTemplate(data: PdfBrochureEmailData): string {
+  // Use production URL for logo - emails need publicly accessible image URLs.
+  // Set EMAIL_ASSETS_BASE_URL if your site uses a different domain (e.g. Vercel).
+  const base = process.env.EMAIL_ASSETS_BASE_URL || 'https://www.aapkatourism.com';
+  const logoUrl = `${base.replace(/\/$/, '')}/aapka-tourism-logo.png`;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your PDF Brochure - Aapka Tourism</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 48px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 520px; width: 100%; background: #ffffff; border: 1px solid #e8e8e8;">
+          <!-- Logo -->
+          <tr>
+            <td style="padding: 48px 40px 32px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+              <img src="${logoUrl}" alt="Aapka Tourism" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #c2410c; letter-spacing: 0.08em; text-transform: uppercase;">Your Brochure</p>
+              <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #111827; letter-spacing: -0.02em; line-height: 1.3;">Ready for you</h1>
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.7;">Dear ${data.customerName},</p>
+              <p style="margin: 0 0 32px 0; font-size: 15px; color: #4b5563; line-height: 1.7;">
+                As requested, here is your PDF brochure for <strong style="color: #111827;">${data.packageName}</strong>. Click the button below to view and download.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.pdfUrl}" style="display: inline-block; background-color: #c2410c; color: #ffffff; text-decoration: none; padding: 14px 32px; font-size: 14px; font-weight: 600; letter-spacing: 0.02em;">Download PDF Brochure</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 32px 0 0 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                Should you have any questions or wish to book, we're here to help.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 40px 32px; background-color: #fafafa; border-top: 1px solid #f0f0f0;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-align: center; font-weight: 600;">Aapka Tourism</p>
+              <p style="margin: 8px 0 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                <a href="mailto:info@aapkatourism.com" style="color: #6b7280; text-decoration: none;">info@aapkatourism.com</a>
+                <span style="margin: 0 8px; color: #d1d5db;">|</span>
+                <a href="https://www.aapkatourism.com" style="color: #6b7280; text-decoration: none;">www.aapkatourism.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendPdfBrochureEmail(data: PdfBrochureEmailData): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  if (!isEmailConfigured()) {
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const result = await sendEmail({
+    to: data.customerEmail,
+    subject: `Your PDF Brochure - ${data.packageName} | Aapka Tourism`,
+    html: getPdfBrochureEmailTemplate(data),
+  });
+
+  return result.success ? { success: true } : { success: false, error: result.error };
+}

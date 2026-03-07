@@ -4,12 +4,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const BUCKET_NAME = 'images';
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { path } = body;
+    const { path, bucket } = body;
 
     if (!path || typeof path !== 'string') {
       return NextResponse.json(
@@ -18,8 +16,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const bucketName = bucket === 'packages' ? 'packages' : bucket === 'documents' ? 'documents' : 'images';
+
     const { error } = await supabaseAdmin.storage
-      .from(BUCKET_NAME)
+      .from(bucketName)
       .remove([path]);
 
     if (error) {

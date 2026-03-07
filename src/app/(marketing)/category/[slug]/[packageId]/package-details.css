@@ -149,6 +149,13 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   margin: 0;
 }
 
+.package-hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
 .package-hero-add-to-cart-button {
   font-family: var(--font-inter);
   font-size: 16px;
@@ -169,6 +176,36 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   box-shadow: 0 4px 14px -2px rgba(253, 107, 6, 0.4);
   position: relative;
   overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.package-hero-pdf-button {
+  font-family: var(--font-inter);
+  font-size: 16px;
+  font-weight: 600;
+  color: #fd6b06;
+  background: transparent;
+  border: 2px solid #fd6b06;
+  padding: 0 24px;
+  height: 60px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.package-hero-pdf-button:hover {
+  background: rgba(253, 107, 6, 0.08);
+  border-color: #e64500;
+  color: #e64500;
+}
+
+.package-hero-pdf-button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 
@@ -631,16 +668,29 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     font-size: 15px;
   }
 
-  .package-hero-add-to-cart-button {
+  .package-hero-buttons {
+    flex-direction: column;
+  }
+
+  .package-hero-add-to-cart-button,
+  .package-hero-pdf-button {
     max-width: 100%;
+    width: 100%;
+  }
+
+  .package-hero-add-to-cart-button {
     height: 56px;
     font-size: 15px;
     padding: 0 24px;
-    justify-content: flex-start;
-    width: max-content;
+    justify-content: center;
   }
   
-  .package-hero-add-to-cart-button svg {
+  .package-hero-pdf-button {
+    height: 56px;
+  }
+
+  .package-hero-add-to-cart-button svg,
+  .package-hero-pdf-button svg {
     width: 18px;
     height: 18px;
   }
@@ -1665,6 +1715,25 @@ width: 24px;
 .desktop-booking-modal-content .booking-add-to-cart-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px -2px rgba(255, 77, 0, 0.5);
+}
+
+.pdf-modal-cancel-button {
+  width: 100%;
+  height: 48px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-inter);
+}
+
+.pdf-modal-cancel-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
 }
 
 /* Horizontal Booking Card - Fixed at Bottom (Legacy - Hidden on Desktop) */
