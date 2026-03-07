@@ -249,15 +249,15 @@ export default function PackageDetailsPage() {
     let total = 0;
     for (const id of addonDeals) {
       const d = addonDealsData.find(x => String(x.id) === String(id));
-      if (d) total += calc(d.adult_price, d.child_price, d.infant_price);
+      if (d) total += calc(d.adult_price ?? 0, d.child_price ?? 0, d.infant_price ?? 0);
     }
     for (const id of addonHotelServices) {
       const s = addonServicesData.find(x => String(x.id) === String(id));
-      if (s) total += calc(s.adult_price, s.child_price, s.infant_price);
+      if (s) total += calc(s.adult_price ?? 0, s.child_price ?? 0, s.infant_price ?? 0);
     }
     for (const id of addonPrivateTransfers) {
       const t = addonTransfersData.find(x => String(x.id) === String(id));
-      if (t) total += calc(t.adult_price, t.child_price, t.infant_price);
+      if (t) total += calc(t.adult_price ?? 0, t.child_price ?? 0, t.infant_price ?? 0);
     }
     return total;
   }, [slug, addonDeals, addonHotelServices, addonPrivateTransfers, addonDealsData, addonServicesData, addonTransfersData, persons.adult, persons.child, persons.infant, isSoloTraveller]);
