@@ -486,8 +486,8 @@ export default function AddPackageClient({
                         toast.error('Please select a PDF file');
                         return;
                       }
-                      if (file.size > 10 * 1024 * 1024) {
-                        toast.error('PDF size should be less than 10MB');
+                      if (file.size > 25 * 1024 * 1024) {
+                        toast.error('PDF size should be less than 25MB');
                         return;
                       }
                       setIsUploadingPdf(true);
@@ -562,7 +562,7 @@ export default function AddPackageClient({
                     </div>
                   ) : (
                     <>
-                      <p style={{ color: '#374151', margin: '0 0 4px', fontSize: '14px' }}>Click to upload PDF (Max 10MB)</p>
+                      <p style={{ color: '#374151', margin: '0 0 4px', fontSize: '14px' }}>Click to upload PDF (Max 25MB)</p>
                       <p style={{ color: '#6b7280', margin: 0, fontSize: '12px' }}>Brochure, itinerary, or other documents</p>
                     </>
                   )}

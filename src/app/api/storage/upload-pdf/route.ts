@@ -28,10 +28,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Max 10MB for PDFs
-    if (file.size > 10 * 1024 * 1024) {
+    // Max 25MB for PDFs (client-side direct upload preferred for files > 5MB)
+    if (file.size > 25 * 1024 * 1024) {
       return NextResponse.json(
-        { error: 'PDF size should be less than 10MB' },
+        { error: 'PDF size should be less than 25MB' },
         { status: 400 }
       );
     }

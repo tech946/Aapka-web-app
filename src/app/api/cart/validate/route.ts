@@ -31,6 +31,10 @@ interface CartItemRequest {
   referralId?: string | null;
   referralDiscountApplied?: boolean; // Client-provided, will be verified against DB
   referralDiscountPercentage?: number; // Client-provided, will be verified against DB
+  // Add-ons (offer packages)
+  addonDeals?: string[];
+  addonHotelServices?: string[];
+  addonPrivateTransfers?: string[];
 }
 
 // Interface for verified referral data from database
@@ -57,6 +61,80 @@ function isDiscountActive(pkg: any): boolean {
   endDate.setHours(23, 59, 59, 999);
   
   return now >= startDate && now <= endDate;
+}
+
+const CRM_BASE_URL = 'https://crm.aapkatourism.com';
+
+// Helper to fetch addon data from CRM and calculate addon price for an item
+async function calculateAddonPrice(
+  addonDeals: string[] | undefined,
+  addonHotelServices: string[] | undefined,
+  addonPrivateTransfers: string[] | undefined,
+  adults: number,
+  children: number,
+  infants: number,
+  nights: number
+): Promise<number> {
+  const dealIds = addonDeals?.filter(Boolean) || [];
+  const serviceIds = addonHotelServices?.filter(Boolean) || [];
+  const transferIds = addonPrivateTransfers?.filter(Boolean) || [];
+  if (dealIds.length === 0 && serviceIds.length === 0 && transferIds.length === 0) return 0;
+
+  const apiKey = process.env.WEBSITE_API_KEY?.trim();
+  if (!apiKey) return 0;
+
+  let total = 0;
+  const addPerPerson = (a: number, c: number, i: number) =>
+    (a || 0) * adults + (c || 0) * children + (i || 0) * infants;
+
+  try {
+    if (dealIds.length > 0) {
+      const params = nights > 0 ? `?nights=${nights}` : '';
+      const res = await fetch(`${CRM_BASE_URL}/api/website/addon-deals${params}`, {
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const deals = Array.isArray(data?.addon_deals) ? data.addon_deals : [];
+        for (const id of dealIds) {
+          const d = deals.find((x: any) => x?.id === id);
+          if (d) total += addPerPerson(d.adult_price, d.child_price, d.infant_price);
+        }
+      }
+    }
+    if (serviceIds.length > 0) {
+      const res = await fetch(`${CRM_BASE_URL}/api/website/addon-hotel-services`, {
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const services = Array.isArray(data?.addon_hotel_services) ? data.addon_hotel_services : [];
+        for (const id of serviceIds) {
+          const s = services.find((x: any) => x?.id === id);
+          if (s) total += addPerPerson(s.adult_price, s.child_price, s.infant_price);
+        }
+      }
+    }
+    if (transferIds.length > 0) {
+      const res = await fetch(`${CRM_BASE_URL}/api/website/addon-private-transfers`, {
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const transfers = Array.isArray(data?.addon_private_transfers) ? data.addon_private_transfers : [];
+        for (const id of transferIds) {
+          const t = transfers.find((x: any) => x?.id === id);
+          if (t) total += addPerPerson(t.adult_price, t.child_price, t.infant_price);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching addon prices:', e);
+  }
+  return total;
 }
 
 // Helper function to find the date range that contains a given date
@@ -88,7 +166,7 @@ export async function POST(req: NextRequest) {
     // Check if user has active agent subscription
     let hasActiveAgentSubscription = false;
     try {
-      const supabase = createServerSupabaseClient();
+      const supabase = await createServerSupabaseClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -430,6 +508,19 @@ export async function POST(req: NextRequest) {
       calculatedPrice += visaPrice;
       originalPrice += visaPrice;
 
+      // Add addon pricing (offer packages - deals, hotel services, private transfers)
+      const addonPrice = await calculateAddonPrice(
+        item.addonDeals,
+        item.addonHotelServices,
+        item.addonPrivateTransfers,
+        item.isSoloTraveller ? 1 : item.adults,
+        item.isSoloTraveller ? 0 : item.children,
+        item.isSoloTraveller ? 0 : item.infants,
+        pkg.package_nights ?? 0
+      );
+      calculatedPrice += addonPrice;
+      originalPrice += addonPrice;
+
       // SECURITY: Apply discount based on verified data, not client-provided values
       // Priority 1: Agent with active subscription gets agent discount
       // Priority 2: Customer via discount-type referral link gets referral discount (verified from DB)
@@ -496,6 +587,7 @@ export async function POST(req: NextRequest) {
           }
         }
         originalPriceForDisplay += visaPrice;
+        originalPriceForDisplay += addonPrice;
       }
 
       return {

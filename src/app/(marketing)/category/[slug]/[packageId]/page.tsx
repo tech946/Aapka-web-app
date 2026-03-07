@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCart, CartItemStorage } from '@/context/CartContext';
@@ -179,6 +179,13 @@ export default function PackageDetailsPage() {
   const [addonPrivateTransfers, setAddonPrivateTransfers] = useState<string[]>(
     []
   );
+  // Addon data with prices - fetched when modal opens, used for instant client-side calculation and AddonsSection dropdown
+  type AddonDeal = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number; category_name?: string | null };
+  type AddonService = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number };
+  type AddonTransfer = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number; pax_type?: string; fixed_pax?: number | null; min_pax?: number | null; max_pax?: number | null };
+  const [addonDealsData, setAddonDealsData] = useState<AddonDeal[]>([]);
+  const [addonServicesData, setAddonServicesData] = useState<AddonService[]>([]);
+  const [addonTransfersData, setAddonTransfersData] = useState<AddonTransfer[]>([]);
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -200,6 +207,60 @@ export default function PackageDetailsPage() {
       setVisaForInfants(0);
     }
   }, [isSoloTraveller, withVisa, visaForAdults]);
+
+  // Fetch addon APIs when Add to Cart modal opens - APIs include prices, so we calculate client-side (fast & accurate)
+  const modalOpen = showMobileDrawer || showDesktopPopover;
+  useEffect(() => {
+    if (slug !== 'offer-packages' || !pkg || !modalOpen) return;
+    const nights = pkg.package_nights ?? 0;
+    let active = true;
+    (async () => {
+      try {
+        const [dealsRes, servicesRes, transfersRes] = await Promise.all([
+          fetch(`/api/website/addon-deals${nights > 0 ? `?nights=${nights}` : ''}`),
+          fetch('/api/website/addon-hotel-services'),
+          fetch('/api/website/addon-private-transfers'),
+        ]);
+        if (!active) return;
+        const deals = dealsRes.ok ? ((await dealsRes.json())?.addon_deals ?? []) : [];
+        const services = servicesRes.ok ? ((await servicesRes.json())?.addon_hotel_services ?? []) : [];
+        const transfers = transfersRes.ok ? ((await transfersRes.json())?.addon_private_transfers ?? []) : [];
+        setAddonDealsData(Array.isArray(deals) ? deals.map((d: any) => ({ ...d, id: String(d?.id ?? ''), adult_price: d?.adult_price ?? 0, child_price: d?.child_price ?? 0, infant_price: d?.infant_price ?? 0 })) : []);
+        setAddonServicesData(Array.isArray(services) ? services.map((s: any) => ({ ...s, id: String(s?.id ?? ''), adult_price: s?.adult_price ?? 0, child_price: s?.child_price ?? 0, infant_price: s?.infant_price ?? 0 })) : []);
+        setAddonTransfersData(Array.isArray(transfers) ? transfers.map((t: any) => ({ ...t, id: String(t?.id ?? ''), adult_price: t?.adult_price ?? 0, child_price: t?.child_price ?? 0, infant_price: t?.infant_price ?? 0 })) : []);
+      } catch {
+        if (active) {
+          setAddonDealsData([]);
+          setAddonServicesData([]);
+          setAddonTransfersData([]);
+        }
+      }
+    })();
+    return () => { active = false; };
+  }, [slug, pkg?.package_id, pkg?.package_nights, modalOpen]);
+
+  // Client-side addon price calculation from fetched data - instant, no fetch on selection change
+  const addonPriceTotal = useMemo(() => {
+    if (slug !== 'offer-packages') return 0;
+    const adults = isSoloTraveller ? 1 : persons.adult;
+    const children = isSoloTraveller ? 0 : persons.child;
+    const infants = isSoloTraveller ? 0 : persons.infant;
+    const calc = (a: number, c: number, i: number) => (a || 0) * adults + (c || 0) * children + (i || 0) * infants;
+    let total = 0;
+    for (const id of addonDeals) {
+      const d = addonDealsData.find(x => String(x.id) === String(id));
+      if (d) total += calc(d.adult_price, d.child_price, d.infant_price);
+    }
+    for (const id of addonHotelServices) {
+      const s = addonServicesData.find(x => String(x.id) === String(id));
+      if (s) total += calc(s.adult_price, s.child_price, s.infant_price);
+    }
+    for (const id of addonPrivateTransfers) {
+      const t = addonTransfersData.find(x => String(x.id) === String(id));
+      if (t) total += calc(t.adult_price, t.child_price, t.infant_price);
+    }
+    return total;
+  }, [slug, addonDeals, addonHotelServices, addonPrivateTransfers, addonDealsData, addonServicesData, addonTransfersData, persons.adult, persons.child, persons.infant, isSoloTraveller]);
 
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [agentDiscountAmount, setAgentDiscountAmount] = useState<number | null>(
@@ -852,7 +913,14 @@ export default function PackageDetailsPage() {
       // getPricesForDate already applies deal prices if active
       const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
       const visaPrice = getVisaPrice();
-      setCalculatedPrice(soloPrice + visaPrice);
+      const addonPrice = slug === 'offer-packages' ? addonPriceTotal : 0;
+      let finalSoloPrice = soloPrice + visaPrice + addonPrice;
+      if (hasActiveAgentSubscription && (pkg?.agent_discount ?? 0) > 0) {
+        finalSoloPrice = Math.max(0, finalSoloPrice - (finalSoloPrice * (pkg.agent_discount ?? 0)) / 100);
+      } else if (referralData?.linkType === 'discount' && (referralData?.discountPercentage ?? 0) > 0) {
+        finalSoloPrice = Math.max(0, finalSoloPrice - (finalSoloPrice * (referralData.discountPercentage ?? 0)) / 100);
+      }
+      setCalculatedPrice(finalSoloPrice);
       return;
     }
 
@@ -906,7 +974,8 @@ export default function PackageDetailsPage() {
 
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
-    let finalPrice = totalPrice + visaPrice;
+    const addonPrice = slug === 'offer-packages' ? addonPriceTotal : 0;
+    let finalPrice = totalPrice + visaPrice + addonPrice;
 
     // Apply discount logic:
     // Priority 1: Agent with active subscription gets agent discount
@@ -969,6 +1038,7 @@ export default function PackageDetailsPage() {
     selectedDate,
     hasActiveAgentSubscription,
     referralData,
+    addonPriceTotal,
   ]);
 
   // Helper function to format price - always shows AED
@@ -1913,6 +1983,21 @@ export default function PackageDetailsPage() {
         onAddonDealsChange={setAddonDeals}
         onAddonHotelServicesChange={setAddonHotelServices}
         onAddonPrivateTransfersChange={setAddonPrivateTransfers}
+        onToggleAddonDeal={id =>
+          setAddonDeals(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+          )
+        }
+        onToggleAddonHotelService={id =>
+          setAddonHotelServices(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+          )
+        }
+        onToggleAddonPrivateTransfer={id =>
+          setAddonPrivateTransfers(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+          )
+        }
         addonNights={pkg?.package_nights ?? 0}
       />
 

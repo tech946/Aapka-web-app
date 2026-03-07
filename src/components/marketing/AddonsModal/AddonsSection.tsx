@@ -12,6 +12,10 @@ interface AddonsSectionProps {
   onSelectDeals: (ids: string[]) => void;
   onSelectServices: (ids: string[]) => void;
   onSelectTransfers: (ids: string[]) => void;
+  /** Optional: use toggle handlers to avoid stale state when rapidly clicking */
+  onToggleDeal?: (id: string) => void;
+  onToggleService?: (id: string) => void;
+  onToggleTransfer?: (id: string) => void;
   nights?: number;
   isMobile: boolean;
 }
@@ -28,6 +32,9 @@ export function AddonsSection({
   onSelectDeals,
   onSelectServices,
   onSelectTransfers,
+  onToggleDeal,
+  onToggleService,
+  onToggleTransfer,
   nights = 0,
   isMobile,
 }: AddonsSectionProps) {
@@ -119,16 +126,28 @@ export function AddonsSection({
   };
 
   const toggleDeal = (id: string) => {
-    if (selectedDeals.includes(id)) onSelectDeals(selectedDeals.filter((x) => x !== id));
-    else onSelectDeals([...selectedDeals, id]);
+    if (onToggleDeal) {
+      onToggleDeal(id);
+    } else {
+      if (selectedDeals.includes(id)) onSelectDeals(selectedDeals.filter((x) => x !== id));
+      else onSelectDeals([...selectedDeals, id]);
+    }
   };
   const toggleService = (id: string) => {
-    if (selectedServices.includes(id)) onSelectServices(selectedServices.filter((x) => x !== id));
-    else onSelectServices([...selectedServices, id]);
+    if (onToggleService) {
+      onToggleService(id);
+    } else {
+      if (selectedServices.includes(id)) onSelectServices(selectedServices.filter((x) => x !== id));
+      else onSelectServices([...selectedServices, id]);
+    }
   };
   const toggleTransfer = (id: string) => {
-    if (selectedTransfers.includes(id)) onSelectTransfers(selectedTransfers.filter((x) => x !== id));
-    else onSelectTransfers([...selectedTransfers, id]);
+    if (onToggleTransfer) {
+      onToggleTransfer(id);
+    } else {
+      if (selectedTransfers.includes(id)) onSelectTransfers(selectedTransfers.filter((x) => x !== id));
+      else onSelectTransfers([...selectedTransfers, id]);
+    }
   };
 
   const openFor = useCallback((type: 'deals' | 'services' | 'transfers') => {

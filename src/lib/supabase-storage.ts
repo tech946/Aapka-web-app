@@ -32,12 +32,13 @@ export async function uploadImageToSupabase(
 }
 
 /**
- * Upload PDF to Supabase Storage (documents bucket)
- * Uses API route for server-side upload with service role
+ * Upload PDF to Supabase Storage (packages bucket)
+ * Uses API route for server-side upload with service role.
+ * Body size limit increased via next.config (proxyClientMaxBodySize) to support files up to 25MB.
  */
 export async function uploadPdfToSupabase(
   file: File,
-  folder: string = 'pdf'
+  folder: string = 'packages'
 ): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);

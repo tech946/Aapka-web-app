@@ -81,6 +81,10 @@ interface BookingModalProps {
   onAddonDealsChange?: (ids: string[]) => void;
   onAddonHotelServicesChange?: (ids: string[]) => void;
   onAddonPrivateTransfersChange?: (ids: string[]) => void;
+  /** Toggle handlers use functional updates to avoid stale state when rapidly clicking */
+  onToggleAddonDeal?: (id: string) => void;
+  onToggleAddonHotelService?: (id: string) => void;
+  onToggleAddonPrivateTransfer?: (id: string) => void;
   addonNights?: number;
 }
 
@@ -146,6 +150,9 @@ export default function BookingModal({
   onAddonDealsChange,
   onAddonHotelServicesChange,
   onAddonPrivateTransfersChange,
+  onToggleAddonDeal,
+  onToggleAddonHotelService,
+  onToggleAddonPrivateTransfer,
   addonNights = 0,
 }: BookingModalProps) {
   if (!isOpen) return null;
@@ -610,6 +617,9 @@ export default function BookingModal({
               onSelectDeals={onAddonDealsChange}
               onSelectServices={onAddonHotelServicesChange}
               onSelectTransfers={onAddonPrivateTransfersChange}
+              onToggleDeal={onToggleAddonDeal}
+              onToggleService={onToggleAddonHotelService}
+              onToggleTransfer={onToggleAddonPrivateTransfer}
               nights={addonNights}
               isMobile={isMobile}
             />
