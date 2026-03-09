@@ -179,8 +179,12 @@
 }
 
 @keyframes oman-transport-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Terms Modal */
@@ -308,6 +312,15 @@
 @media (min-width: 640px) {
   .oman-transport-form-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .oman-transport-title {
+    font-size: 22px;
+  }
+  .oman-transport-container {
+    padding-inline: 12px;
+  }
+  .oman-transport-form {
+    padding: 20px 12px;
   }
 }
 
