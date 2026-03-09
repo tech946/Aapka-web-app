@@ -3,8 +3,16 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { CountrySelect } from '@/components/ui/country-select';
 import './oman-transport.css';
+
+const NATIONALITY_OPTIONS = [
+  { value: 'india', label: 'India' },
+  { value: 'canada', label: 'Canada' },
+  { value: 'us', label: 'US' },
+  { value: 'europe', label: 'Europe' },
+  { value: 'australian', label: 'Australian' },
+  { value: 'british', label: 'British' },
+];
 
 const STATUS_IN_UAE_OPTIONS = [
   { value: 'residence_in_uae', label: 'Residence in UAE' },
@@ -14,12 +22,18 @@ const STATUS_IN_UAE_OPTIONS = [
 const OMAN_VISA_STATUS_OPTIONS = [
   { value: 'i_have_oman_visa', label: 'I have Oman visa' },
   { value: 'i_dont_need_visa', label: "I don't need visa to visit Oman" },
-  { value: 'visa_on_arrival', label: 'I can get visa on arrival at Oman border' },
+  {
+    value: 'visa_on_arrival',
+    label: 'I can get visa on arrival at Oman border',
+  },
 ];
 
 const FLIGHT_HOTEL_OPTIONS = [
   { value: '', label: 'Select' },
-  { value: 'flight_ticket', label: 'I have flight ticket from Muscat to home country' },
+  {
+    value: 'flight_ticket',
+    label: 'I have flight ticket from Muscat to home country',
+  },
   { value: 'hotel_booking', label: 'I have hotel booking in Muscat' },
   { value: 'both', label: 'I have both flight ticket and hotel booking' },
   { value: 'none', label: 'None' },
@@ -63,7 +77,8 @@ export default function OmanTransportPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [passportValidityAccepted, setPassportValidityAccepted] = useState(false);
+  const [passportValidityAccepted, setPassportValidityAccepted] =
+    useState(false);
 
   const [formData, setFormData] = useState({
     travelling_date: '',
@@ -99,14 +114,11 @@ export default function OmanTransportPage() {
       newErrors.lead_passenger_name = 'Required';
     if (!formData.whatsapp_number.trim())
       newErrors.whatsapp_number = 'Required';
-    if (!formData.email.trim())
-      newErrors.email = 'Required';
+    if (!formData.email.trim()) newErrors.email = 'Required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = 'Invalid email';
-    if (!formData.nationality.trim())
-      newErrors.nationality = 'Required';
-    if (!formData.status_in_uae.trim())
-      newErrors.status_in_uae = 'Required';
+    if (!formData.nationality.trim()) newErrors.nationality = 'Required';
+    if (!formData.status_in_uae.trim()) newErrors.status_in_uae = 'Required';
     if (!formData.oman_visa_status.trim())
       newErrors.oman_visa_status = 'Required';
 
@@ -118,7 +130,8 @@ export default function OmanTransportPage() {
       newErrors.number_of_children = 'Enter valid number';
 
     if (!passportValidityAccepted)
-      newErrors.passport_validity = 'You must confirm all passengers have passport validity of more than 6 months';
+      newErrors.passport_validity =
+        'You must confirm all passengers have passport validity of more than 6 months';
     if (!termsAccepted)
       newErrors.terms = 'You must read and accept the terms and conditions';
 
@@ -220,7 +233,8 @@ export default function OmanTransportPage() {
         <div className='oman-transport-header'>
           <h1 className='oman-transport-title'>Oman Exit Transportation</h1>
           <p className='oman-transport-intro'>
-            Book your transportation from UAE to Oman border. Fill in the form below and we will get back to you shortly.
+            Book your transportation from UAE to Oman border. Fill in the form
+            below and we will get back to you shortly.
           </p>
         </div>
 
@@ -235,26 +249,36 @@ export default function OmanTransportPage() {
                 <input
                   type='date'
                   value={formData.travelling_date}
-                  onChange={e => handleInputChange('travelling_date', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('travelling_date', e.target.value)
+                  }
+                  min={new Date().toISOString().split('T')[0]}
                   className={errors.travelling_date ? 'error' : ''}
                 />
                 {errors.travelling_date && (
-                  <p className='oman-transport-error'>{errors.travelling_date}</p>
+                  <p className='oman-transport-error'>
+                    {errors.travelling_date}
+                  </p>
                 )}
               </div>
               <div className='oman-transport-form-group'>
                 <label>
-                  Lead Passenger Name <span style={{ color: '#dc2626' }}>*</span>
+                  Lead Passenger Name{' '}
+                  <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type='text'
                   value={formData.lead_passenger_name}
-                  onChange={e => handleInputChange('lead_passenger_name', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('lead_passenger_name', e.target.value)
+                  }
                   placeholder='Full name as per passport'
                   className={errors.lead_passenger_name ? 'error' : ''}
                 />
                 {errors.lead_passenger_name && (
-                  <p className='oman-transport-error'>{errors.lead_passenger_name}</p>
+                  <p className='oman-transport-error'>
+                    {errors.lead_passenger_name}
+                  </p>
                 )}
               </div>
               <div className='oman-transport-form-group'>
@@ -264,12 +288,16 @@ export default function OmanTransportPage() {
                 <input
                   type='tel'
                   value={formData.whatsapp_number}
-                  onChange={e => handleInputChange('whatsapp_number', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('whatsapp_number', e.target.value)
+                  }
                   placeholder='+971...'
                   className={errors.whatsapp_number ? 'error' : ''}
                 />
                 {errors.whatsapp_number && (
-                  <p className='oman-transport-error'>{errors.whatsapp_number}</p>
+                  <p className='oman-transport-error'>
+                    {errors.whatsapp_number}
+                  </p>
                 )}
               </div>
               <div className='oman-transport-form-group'>
@@ -277,7 +305,9 @@ export default function OmanTransportPage() {
                 <input
                   type='tel'
                   value={formData.calling_number}
-                  onChange={e => handleInputChange('calling_number', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('calling_number', e.target.value)
+                  }
                   placeholder='+971...'
                 />
               </div>
@@ -298,15 +328,23 @@ export default function OmanTransportPage() {
               </div>
               <div className='oman-transport-form-group'>
                 <label>
-                  Nationality <span style={{ color: '#dc2626' }}>*</span>
+                  Nationality
+                  <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <CountrySelect
+                <select
                   value={formData.nationality}
-                  onChange={v => handleInputChange('nationality', v)}
-                  placeholder='Select nationality'
-                  error={!!errors.nationality}
-                  className='oman-transport-country-select'
-                />
+                  onChange={e =>
+                    handleInputChange('nationality', e.target.value)
+                  }
+                  className={errors.nationality ? 'error' : ''}
+                >
+                  <option value=''>Select nationality</option>
+                  {NATIONALITY_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
                 {errors.nationality && (
                   <p className='oman-transport-error'>{errors.nationality}</p>
                 )}
@@ -323,12 +361,16 @@ export default function OmanTransportPage() {
                 </label>
                 <select
                   value={formData.status_in_uae}
-                  onChange={e => handleInputChange('status_in_uae', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('status_in_uae', e.target.value)
+                  }
                   className={errors.status_in_uae ? 'error' : ''}
                 >
                   <option value=''>Select</option>
                   {STATUS_IN_UAE_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
                   ))}
                 </select>
                 {errors.status_in_uae && (
@@ -341,26 +383,36 @@ export default function OmanTransportPage() {
                 </label>
                 <select
                   value={formData.oman_visa_status}
-                  onChange={e => handleInputChange('oman_visa_status', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('oman_visa_status', e.target.value)
+                  }
                   className={errors.oman_visa_status ? 'error' : ''}
                 >
                   <option value=''>Select</option>
                   {OMAN_VISA_STATUS_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
                   ))}
                 </select>
                 {errors.oman_visa_status && (
-                  <p className='oman-transport-error'>{errors.oman_visa_status}</p>
+                  <p className='oman-transport-error'>
+                    {errors.oman_visa_status}
+                  </p>
                 )}
               </div>
               <div className='oman-transport-form-group'>
                 <label>Flight / Hotel Booking in Oman</label>
                 <select
                   value={formData.flight_hotel_booking}
-                  onChange={e => handleInputChange('flight_hotel_booking', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('flight_hotel_booking', e.target.value)
+                  }
                 >
                   {FLIGHT_HOTEL_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -378,11 +430,15 @@ export default function OmanTransportPage() {
                   type='number'
                   min={0}
                   value={formData.number_of_adults}
-                  onChange={e => handleInputChange('number_of_adults', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('number_of_adults', e.target.value)
+                  }
                   className={errors.number_of_adults ? 'error' : ''}
                 />
                 {errors.number_of_adults && (
-                  <p className='oman-transport-error'>{errors.number_of_adults}</p>
+                  <p className='oman-transport-error'>
+                    {errors.number_of_adults}
+                  </p>
                 )}
               </div>
               <div className='oman-transport-form-group'>
@@ -393,18 +449,28 @@ export default function OmanTransportPage() {
                   type='number'
                   min={0}
                   value={formData.number_of_children}
-                  onChange={e => handleInputChange('number_of_children', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('number_of_children', e.target.value)
+                  }
                   className={errors.number_of_children ? 'error' : ''}
                 />
                 {errors.number_of_children && (
-                  <p className='oman-transport-error'>{errors.number_of_children}</p>
+                  <p className='oman-transport-error'>
+                    {errors.number_of_children}
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
           <div className='oman-transport-section'>
-            <h3 className='oman-transport-section-title'>Declaration & Terms</h3>
+            <h3 className='oman-transport-section-title'>
+              Declaration & Terms
+            </h3>
+            <p className='oman-transport-declaration-note'>
+              For UAE residents, the Emirates ID must have a minimum validity of
+              3 months in order to obtain a visa on arrival.
+            </p>
             <label className='oman-transport-terms-checkbox'>
               <input
                 type='checkbox'
@@ -498,7 +564,14 @@ export default function OmanTransportPage() {
               </button>
             </div>
             <div className='oman-transport-modal-body'>
-              <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem', lineHeight: 1.7, color: '#4b5563' }}>
+              <div
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.7,
+                  color: '#4b5563',
+                }}
+              >
                 {TERMS_CONTENT}
               </div>
             </div>

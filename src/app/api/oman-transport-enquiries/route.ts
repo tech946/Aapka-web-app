@@ -4,6 +4,9 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const CRM_BASE = process.env.CRM_API_URL || 'https://crm.aapkatourism.com';
+const CRM_OMAN_TRANSPORT_URL = `${CRM_BASE.replace(/\/$/, '')}/api/website/oman-transport-enquiry`;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -68,10 +71,51 @@ export async function POST(req: NextRequest) {
 
     if (insertError) {
       console.error('Oman transport enquiry insert error:', insertError);
+      const code = (insertError as { code?: string })?.code;
+      const msg = (insertError as { message?: string })?.message || '';
+      const isTableMissing =
+        code === '42P01' ||
+        msg.toLowerCase().includes('does not exist') ||
+        msg.toLowerCase().includes('relation');
       return NextResponse.json(
-        { error: 'Failed to save your request. Please try again.' },
+        {
+          error: isTableMissing
+            ? 'Database setup required. Please contact support.'
+            : 'Failed to save your request. Please try again.',
+          details: process.env.NODE_ENV === 'development' ? insertError.message : undefined,
+        },
         { status: 500 }
       );
+    }
+
+    // Also forward to CRM (aapka-tourism-crm / dajsabrod) - fire-and-forget
+    const apiKey = process.env.WEBSITE_API_KEY?.trim();
+    if (apiKey) {
+      const crmPayload = {
+        travelling_date: travellingDate,
+        lead_passenger_name: leadPassengerName,
+        whatsapp_number: whatsappNumber,
+        calling_number: callingNumber || null,
+        email,
+        nationality,
+        status_in_uae: statusInUae,
+        oman_visa_status: omanVisaStatus,
+        number_of_adults: numberOfAdults,
+        number_of_children: numberOfChildren,
+        flight_hotel_booking: flightHotelBooking || null,
+        passport_validity_accepted: passportValidityAccepted,
+        terms_accepted: termsAccepted,
+      };
+      fetch(CRM_OMAN_TRANSPORT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify(crmPayload),
+      }).catch((err) => {
+        console.warn('Oman transport: CRM forward failed (webapp save succeeded):', err);
+      });
     }
 
     return NextResponse.json({

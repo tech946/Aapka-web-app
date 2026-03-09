@@ -22,6 +22,15 @@ const FLIGHT_HOTEL_LABELS: Record<string, string> = {
   none: 'None',
 };
 
+const NATIONALITY_LABELS: Record<string, string> = {
+  india: 'India',
+  canada: 'Canada',
+  us: 'US',
+  europe: 'Europe',
+  australian: 'Australian',
+  british: 'British',
+};
+
 type OmanTransportRow = {
   id: string;
   travelling_date: string;
@@ -283,7 +292,7 @@ export default function OmanTransportEnquiriesClient() {
                   </div>
                   <div className='detail_item'>
                     <strong>Nationality:</strong>
-                    <span>{selectedRow.nationality}</span>
+                    <span>{NATIONALITY_LABELS[selectedRow.nationality?.toLowerCase()] ?? selectedRow.nationality ?? '-'}</span>
                   </div>
                   <div className='detail_item'>
                     <strong>Adults:</strong>

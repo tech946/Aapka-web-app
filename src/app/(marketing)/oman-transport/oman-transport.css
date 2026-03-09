@@ -118,6 +118,17 @@
   margin-bottom: 12px;
 }
 
+.oman-transport-declaration-note {
+  margin: 0 0 1rem 0;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #92400e;
+  line-height: 1.5;
+}
+
 .oman-transport-terms-checkbox {
   display: flex;
   align-items: flex-start;
