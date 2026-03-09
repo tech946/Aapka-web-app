@@ -3,12 +3,26 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Plus, Settings, ChevronRight, ChevronDown } from 'lucide-react';
+import {
+  ShoppingCart,
+  Menu,
+  X,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Plus,
+  Settings,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useQueryClient } from '@tanstack/react-query';
 import { gsap } from 'gsap';
-import { useCategoriesWithPackages, useAgentStatus } from '@/hooks/use-marketing-queries';
+import {
+  useCategoriesWithPackages,
+  useAgentStatus,
+} from '@/hooks/use-marketing-queries';
 import './header.css';
 
 interface Category {
@@ -28,7 +42,8 @@ export default function Header() {
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const queryClient = useQueryClient();
-  const { data: categoriesWithPackages = [] } = useCategoriesWithPackages(100);
+  const { data: categoriesData = [] } = useCategoriesWithPackages(100);
+  const categoriesWithPackages = categoriesData as unknown as Category[];
   const { data: agentData } = useAgentStatus(isLoggedIn);
   const isAgent = !!agentData?.hasActiveSubscription;
   const { getTotalItems } = useCart();
@@ -110,21 +125,31 @@ export default function Header() {
   useEffect(() => {
     const supabase = createClientComponentClient();
     const syncSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         setIsLoggedIn(true);
         setUserEmail(session.user.email || '');
-        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
+        const name =
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          session.user.email?.split('@')[0] ||
+          'User';
         setUserName(name);
       } else {
         setIsLoggedIn(false);
         setUserName('');
         setUserEmail('');
-        queryClient.invalidateQueries({ queryKey: ['marketing', 'agent-status'] });
+        queryClient.invalidateQueries({
+          queryKey: ['marketing', 'agent-status'],
+        });
       }
     };
     syncSession();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(syncSession);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(syncSession);
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
@@ -166,7 +191,6 @@ export default function Header() {
       const supabase = createClientComponentClient();
       await supabase.auth.signOut();
       setIsLoggedIn(false);
-      setIsAgent(false);
       setShowUserDropdown(false);
       router.push('/');
       router.refresh();
@@ -229,13 +253,20 @@ export default function Header() {
                   } header-dropdown-container`}
                   style={{ position: 'relative' }}
                 >
-                  <div ref={packagesDropdownRef} style={{ position: 'relative' }}>
+                  <div
+                    ref={packagesDropdownRef}
+                    style={{ position: 'relative' }}
+                  >
                     <button
                       type='button'
                       className='header-dropdown-button header-nav-link'
-                      onClick={() => setShowPackagesDropdown(!showPackagesDropdown)}
+                      onClick={() =>
+                        setShowPackagesDropdown(!showPackagesDropdown)
+                      }
                       style={{
-                        color: pathname.startsWith('/category') ? '#fd6b06' : undefined,
+                        color: pathname.startsWith('/category')
+                          ? '#fd6b06'
+                          : undefined,
                       }}
                     >
                       Tours & Packages
@@ -252,18 +283,26 @@ export default function Header() {
                           aria-hidden='true'
                         />
                         <div className='header-dropdown-menu header-dropdown-menu-packages'>
-                          {categoriesWithPackages.map(category => {
+                          {categoriesWithPackages.map((category: Category) => {
                             const href = getCategoryHref(category);
-                            const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
+                            const isFlexibleDatePackages =
+                              category.name === 'Flexible Date Packages';
+                            const key =
+                              category.id ??
+                              category.category_id ??
+                              category.categoryId ??
+                              category.name;
                             return (
                               <Link
-                                key={category.id || category.category_id || category.categoryId}
+                                key={String(key)}
                                 href={href}
                                 className={`header-dropdown-item ${isFlexibleDatePackages ? 'header-dropdown-item-with-badge' : ''}`}
                                 onClick={() => setShowPackagesDropdown(false)}
                               >
                                 {isFlexibleDatePackages && (
-                                  <span className='header-dropdown-badge'>NEW</span>
+                                  <span className='header-dropdown-badge'>
+                                    NEW
+                                  </span>
                                 )}
                                 {category.name}
                               </Link>
@@ -280,12 +319,18 @@ export default function Header() {
                 ref={el => {
                   linkRefs.current['/blogs'] = el;
                 }}
-                className={pathname === '/blogs' || pathname?.startsWith('/blogs/') ? 'active' : ''}
+                className={
+                  pathname === '/blogs' || pathname?.startsWith('/blogs/')
+                    ? 'active'
+                    : ''
+                }
               >
                 <Link
                   href='/blogs'
                   className={`header-nav-link ${
-                    pathname === '/blogs' || pathname?.startsWith('/blogs/') ? 'active' : ''
+                    pathname === '/blogs' || pathname?.startsWith('/blogs/')
+                      ? 'active'
+                      : ''
                   }`}
                 >
                   Blogs
@@ -321,12 +366,13 @@ export default function Header() {
                   Submit your enquiry
                 </Link>
               </li>
-              {/* Customize Your Package - commented out
               <li
                 ref={el => {
                   linkRefs.current['/customize-your-package'] = el;
                 }}
-                className={pathname === '/customize-your-package' ? 'active' : ''}
+                className={
+                  pathname === '/customize-your-package' ? 'active' : ''
+                }
               >
                 <Link
                   href='/customize-your-package'
@@ -337,14 +383,14 @@ export default function Header() {
                   Customize Your Package
                 </Link>
               </li>
-              */}
               <li
                 ref={el => {
                   linkRefs.current['/visas/apply-for-oman-visa'] = el;
                   linkRefs.current['/oman-transport'] = el;
                 }}
                 className={`${
-                  pathname === '/visas/apply-for-oman-visa' || pathname === '/oman-transport'
+                  pathname === '/visas/apply-for-oman-visa' ||
+                  pathname === '/oman-transport'
                     ? 'active'
                     : ''
                 } header-dropdown-container`}
@@ -356,7 +402,11 @@ export default function Header() {
                     className='header-dropdown-button header-nav-link'
                     onClick={() => setShowOmanDropdown(!showOmanDropdown)}
                     style={{
-                      color: pathname === '/visas/apply-for-oman-visa' || pathname === '/oman-transport' ? '#fd6b06' : undefined,
+                      color:
+                        pathname === '/visas/apply-for-oman-visa' ||
+                        pathname === '/oman-transport'
+                          ? '#fd6b06'
+                          : undefined,
                     }}
                   >
                     Oman
@@ -469,11 +519,13 @@ export default function Header() {
                               {userName.charAt(0).toUpperCase()}
                             </div>
                             <div className='header-user-dropdown-user-info'>
-                              <div className='header-user-dropdown-name'>{userName}</div>
+                              <div className='header-user-dropdown-name'>
+                                {userName}
+                              </div>
                             </div>
                             <span className='header-user-dropdown-notification-dot'></span>
                           </div>
-                          
+
                           {/* Menu Items */}
                           {isAgent && (
                             <Link
@@ -481,7 +533,10 @@ export default function Header() {
                               className='header-user-dropdown-item'
                               onClick={() => setShowUserDropdown(false)}
                             >
-                              <LayoutDashboard size={16} className='header-user-dropdown-item-icon' />
+                              <LayoutDashboard
+                                size={16}
+                                className='header-user-dropdown-item-icon'
+                              />
                               <span>Dashboard</span>
                             </Link>
                           )}
@@ -490,18 +545,24 @@ export default function Header() {
                             className='header-user-dropdown-item'
                             onClick={() => setShowUserDropdown(false)}
                           >
-                            <Plus size={16} className='header-user-dropdown-item-icon' />
+                            <Plus
+                              size={16}
+                              className='header-user-dropdown-item-icon'
+                            />
                             <span>Become a Aapka Partner</span>
                           </Link>
                           <Link
                             href='#'
                             className='header-user-dropdown-item'
-                            onClick={(e) => {
+                            onClick={e => {
                               e.preventDefault();
                               setShowUserDropdown(false);
                             }}
                           >
-                            <Settings size={16} className='header-user-dropdown-item-icon' />
+                            <Settings
+                              size={16}
+                              className='header-user-dropdown-item-icon'
+                            />
                             <span>Settings</span>
                           </Link>
                           <button
@@ -509,7 +570,10 @@ export default function Header() {
                             onClick={handleLogout}
                           >
                             <span>Sign Out</span>
-                            <ChevronRight size={16} className='header-user-dropdown-chevron' />
+                            <ChevronRight
+                              size={16}
+                              className='header-user-dropdown-chevron'
+                            />
                           </button>
                         </>
                       )}
@@ -612,12 +676,18 @@ export default function Header() {
                 </button>
                 {mobilePackagesExpanded && (
                   <div className='mobile-sidebar-dropdown-menu'>
-                    {categoriesWithPackages.map(category => {
+                    {categoriesWithPackages.map((category: Category) => {
                       const href = getCategoryHref(category);
-                      const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
+                      const isFlexibleDatePackages =
+                        category.name === 'Flexible Date Packages';
+                      const key =
+                        category.id ??
+                        category.category_id ??
+                        category.categoryId ??
+                        category.name;
                       return (
                         <Link
-                          key={category.id || category.category_id || category.categoryId}
+                          key={String(key)}
                           href={href}
                           className={`mobile-sidebar-dropdown-item ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
                           onClick={() => {
@@ -640,7 +710,9 @@ export default function Header() {
             <Link
               href='/blogs'
               className={`mobile-sidebar-link ${
-                pathname === '/blogs' || pathname?.startsWith('/blogs/') ? 'active' : ''
+                pathname === '/blogs' || pathname?.startsWith('/blogs/')
+                  ? 'active'
+                  : ''
               }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >

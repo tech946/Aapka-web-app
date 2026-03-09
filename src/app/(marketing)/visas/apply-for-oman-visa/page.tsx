@@ -4,14 +4,13 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, FileText, Camera, Upload, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { CountrySelect } from '@/components/ui/country-select';
 import './oman-visa.css';
 
 const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/jpg,image/png,image/webp';
 const ACCEPTED_DOC_TYPES =
   'image/jpeg,image/jpg,image/png,image/webp,application/pdf';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const VISA_FEE_AED = 150;
+const VISA_FEE_AED = 105;
 
 const PURPOSE_OPTIONS = [
   { value: 'Tourism', label: 'Tourism' },
@@ -34,7 +33,7 @@ function OmanVisaApplyContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     full_name_as_per_passport: '',
-    nationality: '',
+    nationality: 'India',
     contact_number: '',
     email: '',
     expected_travel_date: '',
@@ -261,13 +260,15 @@ function OmanVisaApplyContent() {
                 <label>
                   Nationality <span className='required'>*</span>
                 </label>
-                <CountrySelect
+                <select
                   value={formData.nationality}
-                  onChange={value => handleInputChange('nationality', value)}
-                  placeholder='Select nationality'
-                  error={!!errors.nationality}
-                  className='oman-visa-country-select'
-                />
+                  onChange={e =>
+                    handleInputChange('nationality', e.target.value)
+                  }
+                  className={errors.nationality ? 'error' : ''}
+                >
+                  <option value='India'>India</option>
+                </select>
                 {errors.nationality && (
                   <p className='oman-visa-error'>{errors.nationality}</p>
                 )}

@@ -17,7 +17,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .pb-travellers-section {
@@ -28,83 +28,297 @@
   margin-bottom: 4px;
 }
 
-.pb-travellers-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--text); }
-.pb-travellers-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-.pb-traveller-badge { font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
-.pb-traveller-badge-adult { background: #f97316; color: #fff; }
-.pb-traveller-badge-child { background: #3b82f6; color: #fff; }
-.pb-traveller-badge-infant { background: #8b5cf6; color: #fff; }
-
-.quotation-cart-content { display: flex; flex-direction: column; gap: 16px; }
-.quotation-destination-info {
-  padding: 12px; background: var(--panel-2); border-radius: 8px; margin-bottom: 8px;
+.pb-travellers-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--text);
 }
-.quotation-destination-text { font-size: 13px; font-weight: 600; color: var(--accent); }
+.pb-travellers-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pb-traveller-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+.pb-traveller-badge-adult {
+  background: #f97316;
+  color: #fff;
+}
+.pb-traveller-badge-child {
+  background: #3b82f6;
+  color: #fff;
+}
+.pb-traveller-badge-infant {
+  background: #8b5cf6;
+  color: #fff;
+}
 
-.quotation-cart-items { position: relative; padding-left: 12px; }
-.quotation-timeline { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #e5e7eb; z-index: 0; }
+.quotation-cart-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.quotation-destination-info {
+  padding: 12px;
+  background: var(--panel-2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.quotation-destination-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
 
-.quotation-type-section { position: relative; }
+.quotation-cart-items {
+  position: relative;
+  padding-left: 12px;
+}
+.quotation-timeline {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+  z-index: 0;
+}
+
+.quotation-type-section {
+  position: relative;
+}
 .quotation-type-badge-header {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 16px; position: relative; z-index: 1; margin-left: -28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  margin-left: -28px;
 }
 .quotation-type-badge-icon {
-  display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
-  background: var(--accent); border-radius: 50%; color: #fff; flex-shrink: 0; z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--accent);
+  border-radius: 50%;
+  color: #fff;
+  flex-shrink: 0;
+  z-index: 2;
 }
 .quotation-type-badge-icon::after {
-  content: ''; position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
-  width: 12px; height: 2px; background: var(--accent); z-index: 1;
+  content: '';
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+  z-index: 1;
 }
 .quotation-type-badge {
-  padding: 4px 12px; background: var(--accent); color: #fff; border-radius: 16px;
-  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 4px 12px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.quotation-type-items { position: relative; padding-left: 0; }
+.quotation-type-items {
+  position: relative;
+  padding-left: 0;
+}
 
-.quotation-day-section { margin-bottom: 16px; }
+.quotation-day-section {
+  margin-bottom: 16px;
+}
 .quotation-day-header {
-  display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
-  background: var(--accent); color: #fff; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--accent);
+  color: #fff;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
 }
 .quotation-day-header::before {
-  position: absolute; display: inline-block; content: " "; left: -6px; height: 12px; width: 12px;
-  transform: rotate(45deg); background: var(--accent);
+  position: absolute;
+  display: inline-block;
+  content: ' ';
+  left: -6px;
+  height: 12px;
+  width: 12px;
+  transform: rotate(45deg);
+  background: var(--accent);
 }
-.quotation-day-header > * { color: #fff !important; }
-.quotation-day-total { font-size: 13px; font-weight: 600; color: #fff; }
-.quotation-day-items { display: flex; flex-direction: column; gap: 12px; }
+.quotation-day-header > * {
+  color: #fff !important;
+}
+.quotation-day-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+.quotation-day-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .quotation-cart-item {
-  padding: 16px; background: #fff; border: 1px solid var(--border); border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
 }
-.quotation-cart-item-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-.quotation-cart-item-details { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-.quotation-cart-detail-row { display: flex; gap: 8px; font-size: 12px; }
-.quotation-detail-value { color: var(--text); }
-.quotation-hotel-rating { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-left: 8px; }
+.quotation-cart-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.quotation-cart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.quotation-cart-detail-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+.quotation-detail-value {
+  color: var(--text);
+}
+.quotation-hotel-rating {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 8px;
+}
 .quotation-cart-item-total {
-  display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600;
-  color: var(--accent); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
 }
-.quotation-cart-item-total::before { content: 'Total'; color: var(--text); font-weight: 500; }
+.quotation-cart-item-total::before {
+  content: 'Total';
+  color: var(--text);
+  font-weight: 500;
+}
 .quotation-airport-transfer-item {
-  background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
 }
 
 .quotation-summary-section {
-  background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
 }
-.quotation-summary-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-.quotation-summary-rows { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
-.quotation-summary-row { display: flex; justify-content: space-between; }
-.quotation-grand-total { border-top: 2px solid var(--border); margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
-.quotation-grand-total-label { font-weight: 700; font-size: 14px; color: var(--text); }
-.quotation-grand-total-amount { font-weight: 800; font-size: 18px; color: var(--accent-alt); }
-.pb-itinerary-empty { font-size: 12px; color: var(--text-muted); padding: 16px; text-align: center; }
-.quotation-download-pdf-btn {
-  width: 100%; margin-top: 12px; padding: 10px 16px; background: var(--accent); color: #fff; border: none;
-  border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+.quotation-summary-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
 }
-.quotation-download-pdf-btn:hover { background: rgba(255,76,0,0.9); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,76,0,0.3); }
+.quotation-summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.quotation-summary-row {
+  display: flex;
+  justify-content: space-between;
+}
+.quotation-grand-total {
+  border-top: 2px solid var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.quotation-grand-total-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+.quotation-grand-total-amount {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--accent-alt);
+}
+.pb-itinerary-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 16px;
+  text-align: center;
+}
+
+/* Package info & addons info in sidebar box */
+.quotation-sidebar-package-info {
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+.quotation-sidebar-package-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.quotation-sidebar-package-duration {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.quotation-sidebar-addons-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 0;
+  font-size: 12px;
+  border-top: 1px dashed var(--border);
+}
+.quotation-sidebar-addons-label {
+  color: var(--text-muted);
+}
+.quotation-sidebar-addons-count {
+  font-weight: 500;
+  color: var(--accent-alt);
+}

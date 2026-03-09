@@ -27,6 +27,8 @@ export interface AddonDeal {
   child_price: number;
   infant_price: number;
   category_name?: string | null;
+  image_url?: string | null;
+  items?: Array<{ activity_option?: { title?: string } }>;
 }
 
 export interface AddonHotelService {
@@ -35,6 +37,7 @@ export interface AddonHotelService {
   adult_price: number;
   child_price: number;
   infant_price: number;
+  quantity?: number;
 }
 
 export interface AddonPrivateTransfer {

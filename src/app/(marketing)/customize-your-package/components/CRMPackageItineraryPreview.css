@@ -1,0 +1,290 @@
+/* CRM Package Itinerary PDF Preview - matches CRM quotation/PackagePreview design */
+
+.crm-itinerary-preview-container {
+  --accent: rgb(255, 76, 0);
+  --border: #e5e7eb;
+  --text: #1a1a1a;
+  --text-muted: #6b7280;
+  width: 100%;
+  background-color: #f5f5f5;
+  padding: 20px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.crm-itinerary-preview-page {
+  background-color: #ffffff;
+  width: 210mm;
+  min-height: 297mm;
+  height: 297mm;
+  max-height: 297mm;
+  margin: 0 auto 20px;
+  padding: 12mm;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  page-break-after: always;
+  position: relative;
+  overflow: hidden;
+}
+
+.crm-itinerary-preview-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/images/dubai-vector.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.08;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.crm-itinerary-preview-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+.crm-itinerary-preview-page-first {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 297mm;
+  max-height: 297mm;
+  overflow: hidden;
+}
+
+.crm-itinerary-preview-top-section {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.crm-itinerary-preview-logo-container {
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.crm-itinerary-preview-logo-img {
+  max-width: 150px;
+  max-height: 100px;
+  object-fit: contain;
+}
+
+.crm-itinerary-preview-itinerary-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.crm-itinerary-preview-itinerary-details {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.crm-itinerary-preview-dates-text,
+.crm-itinerary-preview-nights-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.crm-itinerary-preview-illustration-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 40px 0;
+  min-height: 300px;
+}
+
+.crm-itinerary-preview-illustration-image img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.crm-itinerary-preview-footer-section {
+  text-align: center;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.crm-itinerary-preview-footer-company {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.crm-itinerary-preview-footer-contact,
+.crm-itinerary-preview-footer-address,
+.crm-itinerary-preview-footer-gst {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* Content page - matches CRM A4 height, 60px padding for pagination */
+.crm-itinerary-preview-page-content {
+  padding: 60px 12mm 60px 12mm !important;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-itinerary-preview-page-content {
+  position: relative;
+}
+
+.crm-itinerary-preview-page-content .quotation-timeline {
+  position: absolute;
+  left: 0;
+  top: 60px;
+  bottom: 60px;
+  width: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.crm-itinerary-preview-page-content .quotation-type-badge-header {
+  margin-left: -28px;
+}
+
+/* Activity/addon card with image (same as CRM PackagePreview) */
+.crm-itinerary-preview-page-content .quotation-cart-item-with-image {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item-image {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f3f4f6;
+  border: 1px solid var(--border);
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Airport transfer locations (same as CRM) */
+.quotation-airport-transfer-header {
+  margin-bottom: 8px;
+}
+
+.quotation-airport-transfer-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.quotation-transfer-locations {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quotation-transfer-location-box {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.quotation-transfer-location-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.quotation-transfer-location-primary {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.quotation-transfer-swap-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.quotation-cart-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.quotation-detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.quotation-detail-value {
+  color: var(--text);
+}
+
+.quotation-cart-policy {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 8px;
+  background: #fef3f0;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+}
+
+.crm-itinerary-preview-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  padding-bottom: 8px;
+  min-height: 56px;
+  border-top: 2px solid var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.crm-itinerary-preview-total-label {
+  color: #1a1a1a;
+}
+
+.crm-itinerary-preview-total-value {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.crm-itinerary-preview-loading,
+.crm-itinerary-preview-error {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}

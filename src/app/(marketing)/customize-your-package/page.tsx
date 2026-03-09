@@ -72,7 +72,9 @@ export default function CustomizeYourPackagePage() {
             adult_price: d.adult_price ?? 0,
             child_price: d.child_price ?? 0,
             infant_price: d.infant_price ?? 0,
-            category_name: d.category_name ?? null,
+            category_name: d.category_name ?? d.addon_category?.name ?? null,
+            image_url: d.image_url ?? null,
+            items: d.items ?? [],
           }))
         : []) as AddonDeal[],
     [dealsRaw]
@@ -215,18 +217,30 @@ export default function CustomizeYourPackagePage() {
 
           <aside className="customize-page-sidebar">
             {selectedPackage?.crm_package_id ? (
-              <CRMPackageItinerarySidebar
-                crmPackageId={selectedPackage.crm_package_id}
-                packageBasePrice={calcPackageBase(selectedPackage, persons, isSoloTraveller)}
-                persons={persons}
-                selectedDealIds={selectedDealIds}
-                selectedServiceIds={selectedServiceIds}
-                selectedTransferIds={selectedTransferIds}
-                addonDeals={dealsForNights}
-                addonServices={addonServices}
-                addonTransfers={addonTransfers}
-                onDownloadPdf={() => setShowPdfModal(true)}
-              />
+              <>
+                <CRMPackageItinerarySidebar
+                  packageName={selectedPackage.package_name}
+                  packageNights={selectedPackage.package_nights ?? undefined}
+                  packageDays={selectedPackage.package_days ?? undefined}
+                  packageBasePrice={calcPackageBase(selectedPackage, persons, isSoloTraveller)}
+                  persons={persons}
+                  selectedDealIds={selectedDealIds}
+                  selectedServiceIds={selectedServiceIds}
+                  selectedTransferIds={selectedTransferIds}
+                  addonDeals={dealsForNights}
+                  addonServices={addonServices}
+                  addonTransfers={addonTransfers}
+                />
+                <button
+                  type="button"
+                  className="customize-page-download-pdf"
+                  onClick={() => setShowPdfModal(true)}
+                  title="Preview & Download PDF"
+                >
+                  <FileDown size={18} />
+                  Download PDF
+                </button>
+              </>
             ) : (
               <PriceSummary
                 package={selectedPackage}

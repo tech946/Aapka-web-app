@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCategoriesWithPackages, usePackagesByCategory } from '@/hooks/use-marketing-queries';
+import {
+  useCategoriesWithPackages,
+  usePackagesByCategory,
+} from '@/hooks/use-marketing-queries';
 import {
   MapPin,
   Calendar,
@@ -90,18 +93,20 @@ export default function BannerSection() {
   const personsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Cached categories with packages (no refetch on navigation back to home)
-  const { data: categoriesWithPackagesData = [], categories } = useCategoriesWithPackages(100);
+  const { data: categoriesWithPackagesData = [], categories } =
+    useCategoriesWithPackages(100);
   const catsWithPkgs = (categoriesWithPackagesData ?? []) as PackageCategory[];
   const allCats = (categories ?? []) as PackageCategory[];
   const hasValidCategory =
     activeCategoryId &&
     activeCategoryId !== 'undefined' &&
     activeCategoryId !== 'null';
-  const { data: packagesData, isLoading: loadingPackages } = usePackagesByCategory({
-    categoryId: hasValidCategory ? activeCategoryId : undefined,
-    limit: 100,
-    status: 'active',
-  });
+  const { data: packagesData, isLoading: loadingPackages } =
+    usePackagesByCategory({
+      categoryId: hasValidCategory ? activeCategoryId : undefined,
+      limit: 100,
+      status: 'active',
+    });
 
   // Sync categories and set active category on first load
   useEffect(() => {
@@ -113,7 +118,7 @@ export default function BannerSection() {
   }, [catsWithPkgs, activeCategoryId]);
 
   // Use cached packages data
-  const packages = ((packagesData?.data ?? []) as unknown) as Package[];
+  const packages = (packagesData?.data ?? []) as unknown as Package[];
   useEffect(() => {
     if (!hasValidCategory) {
       setSelectedPackage(null);
@@ -154,7 +159,8 @@ export default function BannerSection() {
   }, []);
 
   const handleCategoryClick = (categoryId: string | null | undefined) => {
-    if (!categoryId || categoryId === 'undefined' || categoryId === 'null') return;
+    if (!categoryId || categoryId === 'undefined' || categoryId === 'null')
+      return;
     setSelectedPackage(null);
     setShowPackageDropdown(false);
     setSelectedDate(undefined);
@@ -198,7 +204,8 @@ export default function BannerSection() {
       catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ?? allCats.find(
+      ) ??
+      allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -212,7 +219,8 @@ export default function BannerSection() {
       catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ?? allCats.find(
+      ) ??
+      allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -228,7 +236,8 @@ export default function BannerSection() {
       catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ?? allCats.find(
+      ) ??
+      allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -301,7 +310,8 @@ export default function BannerSection() {
       catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ?? allCats.find(
+      ) ??
+      allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -431,7 +441,7 @@ export default function BannerSection() {
               PLAN YOUR ESCAPE
             </h3>
             <div className='search_tabs'>
-              {catsWithPkgs.map((category) => {
+              {catsWithPkgs.map(category => {
                 // Try different possible field names for category ID
                 const categoryId =
                   category.category_id ||

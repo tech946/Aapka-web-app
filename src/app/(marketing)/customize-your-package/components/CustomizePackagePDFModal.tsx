@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { X, Download, Loader2 } from 'lucide-react';
 import { CustomizePackagePreview } from './CustomizePackagePreview';
+import { CRMPackageItineraryPreview } from './CRMPackageItineraryPreview';
 import type { PackageOption, PersonCounts, AddonDeal, AddonHotelService, AddonPrivateTransfer } from '../types';
 import './CustomizePackagePDFModal.css';
 
@@ -27,6 +28,7 @@ export function CustomizePackagePDFModal({
 }: CustomizePackagePDFModalProps) {
   const [downloading, setDownloading] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const useCRMPreview = !!pkg.crm_package_id;
 
   const handleDownload = async () => {
     if (downloading || !previewRef.current) return;
@@ -90,14 +92,26 @@ export function CustomizePackagePDFModal({
 
         <div className="customize-pdf-content">
           <div className="customize-pdf-preview-wrapper" ref={previewRef}>
-            <CustomizePackagePreview
-              package={pkg}
-              persons={persons}
-              isSoloTraveller={isSoloTraveller}
-              selectedDeals={selectedDeals}
-              selectedServices={selectedServices}
-              selectedTransfers={selectedTransfers}
-            />
+            {useCRMPreview && pkg.crm_package_id ? (
+              <CRMPackageItineraryPreview
+                crmPackageId={pkg.crm_package_id}
+                package={pkg}
+                persons={persons}
+                isSoloTraveller={isSoloTraveller}
+                selectedDeals={selectedDeals}
+                selectedServices={selectedServices}
+                selectedTransfers={selectedTransfers}
+              />
+            ) : (
+              <CustomizePackagePreview
+                package={pkg}
+                persons={persons}
+                isSoloTraveller={isSoloTraveller}
+                selectedDeals={selectedDeals}
+                selectedServices={selectedServices}
+                selectedTransfers={selectedTransfers}
+              />
+            )}
           </div>
         </div>
       </div>

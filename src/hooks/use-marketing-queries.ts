@@ -239,6 +239,27 @@ export function useAddonPrivateTransfers(enabled = true) {
   });
 }
 
+// --- CRM Package by ID (single package details - cached to reduce 429) ---
+export function useCRMPackage(crmPackageId: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['marketing', 'crm-package', crmPackageId],
+    queryFn: async () => {
+      const res = await fetcher<{ success?: boolean; data?: unknown }>(
+        `/api/website/crm/packages/${crmPackageId}`
+      );
+      return res.success && res.data ? res.data : null;
+    },
+    enabled: !!crmPackageId && enabled,
+    retry: (failureCount, error) => {
+      // Don't retry on 429 (rate limit) - would worsen the issue
+      const msg = String(error instanceof Error ? error.message : '');
+      if (msg.includes('429')) return false;
+      return failureCount < 2;
+    },
+    ...defaultOptions,
+  });
+}
+
 // --- Agent status (requires auth - fetch only when needed) ---
 export function useAgentStatus(enabled = true) {
   return useQuery({
