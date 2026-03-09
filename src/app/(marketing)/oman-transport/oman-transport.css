@@ -115,6 +115,7 @@
   color: #dc2626;
   font-size: 0.85rem;
   margin: 0;
+  margin-bottom: 12px;
 }
 
 .oman-transport-terms-checkbox {
@@ -313,6 +314,15 @@
   .oman-transport-form-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+@media (min-width: 768px) {
+  .oman-transport-form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
   .oman-transport-title {
     font-size: 22px;
   }
@@ -321,11 +331,5 @@
   }
   .oman-transport-form {
     padding: 20px 12px;
-  }
-}
-
-@media (min-width: 768px) {
-  .oman-transport-form-grid {
-    grid-template-columns: repeat(3, 1fr);
   }
 }

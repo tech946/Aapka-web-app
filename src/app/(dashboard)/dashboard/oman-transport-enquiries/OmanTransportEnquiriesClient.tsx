@@ -35,6 +35,7 @@ type OmanTransportRow = {
   number_of_adults: number;
   number_of_children: number;
   flight_hotel_booking: string | null;
+  passport_validity_accepted?: boolean;
   terms_accepted: boolean;
   created_at: string;
 };

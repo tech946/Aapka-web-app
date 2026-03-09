@@ -63,6 +63,7 @@ export default function OmanTransportPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [passportValidityAccepted, setPassportValidityAccepted] = useState(false);
 
   const [formData, setFormData] = useState({
     travelling_date: '',
@@ -116,6 +117,8 @@ export default function OmanTransportPage() {
     if (isNaN(children) || children < 0)
       newErrors.number_of_children = 'Enter valid number';
 
+    if (!passportValidityAccepted)
+      newErrors.passport_validity = 'You must confirm all passengers have passport validity of more than 6 months';
     if (!termsAccepted)
       newErrors.terms = 'You must read and accept the terms and conditions';
 
@@ -137,6 +140,17 @@ export default function OmanTransportPage() {
       setErrors(prev => {
         const next = { ...prev };
         delete next.terms;
+        return next;
+      });
+    }
+  };
+
+  const handlePassportCheckboxChange = () => {
+    setPassportValidityAccepted(p => !p);
+    if (errors.passport_validity) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next.passport_validity;
         return next;
       });
     }
@@ -166,6 +180,7 @@ export default function OmanTransportPage() {
           number_of_adults: parseInt(formData.number_of_adults, 10) || 1,
           number_of_children: parseInt(formData.number_of_children, 10) || 0,
           flight_hotel_booking: formData.flight_hotel_booking || null,
+          passport_validity_accepted: passportValidityAccepted,
           terms_accepted: termsAccepted,
         }),
       });
@@ -191,6 +206,7 @@ export default function OmanTransportPage() {
         flight_hotel_booking: '',
       });
       setTermsAccepted(false);
+      setPassportValidityAccepted(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -388,7 +404,21 @@ export default function OmanTransportPage() {
           </div>
 
           <div className='oman-transport-section'>
-            <h3 className='oman-transport-section-title'>Terms & Conditions</h3>
+            <h3 className='oman-transport-section-title'>Declaration & Terms</h3>
+            <label className='oman-transport-terms-checkbox'>
+              <input
+                type='checkbox'
+                checked={passportValidityAccepted}
+                onChange={handlePassportCheckboxChange}
+              />
+              <span>
+                All passengers have passport validity of more than 6 months{' '}
+                <span style={{ color: '#dc2626' }}>*</span>
+              </span>
+            </label>
+            {errors.passport_validity && (
+              <p className='oman-transport-error'>{errors.passport_validity}</p>
+            )}
             <label
               className='oman-transport-terms-checkbox'
               onClick={handleTermsCheckboxClick}

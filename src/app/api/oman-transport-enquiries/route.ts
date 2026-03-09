@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const numberOfAdults = Math.max(0, parseInt(body?.number_of_adults || '1', 10) || 1);
     const numberOfChildren = Math.max(0, parseInt(body?.number_of_children || '0', 10) || 0);
     const flightHotelBooking = (body?.flight_hotel_booking || '').trim();
+    const passportValidityAccepted = !!body?.passport_validity_accepted;
     const termsAccepted = !!body?.terms_accepted;
 
     if (!travellingDate)
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Status in UAE is required' }, { status: 400 });
     if (!omanVisaStatus)
       return NextResponse.json({ error: 'Oman visa status is required' }, { status: 400 });
+    if (!passportValidityAccepted)
+      return NextResponse.json({ error: 'You must confirm all passengers have passport validity of more than 6 months' }, { status: 400 });
     if (!termsAccepted)
       return NextResponse.json({ error: 'You must accept the terms and conditions' }, { status: 400 });
 
@@ -56,6 +59,7 @@ export async function POST(req: NextRequest) {
           number_of_adults: numberOfAdults,
           number_of_children: numberOfChildren,
           flight_hotel_booking: flightHotelBooking || null,
+          passport_validity_accepted: passportValidityAccepted,
           terms_accepted: termsAccepted,
         },
       ])
