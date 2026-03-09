@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import PackageSliderArrowRight from '@/components/icons/PackageSliderArrowRight';
+import { useCategoriesWithPackageCount } from '@/hooks/use-marketing-queries';
 import './home.css';
 
 // GSAP hover animation for buttons
@@ -43,9 +44,8 @@ interface Category {
 }
 
 export default function SuitesSection() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { data: categories = [], isLoading: loading } = useCategoriesWithPackageCount(100);
   const sliderRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const [cardsPerView, setCardsPerView] = useState(3);
@@ -65,51 +65,6 @@ export default function SuitesSection() {
     updateCardsPerView();
     window.addEventListener('resize', updateCardsPerView);
     return () => window.removeEventListener('resize', updateCardsPerView);
-  }, []);
-
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await fetch('/api/package-categories?limit=100');
-        if (!res.ok) throw new Error('Failed to fetch categories');
-        const json = await res.json();
-        const categoriesData = json.data || [];
-
-        // Get package count for each category
-        const categoriesWithCount = await Promise.all(
-          categoriesData.map(async (cat: any) => {
-            try {
-              const packagesRes = await fetch(
-                `/api/packages?category_id=${cat.id}&limit=1&status=active`
-              );
-              if (!packagesRes.ok) return { ...cat, packageCount: 0 };
-              const packagesJson = await packagesRes.json();
-              return {
-                id: cat.id,
-                name: cat.name,
-                description: cat.description || null,
-                image: cat.image || null,
-                packageCount: packagesJson.total || 0,
-              };
-            } catch {
-              return { ...cat, packageCount: 0 };
-            }
-          })
-        );
-
-        // Filter categories with packages > 0
-        const filteredCategories = categoriesWithCount.filter(
-          (cat: Category) => cat.packageCount > 0
-        );
-
-        setCategories(filteredCategories);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCategories();
   }, []);
 
   // Calculate max index based on actual items

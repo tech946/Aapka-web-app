@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { usePackageCategories, usePackagesByCategory, useAgentStatus } from '@/hooks/use-marketing-queries';
 import {
   MapPin,
   Grid3x3,
@@ -66,40 +67,54 @@ interface Category {
 export default function CategoryPage() {
   const params = useParams();
   const slug = params?.slug as string;
-
-  const [category, setCategory] = useState<Category | null>(null);
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [limit] = useState(12);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [hasActiveAgentSubscription, setHasActiveAgentSubscription] = useState(false);
 
   // Filter states
   const [sortBy, setSortBy] = useState('created_at_desc');
   const [viewMode, setViewMode] = useState<'grid' | 'row'>('grid');
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
+  // Cached category lookup from slug
+  const { data: categoriesData = [], isLoading: categoriesLoading } = usePackageCategories(100);
+  const category = useMemo(() => {
+    if (!slug || !categoriesData.length) return null;
+    const found = (categoriesData as Category[]).find(cat => {
+      const categorySlug = cat.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      return categorySlug === slug.toLowerCase();
+    });
+    return found ?? null;
+  }, [slug, categoriesData]);
+
+  const { data: packagesResult, isLoading: packagesLoading } = usePackagesByCategory({
+    categoryId: category?.id,
+    limit,
+    status: 'active',
+    page,
+    sort_by: sortBy,
+  });
+  const packagesData = packagesResult?.data ?? [];
+  const total = packagesResult?.total ?? 0;
+
+  const packages = useMemo(() => {
+    let sorted = [...(packagesData as Package[])];
+    if (sortBy === 'price-low') sorted.sort((a, b) => (a.package_price || 0) - (b.package_price || 0));
+    else if (sortBy === 'price-high') sorted.sort((a, b) => (b.package_price || 0) - (a.package_price || 0));
+    else if (sortBy === 'name') sorted.sort((a, b) => (a.package_name || '').localeCompare(b.package_name || ''));
+    return sorted;
+  }, [packagesData, sortBy]);
+
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / limit)),
     [total, limit]
   );
 
-  // Fetch category by slug (name)
-  useEffect(() => {
-    if (slug) {
-      fetchCategory();
-    }
-  }, [slug]);
+  const loading = categoriesLoading || (!!category?.id && packagesLoading);
 
-  // Fetch packages when category is found
-  useEffect(() => {
-    if (category?.id) {
-      fetchPackages();
-    }
-  }, [category?.id, page, sortBy]);
+  const { data: agentData } = useAgentStatus(true);
+  const hasActiveAgentSubscription = !!agentData?.hasActiveSubscription;
 
   // Detect user location and initialize exchange rate on mount
   useEffect(() => {
@@ -126,21 +141,6 @@ export default function CategoryPage() {
     initialize();
   }, []);
 
-  // Check if user is an agent
-  useEffect(() => {
-    const checkAgentStatus = async () => {
-      try {
-        const response = await fetch('/api/agent-subscription/check-agent-status');
-        const result = await response.json();
-        setHasActiveAgentSubscription(result.hasActiveSubscription || false);
-      } catch (error) {
-        console.error('Error checking agent status:', error);
-        setHasActiveAgentSubscription(false);
-      }
-    };
-    checkAgentStatus();
-  }, []);
-
   // Helper function to format price - always shows AED
   const formatPrice = (price: number | null): string => {
     if (!price) return 'N/A';
@@ -148,77 +148,6 @@ export default function CategoryPage() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
-  };
-
-  const fetchCategory = async () => {
-    try {
-      // Fetch all categories and find the one that matches the slug
-      const response = await fetch(`/api/package-categories?limit=100`);
-      const result = await response.json();
-
-      if (result.data && result.data.length > 0) {
-        // Find category by matching slug (convert category name to slug format)
-        const foundCategory = result.data.find((cat: Category) => {
-          const categorySlug = cat.name
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '');
-          return categorySlug === slug.toLowerCase();
-        });
-
-        if (foundCategory) {
-          setCategory(foundCategory);
-        } else {
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    } catch (error) {
-      setLoading(false);
-    }
-  };
-
-  const fetchPackages = async () => {
-    if (!category?.id) return;
-
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(limit),
-        category_id: category.id,
-        sort_by: sortBy,
-      });
-
-      const response = await fetch(`/api/packages?${params.toString()}`);
-      const result = await response.json();
-
-      if (result.data) {
-        // Sorting is now handled by the API, but we keep client-side sorting as fallback
-        // for backward compatibility with old sort values
-        let sortedData = [...result.data];
-        if (sortBy === 'price-low') {
-          sortedData.sort(
-            (a, b) => (a.package_price || 0) - (b.package_price || 0)
-          );
-        } else if (sortBy === 'price-high') {
-          sortedData.sort(
-            (a, b) => (b.package_price || 0) - (a.package_price || 0)
-          );
-        } else if (sortBy === 'name') {
-          sortedData.sort((a, b) =>
-            a.package_name.localeCompare(b.package_name)
-          );
-        }
-
-        setPackages(sortedData);
-        setTotal(result.total || 0);
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
   };
 
   const toggleFavorite = (packageId: string) => {

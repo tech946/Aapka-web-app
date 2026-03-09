@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import 'antd/dist/reset.css';
 import ConditionalHeader from '@/components/marketing/Header/ConditionalHeader';
 import ConditionalFooter from '@/components/marketing/Footer/ConditionalFooter';
+import { QueryProvider } from '@/providers/QueryProvider';
 import ConditionalWhatsAppButton from '@/components/marketing/WhatsAppButton/ConditionalWhatsAppButton';
 import GTMPageViewTracker from '@/components/GTMPageViewTracker';
 import { CartProvider } from '@/context/CartContext';
@@ -71,7 +72,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        <CartProvider>
+        <QueryProvider>
+          <CartProvider>
           <Suspense fallback={null}>
             <GTMPageViewTracker />
           </Suspense>
@@ -81,6 +83,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <ConditionalFooter />
           <ConditionalWhatsAppButton />
         </CartProvider>
+        </QueryProvider>
       </body>
     </html>
   );

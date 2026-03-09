@@ -7,6 +7,7 @@ import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import { generateShortSlug } from '@/lib/utils';
 import { useSliderDrag } from '@/lib/use-slider-drag';
+import { usePackagesByCategory } from '@/hooks/use-marketing-queries';
 import './home.css';
 
 interface Package {
@@ -53,9 +54,13 @@ function getDurationLabel(pkg: Package): string {
 }
 
 export default function OfferPackagesSection() {
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { data, isLoading: loading } = usePackagesByCategory({
+    categorySlug: 'offer-packages',
+    limit: 20,
+    status: 'active',
+  });
+  const packages = ((data?.data ?? []) as unknown) as Package[];
   const cardsRef = useRef<HTMLDivElement>(null);
   const [cardsPerView, setCardsPerView] = useState(3);
 
@@ -68,24 +73,6 @@ export default function OfferPackagesSection() {
     updateCardsPerView();
     window.addEventListener('resize', updateCardsPerView);
     return () => window.removeEventListener('resize', updateCardsPerView);
-  }, []);
-
-  useEffect(() => {
-    async function fetchPackages() {
-      try {
-        const res = await fetch(
-          '/api/packages?categorySlug=offer-packages&limit=20&status=active'
-        );
-        if (!res.ok) throw new Error('Failed to fetch');
-        const json = await res.json();
-        setPackages(json.data || []);
-      } catch (error) {
-        console.error('Error fetching offer packages:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPackages();
   }, []);
 
   const totalSlides = Math.max(1, Math.ceil(packages.length / cardsPerView));

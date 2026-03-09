@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -548,6 +548,10 @@ export async function PUT(req: NextRequest) {
       body?.status !== undefined
         ? String(body.status).trim() || null
         : undefined;
+    const crmPackageId =
+      body?.crm_package_id !== undefined
+        ? (body.crm_package_id === null || body.crm_package_id === '' ? null : String(body.crm_package_id).trim())
+        : undefined;
 
     if (!id) {
       return NextResponse.json(
@@ -628,6 +632,7 @@ export async function PUT(req: NextRequest) {
     if (pdfUrl !== undefined) updates.pdf_url = pdfUrl;
     if (galleryImages !== undefined) updates.gallery = galleryImages;
     if (status !== undefined) updates.status = status;
+    if (crmPackageId !== undefined) updates.crm_package_id = crmPackageId || null;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

@@ -7,6 +7,7 @@ import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import { format } from 'date-fns';
 import { useSliderDrag } from '@/lib/use-slider-drag';
+import { useBlogs } from '@/hooks/use-marketing-queries';
 import './home.css';
 
 interface BlogPost {
@@ -21,9 +22,8 @@ interface BlogPost {
 }
 
 export default function BlogsSection() {
-  const [blogs, setBlogs] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { data: blogs = [], isLoading: loading } = useBlogs(10);
   const sliderRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const [cardsPerView, setCardsPerView] = useState(3);
@@ -41,22 +41,6 @@ export default function BlogsSection() {
     updateCardsPerView();
     window.addEventListener('resize', updateCardsPerView);
     return () => window.removeEventListener('resize', updateCardsPerView);
-  }, []);
-
-  useEffect(() => {
-    async function fetchBlogs() {
-      try {
-        const res = await fetch('/api/blogs?status=active&limit=10');
-        if (!res.ok) throw new Error('Failed to fetch blogs');
-        const json = await res.json();
-        setBlogs(json.data || []);
-      } catch (error) {
-        console.error('Error fetching blogs:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchBlogs();
   }, []);
 
   const maxIndex = Math.max(0, blogs.length - cardsPerView);

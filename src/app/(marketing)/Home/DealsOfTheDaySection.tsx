@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Building2, Plane, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { gsap } from 'gsap';
+import { useDealsOfTheDay } from '@/hooks/use-marketing-queries';
 import './home.css';
 
 interface DealPackage {
@@ -41,27 +42,10 @@ interface Deal {
 }
 
 export default function DealsOfTheDaySection() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function fetchDeals() {
-      try {
-        const res = await fetch('/api/deals-of-the-day');
-        if (!res.ok) throw new Error('Failed to fetch deals');
-        const json = await res.json();
-        setDeals(json.data || []);
-      } catch (error) {
-        console.error('Error fetching deals:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchDeals();
-  }, []);
+  const { data: deals = [], isLoading: loading } = useDealsOfTheDay();
 
   // GSAP animation for slider
   useEffect(() => {

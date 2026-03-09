@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Plus, Settings, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Plus, Settings, ChevronRight, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useQueryClient } from '@tanstack/react-query';
 import { gsap } from 'gsap';
+import { useCategoriesWithPackages, useAgentStatus } from '@/hooks/use-marketing-queries';
 import './header.css';
 
 interface Category {
@@ -19,11 +21,16 @@ interface Category {
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [isAgent, setIsAgent] = useState(false);
+  const [showOmanDropdown, setShowOmanDropdown] = useState(false);
+  const [showPackagesDropdown, setShowPackagesDropdown] = useState(false);
+  const [mobilePackagesExpanded, setMobilePackagesExpanded] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
-  const [categoriesWithPackages, setCategoriesWithPackages] = useState<Category[]>([]);
+  const queryClient = useQueryClient();
+  const { data: categoriesWithPackages = [] } = useCategoriesWithPackages(100);
+  const { data: agentData } = useAgentStatus(isLoggedIn);
+  const isAgent = !!agentData?.hasActiveSubscription;
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
   const pathname = usePathname();
@@ -31,6 +38,8 @@ export default function Header() {
   const navRef = useRef<HTMLUListElement>(null);
   const underlineRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+  const omanDropdownRef = useRef<HTMLDivElement>(null);
+  const packagesDropdownRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
   // Animate underline on pathname change
@@ -84,121 +93,73 @@ export default function Header() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // Fetch categories with packages
+  // Expand mobile packages when on a category page
   useEffect(() => {
-    const fetchCategoriesWithPackages = async () => {
-      try {
-        const response = await fetch('/api/package-categories?limit=100');
-        const result = await response.json();
-        if (result.data && Array.isArray(result.data)) {
-          // Check package count for each category and filter out categories with zero packages
-          const categoriesWithPackagesPromises = result.data.map(async (category: Category) => {
-            const categoryId =
-              category.category_id ||
-              category.id ||
-              category.categoryId;
-            
-            if (!categoryId) return null;
-            
-            try {
-              const packagesResponse = await fetch(
-                `/api/packages?category_id=${categoryId}&limit=1&status=active`
-              );
-              if (packagesResponse.ok) {
-                const packagesResult = await packagesResponse.json();
-                const packageCount = packagesResult.total || 0;
-                return packageCount > 0 ? category : null;
-              }
-              return null;
-            } catch (error) {
-              return null;
-            }
-          });
-          
-          const categoriesWithPackagesResults = await Promise.all(categoriesWithPackagesPromises);
-          const filteredCategories = categoriesWithPackagesResults.filter(
-            (cat): cat is Category => cat !== null
-          );
-          
-          setCategoriesWithPackages(filteredCategories);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-    
-    fetchCategoriesWithPackages();
-  }, []);
+    if (pathname.startsWith('/category')) {
+      setMobilePackagesExpanded(true);
+    }
+  }, [pathname]);
 
-  // Check agent status and login status
+  // Close all dropdowns on route change (prevents overlay from blocking clicks after navigation)
   useEffect(() => {
-    const checkAgentStatus = async () => {
-      try {
-        const supabase = createClientComponentClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          setIsLoggedIn(true);
-          setUserEmail(session.user.email || '');
-          
-          // Get user name from metadata or email
-          const name = session.user.user_metadata?.full_name || 
-                      session.user.user_metadata?.name ||
-                      session.user.email?.split('@')[0] || 
-                      'User';
-          setUserName(name);
-          
-          // Check if user is an agent
-          const response = await fetch('/api/agent-subscription/check-agent-status');
-          const data = await response.json();
-          setIsAgent(data.hasActiveSubscription || false);
-        } else {
-          setIsLoggedIn(false);
-          setIsAgent(false);
-          setUserName('');
-          setUserEmail('');
-        }
-      } catch (error) {
-        console.error('Error checking agent status:', error);
+    setShowPackagesDropdown(false);
+    setShowOmanDropdown(false);
+  }, [pathname]);
+
+  // Sync session state (auth is fast; agent-status API is cached via useAgentStatus)
+  useEffect(() => {
+    const supabase = createClientComponentClient();
+    const syncSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setIsLoggedIn(true);
+        setUserEmail(session.user.email || '');
+        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User';
+        setUserName(name);
+      } else {
         setIsLoggedIn(false);
-        setIsAgent(false);
         setUserName('');
         setUserEmail('');
+        queryClient.invalidateQueries({ queryKey: ['marketing', 'agent-status'] });
       }
     };
+    syncSession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(syncSession);
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
 
-    checkAgentStatus();
-    
-    // Listen for auth state changes
-    const supabase = createClientComponentClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkAgentStatus();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Close user dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
         userDropdownRef.current &&
-        !userDropdownRef.current.contains(event.target as Node)
+        !userDropdownRef.current.contains(target)
       ) {
         setShowUserDropdown(false);
       }
+      if (
+        omanDropdownRef.current &&
+        !omanDropdownRef.current.contains(target)
+      ) {
+        setShowOmanDropdown(false);
+      }
+      if (
+        packagesDropdownRef.current &&
+        !packagesDropdownRef.current.contains(target)
+      ) {
+        setShowPackagesDropdown(false);
+      }
     };
 
-    if (showUserDropdown) {
+    if (showUserDropdown || showOmanDropdown || showPackagesDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showUserDropdown]);
+  }, [showUserDropdown, showOmanDropdown, showPackagesDropdown]);
 
   const handleLogout = async () => {
     try {
@@ -255,33 +216,65 @@ export default function Header() {
                   Home
                 </Link>
               </li>
-              {categoriesWithPackages.map(category => {
-                const href = getCategoryHref(category);
-                const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
-                return (
-                  <li
-                    key={category.id || category.category_id || category.categoryId}
-                    ref={el => {
-                      linkRefs.current[href] = el;
-                    }}
-                    className={`${pathname === href || pathname.startsWith(href + '/') ? 'active' : ''} ${isFlexibleDatePackages ? 'header-nav-link-with-badge' : ''}`}
-                  >
-                    {isFlexibleDatePackages && (
-                      <span className='header-nav-badge'>NEW</span>
-                    )}
-                    <Link
-                      href={href}
-                      className={`header-nav-link ${
-                        pathname === href || pathname.startsWith(href + '/')
-                          ? 'active'
-                          : ''
-                      }`}
+              {categoriesWithPackages.length > 0 && (
+                <li
+                  ref={el => {
+                    linkRefs.current['/category'] = el;
+                    categoriesWithPackages.forEach(cat => {
+                      linkRefs.current[getCategoryHref(cat)] = el;
+                    });
+                  }}
+                  className={`${
+                    pathname.startsWith('/category') ? 'active' : ''
+                  } header-dropdown-container`}
+                  style={{ position: 'relative' }}
+                >
+                  <div ref={packagesDropdownRef} style={{ position: 'relative' }}>
+                    <button
+                      type='button'
+                      className='header-dropdown-button header-nav-link'
+                      onClick={() => setShowPackagesDropdown(!showPackagesDropdown)}
+                      style={{
+                        color: pathname.startsWith('/category') ? '#fd6b06' : undefined,
+                      }}
                     >
-                      {category.name}
-                    </Link>
-                  </li>
-                );
-              })}
+                      Tours & Packages
+                      <ChevronDown
+                        size={16}
+                        className={`header-chevron ${showPackagesDropdown ? 'open' : ''}`}
+                      />
+                    </button>
+                    {showPackagesDropdown && (
+                      <>
+                        <div
+                          className='header-dropdown-overlay'
+                          onClick={() => setShowPackagesDropdown(false)}
+                          aria-hidden='true'
+                        />
+                        <div className='header-dropdown-menu header-dropdown-menu-packages'>
+                          {categoriesWithPackages.map(category => {
+                            const href = getCategoryHref(category);
+                            const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
+                            return (
+                              <Link
+                                key={category.id || category.category_id || category.categoryId}
+                                href={href}
+                                className={`header-dropdown-item ${isFlexibleDatePackages ? 'header-dropdown-item-with-badge' : ''}`}
+                                onClick={() => setShowPackagesDropdown(false)}
+                              >
+                                {isFlexibleDatePackages && (
+                                  <span className='header-dropdown-badge'>NEW</span>
+                                )}
+                                {category.name}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </li>
+              )}
 
               <li
                 ref={el => {
@@ -328,20 +321,76 @@ export default function Header() {
                   Submit your enquiry
                 </Link>
               </li>
+              {/* Customize Your Package - commented out
+              <li
+                ref={el => {
+                  linkRefs.current['/customize-your-package'] = el;
+                }}
+                className={pathname === '/customize-your-package' ? 'active' : ''}
+              >
+                <Link
+                  href='/customize-your-package'
+                  className={`header-nav-link ${
+                    pathname === '/customize-your-package' ? 'active' : ''
+                  }`}
+                >
+                  Customize Your Package
+                </Link>
+              </li>
+              */}
               <li
                 ref={el => {
                   linkRefs.current['/visas/apply-for-oman-visa'] = el;
+                  linkRefs.current['/oman-transport'] = el;
                 }}
-                className={pathname === '/visas/apply-for-oman-visa' ? 'active' : ''}
+                className={`${
+                  pathname === '/visas/apply-for-oman-visa' || pathname === '/oman-transport'
+                    ? 'active'
+                    : ''
+                } header-dropdown-container`}
+                style={{ position: 'relative' }}
               >
-                <Link
-                  href='/visas/apply-for-oman-visa'
-                  className={`header-nav-link ${
-                    pathname === '/visas/apply-for-oman-visa' ? 'active' : ''
-                  }`}
-                >
-                  Apply for Oman Tourist Visa
-                </Link>
+                <div ref={omanDropdownRef} style={{ position: 'relative' }}>
+                  <button
+                    type='button'
+                    className='header-dropdown-button header-nav-link'
+                    onClick={() => setShowOmanDropdown(!showOmanDropdown)}
+                    style={{
+                      color: pathname === '/visas/apply-for-oman-visa' || pathname === '/oman-transport' ? '#fd6b06' : undefined,
+                    }}
+                  >
+                    Oman
+                    <ChevronDown
+                      size={16}
+                      className={`header-chevron ${showOmanDropdown ? 'open' : ''}`}
+                    />
+                  </button>
+                  {showOmanDropdown && (
+                    <>
+                      <div
+                        className='header-dropdown-overlay'
+                        onClick={() => setShowOmanDropdown(false)}
+                        aria-hidden='true'
+                      />
+                      <div className='header-dropdown-menu'>
+                        <Link
+                          href='/visas/apply-for-oman-visa'
+                          className='header-dropdown-item'
+                          onClick={() => setShowOmanDropdown(false)}
+                        >
+                          Apply for Oman Tourist Visa
+                        </Link>
+                        <Link
+                          href='/oman-transport'
+                          className='header-dropdown-item'
+                          onClick={() => setShowOmanDropdown(false)}
+                        >
+                          Oman Exit Transportation
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
               </li>
               {/* <li
                 ref={el => {
@@ -535,27 +584,58 @@ export default function Header() {
               Home
             </Link>
 
-            {categoriesWithPackages.map(category => {
-              const href = getCategoryHref(category);
-              const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
-              return (
-                <Link
-                  key={category.id || category.category_id || category.categoryId}
-                  href={href}
-                  className={`mobile-sidebar-link ${
-                    pathname === href || pathname.startsWith(href + '/')
-                      ? 'active'
-                      : ''
-                  } ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
+            {categoriesWithPackages.length > 0 && (
+              <div className='mobile-sidebar-dropdown'>
+                <button
+                  type='button'
+                  className={`mobile-sidebar-link mobile-sidebar-dropdown-button ${
+                    pathname.startsWith('/category') ? 'active' : ''
+                  }`}
+                  onClick={() => setMobilePackagesExpanded(e => !e)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    width: '100%',
+                    textAlign: 'left',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
                 >
-                  {isFlexibleDatePackages && (
-                    <span className='mobile-sidebar-badge'>NEW</span>
-                  )}
-                  {category.name}
-                </Link>
-              );
-            })}
+                  Tours & Packages
+                  <ChevronDown
+                    size={18}
+                    className={`mobile-sidebar-chevron ${mobilePackagesExpanded ? 'open' : ''}`}
+                    style={{ marginLeft: 'auto' }}
+                  />
+                </button>
+                {mobilePackagesExpanded && (
+                  <div className='mobile-sidebar-dropdown-menu'>
+                    {categoriesWithPackages.map(category => {
+                      const href = getCategoryHref(category);
+                      const isFlexibleDatePackages = category.name === 'Flexible Date Packages';
+                      return (
+                        <Link
+                          key={category.id || category.category_id || category.categoryId}
+                          href={href}
+                          className={`mobile-sidebar-dropdown-item ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            setMobilePackagesExpanded(false);
+                          }}
+                        >
+                          {isFlexibleDatePackages && (
+                            <span className='mobile-sidebar-badge'>NEW</span>
+                          )}
+                          {category.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             <Link
               href='/blogs'
@@ -587,6 +667,18 @@ export default function Header() {
               Submit your enquiry
             </Link>
 
+            {/* Customize Your Package - commented out
+            <Link
+              href='/customize-your-package'
+              className={`mobile-sidebar-link ${
+                pathname === '/customize-your-package' ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Customize Your Package
+            </Link>
+            */}
+
             <Link
               href='/visas/apply-for-oman-visa'
               className={`mobile-sidebar-link ${
@@ -595,6 +687,15 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Apply for Oman Tourist Visa
+            </Link>
+            <Link
+              href='/oman-transport'
+              className={`mobile-sidebar-link ${
+                pathname === '/oman-transport' ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Oman Exit Transportation
             </Link>
 
             {/* <Link

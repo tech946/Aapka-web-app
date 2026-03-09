@@ -1,0 +1,139 @@
+/* Addon dropdown - overlay style (no column expansion) */
+.addon-dropdown-wrap {
+  position: relative;
+}
+
+.customize-addon-dropdown {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.customize-addon-dropdown:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.addon-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: border-color 0.2s, outline 0.2s;
+  font-family: var(--font-inter);
+  text-align: left;
+  font-size: 14px;
+}
+
+.addon-dropdown-trigger:hover {
+  border-color: #fd6b06;
+}
+
+.addon-dropdown-trigger:focus,
+.addon-dropdown-trigger.open {
+  outline: 2px solid #fd6b06;
+  outline-offset: 2px;
+  border-color: #fd6b06;
+}
+
+.addon-dropdown-chevron {
+  flex-shrink: 0;
+  color: #6b7280;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.addon-dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.addon-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 10px rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.addon-dropdown-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  color: #6b7280;
+  font-size: 12px;
+  font-family: var(--font-inter);
+}
+
+.addon-dropdown-spinner {
+  animation: addon-dropdown-spin 1s linear infinite;
+}
+
+@keyframes addon-dropdown-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.addon-dropdown-empty {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-inter);
+}
+
+.addon-dropdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.addon-dropdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.addon-dropdown-item:hover {
+  background: #f3f4f6;
+}
+
+.addon-dropdown-item.selected {
+  background: #f3f4f6;
+}
+
+.addon-dropdown-checkbox {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  cursor: pointer;
+  accent-color: #fd6b06;
+  flex-shrink: 0;
+}
+
+/* Compact text like country dropdown (12px) */
+.addon-dropdown-item-text {
+  font-size: 12px;
+  color: #111827;
+  line-height: 1.3;
+  flex: 1;
+  font-family: var(--font-inter);
+}

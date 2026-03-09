@@ -1,11 +1,10 @@
-header,
 .header {
   display: block;
   width: 100%;
   background: #ffffff;
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
   position: relative;
-  z-index: 100;
+  z-index: 1000;
 }
 .header__container {
   display: flex;
@@ -79,12 +78,15 @@ header,
 
 .header-dropdown-container {
   position: relative;
+  z-index: 1;
 }
 
 .header-dropdown-button {
-  display: flex;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   background: transparent;
   border: none;
   color: inherit;
@@ -98,11 +100,20 @@ header,
   transition: color 0.2s;
 }
 
+/* Ensure dropdown trigger text + icon stay in same row (override header-nav-link) */
+.header-dropdown-button.header-nav-link {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+}
+
 .header-dropdown-button:hover {
   color: #fd6b06;
 }
 
 .header-chevron {
+  flex-shrink: 0;
   transition: transform 0.2s;
 }
 
@@ -116,8 +127,9 @@ header,
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 998;
+  z-index: 9998;
   background: transparent;
+  pointer-events: auto;
 }
 
 .header-dropdown-menu {
@@ -134,7 +146,8 @@ header,
   max-width: 300px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 999;
+  z-index: 9999;
+  pointer-events: auto;
 }
 
 .header-dropdown-item {
@@ -143,7 +156,7 @@ header,
   text-decoration: none;
   color: #111827;
   font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   transition: all 0.2s;
   border-bottom: 1px solid #f3f4f6;
@@ -166,6 +179,31 @@ header,
 .header-dropdown-item.disabled:hover {
   background: transparent;
   color: #6b7280;
+}
+
+.header-dropdown-menu-packages {
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.header-dropdown-item-with-badge {
+  position: relative;
+  padding-left: 36px;
+}
+
+.header-dropdown-badge {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fd6b06;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .header-cart-link {

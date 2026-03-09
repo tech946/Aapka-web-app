@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useFooterPackages } from '@/hooks/use-marketing-queries';
 import { generateShortSlug } from '@/lib/utils';
 import './footer.css';
 
@@ -31,6 +31,7 @@ const stats = [
 const resources = [
   { label: 'About Us', href: '/About' },
   { label: 'Blogs', href: '/blogs' },
+  { label: 'Customize Your Package', href: '/customize-your-package' },
   { label: 'Contact Us', href: '/contact' },
   { label: 'Terms and Conditions', href: '/terms-and-conditions' },
   { label: 'Disclaimer', href: '/disclaimer' },
@@ -48,36 +49,9 @@ interface Package {
 }
 
 export default function Footer() {
-  const [offerPackages, setOfferPackages] = useState<Package[]>([]);
-  const [tours, setTours] = useState<Package[]>([]);
-
-  useEffect(() => {
-    const fetchFooterPackages = async () => {
-      try {
-        // Fetch packages from "Offer Packages" category
-        const offerResponse = await fetch(
-          '/api/packages?categorySlug=offer-packages&limit=4'
-        );
-        const offerResult = await offerResponse.json();
-        if (offerResult.success && offerResult.data) {
-          setOfferPackages(offerResult.data);
-        }
-
-        // Fetch packages from "UAE Tours" category
-        const toursResponse = await fetch(
-          '/api/packages?categorySlug=uae-tours&limit=7'
-        );
-        const toursResult = await toursResponse.json();
-        if (toursResult.success && toursResult.data) {
-          setTours(toursResult.data);
-        }
-      } catch (error) {
-        console.error('Error fetching footer packages:', error);
-      }
-    };
-
-    fetchFooterPackages();
-  }, []);
+  const { offerPackages, tours } = useFooterPackages();
+  const offerPkgs = (Array.isArray(offerPackages) ? offerPackages : []) as Package[];
+  const tourPkgs = (Array.isArray(tours) ? tours : []) as Package[];
 
   const getCategorySlug = (name: string) => {
     return name
@@ -180,8 +154,8 @@ export default function Footer() {
             <div className='footer_links_column'>
               <h4>Offer Packages</h4>
               <ul>
-                {offerPackages.length > 0 ? (
-                  offerPackages.map(pkg => {
+                {offerPkgs.length > 0 ? (
+                  offerPkgs.map(pkg => {
                     const packageSlug = generateShortSlug(
                       pkg.package_name,
                       pkg.package_id,
@@ -211,8 +185,8 @@ export default function Footer() {
             <div className='footer_links_column'>
               <h4>Top Tours</h4>
               <ul>
-                {tours.length > 0 ? (
-                  tours.map(tour => {
+                {tourPkgs.length > 0 ? (
+                  tourPkgs.map(tour => {
                     const packageSlug = generateShortSlug(
                       tour.package_name,
                       tour.package_id,

@@ -47,6 +47,7 @@ import './package-details.css';
 import PackageGallery from './PackageGallery';
 import PackageDetailsTabs from './PackageDetailsTabs';
 import PdfDownloadModal from '@/components/marketing/PdfDownloadModal/PdfDownloadModal';
+import { useAddonDeals, useAddonHotelServices, useAddonPrivateTransfers } from '@/hooks/use-marketing-queries';
 
 interface DateRange {
   id: string;
@@ -179,13 +180,28 @@ export default function PackageDetailsPage() {
   const [addonPrivateTransfers, setAddonPrivateTransfers] = useState<string[]>(
     []
   );
-  // Addon data with prices - fetched when modal opens, used for instant client-side calculation and AddonsSection dropdown
+  // Addon data with prices - cached via TanStack Query when modal opens
   type AddonDeal = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number; category_name?: string | null };
   type AddonService = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number };
   type AddonTransfer = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number; pax_type?: string; fixed_pax?: number | null; min_pax?: number | null; max_pax?: number | null };
-  const [addonDealsData, setAddonDealsData] = useState<AddonDeal[]>([]);
-  const [addonServicesData, setAddonServicesData] = useState<AddonService[]>([]);
-  const [addonTransfersData, setAddonTransfersData] = useState<AddonTransfer[]>([]);
+  const modalOpen = showMobileDrawer || showDesktopPopover;
+  const shouldFetchAddons = slug === 'offer-packages' && !!pkg && modalOpen;
+  const nights = pkg?.package_nights ?? 0;
+  const { data: dealsRaw = [] } = useAddonDeals(nights, !!shouldFetchAddons);
+  const { data: servicesRaw = [] } = useAddonHotelServices(!!shouldFetchAddons);
+  const { data: transfersRaw = [] } = useAddonPrivateTransfers(!!shouldFetchAddons);
+  const addonDealsData = useMemo(
+    () => (Array.isArray(dealsRaw) ? dealsRaw.map((d: any) => ({ ...d, id: String(d?.id ?? ''), adult_price: d?.adult_price ?? 0, child_price: d?.child_price ?? 0, infant_price: d?.infant_price ?? 0 })) : []),
+    [dealsRaw]
+  );
+  const addonServicesData = useMemo(
+    () => (Array.isArray(servicesRaw) ? servicesRaw.map((s: any) => ({ ...s, id: String(s?.id ?? ''), adult_price: s?.adult_price ?? 0, child_price: s?.child_price ?? 0, infant_price: s?.infant_price ?? 0 })) : []),
+    [servicesRaw]
+  );
+  const addonTransfersData = useMemo(
+    () => (Array.isArray(transfersRaw) ? transfersRaw.map((t: any) => ({ ...t, id: String(t?.id ?? ''), adult_price: t?.adult_price ?? 0, child_price: t?.child_price ?? 0, infant_price: t?.infant_price ?? 0 })) : []),
+    [transfersRaw]
+  );
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -208,38 +224,7 @@ export default function PackageDetailsPage() {
     }
   }, [isSoloTraveller, withVisa, visaForAdults]);
 
-  // Fetch addon APIs when Add to Cart modal opens - APIs include prices, so we calculate client-side (fast & accurate)
-  const modalOpen = showMobileDrawer || showDesktopPopover;
-  useEffect(() => {
-    if (slug !== 'offer-packages' || !pkg || !modalOpen) return;
-    const nights = pkg.package_nights ?? 0;
-    let active = true;
-    (async () => {
-      try {
-        const [dealsRes, servicesRes, transfersRes] = await Promise.all([
-          fetch(`/api/website/addon-deals${nights > 0 ? `?nights=${nights}` : ''}`),
-          fetch('/api/website/addon-hotel-services'),
-          fetch('/api/website/addon-private-transfers'),
-        ]);
-        if (!active) return;
-        const deals = dealsRes.ok ? ((await dealsRes.json())?.addon_deals ?? []) : [];
-        const services = servicesRes.ok ? ((await servicesRes.json())?.addon_hotel_services ?? []) : [];
-        const transfers = transfersRes.ok ? ((await transfersRes.json())?.addon_private_transfers ?? []) : [];
-        setAddonDealsData(Array.isArray(deals) ? deals.map((d: any) => ({ ...d, id: String(d?.id ?? ''), adult_price: d?.adult_price ?? 0, child_price: d?.child_price ?? 0, infant_price: d?.infant_price ?? 0 })) : []);
-        setAddonServicesData(Array.isArray(services) ? services.map((s: any) => ({ ...s, id: String(s?.id ?? ''), adult_price: s?.adult_price ?? 0, child_price: s?.child_price ?? 0, infant_price: s?.infant_price ?? 0 })) : []);
-        setAddonTransfersData(Array.isArray(transfers) ? transfers.map((t: any) => ({ ...t, id: String(t?.id ?? ''), adult_price: t?.adult_price ?? 0, child_price: t?.child_price ?? 0, infant_price: t?.infant_price ?? 0 })) : []);
-      } catch {
-        if (active) {
-          setAddonDealsData([]);
-          setAddonServicesData([]);
-          setAddonTransfersData([]);
-        }
-      }
-    })();
-    return () => { active = false; };
-  }, [slug, pkg?.package_id, pkg?.package_nights, modalOpen]);
-
-  // Client-side addon price calculation from fetched data - instant, no fetch on selection change
+  // Client-side addon price calculation from cached addon data - instant, no fetch on selection change
   const addonPriceTotal = useMemo(() => {
     if (slug !== 'offer-packages') return 0;
     const adults = isSoloTraveller ? 1 : persons.adult;

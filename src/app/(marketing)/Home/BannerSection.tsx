@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCategoriesWithPackages, usePackagesByCategory } from '@/hooks/use-marketing-queries';
 import {
   MapPin,
   Calendar,
@@ -67,12 +68,7 @@ interface PersonsCount {
 
 export default function BannerSection() {
   const router = useRouter();
-  const [categories, setCategories] = useState<PackageCategory[]>([]);
-  const [categoriesWithPackages, setCategoriesWithPackages] = useState<
-    PackageCategory[]
-  >([]);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
-  const [packages, setPackages] = useState<Package[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedDateString, setSelectedDateString] = useState<string>('');
@@ -87,43 +83,42 @@ export default function BannerSection() {
   const [showPackageDropdown, setShowPackageDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
-  const [loadingPackages, setLoadingPackages] = useState(false);
 
   const packageDropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
   const personsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch categories on mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // Cached categories with packages (no refetch on navigation back to home)
+  const { data: categoriesWithPackagesData = [], categories } = useCategoriesWithPackages(100);
+  const catsWithPkgs = (categoriesWithPackagesData ?? []) as PackageCategory[];
+  const allCats = (categories ?? []) as PackageCategory[];
+  const hasValidCategory =
+    activeCategoryId &&
+    activeCategoryId !== 'undefined' &&
+    activeCategoryId !== 'null';
+  const { data: packagesData, isLoading: loadingPackages } = usePackagesByCategory({
+    categoryId: hasValidCategory ? activeCategoryId : undefined,
+    limit: 100,
+    status: 'active',
+  });
 
-  // Fetch packages when category changes (initial load only)
-  // Note: handleCategoryClick will fetch packages when user clicks tabs
+  // Sync categories and set active category on first load
   useEffect(() => {
-    if (
-      activeCategoryId &&
-      activeCategoryId !== 'undefined' &&
-      activeCategoryId !== 'null' &&
-      categories.length > 0
-    ) {
-      // Only fetch on initial category set (when categories are first loaded)
-      // Subsequent category changes are handled by handleCategoryClick
-      const isInitialLoad = packages.length === 0;
-      if (isInitialLoad) {
-        fetchPackages(activeCategoryId);
-      }
-    } else if (
-      !activeCategoryId ||
-      activeCategoryId === 'undefined' ||
-      activeCategoryId === 'null'
-    ) {
-      setPackages([]);
+    if (catsWithPkgs.length > 0 && !activeCategoryId) {
+      const first = catsWithPkgs[0];
+      const id = first.category_id ?? first.id ?? first.categoryId;
+      if (id) setActiveCategoryId(String(id));
+    }
+  }, [catsWithPkgs, activeCategoryId]);
+
+  // Use cached packages data
+  const packages = ((packagesData?.data ?? []) as unknown) as Package[];
+  useEffect(() => {
+    if (!hasValidCategory) {
       setSelectedPackage(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategoryId, categories.length]);
+  }, [hasValidCategory]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -158,112 +153,15 @@ export default function BannerSection() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/package-categories?limit=100');
-      const result = await response.json();
-      if (result.data && Array.isArray(result.data)) {
-        setCategories(result.data);
-
-        // Check package count for each category and filter out categories with zero packages
-        const categoriesWithPackagesPromises = result.data.map(
-          async (category: PackageCategory) => {
-            const categoryId =
-              category.category_id || category.id || category.categoryId;
-
-            if (!categoryId) return null;
-
-            try {
-              const packagesResponse = await fetch(
-                `/api/packages?category_id=${categoryId}&limit=1&status=active`
-              );
-              if (packagesResponse.ok) {
-                const packagesResult = await packagesResponse.json();
-                const packageCount = packagesResult.total || 0;
-                return packageCount > 0 ? category : null;
-              }
-              return null;
-            } catch (error) {
-              return null;
-            }
-          }
-        );
-
-        const categoriesWithPackagesResults = await Promise.all(
-          categoriesWithPackagesPromises
-        );
-        const filteredCategories = categoriesWithPackagesResults.filter(
-          (cat): cat is PackageCategory => cat !== null
-        );
-
-        setCategoriesWithPackages(filteredCategories);
-
-        // Set the first category with packages as active
-        if (filteredCategories.length > 0) {
-          const firstCategory = filteredCategories[0];
-          const categoryId =
-            firstCategory.category_id ||
-            firstCategory.id ||
-            firstCategory.categoryId;
-          if (categoryId) {
-            setActiveCategoryId(categoryId);
-          }
-        }
-      }
-    } catch (error) {}
-  };
-
-  const fetchPackages = async (categoryId: string) => {
-    if (!categoryId || categoryId === 'undefined' || categoryId === 'null') {
-      setPackages([]);
-      setLoadingPackages(false);
-      return;
-    }
-
-    try {
-      setLoadingPackages(true);
-      const response = await fetch(
-        `/api/packages?category_id=${categoryId}&limit=100`
-      );
-
-      if (!response.ok) {
-        setPackages([]);
-        setLoadingPackages(false);
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.data && Array.isArray(result.data)) {
-        setPackages(result.data);
-      } else {
-        setPackages([]);
-      }
-    } catch (error) {
-      setPackages([]);
-    } finally {
-      setLoadingPackages(false);
-    }
-  };
-
   const handleCategoryClick = (categoryId: string | null | undefined) => {
-    if (!categoryId || categoryId === 'undefined' || categoryId === 'null') {
-      return;
-    }
-
-    // Clear previous selection and packages
+    if (!categoryId || categoryId === 'undefined' || categoryId === 'null') return;
     setSelectedPackage(null);
-    setPackages([]);
     setShowPackageDropdown(false);
-    // Reset date selections
     setSelectedDate(undefined);
     setSelectedDateString('');
     setShowDatePicker(false);
     setShowDateDropdown(false);
-    // Set active category (this will trigger useEffect, but we'll also fetch directly)
     setActiveCategoryId(categoryId);
-    // Immediately fetch packages for the selected category
-    fetchPackages(categoryId);
   };
 
   const handlePackageSelect = (pkg: Package) => {
@@ -297,11 +195,10 @@ export default function BannerSection() {
   const getActiveCategoryType = (): number | null => {
     if (!activeCategoryId) return null;
     const activeCategory =
-      categoriesWithPackages.find(
+      catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ||
-      categories.find(
+      ) ?? allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -312,11 +209,10 @@ export default function BannerSection() {
   const isFlexibleDatePackage = (): boolean => {
     if (!activeCategoryId) return false;
     const activeCategory =
-      categoriesWithPackages.find(
+      catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ||
-      categories.find(
+      ) ?? allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -329,11 +225,10 @@ export default function BannerSection() {
   const isTourPackage = (): boolean => {
     if (!activeCategoryId) return false;
     const activeCategory =
-      categoriesWithPackages.find(
+      catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ||
-      categories.find(
+      ) ?? allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
@@ -403,18 +298,17 @@ export default function BannerSection() {
 
     // Get category slug from active category
     const activeCategory =
-      categoriesWithPackages.find(
+      catsWithPkgs.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
-      ) ||
-      categories.find(
+      ) ?? allCats.find(
         cat =>
           (cat.category_id || cat.id || cat.categoryId) === activeCategoryId
       );
 
     if (activeCategory) {
       // Convert category name to slug
-      const categorySlug = activeCategory.name
+      const categorySlug = String(activeCategory.name ?? '')
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
@@ -537,7 +431,7 @@ export default function BannerSection() {
               PLAN YOUR ESCAPE
             </h3>
             <div className='search_tabs'>
-              {categoriesWithPackages.map(category => {
+              {catsWithPkgs.map((category) => {
                 // Try different possible field names for category ID
                 const categoryId =
                   category.category_id ||

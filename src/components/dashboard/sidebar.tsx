@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Bus } from 'lucide-react';
 import { PriceMasterModal } from '@/app/(dashboard)/dashboard/price-master/PriceMasterClient';
 import { PlatformFeeModal } from '@/app/(dashboard)/dashboard/platform-fee/PlatformFeeClient';
 import { useHasRoleId } from '@/hooks/use-roles';
@@ -227,6 +228,15 @@ export function Sidebar() {
                 <path d='m15 14-3 3-3-3'></path>
               </svg>
               <span>PDF Enquiries</span>
+            </Link>
+
+            {/* Oman Transport Enquiries */}
+            <Link
+              href='/dashboard/oman-transport-enquiries'
+              className={`sidebar_item ${pathname === '/dashboard/oman-transport-enquiries' ? 'active' : ''}`}
+            >
+              <Bus size={24} className='lucide w-16 h-16' aria-hidden='true' />
+              <span>Oman Transport Enquiries</span>
             </Link>
 
             {/* Agents */}

@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import EditPackageClient from './EditPackageClient';
 import { toast } from 'sonner';
-import { AlertCircle, X, Trash2 } from 'lucide-react';
+import { AlertCircle, X, Trash2, Link2 } from 'lucide-react';
+import { type CRMPackageOption } from '@/components/crm/CRMPackageSelector';
+import { AttachCrmModal } from './AttachCrmModal';
 
 type Pkg = {
   package_id: string;
@@ -17,6 +19,7 @@ type Pkg = {
   child_price?: number | null;
   infant_price?: number | null;
   status?: string | null;
+  crm_package_id?: string | null;
   created_at: string | null;
 };
 
@@ -60,6 +63,12 @@ export default function CategoryPackagesClient({
   const [deletingPackage, setDeletingPackage] = useState<Set<string>>(
     new Set()
   );
+  const [attachCrmModal, setAttachCrmModal] = useState<{
+    packageId: string;
+    packageName: string;
+    crmPackageId: string | null;
+  } | null>(null);
+  const [savingCrmLink, setSavingCrmLink] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -245,6 +254,55 @@ export default function CategoryPackagesClient({
     setDeletePackageName('');
   };
 
+  const handleAttachCrmClick = (p: Pkg) => {
+    setAttachCrmModal({
+      packageId: p.package_id,
+      packageName: p.package_name,
+      crmPackageId: p.crm_package_id ?? null,
+    });
+  };
+
+  const handleSaveCrmLink = async (
+    selectedCrmPkg: CRMPackageOption | null
+  ) => {
+    if (!attachCrmModal) return;
+
+    setSavingCrmLink(true);
+    try {
+      const res = await fetch('/api/packages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: attachCrmModal.packageId,
+          crm_package_id: selectedCrmPkg?.id ?? null,
+        }),
+      });
+
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.error ?? 'Failed to save');
+      }
+
+      setRows(prev =>
+        prev.map(p =>
+          p.package_id === attachCrmModal.packageId
+            ? { ...p, crm_package_id: selectedCrmPkg?.id ?? null }
+            : p
+        )
+      );
+      toast.success(
+        selectedCrmPkg
+          ? 'CRM package linked successfully'
+          : 'CRM package unlinked'
+      );
+      setAttachCrmModal(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      setSavingCrmLink(false);
+    }
+  };
+
   return (
     <>
       {error && (
@@ -287,6 +345,7 @@ export default function CategoryPackagesClient({
               <th>Child</th>
               <th>Infant</th>
               <th>Status</th>
+              <th>CRM</th>
               <th>Description</th>
               <th>Created</th>
               <th></th>
@@ -295,14 +354,14 @@ export default function CategoryPackagesClient({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={11} className='table_loading'>
+                <td colSpan={12} className='table_loading'>
                   Loading...
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={11} className='table_empty'>
+                <td colSpan={12} className='table_empty'>
                   No packages found
                 </td>
               </tr>
@@ -346,6 +405,34 @@ export default function CategoryPackagesClient({
                         {p.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </div>
+                  </td>
+                  <td>
+                    {p.crm_package_id ? (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: '#16a34a',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Linked
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#6b7280' }}>—</span>
+                    )}
+                    <button
+                      type='button'
+                      className='btn_secondary btn_small'
+                      onClick={() => handleAttachCrmClick(p)}
+                      title={
+                        p.crm_package_id
+                          ? 'Change CRM package link'
+                          : 'Attach CRM package'
+                      }
+                      style={{ marginLeft: 6 }}
+                    >
+                      <Link2 size={14} />
+                    </button>
                   </td>
                   <td className='truncate'>{p.package_description}</td>
                   <td>
@@ -489,6 +576,17 @@ export default function CategoryPackagesClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Attach CRM Package Modal */}
+      {attachCrmModal && (
+        <AttachCrmModal
+          packageName={attachCrmModal.packageName}
+          initialCrmPackageId={attachCrmModal.crmPackageId}
+          onClose={() => setAttachCrmModal(null)}
+          onSave={handleSaveCrmLink}
+          saving={savingCrmLink}
+        />
       )}
 
       {/* Delete Confirmation Modal */}

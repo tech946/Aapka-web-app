@@ -1,0 +1,270 @@
+/* Customize Package PDF Preview - matches CRM quotation style, accent #fd6b06 */
+.customize-preview-container {
+  --accent: #fd6b06;
+  --border: #e5e7eb;
+  --text: #1a1a1a;
+  --text-muted: #6b7280;
+  --panel-2: #f9fafb;
+  --hover: #f3f4f6;
+  width: 100%;
+  background-color: #f5f5f5;
+  padding: 20px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.customize-preview-page {
+  background-color: #ffffff;
+  width: 210mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  margin: 0 auto 20px;
+  padding: 12mm;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  page-break-after: always;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background - Dubai sketch (same as CRM) */
+.customize-preview-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/images/dubai-vector.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.08;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.customize-preview-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+.customize-preview-page-content {
+  padding: 60px 12mm 60px 12mm;
+  overflow: visible;
+}
+
+/* First page */
+.customize-preview-page-first {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.customize-preview-top-section {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.customize-preview-logo-container {
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.customize-preview-logo-img {
+  max-width: 150px;
+  max-height: 100px;
+  object-fit: contain;
+}
+
+.customize-preview-itinerary-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.customize-preview-itinerary-details {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.customize-preview-detail-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.customize-preview-detail-label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.customize-preview-detail-value {
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Globe illustration section (same as CRM) */
+.customize-preview-illustration-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 40px 0;
+  min-height: 300px;
+}
+
+.customize-preview-illustration-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 400px;
+}
+
+.customize-preview-illustration-image img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+}
+
+.customize-preview-footer-section {
+  text-align: center;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.customize-preview-footer-company {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.customize-preview-footer-contact {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.customize-preview-footer-address,
+.customize-preview-footer-gst {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+/* Content page - timeline, badge, cart items */
+.customize-preview-timeline {
+  position: absolute;
+  left: 12mm;
+  top: 60px;
+  bottom: 60px;
+  width: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.customize-preview-type-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  margin-top: 24px;
+  position: relative;
+  z-index: 1;
+  padding-left: 0;
+}
+
+.customize-preview-type-badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--accent);
+  border-radius: 50%;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.customize-preview-type-badge {
+  padding: 4px 12px;
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.customize-preview-cart-item {
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+}
+
+.customize-preview-cart-item-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 4px;
+}
+
+.customize-preview-cart-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.customize-preview-cart-item-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.customize-preview-cart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.customize-preview-cart-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.customize-preview-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  padding-bottom: 8px;
+  min-height: 56px;
+  border-top: 2px solid var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.customize-preview-total-label {
+  color: #1a1a1a;
+}
+
+.customize-preview-total-value {
+  color: var(--accent);
+  font-weight: 700;
+}

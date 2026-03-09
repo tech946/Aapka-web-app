@@ -1,0 +1,142 @@
+/* PDF modal - matches CRM quotation-pdf-viewer style */
+.customize-pdf-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: customizePdfFadeIn 0.2s ease-in-out;
+}
+
+@keyframes customizePdfFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.customize-pdf-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: customizePdfSlideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes customizePdfSlideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.customize-pdf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.customize-pdf-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.customize-pdf-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.customize-pdf-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #fd6b06;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.customize-pdf-download-btn:hover:not(:disabled) {
+  background-color: #ea580c;
+}
+
+.customize-pdf-download-btn:disabled,
+.customize-pdf-download-btn.downloading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.customize-pdf-download-spinner {
+  animation: customizePdfSpin 1s linear infinite;
+}
+
+@keyframes customizePdfSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.customize-pdf-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.customize-pdf-close-btn:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.customize-pdf-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+}
+
+.customize-pdf-preview-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
