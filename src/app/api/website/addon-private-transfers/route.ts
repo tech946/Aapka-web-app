@@ -5,10 +5,13 @@ export const dynamic = 'force-dynamic';
 
 const CRM_BASE_URL = 'https://crm.aapkatourism.com';
 
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const STALE_GRACE_MS = 30 * 60 * 1000;
+
+const addonTransfersCache = new Map<string, { data: unknown; timestamp: number }>();
+
 /**
- * GET - Fetch addon private transfers from CRM API
- * Proxies to /api/website/addon-private-transfers
- * Query params: limit
+ * GET - Fetch addon private transfers from CRM API (with server-side cache)
  */
 export async function GET(req: NextRequest) {
   try {
@@ -22,6 +25,21 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const queryString = searchParams.toString();
+    const cacheKey = queryString || 'default';
+
+    const cached = addonTransfersCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
+
     const fullUrl = `${CRM_BASE_URL}/api/website/addon-private-transfers${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(fullUrl, {
@@ -36,6 +54,18 @@ export async function GET(req: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('CRM addon-private-transfers API error:', { status: response.status, error: errorText });
+
+      if (response.status === 429 && cached && now - cached.timestamp < STALE_GRACE_MS) {
+        return NextResponse.json(cached.data, {
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+            'X-Cache': 'STALE',
+          },
+        });
+      }
+
       return NextResponse.json(
         { error: 'Failed to fetch addon private transfers' },
         { status: response.status }
@@ -43,6 +73,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await response.json();
+    addonTransfersCache.set(cacheKey, { data, timestamp: now });
     return NextResponse.json(data, {
       headers: {
         'Access-Control-Allow-Origin': '*',

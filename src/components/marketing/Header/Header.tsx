@@ -308,6 +308,14 @@ export default function Header() {
                               </Link>
                             );
                           })}
+                          <Link
+                            href='/customize-your-package'
+                            className='header-dropdown-item'
+                            onClick={() => setShowPackagesDropdown(false)}
+                            style={{ display: 'none' }}
+                          >
+                            Customize Your Package
+                          </Link>
                         </div>
                       </>
                     )}
@@ -364,23 +372,6 @@ export default function Header() {
                   }`}
                 >
                   Submit your enquiry
-                </Link>
-              </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/customize-your-package'] = el;
-                }}
-                className={
-                  pathname === '/customize-your-package' ? 'active' : ''
-                }
-              >
-                <Link
-                  href='/customize-your-package'
-                  className={`header-nav-link ${
-                    pathname === '/customize-your-package' ? 'active' : ''
-                  }`}
-                >
-                  Customize Your Package
                 </Link>
               </li>
               <li
@@ -702,6 +693,17 @@ export default function Header() {
                         </Link>
                       );
                     })}
+                    <Link
+                      href='/customize-your-package'
+                      className='mobile-sidebar-dropdown-item'
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setMobilePackagesExpanded(false);
+                      }}
+                      style={{ display: 'none' }}
+                    >
+                      Customize Your Package
+                    </Link>
                   </div>
                 )}
               </div>
@@ -738,18 +740,6 @@ export default function Header() {
             >
               Submit your enquiry
             </Link>
-
-            {/* Customize Your Package - commented out
-            <Link
-              href='/customize-your-package'
-              className={`mobile-sidebar-link ${
-                pathname === '/customize-your-package' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Customize Your Package
-            </Link>
-            */}
 
             <Link
               href='/visas/apply-for-oman-visa'

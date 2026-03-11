@@ -73,11 +73,11 @@ export function useCategoriesWithPackages(limit = 100) {
   const isError = rest.isError || packageQueries.some(q => q.isError);
 
   return {
+    ...rest,
     data: filtered,
     categories,
     isLoading,
     isError,
-    ...rest,
   };
 }
 
@@ -116,10 +116,10 @@ export function useCategoriesWithPackageCount(limit = 100) {
   const isError = rest.isError || countQueries.some(q => q.isError);
 
   return {
+    ...rest,
     data: withCount,
     isLoading,
     isError,
-    ...rest,
   };
 }
 
@@ -201,7 +201,18 @@ export function useBlogs(limit = 10) {
   });
 }
 
-// --- Addons (deals, services, transfers) - used in cart, checkout, package details ---
+// --- Addons (deals, services, transfers) - heavily cached to avoid CRM 429s ---
+const ADDON_STALE_MS = 15 * 60 * 1000; // 15 min
+const ADDON_CACHE_MS = 30 * 60 * 1000; // 30 min
+
+const addonRetry = (failureCount: number, error: unknown) => {
+  const err = error as Error & { status?: number };
+  if (err?.status === 429) return false;
+  const msg = String(error instanceof Error ? error.message : '');
+  if (msg.includes('429')) return false;
+  return failureCount < 1;
+};
+
 export function useAddonDeals(nights?: number, enabled = true) {
   const params = nights != null && nights > 0 ? `?nights=${nights}` : '';
   return useQuery({
@@ -211,7 +222,13 @@ export function useAddonDeals(nights?: number, enabled = true) {
         r => r.addon_deals ?? []
       ),
     enabled,
-    ...defaultOptions,
+    staleTime: ADDON_STALE_MS,
+    gcTime: ADDON_CACHE_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: addonRetry,
+    retryDelay: 3000,
   });
 }
 
@@ -223,7 +240,13 @@ export function useAddonHotelServices(enabled = true) {
         '/api/website/addon-hotel-services'
       ).then(r => r.addon_hotel_services ?? []),
     enabled,
-    ...defaultOptions,
+    staleTime: ADDON_STALE_MS,
+    gcTime: ADDON_CACHE_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: addonRetry,
+    retryDelay: 3000,
   });
 }
 
@@ -235,28 +258,48 @@ export function useAddonPrivateTransfers(enabled = true) {
         '/api/website/addon-private-transfers'
       ).then(r => r.addon_private_transfers ?? []),
     enabled,
-    ...defaultOptions,
+    staleTime: ADDON_STALE_MS,
+    gcTime: ADDON_CACHE_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: addonRetry,
+    retryDelay: 3000,
   });
 }
 
-// --- CRM Package by ID (single package details - cached to reduce 429) ---
+// --- CRM Package by ID (heavily cached - CRM rate limits aggressively) ---
+const CRM_STALE_MS = 15 * 60 * 1000; // 15 min
+const CRM_CACHE_MS = 30 * 60 * 1000; // 30 min
 export function useCRMPackage(crmPackageId: string | null | undefined, enabled = true) {
   return useQuery({
     queryKey: ['marketing', 'crm-package', crmPackageId],
     queryFn: async () => {
-      const res = await fetcher<{ success?: boolean; data?: unknown }>(
-        `/api/website/crm/packages/${crmPackageId}`
-      );
-      return res.success && res.data ? res.data : null;
+      const res = await fetch(`/api/website/crm/packages/${crmPackageId}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = new Error(`Fetch failed: ${res.status}`);
+        (err as Error & { status?: number }).status = res.status;
+        throw err;
+      }
+      const json = (await res.json()) as { success?: boolean; data?: unknown };
+      return json.success && json.data ? json.data : null;
     },
     enabled: !!crmPackageId && enabled,
+    staleTime: CRM_STALE_MS,
+    gcTime: CRM_CACHE_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     retry: (failureCount, error) => {
-      // Don't retry on 429 (rate limit) - would worsen the issue
+      const err = error as Error & { status?: number };
+      if (err?.status === 429) return false;
       const msg = String(error instanceof Error ? error.message : '');
       if (msg.includes('429')) return false;
-      return failureCount < 2;
+      return failureCount < 1;
     },
-    ...defaultOptions,
+    retryDelay: 2000,
   });
 }
 

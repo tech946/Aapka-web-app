@@ -242,67 +242,10 @@ export function CRMPackageItineraryPreview({
   const { data, isLoading: loading, error: queryError, isError } = useCRMPackage(crmPackageId);
   const error = isError || queryError ? 'Failed to load itinerary' : null;
 
-  const packageBase =
-    isSoloTraveller && pkg.solo_traveller_enabled
-      ? (pkg.solo_traveller_price ?? pkg.adult_price ?? pkg.package_price ?? 0)
-      : (pkg.adult_price != null && pkg.adult_price > 0) ||
-          (pkg.child_price != null && pkg.child_price > 0) ||
-          (pkg.infant_price != null && pkg.infant_price > 0)
-        ? (persons.adults ?? 0) * (pkg.adult_price ?? 0) +
-          (persons.children ?? 0) * (pkg.child_price ?? 0) +
-          (persons.infants ?? 0) * (pkg.infant_price ?? 0)
-        : pkg.package_price ?? 0;
-
-  const addonDealsPrice = calcAddonPrice(selectedDeals, persons);
-  const addonServicesPrice = calcAddonPrice(selectedServices, persons);
-  const addonTransfersPrice = calcAddonPrice(selectedTransfers, persons);
-  const total = packageBase + addonDealsPrice + addonServicesPrice + addonTransfersPrice;
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    try {
-      return format(new Date(dateString), 'dd MMM yyyy');
-    } catch {
-      return dateString;
-    }
-  };
-
-  const formatTransferOption = (option?: string): string => {
-    if (!option) return 'Without Transfers';
-    const map: Record<string, string> = {
-      without_transfers: 'Without Transfers',
-      with_shared_transfer: 'With Shared Transfer',
-      with_private_transfer: 'With Private Transfer',
-    };
-    return map[option] || option;
-  };
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return '';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}:${mins.toString().padStart(2, '0')} hours (Approx)`;
-    if (hours > 0) return `${hours}:00 hours (Approx)`;
-    return `${mins} minutes (Approx)`;
-  };
-
-  if (loading) {
-    return (
-      <div className="crm-itinerary-preview-loading">
-        <p>Loading itinerary...</p>
-      </div>
-    );
-  }
   const packageData = data as CRMPackageData | null | undefined;
-  if (error || !packageData) {
-    return (
-      <div className="crm-itinerary-preview-error">
-        <p>{error || 'Could not load package itinerary'}</p>
-      </div>
-    );
-  }
+  const hasData = !loading && !error && packageData;
 
-  const opt = packageData.package_options?.[0];
+  const opt = hasData ? packageData?.package_options?.[0] : undefined;
   const items: PackageItem[] = opt?.package_items ?? [];
   const hotels = items.filter((i) => i.item_type === 'hotel');
   const activities = items.filter((i) => i.item_type === 'activity');
@@ -318,22 +261,9 @@ export function CRMPackageItineraryPreview({
     };
   });
 
-  const firstCheckIn = hotels[0]?.check_in;
-  const lastCheckOut = hotels.length > 0 ? (hotels[hotels.length - 1]?.check_out ?? hotels[0]?.check_out) : undefined;
-  const totalNights = hotels.reduce((sum, h) => sum + (h.nights ?? 0), 0);
-  const totalDays = totalNights > 0 ? totalNights + 1 : 0;
-
-  const at = packageData.airportTransfer;
+  const at = hasData ? packageData?.airportTransfer : undefined;
   const hasPickup = !!(at && at.pickupDestinationAreaName);
   const hasDropoff = !!(at && at.dropoffOriginAreaName);
-
-  const paxLabel = [
-    persons.adults > 0 ? `${persons.adults} Adult${persons.adults !== 1 ? 's' : ''}` : '',
-    persons.children > 0 ? `${persons.children} Child${persons.children !== 1 ? 'ren' : ''}` : '',
-    persons.infants > 0 ? `${persons.infants} Infant${persons.infants !== 1 ? 's' : ''}` : '',
-  ]
-    .filter(Boolean)
-    .join(', ') || '0 Guests';
 
   const addonDealsForPreview: AddonDealForPreview[] = selectedDeals.map((d) => ({
     id: d.id,
@@ -389,6 +319,78 @@ export function CRMPackageItineraryPreview({
       addonServicesForPreview,
     ]
   );
+
+  const packageBase =
+    isSoloTraveller && pkg.solo_traveller_enabled
+      ? (pkg.solo_traveller_price ?? pkg.adult_price ?? pkg.package_price ?? 0)
+      : (pkg.adult_price != null && pkg.adult_price > 0) ||
+          (pkg.child_price != null && pkg.child_price > 0) ||
+          (pkg.infant_price != null && pkg.infant_price > 0)
+        ? (persons.adults ?? 0) * (pkg.adult_price ?? 0) +
+          (persons.children ?? 0) * (pkg.child_price ?? 0) +
+          (persons.infants ?? 0) * (pkg.infant_price ?? 0)
+        : pkg.package_price ?? 0;
+
+  const addonDealsPrice = calcAddonPrice(selectedDeals, persons);
+  const addonServicesPrice = calcAddonPrice(selectedServices, persons);
+  const addonTransfersPrice = calcAddonPrice(selectedTransfers, persons);
+  const total = packageBase + addonDealsPrice + addonServicesPrice + addonTransfersPrice;
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      return format(new Date(dateString), 'dd MMM yyyy');
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTransferOption = (option?: string): string => {
+    if (!option) return 'Without Transfers';
+    const map: Record<string, string> = {
+      without_transfers: 'Without Transfers',
+      with_shared_transfer: 'With Shared Transfer',
+      with_private_transfer: 'With Private Transfer',
+    };
+    return map[option] || option;
+  };
+
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return '';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) return `${hours}:${mins.toString().padStart(2, '0')} hours (Approx)`;
+    if (hours > 0) return `${hours}:00 hours (Approx)`;
+    return `${mins} minutes (Approx)`;
+  };
+
+  if (loading) {
+    return (
+      <div className="crm-itinerary-preview-loading">
+        <p>Loading itinerary...</p>
+      </div>
+    );
+  }
+  if (error || !packageData) {
+    return (
+      <div className="crm-itinerary-preview-error">
+        <p>{error || 'Could not load package itinerary'}</p>
+      </div>
+    );
+  }
+
+  const firstCheckIn = hotels[0]?.check_in;
+  const lastCheckOut = hotels.length > 0 ? (hotels[hotels.length - 1]?.check_out ?? hotels[0]?.check_out) : undefined;
+  const totalNights = hotels.reduce((sum, h) => sum + (h.nights ?? 0), 0);
+  const totalDays = totalNights > 0 ? totalNights + 1 : 0;
+
+  const paxLabel = [
+    persons.adults > 0 ? `${persons.adults} Adult${persons.adults !== 1 ? 's' : ''}` : '',
+    persons.children > 0 ? `${persons.children} Child${persons.children !== 1 ? 'ren' : ''}` : '',
+    persons.infants > 0 ? `${persons.infants} Infant${persons.infants !== 1 ? 's' : ''}` : '',
+  ]
+    .filter(Boolean)
+    .join(', ') || '0 Guests';
 
   const renderBlock = (block: ContentBlock) => {
     switch (block.type) {
@@ -473,7 +475,7 @@ export function CRMPackageItineraryPreview({
               )}
               <div className="quotation-cart-detail-row">
                 <span className="quotation-detail-value">
-                  👥 {[(h.adults || 0) > 0 ? `${h.adults} Adult${(h.adults || 0) !== 1 ? 's' : ''}` : '', (h.children || 0) > 0 ? `${h.children} Child${(h.children || 0) !== 1 ? 'ren' : ''}` : '', (h.infants || 0) > 0 ? `${h.infants} Infant${(h.infants || 0) !== 1 ? 's' : ''}` : ''].filter(Boolean).join(', ') || '0 Guests'}
+                  👥 {paxLabel}
                 </span>
               </div>
               <div style={{ borderTop: '1px dashed var(--border)', margin: '8px 0', paddingTop: '8px' }} />
@@ -507,7 +509,7 @@ export function CRMPackageItineraryPreview({
             <div className="quotation-cart-item-details">
               <div className="quotation-cart-detail-row">
                 <span className="quotation-detail-value">
-                  {[(v.adults ?? 0) > 0 ? `${v.adults} Adult${(v.adults ?? 0) > 1 ? 's' : ''}` : '', (v.children ?? 0) > 0 ? `${v.children} Child${(v.children ?? 0) > 1 ? 'ren' : ''}` : '', (v.infants ?? 0) > 0 ? `${v.infants} Infant${(v.infants ?? 0) > 1 ? 's' : ''}` : ''].filter(Boolean).join(', ') || `${v.quantity ?? 1} x`}
+                  {paxLabel}
                 </span>
               </div>
             </div>
@@ -561,7 +563,7 @@ export function CRMPackageItineraryPreview({
                 <div className="quotation-cart-detail-row">
                   <span className="quotation-detail-label">No. of Pax:</span>
                   <span className="quotation-detail-value">
-                    {[(act.adults ?? 0) > 0 ? `Adult ${act.adults}` : '', (act.children ?? 0) > 0 ? `Child ${act.children}` : '', (act.infants ?? 0) > 0 ? `Infant ${act.infants}` : ''].filter(Boolean).join(', ')}
+                    {paxLabel}
                   </span>
                 </div>
               </div>

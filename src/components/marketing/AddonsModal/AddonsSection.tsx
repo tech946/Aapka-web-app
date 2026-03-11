@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, ChevronDown, Gift, Bed, Car } from 'lucide-react';
+import { useAddonDeals, useAddonHotelServices, useAddonPrivateTransfers } from '@/hooks/use-marketing-queries';
 import './addon-modal.css';
 
 interface AddonsSectionProps {
@@ -20,10 +21,9 @@ interface AddonsSectionProps {
   isMobile: boolean;
 }
 
-// Simple in-memory cache for the current browser session
-let cachedDeals: Array<{ id: string; name: string; adult_price: number; category_name: string | null }> | null = null;
-let cachedServices: Array<{ id: string; name: string; adult_price: number }> | null = null;
-let cachedTransfers: Array<{ id: string; name: string; adult_price: number; pax_type: string; fixed_pax: number | null; min_pax: number | null; max_pax: number | null }> | null = null;
+type DealItem = { id: string; name: string; adult_price: number; category_name: string | null };
+type ServiceItem = { id: string; name: string; adult_price: number };
+type TransferItem = { id: string; name: string; adult_price: number; pax_type: string; fixed_pax: number | null; min_pax: number | null; max_pax: number | null };
 
 export function AddonsSection({
   selectedDeals,
@@ -38,92 +38,20 @@ export function AddonsSection({
   nights = 0,
   isMobile,
 }: AddonsSectionProps) {
-  const [deals, setDeals] = useState<Array<{ id: string; name: string; adult_price: number; category_name: string | null }>>([]);
-  const [services, setServices] = useState<Array<{ id: string; name: string; adult_price: number }>>([]);
-  const [transfers, setTransfers] = useState<Array<{ id: string; name: string; adult_price: number; pax_type: string; fixed_pax: number | null; min_pax: number | null; max_pax: number | null }>>([]);
-  const [loadingDeals, setLoadingDeals] = useState(false);
-  const [loadingServices, setLoadingServices] = useState(false);
-  const [loadingTransfers, setLoadingTransfers] = useState(false);
+  const { data: dealsRaw = [], isLoading: loadingDeals } = useAddonDeals(nights);
+  const { data: servicesRaw = [], isLoading: loadingServices } = useAddonHotelServices();
+  const { data: transfersRaw = [], isLoading: loadingTransfers } = useAddonPrivateTransfers();
+
+  const deals = (Array.isArray(dealsRaw) ? dealsRaw : []) as DealItem[];
+  const services = (Array.isArray(servicesRaw) ? servicesRaw : []) as ServiceItem[];
+  const transfers = (Array.isArray(transfersRaw) ? transfersRaw : []) as TransferItem[];
+
   const [openDropdown, setOpenDropdown] = useState<'deals' | 'services' | 'transfers' | null>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
   const dealsRef = useRef<HTMLDivElement | null>(null);
   const servicesRef = useRef<HTMLDivElement | null>(null);
   const transfersRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    fetchDeals();
-    fetchServices();
-    fetchTransfers();
-  }, []);
-
-  const fetchDeals = async () => {
-    if (cachedDeals) {
-      setDeals(cachedDeals);
-      return;
-    }
-    setLoadingDeals(true);
-    try {
-      const params = new URLSearchParams();
-      if (nights > 0) params.set('nights', String(nights));
-      const res = await fetch(`/api/website/addon-deals?${params}`);
-      const data = await res.json();
-      if (res.ok && data.addon_deals) {
-        cachedDeals = data.addon_deals;
-        setDeals(data.addon_deals);
-      } else {
-        setDeals([]);
-      }
-    } catch {
-      setDeals([]);
-    } finally {
-      setLoadingDeals(false);
-    }
-  };
-
-  const fetchServices = async () => {
-    if (cachedServices) {
-      setServices(cachedServices);
-      return;
-    }
-    setLoadingServices(true);
-    try {
-      const res = await fetch('/api/website/addon-hotel-services');
-      const data = await res.json();
-      if (res.ok && data.addon_hotel_services) {
-        cachedServices = data.addon_hotel_services;
-        setServices(data.addon_hotel_services);
-      } else {
-        setServices([]);
-      }
-    } catch {
-      setServices([]);
-    } finally {
-      setLoadingServices(false);
-    }
-  };
-
-  const fetchTransfers = async () => {
-    if (cachedTransfers) {
-      setTransfers(cachedTransfers);
-      return;
-    }
-    setLoadingTransfers(true);
-    try {
-      const res = await fetch('/api/website/addon-private-transfers');
-      const data = await res.json();
-      if (res.ok && data.addon_private_transfers) {
-        cachedTransfers = data.addon_private_transfers;
-        setTransfers(data.addon_private_transfers);
-      } else {
-        setTransfers([]);
-      }
-    } catch {
-      setTransfers([]);
-    } finally {
-      setLoadingTransfers(false);
-    }
-  };
 
   const toggleDeal = (id: string) => {
     if (onToggleDeal) {

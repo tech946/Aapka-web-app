@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, User, Mail, Phone } from 'lucide-react';
+import { X, User, Mail, Phone, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PdfDownloadModalProps {
@@ -89,10 +89,21 @@ export default function PdfDownloadModal({
     <div className={overlayClass} onClick={onClose}>
       <div className={modalClass} onClick={e => e.stopPropagation()}>
         <div className={headerClass}>
-          <h3 className={titleClass}>Download PDF Brochure</h3>
-          <button className={closeClass} onClick={onClose} aria-label='Close'>
-            <X className={isMobile ? 'close-icon' : 'desktop-booking-modal-close-icon'} />
-          </button>
+          <h3 className={titleClass}>Send PDF Brochure</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type='button'
+              className='pdf-modal-view-pdf-btn'
+              onClick={() => window.open(pdfUrl, '_blank', 'noopener,noreferrer')}
+              title='Open PDF in new tab'
+            >
+              <FileDown size={18} />
+              View PDF
+            </button>
+            <button className={closeClass} onClick={onClose} aria-label='Close'>
+              <X className={isMobile ? 'close-icon' : 'desktop-booking-modal-close-icon'} />
+            </button>
+          </div>
         </div>
         <div className={contentClass}>
           <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#6b7280' }}>

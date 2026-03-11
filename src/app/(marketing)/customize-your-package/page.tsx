@@ -235,10 +235,10 @@ export default function CustomizeYourPackagePage() {
                   type="button"
                   className="customize-page-download-pdf"
                   onClick={() => setShowPdfModal(true)}
-                  title="Preview & Download PDF"
+                  title="PDF Preview"
                 >
                   <FileDown size={18} />
-                  Download PDF
+                  PDF Preview
                 </button>
               </>
             ) : (
@@ -269,10 +269,10 @@ export default function CustomizeYourPackagePage() {
                 type="button"
                 className="customize-page-download-pdf"
                 onClick={() => setShowPdfModal(true)}
-                title="Preview & Download PDF"
+                title="PDF Preview"
               >
                 <FileDown size={18} />
-                Download PDF
+                PDF Preview
               </button>
             )}
           </aside>
