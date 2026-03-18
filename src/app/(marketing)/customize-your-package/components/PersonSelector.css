@@ -70,9 +70,36 @@
   gap: 12px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .customize-person-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+  .customize-person-grid::-webkit-scrollbar {
+    height: 4px;
+  }
+  .customize-person-grid::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+  }
+  .customize-person-item {
+    flex: 0 0 auto;
+    min-width: 100px;
+    scroll-snap-align: start;
+    padding: 10px 12px;
+  }
+  .customize-person-name {
+    font-size: 0.8rem;
+  }
+  .customize-person-count {
+    font-size: 1.1rem;
   }
 }
 

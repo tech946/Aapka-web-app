@@ -18,6 +18,13 @@ interface CustomizePackagePDFModalProps {
   selectedDeals: AddonDeal[];
   selectedServices: AddonHotelService[];
   selectedTransfers: AddonPrivateTransfer[];
+  packageBasePriceOverride?: number;
+  hotelSurchargeTotal?: number;
+  extraBedChildNoBedTotal?: number;
+  /** Effective nights (base + hotel service extension) - matches sidebar */
+  effectiveNights?: number;
+  /** Effective days (nights + 1) - matches sidebar */
+  effectiveDays?: number;
 }
 
 export function CustomizePackagePDFModal({
@@ -28,6 +35,11 @@ export function CustomizePackagePDFModal({
   selectedDeals,
   selectedServices,
   selectedTransfers,
+  packageBasePriceOverride,
+  hotelSurchargeTotal = 0,
+  extraBedChildNoBedTotal = 0,
+  effectiveNights,
+  effectiveDays,
 }: CustomizePackagePDFModalProps) {
   const isMobile = useIsMobile();
   const [showFormModal, setShowFormModal] = useState(false);
@@ -70,14 +82,25 @@ export function CustomizePackagePDFModal({
     }
     setSubmitting(true);
     try {
+      const wrapper = previewRef.current;
+      wrapper.classList.add('customize-pdf-export-mode');
+      await new Promise((r) => setTimeout(r, 50));
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
-        margin: [5, 5, 5, 5],
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        margin: [0, 0, 0, 0],
+        image: { type: 'png', quality: 1 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'css' },
       };
-      const blob = await html2pdf().set(opt).from(previewRef.current).outputPdf('blob');
+      const blob = await html2pdf().set(opt).from(wrapper).outputPdf('blob');
+      wrapper.classList.remove('customize-pdf-export-mode');
       const formData = new FormData();
       formData.append('file', blob, `package-${pkg.package_id || 'custom'}.pdf`);
       formData.append('folder', 'customize-pdf');
@@ -121,6 +144,7 @@ export function CustomizePackagePDFModal({
       console.error('Send PDF failed:', err);
       toast.error('Failed to send PDF. Please try again.');
     } finally {
+      previewRef.current?.classList.remove('customize-pdf-export-mode');
       setSubmitting(false);
     }
   };
@@ -157,6 +181,11 @@ export function CustomizePackagePDFModal({
                 selectedDeals={selectedDeals}
                 selectedServices={selectedServices}
                 selectedTransfers={selectedTransfers}
+                packageBasePriceOverride={packageBasePriceOverride}
+                hotelSurchargeTotal={hotelSurchargeTotal}
+                extraBedChildNoBedTotal={extraBedChildNoBedTotal}
+                effectiveNightsOverride={effectiveNights}
+                effectiveDaysOverride={effectiveDays}
               />
             ) : (
               <CustomizePackagePreview
@@ -166,6 +195,8 @@ export function CustomizePackagePDFModal({
                 selectedDeals={selectedDeals}
                 selectedServices={selectedServices}
                 selectedTransfers={selectedTransfers}
+                effectiveNightsOverride={effectiveNights}
+                effectiveDaysOverride={effectiveDays}
               />
             )}
           </div>

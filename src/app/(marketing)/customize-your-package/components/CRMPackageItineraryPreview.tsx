@@ -213,6 +213,20 @@ function calcAddonPrice(
   );
 }
 
+function calcAddonServicesPrice(
+  services: Array<AddonHotelService & { quantity?: number }>,
+  persons: PersonCounts
+): number {
+  return services.reduce((sum, s) => {
+    const qty = s.quantity ?? 1;
+    const unitPrice =
+      (persons.adults ?? 0) * (s.adult_price ?? 0) +
+      (persons.children ?? 0) * (s.child_price ?? 0) +
+      (persons.infants ?? 0) * (s.infant_price ?? 0);
+    return sum + unitPrice * qty;
+  }, 0);
+}
+
 function getDisplayImageUrl(url: string | undefined): string {
   if (!url) return '';
   if (url.startsWith('http')) return url;
@@ -228,6 +242,16 @@ interface CRMPackageItineraryPreviewProps {
   selectedDeals: AddonDeal[];
   selectedServices: AddonHotelService[];
   selectedTransfers: AddonPrivateTransfer[];
+  /** Override package base when group dates apply (from parent) */
+  packageBasePriceOverride?: number;
+  /** Hotel surcharge total to add to grand total */
+  hotelSurchargeTotal?: number;
+  /** Extra bed / child no bed total */
+  extraBedChildNoBedTotal?: number;
+  /** Effective nights (base + hotel service extension) - matches sidebar */
+  effectiveNightsOverride?: number;
+  /** Effective days (nights + 1) - matches sidebar */
+  effectiveDaysOverride?: number;
 }
 
 export function CRMPackageItineraryPreview({
@@ -238,6 +262,11 @@ export function CRMPackageItineraryPreview({
   selectedDeals,
   selectedServices,
   selectedTransfers,
+  packageBasePriceOverride,
+  hotelSurchargeTotal = 0,
+  extraBedChildNoBedTotal = 0,
+  effectiveNightsOverride,
+  effectiveDaysOverride,
 }: CRMPackageItineraryPreviewProps) {
   const { data, isLoading: loading, error: queryError, isError } = useCRMPackage(crmPackageId);
   const error = isError || queryError ? 'Failed to load itinerary' : null;
@@ -321,7 +350,8 @@ export function CRMPackageItineraryPreview({
   );
 
   const packageBase =
-    isSoloTraveller && pkg.solo_traveller_enabled
+    packageBasePriceOverride ??
+    (isSoloTraveller && pkg.solo_traveller_enabled
       ? (pkg.solo_traveller_price ?? pkg.adult_price ?? pkg.package_price ?? 0)
       : (pkg.adult_price != null && pkg.adult_price > 0) ||
           (pkg.child_price != null && pkg.child_price > 0) ||
@@ -329,12 +359,12 @@ export function CRMPackageItineraryPreview({
         ? (persons.adults ?? 0) * (pkg.adult_price ?? 0) +
           (persons.children ?? 0) * (pkg.child_price ?? 0) +
           (persons.infants ?? 0) * (pkg.infant_price ?? 0)
-        : pkg.package_price ?? 0;
+        : pkg.package_price ?? 0);
 
   const addonDealsPrice = calcAddonPrice(selectedDeals, persons);
-  const addonServicesPrice = calcAddonPrice(selectedServices, persons);
+  const addonServicesPrice = calcAddonServicesPrice(selectedServices, persons);
   const addonTransfersPrice = calcAddonPrice(selectedTransfers, persons);
-  const total = packageBase + addonDealsPrice + addonServicesPrice + addonTransfersPrice;
+  const total = packageBase + addonDealsPrice + addonServicesPrice + addonTransfersPrice + hotelSurchargeTotal + extraBedChildNoBedTotal;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -381,8 +411,9 @@ export function CRMPackageItineraryPreview({
 
   const firstCheckIn = hotels[0]?.check_in;
   const lastCheckOut = hotels.length > 0 ? (hotels[hotels.length - 1]?.check_out ?? hotels[0]?.check_out) : undefined;
-  const totalNights = hotels.reduce((sum, h) => sum + (h.nights ?? 0), 0);
-  const totalDays = totalNights > 0 ? totalNights + 1 : 0;
+  const baseNightsFromHotels = hotels.reduce((sum, h) => sum + (h.nights ?? 0), 0);
+  const totalNights = effectiveNightsOverride ?? baseNightsFromHotels;
+  const totalDays = effectiveDaysOverride ?? (totalNights > 0 ? totalNights + 1 : 0);
 
   const paxLabel = [
     persons.adults > 0 ? `${persons.adults} Adult${persons.adults !== 1 ? 's' : ''}` : '',
@@ -481,16 +512,22 @@ export function CRMPackageItineraryPreview({
               <div style={{ borderTop: '1px dashed var(--border)', margin: '8px 0', paddingTop: '8px' }} />
               {(() => {
                 const rooms = h.rooms ?? hd?.rooms ?? 1;
-                const extraBeds = hd?.extraBedCount ?? 0;
-                const childNoBed = hd?.childNoBedCount ?? 0;
+                const roomLabel = h.option_title
+                  ? String(h.option_title).toLowerCase()
+                  : 'room';
                 const roomParts = [
-                  rooms > 1 ? `${rooms} rooms` : '1 room',
-                  extraBeds > 0 ? `${extraBeds} extra bed${extraBeds !== 1 ? 's' : ''}` : null,
-                  childNoBed > 0 ? `${childNoBed} child no bed${childNoBed !== 1 ? 's' : ''}` : null,
+                  rooms > 1 ? `${rooms} ${roomLabel}s` : roomLabel,
+                  (hd?.extraBedCount ?? 0) > 0
+                    ? `${hd?.extraBedCount ?? 0} extra bed${(hd?.extraBedCount ?? 0) !== 1 ? 's' : ''}`
+                    : null,
+                  (hd?.childNoBedCount ?? 0) > 0
+                    ? `${hd?.childNoBedCount ?? 0} child no bed${(hd?.childNoBedCount ?? 0) !== 1 ? 's' : ''}`
+                    : null,
                 ].filter(Boolean);
-                return roomParts.length > 0 ? (
+                const roomDetail = roomParts.join(', ');
+                return roomDetail ? (
                   <div className="quotation-cart-detail-row">
-                    <span className="quotation-detail-value">{roomParts.join(', ')}</span>
+                    <span className="quotation-detail-value">{roomDetail}</span>
                   </div>
                 ) : null;
               })()}
@@ -819,7 +856,7 @@ export function CRMPackageItineraryPreview({
         {hasTotalBlock && (
           <div className="crm-itinerary-preview-total-row">
             <span className="crm-itinerary-preview-total-label">Final Amount</span>
-            <span className="crm-itinerary-preview-total-value">AED {total.toLocaleString()}</span>
+            <span className="crm-itinerary-preview-total-value">AED {total.toFixed(2)}</span>
           </div>
         )}
       </div>
@@ -839,18 +876,14 @@ export function CRMPackageItineraryPreview({
         <div className="crm-itinerary-preview-itinerary-details">
           {(firstCheckIn || lastCheckOut) && (
             <div className="crm-itinerary-preview-dates-text">
-              Start Date : {firstCheckIn ? formatDate(firstCheckIn) : 'N/A'} End Date :{' '}
-              {lastCheckOut ? formatDate(lastCheckOut) : 'N/A'}
+              Start Date : {firstCheckIn ? formatDate(firstCheckIn) : 'N/A'}{' '}
+              End Date : {lastCheckOut ? formatDate(lastCheckOut) : 'N/A'}
             </div>
           )}
           {totalNights > 0 && (
             <div className="crm-itinerary-preview-nights-text">
               Duration: {totalNights} Night{totalNights !== 1 ? 's' : ''} {totalDays} Day{totalDays !== 1 ? 's' : ''}
             </div>
-          )}
-          <div className="crm-itinerary-preview-nights-text">Travellers: {paxLabel}</div>
-          {isSoloTraveller && (
-            <div className="crm-itinerary-preview-nights-text">Type: Solo Traveller</div>
           )}
         </div>
         <div className="crm-itinerary-preview-illustration-section">
@@ -859,10 +892,10 @@ export function CRMPackageItineraryPreview({
           </div>
         </div>
         <div className="crm-itinerary-preview-footer-section">
-          <div className="crm-itinerary-preview-footer-company">Aapka Tourism</div>
-          <div className="crm-itinerary-preview-footer-contact">+971 56 780 9460</div>
-          <div className="crm-itinerary-preview-footer-address">Dubai, UAE</div>
-          <div className="crm-itinerary-preview-footer-gst">GST applicable as per UAE law</div>
+          <div className="crm-itinerary-preview-footer-company">Crafted by: A A P K A TOURISM LLC</div>
+          <div className="crm-itinerary-preview-footer-contact">info@aapkatourism.com, +91 7042857575</div>
+          <div className="crm-itinerary-preview-footer-address">1522 B, 15th Floor, Hemkunt Chambers 89, Nehru Place, New Delhi, 110019</div>
+          <div className="crm-itinerary-preview-footer-gst">GST Number: 07ABDCA8821C1ZY</div>
         </div>
       </div>
 

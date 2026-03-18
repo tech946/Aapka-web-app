@@ -1,13 +1,14 @@
-/* CRM Package Itinerary PDF Preview - matches CRM quotation/PackagePreview design */
+/* CRM Package Itinerary PDF Preview - matches CRM PackagePreview / package with addons design */
 
 .crm-itinerary-preview-container {
   --accent: rgb(255, 76, 0);
   --border: #e5e7eb;
   --text: #1a1a1a;
   --text-muted: #6b7280;
+  --panel-2: #f9fafb;
   width: 100%;
-  background-color: #f5f5f5;
-  padding: 20px;
+  background-color: #ffffff;
+  padding: 0;
   margin: 0;
   box-sizing: border-box;
 }
@@ -23,8 +24,12 @@
   box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   page-break-after: always;
+  page-break-inside: avoid;
+  break-after: page;
+  break-inside: avoid;
   position: relative;
   overflow: hidden;
+  display: block;
 }
 
 .crm-itinerary-preview-page::before {
@@ -46,6 +51,38 @@
 .crm-itinerary-preview-page > * {
   position: relative;
   z-index: 1;
+}
+
+.crm-itinerary-preview-page + .crm-itinerary-preview-page {
+  margin-top: 0;
+}
+
+.crm-itinerary-preview-page:last-child {
+  page-break-after: auto !important;
+  break-after: auto !important;
+  margin-bottom: 0;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  .crm-itinerary-preview-container {
+    background: #fff !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .crm-itinerary-preview-page {
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
+  .crm-itinerary-preview-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
 }
 
 .crm-itinerary-preview-page-first {
@@ -70,16 +107,17 @@
 
 .crm-itinerary-preview-logo-img {
   max-width: 150px;
-  max-height: 100px;
+  max-height: 120px;
   object-fit: contain;
+  height: auto;
 }
 
 .crm-itinerary-preview-itinerary-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 8px 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .crm-itinerary-preview-itinerary-details {
@@ -87,11 +125,18 @@
   margin-bottom: 24px;
 }
 
-.crm-itinerary-preview-dates-text,
+.crm-itinerary-preview-dates-text {
+  font-size: 15px;
+  color: #4b5563;
+  line-height: 1.8;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
 .crm-itinerary-preview-nights-text {
   font-size: 14px;
   color: var(--text-muted);
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   font-weight: 500;
 }
 
@@ -122,13 +167,25 @@
   font-weight: 600;
   color: #1a1a1a;
   margin-bottom: 8px;
+  letter-spacing: 1px;
 }
 
-.crm-itinerary-preview-footer-contact,
-.crm-itinerary-preview-footer-address,
-.crm-itinerary-preview-footer-gst {
-  font-size: 12px;
+.crm-itinerary-preview-footer-contact {
+  font-size: 11px;
   color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.crm-itinerary-preview-footer-address {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.crm-itinerary-preview-footer-gst {
+  font-size: 10px;
+  color: #9ca3af;
   margin-bottom: 8px;
 }
 
@@ -155,7 +212,137 @@
 }
 
 .crm-itinerary-preview-page-content .quotation-type-badge-header {
-  margin-left: -28px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+  margin-left: -28px !important;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.crm-itinerary-preview-page-content .quotation-type-badge-icon {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  background: var(--accent) !important;
+  border-radius: 50% !important;
+  color: #ffffff !important;
+  flex-shrink: 0 !important;
+  z-index: 2 !important;
+}
+
+.crm-itinerary-preview-page-content .quotation-type-badge {
+  display: inline-block !important;
+  padding: 4px 12px !important;
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-radius: 16px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.crm-itinerary-preview-page-content .quotation-day-header {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 12px;
+  position: relative;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.crm-itinerary-preview-page-content .quotation-day-header::before {
+  top: 16px;
+  position: absolute;
+  display: inline-block;
+  content: " ";
+  left: -6px;
+  right: auto;
+  height: 12px;
+  width: 12px;
+  transform: rotate(45deg);
+  background: var(--accent) !important;
+}
+
+.crm-itinerary-preview-page-content .quotation-day-title {
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.crm-itinerary-preview-page-content .quotation-airport-transfer-item,
+.crm-itinerary-preview-page-content .quotation-cart-item {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Cart items - fixed heights per PDF_PAGINATION (HOTEL: 200, ADDON_DEAL: 90, ADDON_TRANSFER: 75, ADDON_HOTEL_SERVICE: 75, ITINERARY_ACTIVITY: 155) */
+.crm-itinerary-preview-page-content .quotation-cart-item {
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
+  min-height: 0;
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item:has(.quotation-cart-item-image) {
+  /* Hotel/activity/addon deal with image - let content flow, pagination uses fixed heights */
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+
+.crm-itinerary-preview-page-content .quotation-cart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.crm-itinerary-preview-page-content .quotation-hotel-rating {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+/* Transfer pickup/dropoff - match CRM (pickup orange tint, dropoff white) */
+.crm-itinerary-preview-page-content .quotation-transfer-pickup {
+  background: rgba(255, 76, 0, 0.08);
+  border: 1px solid rgba(255, 76, 0, 0.3);
+}
+
+.crm-itinerary-preview-page-content .quotation-transfer-dropoff {
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+
+.crm-itinerary-preview-page-content .quotation-airport-transfer-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
 }
 
 /* Activity/addon card with image (same as CRM PackagePreview) */
@@ -224,14 +411,39 @@
 }
 
 .quotation-transfer-location-primary {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
   color: var(--text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
 }
 
 .quotation-transfer-swap-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  color: var(--accent);
+  margin: 4px auto;
+  transform: rotate(90deg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.quotation-transfer-swap-icon svg {
+  color: var(--text-muted);
+  width: 16px;
+  height: 16px;
 }
 
 .quotation-cart-detail-row {
@@ -271,6 +483,9 @@
   border-top: 2px solid var(--accent);
   font-size: 16px;
   font-weight: 600;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  flex-shrink: 0;
 }
 
 .crm-itinerary-preview-total-label {

@@ -213,12 +213,12 @@ const addonRetry = (failureCount: number, error: unknown) => {
   return failureCount < 1;
 };
 
+/** Fetches all addon deals once (no nights param) to avoid 429s from rapid nights changes. Filter by nights client-side. */
 export function useAddonDeals(nights?: number, enabled = true) {
-  const params = nights != null && nights > 0 ? `?nights=${nights}` : '';
-  return useQuery({
-    queryKey: ['marketing', 'addon-deals', nights ?? 0],
+  const query = useQuery({
+    queryKey: ['marketing', 'addon-deals'],
     queryFn: () =>
-      fetcher<{ addon_deals?: unknown[] }>(`/api/website/addon-deals${params}`).then(
+      fetcher<{ addon_deals?: unknown[] }>('/api/website/addon-deals').then(
         r => r.addon_deals ?? []
       ),
     enabled,
@@ -230,6 +230,16 @@ export function useAddonDeals(nights?: number, enabled = true) {
     retry: addonRetry,
     retryDelay: 3000,
   });
+  const allDeals = (query.data ?? []) as Array<{ included_nights?: number[] }>;
+  const filtered =
+    nights != null && nights > 0
+      ? allDeals.filter(
+          (d) =>
+            !d.included_nights?.length ||
+            d.included_nights.includes(nights)
+        )
+      : allDeals;
+  return { ...query, data: filtered };
 }
 
 export function useAddonHotelServices(enabled = true) {

@@ -1,0 +1,78 @@
+.checkin-date-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkin-date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-inter);
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2d22;
+  margin-bottom: 8px;
+}
+
+.checkin-date-fields {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.checkin-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.checkin-date-fields .checkin-date-field {
+  flex: 1 1 0;
+  min-width: 120px;
+}
+
+.checkin-date-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.checkin-date-input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.checkin-date-input:focus {
+  outline: none;
+  border-color: #fd6b06;
+}
+
+.checkin-date-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.checkin-date-output {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #f9fafb;
+  color: #374151;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}

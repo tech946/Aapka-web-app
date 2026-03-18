@@ -40,6 +40,12 @@ export interface AddonHotelService {
   quantity?: number;
 }
 
+/** Selected hotel service with quantity (extends package nights) */
+export interface SelectedHotelService {
+  serviceId: string;
+  quantity: number;
+}
+
 export interface AddonPrivateTransfer {
   id: string;
   name: string;
@@ -56,4 +62,12 @@ export interface PersonCounts {
   adults: number;
   children: number;
   infants: number;
+}
+
+/** Group dates breakdown: base package vs extra (outside group dates) */
+export interface GroupDatesBreakdown {
+  basePackageTotal: number;
+  extraTotal: number;
+  inDateRange: boolean;
+  total: number;
 }

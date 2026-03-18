@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, ChevronDown } from 'lucide-react';
 import type { AddonPrivateTransfer } from '../types';
 import './AddonSection.css';
@@ -21,11 +22,14 @@ export function AddonPrivateTransfersSection({
   onFetch,
 }: AddonPrivateTransfersSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const hasAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
       hasAttemptedRef.current = false;
+      setDropdownStyle(null);
       return;
     }
     if (transfers.length > 0 || loading || hasAttemptedRef.current) return;
@@ -34,13 +38,37 @@ export function AddonPrivateTransfersSection({
   }, [isOpen, transfers.length, loading, onFetch]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const updatePosition = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownStyle({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.addon-dropdown-wrap')) setIsOpen(false);
+      if (!target.closest('.addon-dropdown-wrap') && !target.closest('.addon-dropdown-panel-portal')) {
+        setIsOpen(false);
+      }
     };
+    const handleScroll = () => setIsOpen(false);
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
     }
   }, [isOpen]);
 
@@ -66,9 +94,59 @@ export function AddonPrivateTransfersSection({
       ? `Private Transfers (${selectedIds.length} selected)`
       : 'Private Transfers';
 
+  const panelContent = (
+    <div
+      className="addon-dropdown-panel addon-dropdown-panel-portal"
+      style={
+        dropdownStyle
+          ? {
+              position: 'fixed',
+              top: dropdownStyle.top,
+              left: dropdownStyle.left,
+              width: dropdownStyle.width,
+              zIndex: 10000,
+            }
+          : undefined
+      }
+    >
+      {loading ? (
+        <div className="addon-dropdown-loading">
+          <Loader2 size={18} className="addon-dropdown-spinner" />
+          <span>Loading...</span>
+        </div>
+      ) : !transfers.length ? (
+        <p className="addon-dropdown-empty">No private transfers available</p>
+      ) : (
+        <div className="addon-dropdown-list">
+          {transfers.map((t) => {
+            const checked = selectedIds.includes(t.id);
+            return (
+              <label
+                key={t.id}
+                className={`addon-dropdown-item ${checked ? 'selected' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggle(t.id)}
+                  className="addon-dropdown-checkbox"
+                />
+                <span className="addon-dropdown-item-text">
+                  {t.name}
+                  {paxLabel(t)}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="addon-dropdown-wrap customize-addon-dropdown">
       <button
+        ref={triggerRef}
         type="button"
         className={`addon-dropdown-trigger ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
@@ -80,42 +158,10 @@ export function AddonPrivateTransfersSection({
           className={`addon-dropdown-chevron ${isOpen ? 'open' : ''}`}
         />
       </button>
-      {isOpen && (
-        <div className="addon-dropdown-panel">
-          {loading ? (
-            <div className="addon-dropdown-loading">
-              <Loader2 size={18} className="addon-dropdown-spinner" />
-              <span>Loading...</span>
-            </div>
-          ) : !transfers.length ? (
-            <p className="addon-dropdown-empty">No private transfers available</p>
-          ) : (
-            <div className="addon-dropdown-list">
-              {transfers.map((t) => {
-                const checked = selectedIds.includes(t.id);
-                return (
-                  <label
-                    key={t.id}
-                    className={`addon-dropdown-item ${checked ? 'selected' : ''}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggle(t.id)}
-                      className="addon-dropdown-checkbox"
-                    />
-                    <span className="addon-dropdown-item-text">
-                      {t.name}
-                      {t.adult_price > 0 ? ` – AED ${t.adult_price}` : ''}
-                      {paxLabel(t)}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      {isOpen &&
+        dropdownStyle &&
+        typeof document !== 'undefined' &&
+        createPortal(panelContent, document.body)}
     </div>
   );
 }

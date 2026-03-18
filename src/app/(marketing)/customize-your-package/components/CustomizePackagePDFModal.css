@@ -107,7 +107,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background-color: #f9fafb;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   margin-top: 8px;
@@ -120,6 +120,38 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: auto;
-  padding: 20px;
-  background-color: #f5f5f5;
+  padding: 8px;
+  background-color: #ffffff;
+}
+
+/* PDF export: zero padding, white bg, no page-break/margin - prevents blank pages & grey */
+.customize-pdf-preview-wrapper.customize-pdf-export-mode {
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: #ffffff !important;
+  overflow: visible !important;
+}
+
+.customize-pdf-export-mode .crm-itinerary-preview-container,
+.customize-pdf-export-mode .customize-preview-container {
+  background-color: #ffffff !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.customize-pdf-export-mode .customize-preview-page,
+.customize-pdf-export-mode .crm-itinerary-preview-page {
+  page-break-after: always;
+  break-after: page;
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Last page: NO break after - prevents extra blank page */
+.customize-pdf-export-mode .crm-itinerary-preview-container > .crm-itinerary-preview-page:last-child,
+.customize-pdf-export-mode .customize-preview-container > .customize-preview-page:last-child {
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+  margin-bottom: 0 !important;
 }

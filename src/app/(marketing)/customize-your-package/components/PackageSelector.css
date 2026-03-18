@@ -69,6 +69,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 12px;
 }
 
 .customize-package-chevron {
@@ -82,10 +83,6 @@
 }
 
 .customize-package-list {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
   max-height: 260px;
   overflow-y: auto;
   background: #fff;
@@ -95,7 +92,10 @@
   list-style: none;
   margin: 0;
   padding: 4px;
-  z-index: 50;
+}
+
+.customize-package-list-portal {
+  position: fixed;
 }
 
 .customize-package-option {

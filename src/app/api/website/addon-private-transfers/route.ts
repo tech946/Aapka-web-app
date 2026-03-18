@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 const CRM_BASE_URL = 'https://crm.aapkatourism.com';
 
-const CACHE_TTL_MS = 10 * 60 * 1000;
-const STALE_GRACE_MS = 30 * 60 * 1000;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+const STALE_GRACE_MS = 60 * 60 * 1000;
 
 const addonTransfersCache = new Map<string, { data: unknown; timestamp: number }>();
 
@@ -55,15 +55,24 @@ export async function GET(req: NextRequest) {
       const errorText = await response.text();
       console.error('CRM addon-private-transfers API error:', { status: response.status, error: errorText });
 
-      if (response.status === 429 && cached && now - cached.timestamp < STALE_GRACE_MS) {
-        return NextResponse.json(cached.data, {
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-            'X-Cache': 'STALE',
-          },
-        });
+      if (response.status === 429) {
+        const staleEntry =
+          cached && now - cached.timestamp < STALE_GRACE_MS
+            ? cached
+            : Array.from(addonTransfersCache.entries())
+                .map(([, v]) => v)
+                .filter((v) => now - v.timestamp < STALE_GRACE_MS)
+                .sort((a, b) => b.timestamp - a.timestamp)[0];
+        if (staleEntry) {
+          return NextResponse.json(staleEntry.data, {
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+              'X-Cache': 'STALE',
+            },
+          });
+        }
       }
 
       return NextResponse.json(

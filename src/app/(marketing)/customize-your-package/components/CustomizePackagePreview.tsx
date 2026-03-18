@@ -48,6 +48,10 @@ interface CustomizePackagePreviewProps {
   selectedDeals: AddonDeal[];
   selectedServices: AddonHotelService[];
   selectedTransfers: AddonPrivateTransfer[];
+  /** Effective nights (base + hotel service extension) - matches sidebar */
+  effectiveNightsOverride?: number;
+  /** Effective days (nights + 1) - matches sidebar */
+  effectiveDaysOverride?: number;
 }
 
 export function CustomizePackagePreview({
@@ -93,7 +97,15 @@ export function CustomizePackagePreview({
           <div className="customize-preview-detail-row">
             <span className="customize-preview-detail-label">Duration</span>
             <span className="customize-preview-detail-value">
-              {pkg.package_nights ? `${pkg.package_nights} Nights` : pkg.package_days ? `${pkg.package_days} Days` : '-'}
+              {effectiveNightsOverride != null && effectiveNightsOverride > 0
+                ? `${effectiveNightsOverride} Night${effectiveNightsOverride !== 1 ? 's' : ''}${effectiveDaysOverride != null && effectiveDaysOverride > 0 ? ` • ${effectiveDaysOverride} Day${effectiveDaysOverride !== 1 ? 's' : ''}` : ''}`
+                : effectiveDaysOverride != null && effectiveDaysOverride > 0
+                  ? `${effectiveDaysOverride} Day${effectiveDaysOverride !== 1 ? 's' : ''}`
+                  : pkg.package_nights
+                    ? `${pkg.package_nights} Nights${pkg.package_days ? ` • ${pkg.package_days} Days` : ''}`
+                    : pkg.package_days
+                      ? `${pkg.package_days} Days`
+                      : '-'}
             </span>
           </div>
           <div className="customize-preview-detail-row">

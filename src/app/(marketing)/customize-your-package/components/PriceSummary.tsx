@@ -6,6 +6,7 @@ import type {
   AddonDeal,
   AddonHotelService,
   AddonPrivateTransfer,
+  SelectedHotelService,
 } from '../types';
 import './PriceSummary.css';
 
@@ -17,7 +18,7 @@ interface PriceSummaryProps {
   addonHotelServices: AddonHotelService[];
   addonPrivateTransfers: AddonPrivateTransfer[];
   selectedDealIds: string[];
-  selectedServiceIds: string[];
+  selectedServices: SelectedHotelService[];
   selectedTransferIds: string[];
 }
 
@@ -67,7 +68,7 @@ export function PriceSummary({
   addonHotelServices,
   addonPrivateTransfers,
   selectedDealIds,
-  selectedServiceIds,
+  selectedServices,
   selectedTransferIds,
 }: PriceSummaryProps) {
   if (!pkg) {
@@ -82,9 +83,6 @@ export function PriceSummary({
   const packageBase = calcPackageBase(pkg, persons, isSoloTraveller);
 
   const selectedDeals = addonDeals.filter((d) => selectedDealIds.includes(d.id));
-  const selectedServices = addonHotelServices.filter((s) =>
-    selectedServiceIds.includes(s.id)
-  );
   const selectedTransfers = addonPrivateTransfers.filter((t) =>
     selectedTransferIds.includes(t.id)
   );
@@ -93,7 +91,15 @@ export function PriceSummary({
     ? { adults: 1, children: 0, infants: 0 }
     : persons;
   const addonDealsPrice = calcAddonPrice(selectedDeals, addonPersons);
-  const addonServicesPrice = calcAddonPrice(selectedServices, addonPersons);
+  const addonServicesPrice = selectedServices.reduce((sum, sel) => {
+    const svc = addonHotelServices.find((s) => s.id === sel.serviceId);
+    if (!svc) return sum;
+    const unitPrice =
+      addonPersons.adults * (svc.adult_price ?? 0) +
+      addonPersons.children * (svc.child_price ?? 0) +
+      addonPersons.infants * (svc.infant_price ?? 0);
+    return sum + unitPrice * sel.quantity;
+  }, 0);
   const addonTransfersPrice = calcAddonPrice(selectedTransfers, addonPersons);
   const addonsTotal = addonDealsPrice + addonServicesPrice + addonTransfersPrice;
 
@@ -122,7 +128,7 @@ export function PriceSummary({
                 </span>
               </div>
             )}
-            {selectedServices.length > 0 && (
+            {addonServicesPrice > 0 && (
               <div className="customize-price-row">
                 <span className="customize-price-label">Hotel Services</span>
                 <span className="customize-price-value">

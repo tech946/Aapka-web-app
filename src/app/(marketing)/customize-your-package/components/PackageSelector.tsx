@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, ChevronDown, Check } from 'lucide-react';
 import type { PackageOption } from '../types';
 import './PackageSelector.css';
@@ -14,6 +15,8 @@ export function PackageSelector({ value, onChange }: PackageSelectorProps) {
   const [packages, setPackages] = useState<PackageOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -53,13 +56,40 @@ export function PackageSelector({ value, onChange }: PackageSelectorProps) {
   }, []);
 
   useEffect(() => {
+    if (!isOpen) {
+      setDropdownStyle(null);
+      return;
+    }
+    const updatePosition = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownStyle({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.customize-package-selector')) setIsOpen(false);
+      if (!target.closest('.customize-package-selector') && !target.closest('.customize-package-list-portal')) {
+        setIsOpen(false);
+      }
     };
+    const handleScroll = () => setIsOpen(false);
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
     }
   }, [isOpen]);
 
@@ -74,6 +104,7 @@ export function PackageSelector({ value, onChange }: PackageSelectorProps) {
       ) : (
         <div className="customize-package-dropdown">
           <button
+            ref={triggerRef}
             type="button"
             className={`customize-package-trigger ${isOpen ? 'open' : ''}`}
             onClick={() => setIsOpen(!isOpen)}
@@ -90,45 +121,59 @@ export function PackageSelector({ value, onChange }: PackageSelectorProps) {
               className={`customize-package-chevron ${isOpen ? 'open' : ''}`}
             />
           </button>
-          {isOpen && (
-            <ul className="customize-package-list" role="listbox">
-              <li
-                role="option"
-                className="customize-package-option"
-                onClick={() => {
-                  onChange(null);
-                  setIsOpen(false);
+          {isOpen &&
+            dropdownStyle &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <ul
+                className="customize-package-list customize-package-list-portal"
+                role="listbox"
+                style={{
+                  position: 'fixed',
+                  top: dropdownStyle.top,
+                  left: dropdownStyle.left,
+                  width: dropdownStyle.width,
+                  zIndex: 10000,
                 }}
               >
-                <span className="customize-package-option-text">Clear selection</span>
-              </li>
-              {packages.map((pkg) => {
-                const isSelected = value?.package_id === pkg.package_id;
-                return (
-                  <li
-                    key={pkg.package_id}
-                    role="option"
-                    aria-selected={isSelected}
-                    className={`customize-package-option ${isSelected ? 'selected' : ''}`}
-                    onClick={() => {
-                      onChange(pkg);
-                      setIsOpen(false);
-                    }}
-                  >
-                    <div className="customize-package-option-content">
-                      <span className="customize-package-option-text">{pkg.package_name}</span>
-                      {pkg.package_nights && (
-                        <span className="customize-package-option-meta">
-                          {pkg.package_nights} nights
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && <Check size={16} style={{ color: '#fd6b06', flexShrink: 0 }} />}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                <li
+                  role="option"
+                  className="customize-package-option"
+                  onClick={() => {
+                    onChange(null);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span className="customize-package-option-text">Clear selection</span>
+                </li>
+                {packages.map((pkg) => {
+                  const isSelected = value?.package_id === pkg.package_id;
+                  return (
+                    <li
+                      key={pkg.package_id}
+                      role="option"
+                      aria-selected={isSelected}
+                      className={`customize-package-option ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        onChange(pkg);
+                        setIsOpen(false);
+                      }}
+                    >
+                      <div className="customize-package-option-content">
+                        <span className="customize-package-option-text">{pkg.package_name}</span>
+                        {pkg.package_nights && (
+                          <span className="customize-package-option-meta">
+                            {pkg.package_nights} nights
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && <Check size={16} style={{ color: '#fd6b06', flexShrink: 0 }} />}
+                    </li>
+                  );
+                })}
+              </ul>,
+              document.body
+            )}
         </div>
       )}
     </div>

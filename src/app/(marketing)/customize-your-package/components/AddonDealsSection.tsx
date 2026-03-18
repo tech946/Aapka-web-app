@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, ChevronDown } from 'lucide-react';
 import type { AddonDeal } from '../types';
 import './AddonSection.css';
@@ -23,6 +24,8 @@ export function AddonDealsSection({
   onFetch,
 }: AddonDealsSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const hasAttemptedRef = useRef(false);
   const prevNightsRef = useRef(nights);
 
@@ -36,6 +39,7 @@ export function AddonDealsSection({
   useEffect(() => {
     if (!isOpen) {
       hasAttemptedRef.current = false;
+      setDropdownStyle(null);
       return;
     }
     if (deals.length > 0 || loading || hasAttemptedRef.current) return;
@@ -44,13 +48,37 @@ export function AddonDealsSection({
   }, [isOpen, deals.length, loading, nights, onFetch]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const updatePosition = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownStyle({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.addon-dropdown-wrap')) setIsOpen(false);
+      if (!target.closest('.addon-dropdown-wrap') && !target.closest('.addon-dropdown-panel-portal')) {
+        setIsOpen(false);
+      }
     };
+    const handleScroll = () => setIsOpen(false);
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+      };
     }
   }, [isOpen]);
 
@@ -68,9 +96,58 @@ export function AddonDealsSection({
       ? `Addon Deals (${selectedIds.length} selected)`
       : 'Addon Deals';
 
+  const panelContent = (
+    <div
+      className="addon-dropdown-panel addon-dropdown-panel-portal"
+      style={
+        dropdownStyle
+          ? {
+              position: 'fixed',
+              top: dropdownStyle.top,
+              left: dropdownStyle.left,
+              width: dropdownStyle.width,
+              zIndex: 10000,
+            }
+          : undefined
+      }
+    >
+      {loading ? (
+        <div className="addon-dropdown-loading">
+          <Loader2 size={18} className="addon-dropdown-spinner" />
+          <span>Loading...</span>
+        </div>
+      ) : !deals.length ? (
+        <p className="addon-dropdown-empty">No addon deals available</p>
+      ) : (
+        <div className="addon-dropdown-list">
+          {deals.map((d) => {
+            const checked = selectedIds.includes(d.id);
+            return (
+              <label
+                key={d.id}
+                className={`addon-dropdown-item ${checked ? 'selected' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggle(d.id)}
+                  className="addon-dropdown-checkbox"
+                />
+                <span className="addon-dropdown-item-text">
+                  {d.name}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="addon-dropdown-wrap customize-addon-dropdown">
       <button
+        ref={triggerRef}
         type="button"
         className={`addon-dropdown-trigger ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
@@ -82,42 +159,10 @@ export function AddonDealsSection({
           className={`addon-dropdown-chevron ${isOpen ? 'open' : ''}`}
         />
       </button>
-      {isOpen && (
-        <div className="addon-dropdown-panel">
-          {loading ? (
-            <div className="addon-dropdown-loading">
-              <Loader2 size={18} className="addon-dropdown-spinner" />
-              <span>Loading...</span>
-            </div>
-          ) : !deals.length ? (
-            <p className="addon-dropdown-empty">No addon deals available</p>
-          ) : (
-            <div className="addon-dropdown-list">
-              {deals.map((d) => {
-                const checked = selectedIds.includes(d.id);
-                return (
-                  <label
-                    key={d.id}
-                    className={`addon-dropdown-item ${checked ? 'selected' : ''}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggle(d.id)}
-                      className="addon-dropdown-checkbox"
-                    />
-                    <span className="addon-dropdown-item-text">
-                      {d.name}
-                      {d.adult_price > 0 ? ` – AED ${d.adult_price}` : ''}
-                      {d.category_name ? ` [${d.category_name}]` : ''}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      {isOpen &&
+        dropdownStyle &&
+        typeof document !== 'undefined' &&
+        createPortal(panelContent, document.body)}
     </div>
   );
 }
