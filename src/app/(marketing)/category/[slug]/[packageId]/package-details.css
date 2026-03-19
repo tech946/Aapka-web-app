@@ -64,6 +64,70 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   height: 44px;
   font-size: 16px;
 }
+
+/* Modal overlay (used by LTD Book Now modal - portaled to body) */
+.modal_overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999 !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.modal_overlay .modal {
+  width: 520px;
+  max-width: 95vw;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #111827;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 100000;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal_overlay .btn_primary {
+  padding: 10px 20px;
+  background: #fd6b06;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+.modal_overlay .btn_primary:hover:not(:disabled) {
+  background: #ea580c;
+}
+.modal_overlay .btn_primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.modal_overlay .btn_secondary {
+  padding: 10px 20px;
+  background: #fff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 14px;
+}
+.modal_overlay .btn_secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
 /* Hero Section - Gallery and Product Details */
 .package-hero-section {
   max-width: 1280px;
@@ -1756,6 +1820,145 @@ width: 24px;
   color: #374151;
 }
 
+/* LTD Booking Modal - Footer and Step 1 (matches package details modal) */
+.ltd-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  flex-shrink: 0;
+}
+.ltd-modal-footer .pdf-modal-cancel-button,
+.ltd-modal-footer .booking-add-to-cart-button {
+  flex: 1;
+  height: 52px;
+}
+.desktop-booking-modal-content .booking-input-wrapper {
+  border: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  border-radius: 0;
+}
+.desktop-booking-modal-content .booking-input-wrapper label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+  font-family: var(--font-inter);
+}
+.desktop-booking-modal-content .booking-input-wrapper input,
+.desktop-booking-modal-content .booking-input-wrapper select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  font-size: 14px;
+  font-family: var(--font-inter);
+  color: #111827;
+  background: #fff;
+}
+.desktop-booking-modal-content .ltd-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  font-family: var(--font-inter);
+}
+.desktop-booking-modal-content .ltd-persons-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  font-family: var(--font-inter);
+}
+.desktop-booking-modal-content .ltd-person-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.desktop-booking-modal-content .ltd-person-stepper button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  cursor: pointer;
+  color: #111827;
+  transition: all 0.2s;
+}
+.desktop-booking-modal-content .ltd-person-stepper button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+.desktop-booking-modal-content .ltd-person-stepper span {
+  min-width: 24px;
+  text-align: center;
+}
+.desktop-booking-modal-content .ltd-modal-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  font-family: var(--font-inter);
+}
+.desktop-booking-modal-content .ltd-modal-checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #fd6b06;
+  cursor: pointer;
+}
+.desktop-booking-modal-content .ltd-modal-person-selectors {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  font-family: var(--font-inter);
+}
+.desktop-booking-modal-content .ltd-modal-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.desktop-booking-modal-content .ltd-modal-stepper-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  cursor: pointer;
+  color: #111827;
+  transition: all 0.2s;
+}
+.desktop-booking-modal-content .ltd-modal-stepper-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+.desktop-booking-modal-content .ltd-modal-stepper-value {
+  min-width: 24px;
+  text-align: center;
+}
+
 /* Horizontal Booking Card - Fixed at Bottom (Legacy - Hidden on Desktop) */
 .package-booking-card-horizontal {
   position: fixed;
@@ -2164,6 +2367,17 @@ width: 24px;
 
 .person-counter-row:first-child {
   padding-top: 0;
+}
+
+/* LTD modal person counters - matches package details booking modal */
+.ltd-person-counters {
+  margin-top: 16px;
+  padding: 12px 0 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.ltd-person-counters .person-counter-row {
+  padding: 10px 0;
 }
 
 .person-label {
@@ -3773,4 +3987,99 @@ width: 24px;
     width: 100%;
     justify-content: center;
   }
+}
+
+/* LTD date dropdown */
+.ltd-date-dropdown-wrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.ltd-date-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.ltd-date-dropdown-trigger:hover {
+  border-color: #fd6b06;
+}
+
+.ltd-date-icon {
+  color: #fd6b06;
+  flex-shrink: 0;
+}
+
+.ltd-date-placeholder {
+  flex: 1;
+  text-align: left;
+  color: #9ca3af;
+}
+
+.ltd-date-value {
+  flex: 1;
+  text-align: left;
+  color: #111827;
+  font-weight: 500;
+}
+
+.ltd-date-chevron {
+  color: #6b7280;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.ltd-date-chevron-open {
+  transform: rotate(180deg);
+}
+
+.ltd-date-calendar-dropdown {
+  margin-top: 6px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: visible;
+  animation: fadeIn 0.15s ease-out;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.ltd-date-calendar-dropdown .flexible-date-calendar-wrapper {
+  max-width: 100%;
+  min-height: auto;
+}
+
+/* LTD price summary */
+.ltd-price-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #fef8f3;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  flex-wrap: wrap;
+}
+
+.ltd-price-summary strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fd6b06;
+}
+
+.ltd-price-breakdown {
+  font-size: 12px;
+  color: #6b7280;
 }

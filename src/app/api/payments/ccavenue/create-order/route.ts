@@ -13,6 +13,7 @@ interface CreateCCAvenueOrderRequest {
   customerPhone: string;
   paymentType: 'half' | 'full';
   billingCountry?: string; // Country code for billing
+  cancelUrl?: string; // Optional: custom cancel redirect (e.g. for LTD checkout)
 }
 
 export async function POST(req: NextRequest) {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       amount: amount.toFixed(2), // Required - order amount (numeric, 12 digits, 2 decimals)
       currency: currency || 'AED', // Required - must match account currency (AED for Dubai account)
       redirect_url: `${baseUrl}/api/payments/ccavenue/callback`, // Required - MUST be registered in CCAvenue MARS
-      cancel_url: `${baseUrl}/checkout?error=payment_cancelled`, // Required
+      cancel_url: body.cancelUrl || `${baseUrl}/checkout?error=payment_cancelled`, // Required; optional custom for LTD
       language: 'en', // Required - billing page language (en/hi/gu/mr/bn)
       // Billing information (optional but recommended to avoid errors)
       billing_name: (customerName || 'Customer').substring(0, 60), // Alphabets only, max 60 chars
