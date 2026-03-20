@@ -282,6 +282,14 @@
   margin-bottom: 18px;
 }
 
+.ltd-listing-checkout-note {
+  margin: -12px 0 14px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.35;
+  font-family: var(--font-inter);
+}
+
 .suites-price-amount {
   font-family: var(--font-inter);
   font-size: 20px;

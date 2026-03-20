@@ -101,9 +101,9 @@ export default function LimitedTimeDealCalendar({
         ) : !isDisabled ? (
           <span
             className="flexible-day-price"
-            title={`${maxPerDay} seats per day · ${info.available} remaining (completed payments only; pending/unpaid not counted)`}
+            title={`${info.available} seats left (max ${maxPerDay} per day; only completed payments reduce availability)`}
           >
-            {info.available}/{maxPerDay}
+            {info.available} left
           </span>
         ) : (
           <span className="flexible-day-na">N/A</span>
@@ -152,9 +152,9 @@ export default function LimitedTimeDealCalendar({
       />
       <div className="flexible-calendar-footer">
         <p className="ltd-calendar-cap-hint">
-          <strong>{maxPerDay}</strong> seats per day · numbers show{' '}
-          <strong>remaining / cap</strong> (only <strong>completed</strong> LTD
-          payments count; pending or cancelled do not reduce availability).
+          Up to <strong>{maxPerDay}</strong> seats per day · each date shows{' '}
+          <strong>seats left</strong> (only <strong>completed</strong> LTD payments
+          count; pending or cancelled do not reduce availability).
         </p>
         <button
           type="button"

@@ -1,16 +1,31 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Zap, Minus, Plus, X, Calendar, ChevronDown } from 'lucide-react';
+import {
+  ArrowLeft,
+  Zap,
+  Minus,
+  Plus,
+  X,
+  Calendar,
+  ChevronDown,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import PackageGallery from '@/app/(marketing)/category/[slug]/[packageId]/PackageGallery';
 import PackageDetailsTabs from '@/app/(marketing)/category/[slug]/[packageId]/PackageDetailsTabs';
 import LimitedTimeDealCalendar from '@/components/marketing/LimitedTimeDealCalendar';
+import { computeLtdPayableTotal } from '@/lib/ltd-copy';
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
 
@@ -26,7 +41,8 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
   const childP = Number(pkg.child_price) || 0;
   const infantP = Number(pkg.infant_price) || 0;
   const packagePrice = Number(pkg.package_price) || 0;
-  const soloP = pkg.solo_traveller_price != null ? Number(pkg.solo_traveller_price) : 0;
+  const soloP =
+    pkg.solo_traveller_price != null ? Number(pkg.solo_traveller_price) : 0;
 
   const hasBreakdown = adultP > 0 || childP > 0 || infantP > 0;
   const hasSolo = Boolean(pkg.solo_traveller_enabled && soloP > 0);
@@ -36,8 +52,10 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
   /* Package-only SKU: single headline price, no duplicate row in the grid */
   if (!hasBreakdown && !hasSolo && packagePrice > 0) {
     return (
-      <div className="package-hero-pricing">
-        <span className="package-hero-price-current">{formatAedAmount(packagePrice)}</span>
+      <div className='package-hero-pricing'>
+        <span className='package-hero-price-current'>
+          {formatAedAmount(packagePrice)}
+        </span>
       </div>
     );
   }
@@ -56,37 +74,51 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
   return (
     <>
       {mainAmount > 0 && (
-        <div className="package-hero-pricing">
-          <span className="package-hero-price-current">{formatAedAmount(mainAmount)}</span>
+        <div className='package-hero-pricing'>
+          <span className='package-hero-price-current'>
+            {formatAedAmount(mainAmount)}
+          </span>
         </div>
       )}
-      <div className="package-hero-price-breakdown">
+      <div className='package-hero-price-breakdown'>
         {adultP > 0 && (
-          <div className="package-hero-price-item">
-            <span className="package-hero-price-item-label">Adult</span>
-            <span className="package-hero-price-item-age">12+ Years</span>
-            <span className="package-hero-price-item-amount">{formatAedAmount(adultP)}</span>
+          <div className='package-hero-price-item'>
+            <span className='package-hero-price-item-label'>Adult</span>
+            <span className='package-hero-price-item-age'>12+ Years</span>
+            <span className='package-hero-price-item-amount'>
+              {formatAedAmount(adultP)}
+            </span>
           </div>
         )}
         {childP > 0 && (
-          <div className="package-hero-price-item">
-            <span className="package-hero-price-item-label">Child</span>
-            <span className="package-hero-price-item-age">2-8 Years</span>
-            <span className="package-hero-price-item-amount">{formatAedAmount(childP)}</span>
+          <div className='package-hero-price-item'>
+            <span className='package-hero-price-item-label'>Child</span>
+            <span className='package-hero-price-item-age'>2-8 Years</span>
+            <span className='package-hero-price-item-amount'>
+              {formatAedAmount(childP)}
+            </span>
           </div>
         )}
         {infantP > 0 && (
-          <div className="package-hero-price-item">
-            <span className="package-hero-price-item-label">Infant</span>
-            <span className="package-hero-price-item-age">&lt; 2 Years</span>
-            <span className="package-hero-price-item-amount">{formatAedAmount(infantP)}</span>
+          <div className='package-hero-price-item'>
+            <span className='package-hero-price-item-label'>Infant</span>
+            <span className='package-hero-price-item-age'>&lt; 2 Years</span>
+            <span className='package-hero-price-item-amount'>
+              {formatAedAmount(infantP)}
+            </span>
           </div>
         )}
         {hasSolo && (
-          <div className="package-hero-price-item">
-            <span className="package-hero-price-item-label">Solo Traveller</span>
-            <span className="package-hero-price-item-age">Single occupancy</span>
-            <span className="package-hero-price-item-amount">{formatAedAmount(soloP)}</span>
+          <div className='package-hero-price-item'>
+            <span className='package-hero-price-item-label'>
+              Solo Traveller
+            </span>
+            <span className='package-hero-price-item-age'>
+              Double/Triple occupancy
+            </span>
+            <span className='package-hero-price-item-amount'>
+              {formatAedAmount(soloP)}
+            </span>
           </div>
         )}
       </div>
@@ -152,39 +184,38 @@ export default function LimitedTimeDealDetailPage() {
   const [month, setMonth] = useState<Date>(new Date());
   const [persons, setPersons] = useState({ adult: 2, child: 0, infant: 0 });
   const [isSoloTraveller, setIsSoloTraveller] = useState(false);
-  const [withVisa, setWithVisa] = useState(false);
-  const [visaForAdults, setVisaForAdults] = useState(0);
-  const [visaForChildren, setVisaForChildren] = useState(0);
-  const [visaForInfants, setVisaForInfants] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDateRequiredError, setShowDateRequiredError] = useState(false);
   const dateTriggerRef = useRef<HTMLDivElement>(null);
   const calendarPopoverRef = useRef<HTMLDivElement>(null);
-  const [calendarPopoverStyle, setCalendarPopoverStyle] = useState<CSSProperties>({});
+  const [calendarPopoverStyle, setCalendarPopoverStyle] =
+    useState<CSSProperties>({});
 
   const pkg = deal?.package;
   const bookingFeePerPerson = Number(deal?.booking_fee_aed) || BOOKING_FEE_AED;
-  const totalPersons = isSoloTraveller ? 1 : persons.adult + persons.child + persons.infant;
-  const totalAmount = totalPersons * bookingFeePerPerson;
+  const totalPersons = isSoloTraveller
+    ? 1
+    : persons.adult + persons.child + persons.infant;
+  const bookingFeeSubtotal = totalPersons * bookingFeePerPerson;
+  const {
+    subtotal: ltdSubtotal,
+    surcharge: ltdSurcharge,
+    total: totalAmount,
+  } = computeLtdPayableTotal(bookingFeeSubtotal);
 
   const formatPrice = (price: number) => formatAedAmount(price);
 
   const continueButtonLabel = `Continue – ${formatPrice(totalAmount)}`;
-
-  useEffect(() => {
-    if (withVisa) {
-      setVisaForAdults(persons.adult);
-      setVisaForChildren(persons.child);
-      setVisaForInfants(persons.infant);
-    }
-  }, [withVisa, persons.adult, persons.child, persons.infant]);
 
   const updateCalendarPopoverPosition = useCallback(() => {
     const el = dateTriggerRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
     const width = Math.max(r.width, 300);
-    const maxH = Math.min(420, typeof window !== 'undefined' ? window.innerHeight - r.bottom - 24 : 420);
+    const maxH = Math.min(
+      420,
+      typeof window !== 'undefined' ? window.innerHeight - r.bottom - 24 : 420
+    );
     let left = r.left;
     if (left + width > window.innerWidth - 12) {
       left = Math.max(12, window.innerWidth - width - 12);
@@ -227,7 +258,9 @@ export default function LimitedTimeDealDetailPage() {
     if (showModal) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = prev; };
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
   }, [showModal]);
 
@@ -246,7 +279,9 @@ export default function LimitedTimeDealDetailPage() {
         const foundPkg = pkgJson.data;
 
         if (foundPkg) {
-          const matchingDeal = deals.find(d => d.offer_package_id === foundPkg.package_id);
+          const matchingDeal = deals.find(
+            d => d.offer_package_id === foundPkg.package_id
+          );
           if (matchingDeal) {
             setDeal({ ...matchingDeal, package: foundPkg });
             const start = new Date(matchingDeal.start_date);
@@ -284,52 +319,66 @@ export default function LimitedTimeDealDetailPage() {
 
   const handleProceedToPayment = async () => {
     if (!deal || !pkg || !selectedDate) return;
-    const { salutation, firstName, lastName, email, phone, whatsapp } = leadPassenger;
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim() || !whatsapp.trim()) {
+    const { salutation, firstName, lastName, email, phone, whatsapp } =
+      leadPassenger;
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
+      !phone.trim() ||
+      !whatsapp.trim()
+    ) {
       toast.error('Please fill all required passenger details');
       return;
     }
     setIsSubmitting(true);
     try {
-
-      const bookingRes = await fetch('/api/checkout-limited-time-deal/create-booking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          limitedTimeDealId: deal.id,
-          cartItems: [{
-            packageId: pkg.package_id,
-            adults: isSoloTraveller ? 1 : persons.adult,
-            children: isSoloTraveller ? 0 : persons.child,
-            infants: persons.infant,
-            selectedDate: format(selectedDate, 'yyyy-MM-dd'),
-            isSoloTraveller,
-            withVisa,
-            price: totalAmount,
-          }],
-          passengers: [{
-            salutation,
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: email.trim(),
-            phone: phone.trim(),
-            whatsapp: whatsapp.trim(),
-          }],
-          infantDocuments: [],
-          paymentMethod: 'ccavenue',
-          totalAmount,
-          paymentType: 'full',
-          paymentAmount: totalAmount,
-          currency: 'AED',
-        }),
-      });
+      const bookingRes = await fetch(
+        '/api/checkout-limited-time-deal/create-booking',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            limitedTimeDealId: deal.id,
+            cartItems: [
+              {
+                packageId: pkg.package_id,
+                adults: isSoloTraveller ? 1 : persons.adult,
+                children: isSoloTraveller ? 0 : persons.child,
+                infants: persons.infant,
+                selectedDate: format(selectedDate, 'yyyy-MM-dd'),
+                isSoloTraveller,
+                withVisa: false,
+                price: totalAmount,
+              },
+            ],
+            passengers: [
+              {
+                salutation,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                email: email.trim(),
+                phone: phone.trim(),
+                whatsapp: whatsapp.trim(),
+              },
+            ],
+            infantDocuments: [],
+            paymentMethod: 'ccavenue',
+            totalAmount,
+            paymentType: 'full',
+            paymentAmount: totalAmount,
+            currency: 'AED',
+          }),
+        }
+      );
 
       const bookingResult = await bookingRes.json();
       if (!bookingRes.ok || !bookingResult.success) {
         throw new Error(bookingResult.error || 'Failed to create booking');
       }
 
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const origin =
+        typeof window !== 'undefined' ? window.location.origin : '';
       const cancelUrl = `${origin}/limited-time-deals/${packageSlug}?error=payment_cancelled`;
 
       const orderRes = await fetch('/api/payments/ccavenue/create-order', {
@@ -368,7 +417,9 @@ export default function LimitedTimeDealDetailPage() {
       document.body.appendChild(form);
       form.submit();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to process payment');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to process payment'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -388,7 +439,10 @@ export default function LimitedTimeDealDetailPage() {
     setShowDateRequiredError(false);
   };
 
-  const updatePersonCount = (type: 'adult' | 'child' | 'infant', delta: number) => {
+  const updatePersonCount = (
+    type: 'adult' | 'child' | 'infant',
+    delta: number
+  ) => {
     const minAdults = pkg?.min_adults ?? 2;
     setPersons(prev => {
       let v = prev[type] + delta;
@@ -400,317 +454,448 @@ export default function LimitedTimeDealDetailPage() {
 
   if (loading) {
     return (
-      <div className="package-details-page">
-        <div className="package-details-loading">Loading...</div>
+      <div className='package-details-page'>
+        <div className='package-details-loading'>Loading...</div>
       </div>
     );
   }
 
   if (!deal || !pkg) {
     return (
-      <div className="package-details-page">
-        <div className="package-details-error">
+      <div className='package-details-page'>
+        <div className='package-details-error'>
           <h2>Deal or package not found</h2>
-          <Link href="/limited-time-deals" className="back-button"><ArrowLeft /> Back to Limited Time Deals</Link>
+          <Link href='/limited-time-deals' className='back-button'>
+            <ArrowLeft /> Back to Limited Time Deals
+          </Link>
         </div>
       </div>
     );
   }
 
-  const images = (pkg.gallery?.length ? pkg.gallery : pkg.thumbnail_image ? [pkg.thumbnail_image] : []) as string[];
+  const images = (
+    pkg.gallery?.length
+      ? pkg.gallery
+      : pkg.thumbnail_image
+        ? [pkg.thumbnail_image]
+        : []
+  ) as string[];
 
   return (
-    <div className="package-details-page">
-      <div className="package-hero-section">
+    <div className='package-details-page'>
+      <div className='package-hero-section'>
         <PackageGallery images={images} packageName={pkg.package_name} />
-        <div className="package-hero-details">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div className='package-hero-details'>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 8,
+            }}
+          >
             <Zap size={20} style={{ color: '#fd6b06' }} />
-            <span style={{ fontSize: 12, color: '#fd6b06', fontWeight: 600 }}>Limited Time Deal</span>
+            <span style={{ fontSize: 12, color: '#fd6b06', fontWeight: 600 }}>
+              Limited Time Deal
+            </span>
           </div>
-          <h1 className="package-hero-title">{pkg.package_name}</h1>
+          <h1 className='package-hero-title'>{pkg.package_name}</h1>
           <LtdPackagePricingDisplay pkg={pkg} />
-          <p className="ltd-hero-booking-fee-note">
-            <strong>Limited time deal — booking fee:</strong> {formatPrice(bookingFeePerPerson)} per person (payable when you book this offer).
+          <p className='ltd-hero-booking-fee-note'>
+            <strong>Limited time deal — booking fee:</strong>{' '}
+            {formatPrice(bookingFeePerPerson)} per person when you book. A{' '}
+            <strong>3% platform fee</strong> is added to the booking-fee total
+            at checkout.
           </p>
-          {pkg.package_description && <p className="package-hero-description">{pkg.package_description}</p>}
-          <div className="package-hero-buttons">
-            <button type="button" className="package-hero-add-to-cart-button" onClick={handleOpenModal}>
+          {pkg.package_description && (
+            <p className='package-hero-description'>
+              {pkg.package_description}
+            </p>
+          )}
+          <div className='package-hero-buttons'>
+            <button
+              type='button'
+              className='package-hero-add-to-cart-button'
+              onClick={handleOpenModal}
+            >
               Book Now
             </button>
           </div>
         </div>
       </div>
-      <PackageDetailsTabs pkg={pkg} />
+      <PackageDetailsTabs pkg={pkg} sanitizeOccupancyCopy />
 
-      {showModal && typeof window !== 'undefined' && createPortal(
-        <div className="desktop-booking-modal-overlay" onClick={handleCloseModal}>
+      {showModal &&
+        typeof window !== 'undefined' &&
+        createPortal(
           <div
-            className="desktop-booking-modal"
-            onClick={e => e.stopPropagation()}
-            style={{ width: 520, maxWidth: 'calc(100vw - 40px)' }}
+            className='desktop-booking-modal-overlay'
+            onClick={handleCloseModal}
           >
-            <div className="desktop-booking-modal-header">
-              <h3 className="desktop-booking-modal-title">
-                {modalStep === 1 ? 'Select Date & Travellers' : 'Lead Passenger Details'}
-              </h3>
-              <button type="button" className="desktop-booking-modal-close" onClick={handleCloseModal} aria-label="Close">
-                <X className="desktop-booking-modal-close-icon" size={20} />
-              </button>
-            </div>
             <div
-              className="desktop-booking-modal-content"
-              style={
-                modalStep === 1
-                  ? { overflow: 'visible', maxHeight: 'calc(100vh - 120px)' }
-                  : { overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }
-              }
+              className='desktop-booking-modal'
+              onClick={e => e.stopPropagation()}
+              style={{ width: 520, maxWidth: 'calc(100vw - 40px)' }}
             >
-              {modalStep === 1 ? (
-                <>
-                  {/* Date field — calendar opens in a fixed portal (true dropdown), not inline */}
-                  <div className="ltd-date-dropdown-wrapper">
-                    <div ref={dateTriggerRef}>
-                      <button
-                        type="button"
-                        className={`ltd-date-dropdown-trigger${showDateRequiredError ? ' ltd-date-dropdown-trigger--error' : ''}`}
-                        onClick={() => setShowCalendar(prev => !prev)}
-                      >
-                        <Calendar size={18} className="ltd-date-icon" />
-                        <span className={selectedDate ? 'ltd-date-value' : 'ltd-date-placeholder'}>
-                          {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Select travel date'}
-                        </span>
-                        <ChevronDown size={18} className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`} />
-                      </button>
+              <div className='desktop-booking-modal-header'>
+                <h3 className='desktop-booking-modal-title'>
+                  {modalStep === 1
+                    ? 'Select Date & Travellers'
+                    : 'Lead Passenger Details'}
+                </h3>
+                <button
+                  type='button'
+                  className='desktop-booking-modal-close'
+                  onClick={handleCloseModal}
+                  aria-label='Close'
+                >
+                  <X className='desktop-booking-modal-close-icon' size={20} />
+                </button>
+              </div>
+              <div
+                className='desktop-booking-modal-content'
+                style={
+                  modalStep === 1
+                    ? { overflow: 'visible', maxHeight: 'calc(100vh - 120px)' }
+                    : { overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }
+                }
+              >
+                {modalStep === 1 ? (
+                  <>
+                    {/* Date field — calendar opens in a fixed portal (true dropdown), not inline */}
+                    <div className='ltd-date-dropdown-wrapper'>
+                      <div ref={dateTriggerRef}>
+                        <button
+                          type='button'
+                          className={`ltd-date-dropdown-trigger${showDateRequiredError ? ' ltd-date-dropdown-trigger--error' : ''}`}
+                          onClick={() => setShowCalendar(prev => !prev)}
+                        >
+                          <Calendar size={18} className='ltd-date-icon' />
+                          <span
+                            className={
+                              selectedDate
+                                ? 'ltd-date-value'
+                                : 'ltd-date-placeholder'
+                            }
+                          >
+                            {selectedDate
+                              ? format(selectedDate, 'dd MMM yyyy')
+                              : 'Select travel date'}
+                          </span>
+                          <ChevronDown
+                            size={18}
+                            className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`}
+                          />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  {showCalendar &&
-                    typeof window !== 'undefined' &&
-                    createPortal(
-                      <div
-                        ref={calendarPopoverRef}
-                        className="ltd-date-calendar-popover"
-                        style={calendarPopoverStyle}
-                        role="dialog"
-                        aria-label="Choose travel date"
-                      >
-                        <LimitedTimeDealCalendar
-                          dealId={deal.id}
-                          startDate={deal.start_date}
-                          endDate={deal.end_date}
-                          selectedDate={selectedDate}
-                          onDateSelect={d => {
-                            setSelectedDate(d);
-                            setShowDateRequiredError(false);
-                            setShowCalendar(false);
-                          }}
-                          month={month}
-                          onMonthChange={setMonth}
-                        />
-                      </div>,
-                      document.body
+                    {showCalendar &&
+                      typeof window !== 'undefined' &&
+                      createPortal(
+                        <div
+                          ref={calendarPopoverRef}
+                          className='ltd-date-calendar-popover'
+                          style={calendarPopoverStyle}
+                          role='dialog'
+                          aria-label='Choose travel date'
+                        >
+                          <LimitedTimeDealCalendar
+                            dealId={deal.id}
+                            startDate={deal.start_date}
+                            endDate={deal.end_date}
+                            selectedDate={selectedDate}
+                            onDateSelect={d => {
+                              setSelectedDate(d);
+                              setShowDateRequiredError(false);
+                              setShowCalendar(false);
+                            }}
+                            month={month}
+                            onMonthChange={setMonth}
+                          />
+                        </div>,
+                        document.body
+                      )}
+
+                    {showDateRequiredError && (
+                      <p className='ltd-date-required-msg' role='alert'>
+                        Please select a travel date to continue.
+                      </p>
                     )}
 
-                  {showDateRequiredError && (
-                    <p className="ltd-date-required-msg" role="alert">
-                      Please select a travel date to continue.
+                    {pkg.solo_traveller_enabled && (
+                      <div className='solo-traveller-block'>
+                        <label className='solo-checkbox'>
+                          <input
+                            type='checkbox'
+                            checked={isSoloTraveller}
+                            onChange={e => {
+                              const v = e.target.checked;
+                              setIsSoloTraveller(v);
+                              if (v) {
+                                setPersons({ adult: 1, child: 0, infant: 0 });
+                              } else {
+                                setPersons(prev => ({
+                                  ...prev,
+                                  adult: pkg.min_adults ?? 2,
+                                }));
+                              }
+                            }}
+                          />
+                          Solo Traveller{' '}
+                          {pkg.solo_traveller_price != null
+                            ? `(AED ${pkg.solo_traveller_price.toLocaleString()})`
+                            : ''}
+                        </label>
+                      </div>
+                    )}
+
+                    <p className='ltd-modal-per-person-note'>
+                      Booking fee for this offer is charged{' '}
+                      <strong>per person</strong>.
                     </p>
-                  )}
 
-                  {pkg.solo_traveller_enabled && (
-                    <div className="solo-traveller-block">
-                      <label className="solo-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={isSoloTraveller}
-                          onChange={e => {
-                            const v = e.target.checked;
-                            setIsSoloTraveller(v);
-                            if (v) {
-                              setPersons({ adult: 1, child: 0, infant: 0 });
-                              setVisaForAdults(0);
-                              setVisaForChildren(0);
-                              setVisaForInfants(0);
-                              setWithVisa(false);
-                            } else {
-                              setPersons(prev => ({ ...prev, adult: pkg.min_adults ?? 2 }));
+                    <div className='ltd-person-counters'>
+                      <div className='person-counter-row'>
+                        <span className='person-label'>
+                          Adult{' '}
+                          <span className='person-age-info'>(12+ years)</span>
+                        </span>
+                        <div className='person-counter'>
+                          <button
+                            type='button'
+                            className='counter-button'
+                            onClick={() => updatePersonCount('adult', -1)}
+                            disabled={
+                              isSoloTraveller ||
+                              persons.adult <= (pkg.min_adults ?? 2)
                             }
-                          }}
-                        />
-                        Solo Traveller {pkg.solo_traveller_price != null ? `(AED ${pkg.solo_traveller_price.toLocaleString()})` : ''}
-                      </label>
-                    </div>
-                  )}
-
-                  {pkg.with_visa && (
-                    <div className="visa-option-block">
-                      <label className="visa-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={withVisa}
-                          onChange={e => {
-                            const v = e.target.checked;
-                            setWithVisa(v);
-                            if (v) {
-                              setVisaForAdults(persons.adult);
-                              setVisaForChildren(persons.child);
-                              setVisaForInfants(persons.infant);
-                            } else {
-                              setVisaForAdults(0);
-                              setVisaForChildren(0);
-                              setVisaForInfants(0);
-                            }
-                          }}
-                        />
-                        With Visa (Indian passport Holder)
-                      </label>
-                    </div>
-                  )}
-
-                  <div className="ltd-person-counters">
-                    <div className="person-counter-row">
-                      <span className="person-label">Adult <span className="person-age-info">(12+ years)</span></span>
-                      <div className="person-counter">
-                        <button type="button" className="counter-button" onClick={() => updatePersonCount('adult', -1)} disabled={isSoloTraveller || persons.adult <= (pkg.min_adults ?? 2)}>
-                          <Minus className="counter-icon" size={18} />
-                        </button>
-                        <span className="counter-value">{persons.adult}</span>
-                        <button type="button" className="counter-button" onClick={() => updatePersonCount('adult', 1)} disabled={isSoloTraveller}>
-                          <Plus className="counter-icon" size={18} />
-                        </button>
+                          >
+                            <Minus className='counter-icon' size={18} />
+                          </button>
+                          <span className='counter-value'>{persons.adult}</span>
+                          <button
+                            type='button'
+                            className='counter-button'
+                            onClick={() => updatePersonCount('adult', 1)}
+                            disabled={isSoloTraveller}
+                          >
+                            <Plus className='counter-icon' size={18} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='person-counter-row'>
+                        <span className='person-label'>
+                          Child{' '}
+                          <span className='person-age-info'>(2-8 years)</span>
+                        </span>
+                        <div className='person-counter'>
+                          <button
+                            type='button'
+                            className='counter-button'
+                            onClick={() => updatePersonCount('child', -1)}
+                            disabled={isSoloTraveller || persons.child === 0}
+                          >
+                            <Minus className='counter-icon' size={18} />
+                          </button>
+                          <span className='counter-value'>{persons.child}</span>
+                          <button
+                            type='button'
+                            className='counter-button'
+                            onClick={() => updatePersonCount('child', 1)}
+                            disabled={isSoloTraveller}
+                          >
+                            <Plus className='counter-icon' size={18} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className='person-counter-row'>
+                        <span className='person-label'>
+                          Infant{' '}
+                          <span className='person-age-info'>
+                            (&lt; 2 years)
+                          </span>
+                        </span>
+                        <div className='person-counter'>
+                          <button
+                            type='button'
+                            className='counter-button'
+                            onClick={() => updatePersonCount('infant', -1)}
+                            disabled={persons.infant === 0}
+                          >
+                            <Minus className='counter-icon' size={18} />
+                          </button>
+                          <span className='counter-value'>
+                            {persons.infant}
+                          </span>
+                          <button
+                            type='button'
+                            className='counter-button'
+                            onClick={() => updatePersonCount('infant', 1)}
+                          >
+                            <Plus className='counter-icon' size={18} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="person-counter-row">
-                      <span className="person-label">Child <span className="person-age-info">(2-8 years)</span></span>
-                      <div className="person-counter">
-                        <button type="button" className="counter-button" onClick={() => updatePersonCount('child', -1)} disabled={isSoloTraveller || persons.child === 0}>
-                          <Minus className="counter-icon" size={18} />
-                        </button>
-                        <span className="counter-value">{persons.child}</span>
-                        <button type="button" className="counter-button" onClick={() => updatePersonCount('child', 1)} disabled={isSoloTraveller}>
-                          <Plus className="counter-icon" size={18} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="person-counter-row">
-                      <span className="person-label">Infant <span className="person-age-info">(&lt; 2 years)</span></span>
-                      <div className="person-counter">
-                        <button type="button" className="counter-button" onClick={() => updatePersonCount('infant', -1)} disabled={persons.infant === 0}>
-                          <Minus className="counter-icon" size={18} />
-                        </button>
-                        <span className="counter-value">{persons.infant}</span>
-                        <button type="button" className="counter-button" onClick={() => updatePersonCount('infant', 1)}>
-                          <Plus className="counter-icon" size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Price summary */}
-                  <div className="ltd-price-summary">
-                    <span>Booking Fee</span>
-                    <strong>{formatPrice(totalAmount)}</strong>
-                    <span className="ltd-price-breakdown">
-                      ({totalPersons} {totalPersons === 1 ? 'person' : 'persons'} × AED {bookingFeePerPerson})
-                    </span>
+                    {/* Price summary — booking fee + platform fee (3%) at checkout */}
+                    <div className='ltd-price-summary ltd-price-summary-stacked'>
+                      <div className='ltd-price-line'>
+                        <span>Booking fee</span>
+                        <span>{formatPrice(ltdSubtotal)}</span>
+                      </div>
+                      <div className='ltd-price-line ltd-price-line-muted'>
+                        <span>Platform fee (3%)</span>
+                        <span>{formatPrice(ltdSurcharge)}</span>
+                      </div>
+                      <div className='ltd-price-line ltd-price-line-total'>
+                        <span>Total due</span>
+                        <strong>{formatPrice(totalAmount)}</strong>
+                      </div>
+                      <span className='ltd-price-breakdown'>
+                        {totalPersons}{' '}
+                        {totalPersons === 1 ? 'person' : 'persons'} ×{' '}
+                        {formatPrice(bookingFeePerPerson)} + 3%
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className='input-selectors'
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 14,
+                    }}
+                  >
+                    <div className='booking-input-wrapper'>
+                      <label>Salutation *</label>
+                      <select
+                        value={leadPassenger.salutation}
+                        onChange={e =>
+                          setLeadPassenger(p => ({
+                            ...p,
+                            salutation: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value='Mr'>Mr</option>
+                        <option value='Mrs'>Mrs</option>
+                        <option value='Ms'>Ms</option>
+                        <option value='Dr'>Dr</option>
+                      </select>
+                    </div>
+                    <div className='booking-input-wrapper'>
+                      <label>First Name *</label>
+                      <input
+                        type='text'
+                        value={leadPassenger.firstName}
+                        onChange={e =>
+                          setLeadPassenger(p => ({
+                            ...p,
+                            firstName: e.target.value,
+                          }))
+                        }
+                        placeholder='First name'
+                      />
+                    </div>
+                    <div className='booking-input-wrapper'>
+                      <label>Last Name *</label>
+                      <input
+                        type='text'
+                        value={leadPassenger.lastName}
+                        onChange={e =>
+                          setLeadPassenger(p => ({
+                            ...p,
+                            lastName: e.target.value,
+                          }))
+                        }
+                        placeholder='Last name'
+                      />
+                    </div>
+                    <div className='booking-input-wrapper'>
+                      <label>Email *</label>
+                      <input
+                        type='email'
+                        value={leadPassenger.email}
+                        onChange={e =>
+                          setLeadPassenger(p => ({
+                            ...p,
+                            email: e.target.value,
+                          }))
+                        }
+                        placeholder='Email'
+                      />
+                    </div>
+                    <div className='booking-input-wrapper'>
+                      <label>Phone *</label>
+                      <input
+                        type='tel'
+                        value={leadPassenger.phone}
+                        onChange={e =>
+                          setLeadPassenger(p => ({
+                            ...p,
+                            phone: e.target.value,
+                          }))
+                        }
+                        placeholder='Phone'
+                      />
+                    </div>
+                    <div className='booking-input-wrapper'>
+                      <label>WhatsApp *</label>
+                      <input
+                        type='tel'
+                        value={leadPassenger.whatsapp}
+                        onChange={e =>
+                          setLeadPassenger(p => ({
+                            ...p,
+                            whatsapp: e.target.value,
+                          }))
+                        }
+                        placeholder='WhatsApp number'
+                      />
+                    </div>
                   </div>
-                </>
-              ) : (
-                <div className="input-selectors" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div className="booking-input-wrapper">
-                    <label>Salutation *</label>
-                    <select
-                      value={leadPassenger.salutation}
-                      onChange={e => setLeadPassenger(p => ({ ...p, salutation: e.target.value }))}
-                    >
-                      <option value="Mr">Mr</option>
-                      <option value="Mrs">Mrs</option>
-                      <option value="Ms">Ms</option>
-                      <option value="Dr">Dr</option>
-                    </select>
-                  </div>
-                  <div className="booking-input-wrapper">
-                    <label>First Name *</label>
-                    <input
-                      type="text"
-                      value={leadPassenger.firstName}
-                      onChange={e => setLeadPassenger(p => ({ ...p, firstName: e.target.value }))}
-                      placeholder="First name"
-                    />
-                  </div>
-                  <div className="booking-input-wrapper">
-                    <label>Last Name *</label>
-                    <input
-                      type="text"
-                      value={leadPassenger.lastName}
-                      onChange={e => setLeadPassenger(p => ({ ...p, lastName: e.target.value }))}
-                      placeholder="Last name"
-                    />
-                  </div>
-                  <div className="booking-input-wrapper">
-                    <label>Email *</label>
-                    <input
-                      type="email"
-                      value={leadPassenger.email}
-                      onChange={e => setLeadPassenger(p => ({ ...p, email: e.target.value }))}
-                      placeholder="Email"
-                    />
-                  </div>
-                  <div className="booking-input-wrapper">
-                    <label>Phone *</label>
-                    <input
-                      type="tel"
-                      value={leadPassenger.phone}
-                      onChange={e => setLeadPassenger(p => ({ ...p, phone: e.target.value }))}
-                      placeholder="Phone"
-                    />
-                  </div>
-                  <div className="booking-input-wrapper">
-                    <label>WhatsApp *</label>
-                    <input
-                      type="tel"
-                      value={leadPassenger.whatsapp}
-                      onChange={e => setLeadPassenger(p => ({ ...p, whatsapp: e.target.value }))}
-                      placeholder="WhatsApp number"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="ltd-modal-footer">
-              <button
-                type="button"
-                onClick={modalStep === 1 ? handleCloseModal : () => setModalStep(1)}
-                className="pdf-modal-cancel-button"
-                style={{ flex: 1 }}
-              >
-                {modalStep === 1 ? 'Cancel' : 'Back'}
-              </button>
-              {modalStep === 1 ? (
+                )}
+              </div>
+              <div className='ltd-modal-footer'>
                 <button
-                  type="button"
-                  onClick={handleStep1Continue}
-                  className="booking-add-to-cart-button"
+                  type='button'
+                  onClick={
+                    modalStep === 1 ? handleCloseModal : () => setModalStep(1)
+                  }
+                  className='pdf-modal-cancel-button'
                   style={{ flex: 1 }}
                 >
-                  {continueButtonLabel}
+                  {modalStep === 1 ? 'Cancel' : 'Back'}
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleProceedToPayment}
-                  className="booking-add-to-cart-button"
-                  disabled={isSubmitting}
-                  style={{ flex: 1 }}
-                >
-                  {isSubmitting ? 'Processing...' : `Proceed to Payment – ${formatPrice(totalAmount)}`}
-                </button>
-              )}
+                {modalStep === 1 ? (
+                  <button
+                    type='button'
+                    onClick={handleStep1Continue}
+                    className='booking-add-to-cart-button'
+                    style={{ flex: 1 }}
+                  >
+                    {continueButtonLabel}
+                  </button>
+                ) : (
+                  <button
+                    type='button'
+                    onClick={handleProceedToPayment}
+                    className='booking-add-to-cart-button'
+                    disabled={isSubmitting}
+                    style={{ flex: 1 }}
+                  >
+                    {isSubmitting
+                      ? 'Processing...'
+                      : `Proceed to Payment – ${formatPrice(totalAmount)}`}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -782,6 +782,7 @@ function getLimitedTimeDealCustomerEmailTemplate(data: LimitedTimeDealBookingEma
                 <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">${escapeHtml(partySummary)}</p>
                 <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Booking fee paid</p>
                 <p style="margin: 0; font-size: 22px; font-weight: 700; color: #c2410c;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</p>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280; line-height: 1.5;">Includes applicable platform fee (3%) on the booking fee portion.</p>
                 <p style="margin: 8px 0 0 0; font-size: 13px; color: #6b7280;">Transaction: <span style="font-family: ui-monospace, monospace;">${escapeHtml(data.paymentTransactionId)}</span></p>
               </div>
 
@@ -859,7 +860,7 @@ function getLimitedTimeDealInternalEmailTemplate(data: LimitedTimeDealBookingEma
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Package:</strong> ${escapeHtml(data.packageName)}</p>
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Travel date:</strong> ${escapeHtml(data.travelDateDisplay)}</p>
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Party:</strong> ${escapeHtml(partySummary)}</p>
-                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Fee paid:</strong> <span style="color: #c2410c; font-weight: 700;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</span></p>
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Fee paid:</strong> <span style="color: #c2410c; font-weight: 700;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</span> <span style="color: #6b7280; font-weight: 400;">(includes 3% platform fee on booking fee)</span></p>
                 <p style="margin: 0; font-size: 12px; color: #6b7280; font-family: ui-monospace, monospace;">Txn: ${escapeHtml(data.paymentTransactionId)}</p>
               </div>
               <p style="margin: 0 0 10px 0; font-size: 12px; font-weight: 600; color: #c2410c; text-transform: uppercase;">Customer (form)</p>
@@ -907,7 +908,10 @@ export async function sendLimitedTimeDealBookingConfirmationEmail(
       return { success: false, error: 'Email service not configured' };
     }
 
-    const internalRecipientEmail = 'rawatajay9092@gmail.com';
+    const internalTeamEmails = [
+      'info@aapkatourism.com',
+      'sam@aapkatourism.com',
+    ];
     const errors: string[] = [];
     const results: { customerEmailId?: string; internalEmailId?: string } = {};
 
@@ -927,7 +931,7 @@ export async function sendLimitedTimeDealBookingConfirmationEmail(
     }
 
     const internalRes = await sendEmail({
-      to: internalRecipientEmail,
+      to: internalTeamEmails,
       subject: internalSubject,
       html: getLimitedTimeDealInternalEmailTemplate(data),
     });

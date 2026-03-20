@@ -2372,8 +2372,6 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 /* LTD modal person counters - matches package details booking modal */
 .ltd-person-counters {
-  margin-top: 16px;
-  padding: 12px 0 0;
   border-top: 1px solid #f3f4f6;
 }
 
@@ -4132,4 +4130,43 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .ltd-price-breakdown {
   font-size: 12px;
   color: #6b7280;
+}
+
+.ltd-modal-per-person-note {
+  margin: 0;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.45;
+}
+
+.ltd-price-summary-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.ltd-price-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.ltd-price-line-muted {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.ltd-price-line-total {
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px solid #fed7aa;
+  font-weight: 600;
+}
+
+.ltd-price-line-total strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fd6b06;
 }

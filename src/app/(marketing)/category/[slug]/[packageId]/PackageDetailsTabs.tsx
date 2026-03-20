@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronDown } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { replaceLtdOccupancyPhrases } from '@/lib/ltd-copy';
 import './package-details.css';
 
 interface PackageDetailsTabsProps {
@@ -16,9 +17,22 @@ interface PackageDetailsTabsProps {
     exclusion_html?: string | null;
     terms_html?: string | null;
   };
+  /** Limited time deal page: normalize occupancy wording in CMS copy (e.g. single → double/triple) */
+  sanitizeOccupancyCopy?: boolean;
 }
 
-export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
+function occ(
+  text: string | null | undefined,
+  sanitize: boolean | undefined
+): string {
+  if (!text) return '';
+  return sanitize ? replaceLtdOccupancyPhrases(text) : text;
+}
+
+export default function PackageDetailsTabs({
+  pkg,
+  sanitizeOccupancyCopy,
+}: PackageDetailsTabsProps) {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [expandedItineraryItems, setExpandedItineraryItems] = useState<Set<number>>(new Set());
   const isMobile = useIsMobile();
@@ -192,14 +206,14 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
         {activeTab === 'overview' && pkg.overview && (
           <div className='package-section'>
             <h2>Overview</h2>
-            <p>{pkg.overview}</p>
+            <p>{occ(pkg.overview, sanitizeOccupancyCopy)}</p>
           </div>
         )}
 
         {activeTab === 'description' && pkg.package_description && (
           <div className='package-section'>
             <h2>Description</h2>
-            <p>{pkg.package_description}</p>
+            <p>{occ(pkg.package_description, sanitizeOccupancyCopy)}</p>
           </div>
         )}
 
@@ -209,7 +223,7 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
             <div
               className='package-html-content'
               dangerouslySetInnerHTML={{
-                __html: pkg.holiday_description_html,
+                __html: occ(pkg.holiday_description_html, sanitizeOccupancyCopy),
               }}
             />
           </div>
@@ -232,7 +246,9 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
                         >
                           <h3
                             className='itinerary-heading'
-                            dangerouslySetInnerHTML={{ __html: item.heading }}
+                            dangerouslySetInnerHTML={{
+                              __html: occ(item.heading, sanitizeOccupancyCopy),
+                            }}
                           />
                           <ChevronDown
                             className={`itinerary-chevron ${
@@ -246,7 +262,9 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
                           className={`itinerary-description ${
                             isExpanded ? 'expanded' : ''
                           }`}
-                          dangerouslySetInnerHTML={{ __html: item.desc }}
+                          dangerouslySetInnerHTML={{
+                            __html: occ(item.desc, sanitizeOccupancyCopy),
+                          }}
                         />
                       )}
                     </div>
@@ -261,7 +279,9 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
             <h2>Inclusions</h2>
             <div
               className='package-html-content'
-              dangerouslySetInnerHTML={{ __html: pkg.inclusion_html }}
+              dangerouslySetInnerHTML={{
+                __html: occ(pkg.inclusion_html, sanitizeOccupancyCopy),
+              }}
             />
           </div>
         )}
@@ -271,7 +291,9 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
             <h2>Exclusions</h2>
             <div
               className='package-html-content'
-              dangerouslySetInnerHTML={{ __html: pkg.exclusion_html }}
+              dangerouslySetInnerHTML={{
+                __html: occ(pkg.exclusion_html, sanitizeOccupancyCopy),
+              }}
             />
           </div>
         )}
@@ -281,7 +303,9 @@ export default function PackageDetailsTabs({ pkg }: PackageDetailsTabsProps) {
             <h2>Terms & Conditions</h2>
             <div
               className='package-html-content'
-              dangerouslySetInnerHTML={{ __html: pkg.terms_html }}
+              dangerouslySetInnerHTML={{
+                __html: occ(pkg.terms_html, sanitizeOccupancyCopy),
+              }}
             />
           </div>
         )}
