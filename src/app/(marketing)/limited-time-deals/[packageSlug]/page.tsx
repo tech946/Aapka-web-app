@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import type { CSSProperties } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -13,7 +14,85 @@ import LimitedTimeDealCalendar from '@/components/marketing/LimitedTimeDealCalen
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
 
-const BOOKING_FEE_AED = 1; // TODO: revert to 100 after testing
+const BOOKING_FEE_AED = 100;
+
+function formatAedAmount(n: number) {
+  return `AED ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** Package hero pricing: same layout as package details (main total + Adult / Child / Infant grid). */
+function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
+  const adultP = Number(pkg.adult_price) || 0;
+  const childP = Number(pkg.child_price) || 0;
+  const infantP = Number(pkg.infant_price) || 0;
+  const packagePrice = Number(pkg.package_price) || 0;
+  const soloP = pkg.solo_traveller_price != null ? Number(pkg.solo_traveller_price) : 0;
+
+  const hasBreakdown = adultP > 0 || childP > 0 || infantP > 0;
+  const hasSolo = Boolean(pkg.solo_traveller_enabled && soloP > 0);
+
+  if (!hasBreakdown && !packagePrice && !hasSolo) return null;
+
+  /* Package-only SKU: single headline price, no duplicate row in the grid */
+  if (!hasBreakdown && !hasSolo && packagePrice > 0) {
+    return (
+      <div className="package-hero-pricing">
+        <span className="package-hero-price-current">{formatAedAmount(packagePrice)}</span>
+      </div>
+    );
+  }
+
+  const minAdults = Math.max(1, pkg.min_adults ?? 2);
+  const mainFromAdults = adultP > 0 ? adultP * minAdults : 0;
+  const mainAmount =
+    packagePrice > 0
+      ? packagePrice
+      : mainFromAdults > 0
+        ? mainFromAdults
+        : hasSolo
+          ? soloP
+          : 0;
+
+  return (
+    <>
+      {mainAmount > 0 && (
+        <div className="package-hero-pricing">
+          <span className="package-hero-price-current">{formatAedAmount(mainAmount)}</span>
+        </div>
+      )}
+      <div className="package-hero-price-breakdown">
+        {adultP > 0 && (
+          <div className="package-hero-price-item">
+            <span className="package-hero-price-item-label">Adult</span>
+            <span className="package-hero-price-item-age">12+ Years</span>
+            <span className="package-hero-price-item-amount">{formatAedAmount(adultP)}</span>
+          </div>
+        )}
+        {childP > 0 && (
+          <div className="package-hero-price-item">
+            <span className="package-hero-price-item-label">Child</span>
+            <span className="package-hero-price-item-age">2-8 Years</span>
+            <span className="package-hero-price-item-amount">{formatAedAmount(childP)}</span>
+          </div>
+        )}
+        {infantP > 0 && (
+          <div className="package-hero-price-item">
+            <span className="package-hero-price-item-label">Infant</span>
+            <span className="package-hero-price-item-age">&lt; 2 Years</span>
+            <span className="package-hero-price-item-amount">{formatAedAmount(infantP)}</span>
+          </div>
+        )}
+        {hasSolo && (
+          <div className="package-hero-price-item">
+            <span className="package-hero-price-item-label">Solo Traveller</span>
+            <span className="package-hero-price-item-age">Single occupancy</span>
+            <span className="package-hero-price-item-amount">{formatAedAmount(soloP)}</span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
 
 interface Package {
   package_id: string;
@@ -78,16 +157,17 @@ export default function LimitedTimeDealDetailPage() {
   const [visaForChildren, setVisaForChildren] = useState(0);
   const [visaForInfants, setVisaForInfants] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
-  const calendarRef = useRef<HTMLDivElement>(null);
+  const [showDateRequiredError, setShowDateRequiredError] = useState(false);
+  const dateTriggerRef = useRef<HTMLDivElement>(null);
+  const calendarPopoverRef = useRef<HTMLDivElement>(null);
+  const [calendarPopoverStyle, setCalendarPopoverStyle] = useState<CSSProperties>({});
 
   const pkg = deal?.package;
-  const bookingFeePerPerson = BOOKING_FEE_AED; // TODO: revert to `Number(deal?.booking_fee_aed) || BOOKING_FEE_AED` after testing
+  const bookingFeePerPerson = Number(deal?.booking_fee_aed) || BOOKING_FEE_AED;
   const totalPersons = isSoloTraveller ? 1 : persons.adult + persons.child + persons.infant;
   const totalAmount = totalPersons * bookingFeePerPerson;
 
-  const formatPrice = (price: number) => {
-    return `AED ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatPrice = (price: number) => formatAedAmount(price);
 
   const continueButtonLabel = `Continue – ${formatPrice(totalAmount)}`;
 
@@ -99,12 +179,45 @@ export default function LimitedTimeDealDetailPage() {
     }
   }, [withVisa, persons.adult, persons.child, persons.infant]);
 
+  const updateCalendarPopoverPosition = useCallback(() => {
+    const el = dateTriggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const width = Math.max(r.width, 300);
+    const maxH = Math.min(420, typeof window !== 'undefined' ? window.innerHeight - r.bottom - 24 : 420);
+    let left = r.left;
+    if (left + width > window.innerWidth - 12) {
+      left = Math.max(12, window.innerWidth - width - 12);
+    }
+    setCalendarPopoverStyle({
+      position: 'fixed',
+      top: r.bottom + 6,
+      left,
+      width,
+      maxHeight: maxH,
+      zIndex: 10050,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!showCalendar) return;
+    updateCalendarPopoverPosition();
+    const onReposition = () => updateCalendarPopoverPosition();
+    window.addEventListener('resize', onReposition);
+    window.addEventListener('scroll', onReposition, true);
+    return () => {
+      window.removeEventListener('resize', onReposition);
+      window.removeEventListener('scroll', onReposition, true);
+    };
+  }, [showCalendar, updateCalendarPopoverPosition]);
+
   useEffect(() => {
     if (!showCalendar) return;
     const handler = (e: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
-        setShowCalendar(false);
-      }
+      const t = e.target as Node;
+      if (dateTriggerRef.current?.contains(t)) return;
+      if (calendarPopoverRef.current?.contains(t)) return;
+      setShowCalendar(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -152,9 +265,11 @@ export default function LimitedTimeDealDetailPage() {
   const handleStep1Continue = () => {
     if (!deal || !pkg) return;
     if (!selectedDate) {
-      toast.error('Please select a travel date');
+      setShowDateRequiredError(true);
+      toast.error('Please select a travel date before continuing.');
       return;
     }
+    setShowDateRequiredError(false);
     const minAdults = pkg.min_adults ?? 2;
     if (!isSoloTraveller && persons.adult < minAdults) {
       toast.error(`Minimum ${minAdults} adults required`);
@@ -260,6 +375,7 @@ export default function LimitedTimeDealDetailPage() {
   };
 
   const handleOpenModal = () => {
+    setShowDateRequiredError(false);
     setShowModal(true);
     setShowCalendar(false);
     setModalStep(1);
@@ -269,6 +385,7 @@ export default function LimitedTimeDealDetailPage() {
     setShowModal(false);
     setModalStep(1);
     setShowCalendar(false);
+    setShowDateRequiredError(false);
   };
 
   const updatePersonCount = (type: 'adult' | 'child' | 'infant', delta: number) => {
@@ -312,11 +429,10 @@ export default function LimitedTimeDealDetailPage() {
             <span style={{ fontSize: 12, color: '#fd6b06', fontWeight: 600 }}>Limited Time Deal</span>
           </div>
           <h1 className="package-hero-title">{pkg.package_name}</h1>
-          <div className="package-hero-pricing">
-            <span className="package-hero-price-current">
-              AED {bookingFeePerPerson.toLocaleString()} booking fee per person
-            </span>
-          </div>
+          <LtdPackagePricingDisplay pkg={pkg} />
+          <p className="ltd-hero-booking-fee-note">
+            <strong>Limited time deal — booking fee:</strong> {formatPrice(bookingFeePerPerson)} per person (payable when you book this offer).
+          </p>
           {pkg.package_description && <p className="package-hero-description">{pkg.package_description}</p>}
           <div className="package-hero-buttons">
             <button type="button" className="package-hero-add-to-cart-button" onClick={handleOpenModal}>
@@ -342,24 +458,42 @@ export default function LimitedTimeDealDetailPage() {
                 <X className="desktop-booking-modal-close-icon" size={20} />
               </button>
             </div>
-            <div className="desktop-booking-modal-content" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
+            <div
+              className="desktop-booking-modal-content"
+              style={
+                modalStep === 1
+                  ? { overflow: 'visible', maxHeight: 'calc(100vh - 120px)' }
+                  : { overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }
+              }
+            >
               {modalStep === 1 ? (
                 <>
-                  {/* Date dropdown */}
-                  <div className="ltd-date-dropdown-wrapper" ref={calendarRef}>
-                    <button
-                      type="button"
-                      className="ltd-date-dropdown-trigger"
-                      onClick={() => setShowCalendar(prev => !prev)}
-                    >
-                      <Calendar size={18} className="ltd-date-icon" />
-                      <span className={selectedDate ? 'ltd-date-value' : 'ltd-date-placeholder'}>
-                        {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Select travel date'}
-                      </span>
-                      <ChevronDown size={18} className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`} />
-                    </button>
-                    {showCalendar && (
-                      <div className="ltd-date-calendar-dropdown">
+                  {/* Date field — calendar opens in a fixed portal (true dropdown), not inline */}
+                  <div className="ltd-date-dropdown-wrapper">
+                    <div ref={dateTriggerRef}>
+                      <button
+                        type="button"
+                        className={`ltd-date-dropdown-trigger${showDateRequiredError ? ' ltd-date-dropdown-trigger--error' : ''}`}
+                        onClick={() => setShowCalendar(prev => !prev)}
+                      >
+                        <Calendar size={18} className="ltd-date-icon" />
+                        <span className={selectedDate ? 'ltd-date-value' : 'ltd-date-placeholder'}>
+                          {selectedDate ? format(selectedDate, 'dd MMM yyyy') : 'Select travel date'}
+                        </span>
+                        <ChevronDown size={18} className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+                  {showCalendar &&
+                    typeof window !== 'undefined' &&
+                    createPortal(
+                      <div
+                        ref={calendarPopoverRef}
+                        className="ltd-date-calendar-popover"
+                        style={calendarPopoverStyle}
+                        role="dialog"
+                        aria-label="Choose travel date"
+                      >
                         <LimitedTimeDealCalendar
                           dealId={deal.id}
                           startDate={deal.start_date}
@@ -367,14 +501,21 @@ export default function LimitedTimeDealDetailPage() {
                           selectedDate={selectedDate}
                           onDateSelect={d => {
                             setSelectedDate(d);
+                            setShowDateRequiredError(false);
                             setShowCalendar(false);
                           }}
                           month={month}
                           onMonthChange={setMonth}
                         />
-                      </div>
+                      </div>,
+                      document.body
                     )}
-                  </div>
+
+                  {showDateRequiredError && (
+                    <p className="ltd-date-required-msg" role="alert">
+                      Please select a travel date to continue.
+                    </p>
+                  )}
 
                   {pkg.solo_traveller_enabled && (
                     <div className="solo-traveller-block">
@@ -428,7 +569,7 @@ export default function LimitedTimeDealDetailPage() {
 
                   <div className="ltd-person-counters">
                     <div className="person-counter-row">
-                      <span className="person-label">Adult <span className="person-age-info">(8+ years)</span></span>
+                      <span className="person-label">Adult <span className="person-age-info">(12+ years)</span></span>
                       <div className="person-counter">
                         <button type="button" className="counter-button" onClick={() => updatePersonCount('adult', -1)} disabled={isSoloTraveller || persons.adult <= (pkg.min_adults ?? 2)}>
                           <Minus className="counter-icon" size={18} />
@@ -440,7 +581,7 @@ export default function LimitedTimeDealDetailPage() {
                       </div>
                     </div>
                     <div className="person-counter-row">
-                      <span className="person-label">Child <span className="person-age-info">(3-8 years)</span></span>
+                      <span className="person-label">Child <span className="person-age-info">(2-8 years)</span></span>
                       <div className="person-counter">
                         <button type="button" className="counter-button" onClick={() => updatePersonCount('child', -1)} disabled={isSoloTraveller || persons.child === 0}>
                           <Minus className="counter-icon" size={18} />
@@ -452,7 +593,7 @@ export default function LimitedTimeDealDetailPage() {
                       </div>
                     </div>
                     <div className="person-counter-row">
-                      <span className="person-label">Infant <span className="person-age-info">(0-2 years)</span></span>
+                      <span className="person-label">Infant <span className="person-age-info">(&lt; 2 years)</span></span>
                       <div className="person-counter">
                         <button type="button" className="counter-button" onClick={() => updatePersonCount('infant', -1)} disabled={persons.infant === 0}>
                           <Minus className="counter-icon" size={18} />
@@ -550,7 +691,6 @@ export default function LimitedTimeDealDetailPage() {
                   type="button"
                   onClick={handleStep1Continue}
                   className="booking-add-to-cart-button"
-                  disabled={!selectedDate}
                   style={{ flex: 1 }}
                 >
                   {continueButtonLabel}

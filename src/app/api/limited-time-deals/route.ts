@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       body?.max_bookings_per_day !== undefined &&
       body?.max_bookings_per_day !== null
         ? Number(body.max_bookings_per_day)
-        : 46;
+        : 48;
     const isActive = body?.is_active !== false;
 
     if (!offerPackageId || !startDate || !endDate) {

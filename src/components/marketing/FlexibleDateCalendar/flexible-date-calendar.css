@@ -232,10 +232,29 @@
 /* Calendar Footer */
 .flexible-calendar-footer {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding-top: 8px;
   margin-top: 8px;
   border-top: 1px solid #f3f4f6;
+}
+
+.ltd-calendar-cap-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #6b7280;
+  text-align: left;
+}
+
+.ltd-calendar-cap-hint strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.flexible-calendar-footer .flexible-clear-dates-button {
+  align-self: flex-end;
 }
 
 .flexible-clear-dates-button {

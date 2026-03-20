@@ -26,7 +26,7 @@ export default function LimitedTimeDealCalendar({
   onMonthChange,
 }: LimitedTimeDealCalendarProps) {
   const [availability, setAvailability] = useState<Record<string, { available: number; isSoldOut: boolean }>>({});
-  const [maxPerDay, setMaxPerDay] = useState(46);
+  const [maxPerDay, setMaxPerDay] = useState(48);
 
   useEffect(() => {
     if (!dealId) return;
@@ -37,7 +37,7 @@ export default function LimitedTimeDealCalendar({
         const json = await res.json();
         if (json.success && json.data) {
           setAvailability(json.data);
-          setMaxPerDay(json.maxBookingsPerDay || 46);
+          setMaxPerDay(Number(json.maxBookingsPerDay) || 48);
         }
       } catch (error) {
         console.error('Failed to fetch LTD availability:', error);
@@ -99,7 +99,12 @@ export default function LimitedTimeDealCalendar({
         {info.isSoldOut ? (
           <span className="flexible-day-soldout">Sold Out</span>
         ) : !isDisabled ? (
-          <span className="flexible-day-price">{info.available} left</span>
+          <span
+            className="flexible-day-price"
+            title={`${maxPerDay} seats per day · ${info.available} remaining (completed payments only; pending/unpaid not counted)`}
+          >
+            {info.available}/{maxPerDay}
+          </span>
         ) : (
           <span className="flexible-day-na">N/A</span>
         )}
@@ -113,11 +118,6 @@ export default function LimitedTimeDealCalendar({
         <button
           className="flexible-calendar-nav-button"
           disabled={startOfMonth(month) <= minMonth}
-          onClick={() => {
-            const prev = new Date(month);
-            prev.setMonth(prev.getMonth() - 1);
-            onMonthChange(prev);
-          }}
           onClick={() => {
             const prev = new Date(month);
             prev.setMonth(prev.getMonth() - 1);
@@ -151,6 +151,11 @@ export default function LimitedTimeDealCalendar({
         components={{ DayButton: CustomDayButton }}
       />
       <div className="flexible-calendar-footer">
+        <p className="ltd-calendar-cap-hint">
+          <strong>{maxPerDay}</strong> seats per day · numbers show{' '}
+          <strong>remaining / cap</strong> (only <strong>completed</strong> LTD
+          payments count; pending or cancelled do not reduce availability).
+        </p>
         <button
           type="button"
           className="flexible-clear-dates-button"

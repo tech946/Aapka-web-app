@@ -180,6 +180,32 @@ export function Sidebar() {
               <span>Payments</span>
             </Link>
 
+            <Link
+              href='/dashboard/booking-payments'
+              className={`sidebar_item ${pathname === '/dashboard/booking-payments' ? 'active' : ''}`}
+            >
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='24'
+                height='24'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                className='lucide lucide-calendar-check w-16 h-16'
+                aria-hidden='true'
+              >
+                <path d='M8 2v4'></path>
+                <path d='M16 2v4'></path>
+                <rect width='18' height='18' x='3' y='4' rx='2'></rect>
+                <path d='M3 10h18'></path>
+                <path d='m9 16 2 2 4-4'></path>
+              </svg>
+              <span>Booking payments</span>
+            </Link>
+
             {/* Contact Queries */}
             <Link
               href='/dashboard/contact-queries'

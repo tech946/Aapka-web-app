@@ -97,6 +97,7 @@ export default function PaymentsPage() {
         const params = new URLSearchParams({
           page: String(page),
           limit: String(limit),
+          limited_time_deal: 'exclude',
         });
         if (query) params.append('search', query);
         if (paymentStatusFilter)
@@ -346,6 +347,7 @@ export default function PaymentsPage() {
       const params = new URLSearchParams({
         page: '1',
         limit: '10000', // Large limit to get all
+        limited_time_deal: 'exclude',
       });
       if (query) params.append('search', query);
       if (paymentStatusFilter)
@@ -475,7 +477,10 @@ export default function PaymentsPage() {
     <div className='dashboard_page'>
       <div className='heading_block'>
         <h3>Payments</h3>
-        <p>View and manage payment transactions</p>
+        <p>
+          Full package checkout payments. Limited time deal booking fees are listed
+          under <strong>Booking payments</strong>.
+        </p>
       </div>
 
       <div className='table_toolbar'>

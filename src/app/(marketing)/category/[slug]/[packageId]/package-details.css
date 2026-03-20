@@ -35,8 +35,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
 }
-.package-details-page{
-      background: #f8f2ed;
+.package-details-page {
+  background: #f8f2ed;
 }
 .package-details-loading,
 .package-details-error {
@@ -53,12 +53,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   margin-bottom: 24px;
   color: #111827;
 }
-.package-details-error .back-button{
+.package-details-error .back-button {
   display: flex;
   gap: 8px;
   align-items: center;
   border: 1px solid #fd6b06;
-  color:#fd6b06;
+  color: #fd6b06;
   border-radius: 8px;
   padding-inline: 24px;
   height: 44px;
@@ -272,7 +272,6 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   flex-shrink: 0;
 }
 
-
 .package-hero-add-to-cart-button svg {
   width: 20px;
   height: 20px;
@@ -410,14 +409,14 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-    color: #fff;
-    background: #fd6b06;
+  color: #fff;
+  background: #fd6b06;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .package-gallery-zoom-btn:hover {
-     color: #fff;
-    background: #fd6b06;
+  color: #fff;
+  background: #fd6b06;
   transform: scale(1.1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
@@ -625,7 +624,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   transition: all 0.3s ease;
   color: #fff;
 }
-.package-lightbox-nav svg path{
+.package-lightbox-nav svg path {
   fill: #fff;
 }
 
@@ -748,7 +747,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     padding: 0 24px;
     justify-content: center;
   }
-  
+
   .package-hero-pdf-button {
     height: 56px;
   }
@@ -1142,7 +1141,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 @media (max-width: 768px) {
   .package-price-display-section {
-    padding: 16px 16px ;
+    padding: 16px 16px;
   }
 
   .package-price-display-container {
@@ -1270,7 +1269,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 @keyframes timer-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -1442,7 +1442,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   gap: 16px;
   transition: background 0.2s ease;
 }
-.itinerary-item-header p{
+.itinerary-item-header p {
   margin-bottom: 0;
 }
 .itinerary-item-header:hover {
@@ -1633,9 +1633,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .desktop-booking-modal-close-icon {
-width: 24px;
-    height: 24px;
-    stroke: rgb(51, 51, 51);
+  width: 24px;
+  height: 24px;
+  stroke: rgb(51, 51, 51);
 }
 
 @media (max-width: 768px) {
@@ -1652,7 +1652,6 @@ width: 24px;
 .desktop-booking-popover {
   display: none;
 }
-
 
 @media (max-width: 1024px) {
   .desktop-booking-popover {
@@ -1719,7 +1718,9 @@ width: 24px;
   font-family: var(--font-inter);
 }
 
-.desktop-booking-modal-content .booking-price-section .booking-price-amount.discounted {
+.desktop-booking-modal-content
+  .booking-price-section
+  .booking-price-amount.discounted {
   color: #fd6b06;
 }
 
@@ -1915,7 +1916,7 @@ width: 24px;
   color: #111827;
   font-family: var(--font-inter);
 }
-.desktop-booking-modal-content .ltd-modal-checkbox-row input[type="checkbox"] {
+.desktop-booking-modal-content .ltd-modal-checkbox-row input[type='checkbox'] {
   width: 18px;
   height: 18px;
   accent-color: #fd6b06;
@@ -2020,7 +2021,7 @@ width: 24px;
   font-family: var(--font-inter);
 }
 
-.solo-checkbox input[type="checkbox"] {
+.solo-checkbox input[type='checkbox'] {
   width: 20px;
   height: 20px;
   cursor: pointer;
@@ -2029,7 +2030,7 @@ width: 24px;
   border-radius: 4px;
 }
 
-.solo-checkbox input[type="checkbox"]:checked {
+.solo-checkbox input[type='checkbox']:checked {
   background-color: #fd6b06;
   border-color: #fd6b06;
 }
@@ -2094,7 +2095,7 @@ width: 24px;
   font-family: var(--font-inter);
 }
 
-.solo-consent input[type="checkbox"] {
+.solo-consent input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -2153,7 +2154,7 @@ width: 24px;
   font-family: var(--font-inter);
 }
 
-.visa-checkbox input[type="checkbox"] {
+.visa-checkbox input[type='checkbox'] {
   width: 20px;
   height: 20px;
   cursor: pointer;
@@ -2162,7 +2163,7 @@ width: 24px;
   border-radius: 4px;
 }
 
-.visa-checkbox input[type="checkbox"]:checked {
+.visa-checkbox input[type='checkbox']:checked {
   background-color: #3b82f6;
   border-color: #3b82f6;
 }
@@ -2729,7 +2730,6 @@ width: 24px;
   background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
   color: #fff;
   border: none;
-  border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -3775,7 +3775,9 @@ width: 24px;
   max-height: 90vh;
   overflow-y: auto;
   z-index: 10000;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideUp 0.3s ease-out;
   pointer-events: auto;
 }
@@ -3989,10 +3991,33 @@ width: 24px;
   }
 }
 
+/* Limited time deal: package pricing on hero + modal (matches details breakdown) */
+.ltd-hero-booking-fee-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #4b5563;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 /* LTD date dropdown */
 .ltd-date-dropdown-wrapper {
   position: relative;
   margin-bottom: 8px;
+}
+
+.ltd-date-required-msg {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
 }
 
 .ltd-date-dropdown-trigger {
@@ -4011,6 +4036,11 @@ width: 24px;
 
 .ltd-date-dropdown-trigger:hover {
   border-color: #fd6b06;
+}
+
+.ltd-date-dropdown-trigger--error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25);
 }
 
 .ltd-date-icon {
@@ -4055,6 +4085,26 @@ width: 24px;
 }
 
 .ltd-date-calendar-dropdown .flexible-date-calendar-wrapper {
+  max-width: 100%;
+  min-height: auto;
+}
+
+/* LTD calendar as fixed popover (portaled to body) — overlays modal, not inline */
+.ltd-date-calendar-popover {
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ltd-date-calendar-popover .flexible-date-calendar-wrapper {
   max-width: 100%;
   min-height: auto;
 }

@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
+  Zap,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -238,6 +239,30 @@ export default function Header() {
                   }`}
                 >
                   Home
+                </Link>
+              </li>
+              <li
+                ref={el => {
+                  linkRefs.current['/limited-time-deals'] = el;
+                }}
+                className={
+                  pathname.startsWith('/limited-time-deals') ? 'active' : ''
+                }
+              >
+                <Link
+                  href='/limited-time-deals'
+                  className={`header-nav-link header-nav-link-ltd ${
+                    pathname.startsWith('/limited-time-deals') ? 'active' : ''
+                  }`}
+                >
+                  <span className='header-ltd-zap-wrap' aria-hidden>
+                    <Zap
+                      size={16}
+                      className='header-ltd-zap'
+                      strokeWidth={2.5}
+                    />
+                  </span>
+                  <span className='header-ltd-text'>Limited Time Deals</span>
                 </Link>
               </li>
               {categoriesWithPackages.length > 0 && (
@@ -637,6 +662,22 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Home
+            </Link>
+
+            <Link
+              href='/limited-time-deals'
+              className={`mobile-sidebar-link mobile-sidebar-link-ltd ${
+                pathname.startsWith('/limited-time-deals') ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Zap
+                size={18}
+                className='mobile-ltd-zap'
+                aria-hidden
+                strokeWidth={2.5}
+              />
+              <span className='mobile-ltd-label'>Limited Time Deals</span>
             </Link>
 
             {categoriesWithPackages.length > 0 && (

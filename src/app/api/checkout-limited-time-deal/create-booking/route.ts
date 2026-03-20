@@ -2,45 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { REFERRAL_COOKIE_NAME } from '@/lib/influencer-referral';
+import { getLtdOccupiedSeatsByDate } from '@/lib/ltd-occupied-seats';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const BUCKET_NAME = 'images';
-
-// Helper: Get occupied seats per date for a limited time deal (from api/limited-time-deals/availability)
-async function getOccupiedSeatsForLimitedTimeDeal(
-  dealId: string
-): Promise<Map<string, number>> {
-  const map = new Map<string, number>();
-  try {
-    const { data: bookings, error } = await supabaseAdmin
-      .from('bookings')
-      .select('cart_items')
-      .eq('payment_status', 'completed')
-      .eq('limited_time_deal_id', dealId);
-
-    if (error || !bookings) return map;
-
-    for (const booking of bookings) {
-      const cartItems = booking.cart_items;
-      if (!Array.isArray(cartItems)) continue;
-      for (const item of cartItems) {
-        if (!item?.selectedDate) continue;
-        const dateStr = String(item.selectedDate).split('T')[0];
-        const adults = Number(item.adults) || 0;
-        const children = Number(item.children) || 0;
-        const infants = Number(item.infants) || 0;
-        const total = item.isSoloTraveller ? 1 : adults + children + infants;
-        const current = map.get(dateStr) || 0;
-        map.set(dateStr, current + total);
-      }
-    }
-  } catch (e) {
-    console.error('Error getting occupied seats:', e);
-  }
-  return map;
-}
 
 async function uploadBase64ToSupabase(
   base64String: string,
@@ -160,6 +127,14 @@ export async function POST(req: NextRequest) {
 
     const item = cartItems[0];
 
+    // Solo traveller: always persist as 1 adult, 0 children, 0 infants (for reports & dashboard)
+    const normalizedItem = {
+      ...item,
+      ...(item.isSoloTraveller
+        ? { adults: 1, children: 0, infants: 0 }
+        : {}),
+    };
+
     // Fetch deal and validate
     const { data: deal, error: dealError } = await supabaseAdmin
       .from('limited_time_deals')
@@ -174,14 +149,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (item.packageId !== deal.offer_package_id) {
+    if (normalizedItem.packageId !== deal.offer_package_id) {
       return NextResponse.json(
         { error: 'Package does not match this limited time deal' },
         { status: 400 }
       );
     }
 
-    const selectedDateStr = item.selectedDate ? String(item.selectedDate).split('T')[0] : null;
+    const selectedDateStr = normalizedItem.selectedDate
+      ? String(normalizedItem.selectedDate).split('T')[0]
+      : null;
     if (!selectedDateStr) {
       return NextResponse.json(
         { error: 'Selected date is required' },
@@ -201,10 +178,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Check availability: occupied < max_bookings_per_day
-    const occupiedMap = await getOccupiedSeatsForLimitedTimeDeal(limitedTimeDealId);
+    const occupiedMap = await getLtdOccupiedSeatsByDate(limitedTimeDealId);
     const occupied = occupiedMap.get(selectedDateStr) || 0;
-    const maxPerDay = Number(deal.max_bookings_per_day) || 46;
-    const totalPersons = item.isSoloTraveller ? 1 : item.adults + item.children + item.infants;
+    const maxPerDay = Number(deal.max_bookings_per_day) || 48;
+    const totalPersons =
+      Number(normalizedItem.adults || 0) +
+      Number(normalizedItem.children || 0) +
+      Number(normalizedItem.infants || 0);
 
     if (occupied + totalPersons > maxPerDay) {
       return NextResponse.json(
@@ -337,8 +317,8 @@ export async function POST(req: NextRequest) {
 
     // Build cart item with price for email
     const cartItemWithPrice = {
-      ...item,
-      price: item.price ?? totalAmount,
+      ...normalizedItem,
+      price: normalizedItem.price ?? totalAmount,
     };
 
     let dbPaymentMethod = 'other';
@@ -356,7 +336,7 @@ export async function POST(req: NextRequest) {
     }
 
     const bookingData: Record<string, unknown> = {
-      package_ids: [item.packageId],
+      package_ids: [normalizedItem.packageId],
       total_amount: totalAmount,
       payment_method: dbPaymentMethod,
       payment_status: 'pending',
@@ -366,7 +346,7 @@ export async function POST(req: NextRequest) {
       cart_items: [cartItemWithPrice],
       created_at: new Date().toISOString(),
       limited_time_deal_id: limitedTimeDealId,
-      is_solo_traveller: item.isSoloTraveller || false,
+      is_solo_traveller: normalizedItem.isSoloTraveller || false,
       solo_traveller_gender: null,
       solo_traveller_share_consent: false,
       referral_id: null,

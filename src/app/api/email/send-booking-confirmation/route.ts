@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendBookingConfirmationEmail } from '@/lib/email';
+import {
+  sendBookingConfirmationEmail,
+  sendLimitedTimeDealBookingConfirmationEmail,
+} from '@/lib/email';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { parseDateStringToLocal } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -95,7 +99,69 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // Prepare email data
+    // Limited Time Deal: dedicated “booking fee only” template (PDF-style), not full-package confirmation
+    if (booking.limited_time_deal_id) {
+      const item = cartItems[0] as Record<string, unknown> | undefined;
+      const pkgName =
+        packages[0]?.packageName ||
+        (Array.isArray(booking.package_ids) && booking.package_ids[0]
+          ? 'Package'
+          : 'Limited time deal package');
+      const selectedRaw = item?.selectedDate != null ? String(item.selectedDate) : '';
+      let travelDateDisplay = 'Not specified';
+      if (selectedRaw) {
+        const d = parseDateStringToLocal(selectedRaw.split('T')[0]);
+        travelDateDisplay = d
+          ? d.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          : selectedRaw.split('T')[0];
+      }
+
+      const ltdData = {
+        bookingId: booking.id,
+        packageName: pkgName,
+        travelDateDisplay,
+        adults: Number(item?.adults) || 0,
+        children: Number(item?.children) || 0,
+        infants: Number(item?.infants) || 0,
+        isSoloTraveller: Boolean(item?.isSoloTraveller),
+        salutation: String(leadPassenger.salutation || ''),
+        firstName: String(leadPassenger.firstName || ''),
+        lastName: String(leadPassenger.lastName || ''),
+        email: customerEmail,
+        phone: String(leadPassenger.phone || customerPhone || ''),
+        whatsapp: String(leadPassenger.whatsapp || customerWhatsApp || ''),
+        bookingFeePaid: Number(booking.payment_amount ?? booking.total_amount) || 0,
+        currency: String(booking.payment_amount_currency || 'AED'),
+        paymentTransactionId: String(paymentTransactionId || ''),
+      };
+
+      console.log(`📧 [EMAIL API] Sending LTD booking-fee emails for booking ${booking.id}`);
+      const result = await sendLimitedTimeDealBookingConfirmationEmail(ltdData);
+
+      if (result.success) {
+        return NextResponse.json({
+          success: true,
+          message: 'Limited time deal booking fee confirmation emails sent',
+          template: 'limited_time_deal',
+          customerEmailId: result.customerEmailId,
+          internalEmailId: result.internalEmailId,
+        });
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error || 'Failed to send LTD emails',
+          errors: result.errors,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Standard full booking confirmation
     const emailData = {
       bookingId: booking.id,
       customerName,

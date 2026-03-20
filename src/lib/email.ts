@@ -691,6 +691,261 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
   }
 }
 
+function escapeHtml(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Limited Time Deal: booking fee only (not full package) — matches PDF brochure email layout */
+export interface LimitedTimeDealBookingEmailData {
+  bookingId: string;
+  packageName: string;
+  travelDateDisplay: string;
+  adults: number;
+  children: number;
+  infants: number;
+  isSoloTraveller: boolean;
+  salutation: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  bookingFeePaid: number;
+  currency: string;
+  paymentTransactionId: string;
+}
+
+function getLtdEmailAssetsBase(): string {
+  return process.env.EMAIL_ASSETS_BASE_URL || 'https://www.aapkatourism.com';
+}
+
+function getLtdSiteUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || getLtdEmailAssetsBase()).replace(/\/$/, '');
+}
+
+function formatLtdCurrency(amount: number, currency: string): string {
+  return `${currency} ${Number(amount).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function getLimitedTimeDealCustomerEmailTemplate(data: LimitedTimeDealBookingEmailData): string {
+  const base = getLtdEmailAssetsBase();
+  const siteUrl = getLtdSiteUrl();
+  const logoUrl = `${base.replace(/\/$/, '')}/aapka-tourism-logo.png`;
+  const dealsUrl = `${siteUrl}/limited-time-deals`;
+  const fullName = `${data.salutation} ${data.firstName} ${data.lastName}`.trim();
+  const partySummary = data.isSoloTraveller
+    ? 'Solo traveller'
+    : `${data.adults} adult(s), ${data.children} child(ren), ${data.infants} infant(s)`;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limited Time Deal – Booking fee received</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 48px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 520px; width: 100%; background: #ffffff; border: 1px solid #e8e8e8;">
+          <tr>
+            <td style="padding: 48px 40px 32px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+              <img src="${logoUrl}" alt="Aapka Tourism" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #c2410c; letter-spacing: 0.08em; text-transform: uppercase;">Limited time deal</p>
+              <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #111827; letter-spacing: -0.02em; line-height: 1.3;">Booking fee received</h1>
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.7;">Dear ${escapeHtml(fullName)},</p>
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563; line-height: 1.7;">
+                Thank you. We have received your <strong style="color: #111827;">booking fee</strong> for the limited time offer below. This payment secures your interest in the package — it is <strong style="color: #111827;">not</strong> the full package price. Our team will contact you with next steps.
+              </p>
+
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Reference</p>
+                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #111827; font-family: ui-monospace, monospace;">${escapeHtml(data.bookingId)}</p>
+                <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Package</p>
+                <p style="margin: 0 0 16px 0; font-size: 17px; font-weight: 600; color: #111827;">${escapeHtml(data.packageName)}</p>
+                <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Preferred travel date</p>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">${escapeHtml(data.travelDateDisplay)}</p>
+                <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Travellers</p>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151;">${escapeHtml(partySummary)}</p>
+                <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Booking fee paid</p>
+                <p style="margin: 0; font-size: 22px; font-weight: 700; color: #c2410c;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</p>
+                <p style="margin: 8px 0 0 0; font-size: 13px; color: #6b7280;">Transaction: <span style="font-family: ui-monospace, monospace;">${escapeHtml(data.paymentTransactionId)}</span></p>
+              </div>
+
+              <p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 600; color: #c2410c; letter-spacing: 0.06em; text-transform: uppercase;">Your contact details</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; margin-bottom: 28px;">
+                <tr><td style="padding: 6px 0; font-size: 14px; color: #6b7280; width: 100px;">Name</td><td style="padding: 6px 0; font-size: 14px; color: #111827;">${escapeHtml(fullName)}</td></tr>
+                <tr><td style="padding: 6px 0; font-size: 14px; color: #6b7280;">Email</td><td style="padding: 6px 0; font-size: 14px; color: #111827;"><a href="mailto:${escapeHtml(data.email)}" style="color: #c2410c; text-decoration: none;">${escapeHtml(data.email)}</a></td></tr>
+                <tr><td style="padding: 6px 0; font-size: 14px; color: #6b7280;">Phone</td><td style="padding: 6px 0; font-size: 14px; color: #111827;">${escapeHtml(data.phone)}</td></tr>
+                <tr><td style="padding: 6px 0; font-size: 14px; color: #6b7280;">WhatsApp</td><td style="padding: 6px 0; font-size: 14px; color: #111827;">${escapeHtml(data.whatsapp)}</td></tr>
+              </table>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%;">
+                <tr>
+                  <td align="center">
+                    <a href="${dealsUrl}" style="display: inline-block; background-color: #c2410c; color: #ffffff; text-decoration: none; padding: 14px 32px; font-size: 14px; font-weight: 600; letter-spacing: 0.02em;">View limited time deals</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 32px 0 0 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                Questions? Reply to this email or contact us at <a href="mailto:info@aapkatourism.com" style="color: #c2410c; text-decoration: none;">info@aapkatourism.com</a>.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px 32px; background-color: #fafafa; border-top: 1px solid #f0f0f0;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-align: center; font-weight: 600;">Aapka Tourism</p>
+              <p style="margin: 8px 0 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                <a href="mailto:info@aapkatourism.com" style="color: #6b7280; text-decoration: none;">info@aapkatourism.com</a>
+                <span style="margin: 0 8px; color: #d1d5db;">|</span>
+                <a href="${siteUrl}" style="color: #6b7280; text-decoration: none;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function getLimitedTimeDealInternalEmailTemplate(data: LimitedTimeDealBookingEmailData): string {
+  const base = getLtdEmailAssetsBase();
+  const siteUrl = getLtdSiteUrl();
+  const logoUrl = `${base.replace(/\/$/, '')}/aapka-tourism-logo.png`;
+  const fullName = `${data.salutation} ${data.firstName} ${data.lastName}`.trim();
+  const partySummary = data.isSoloTraveller
+    ? 'Solo traveller'
+    : `${data.adults} adult(s), ${data.children} child(ren), ${data.infants} infant(s)`;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTD booking fee – ${escapeHtml(data.bookingId)}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 32px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 520px; width: 100%; background: #ffffff; border: 1px solid #e8e8e8;">
+          <tr>
+            <td style="padding: 32px 40px 24px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+              <img src="${logoUrl}" alt="Aapka Tourism" width="180" style="max-width: 180px; height: auto; display: block; margin: 0 auto;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 40px;">
+              <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #c2410c; letter-spacing: 0.08em; text-transform: uppercase;">Internal · Limited time deal</p>
+              <h1 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 600; color: #111827;">Booking fee payment received</h1>
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Booking ID:</strong> ${escapeHtml(data.bookingId)}</p>
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Package:</strong> ${escapeHtml(data.packageName)}</p>
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Travel date:</strong> ${escapeHtml(data.travelDateDisplay)}</p>
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Party:</strong> ${escapeHtml(partySummary)}</p>
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Fee paid:</strong> <span style="color: #c2410c; font-weight: 700;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</span></p>
+                <p style="margin: 0; font-size: 12px; color: #6b7280; font-family: ui-monospace, monospace;">Txn: ${escapeHtml(data.paymentTransactionId)}</p>
+              </div>
+              <p style="margin: 0 0 10px 0; font-size: 12px; font-weight: 600; color: #c2410c; text-transform: uppercase;">Customer (form)</p>
+              <table role="presentation" style="width: 100%; font-size: 13px; color: #374151;">
+                <tr><td style="padding: 4px 0; color: #6b7280; width: 90px;">Name</td><td>${escapeHtml(fullName)}</td></tr>
+                <tr><td style="padding: 4px 0; color: #6b7280;">Email</td><td><a href="mailto:${escapeHtml(data.email)}" style="color: #c2410c;">${escapeHtml(data.email)}</a></td></tr>
+                <tr><td style="padding: 4px 0; color: #6b7280;">Phone</td><td>${escapeHtml(data.phone)}</td></tr>
+                <tr><td style="padding: 4px 0; color: #6b7280;">WhatsApp</td><td>${escapeHtml(data.whatsapp)}</td></tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${siteUrl}/limited-time-deals" style="display: inline-block; background-color: #c2410c; color: #ffffff; text-decoration: none; padding: 12px 28px; font-size: 13px; font-weight: 600;">View limited time deals</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 40px 28px; background-color: #fafafa; border-top: 1px solid #f0f0f0;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">Aapka Tourism · automated LTD booking fee notice</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendLimitedTimeDealBookingConfirmationEmail(
+  data: LimitedTimeDealBookingEmailData
+): Promise<{
+  success: boolean;
+  customerEmailId?: string;
+  internalEmailId?: string;
+  errors?: string[];
+  error?: string;
+}> {
+  console.log(`📧 [LTD EMAIL] Booking #${data.bookingId} — fee ${formatLtdCurrency(data.bookingFeePaid, data.currency)}`);
+
+  try {
+    if (!isEmailConfigured()) {
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    const internalRecipientEmail = 'rawatajay9092@gmail.com';
+    const errors: string[] = [];
+    const results: { customerEmailId?: string; internalEmailId?: string } = {};
+
+    const customerSubject = `Limited Time Deal – booking fee received · ${data.packageName} | Aapka Tourism`;
+    const internalSubject = `LTD fee paid #${data.bookingId} · ${formatLtdCurrency(data.bookingFeePaid, data.currency)} · ${data.packageName}`;
+
+    if (data.email) {
+      const customerRes = await sendEmail({
+        to: data.email,
+        subject: customerSubject,
+        html: getLimitedTimeDealCustomerEmailTemplate(data),
+      });
+      if (customerRes.success) results.customerEmailId = customerRes.messageId;
+      else errors.push(customerRes.error || 'Customer email failed');
+    } else {
+      errors.push('Customer email missing');
+    }
+
+    const internalRes = await sendEmail({
+      to: internalRecipientEmail,
+      subject: internalSubject,
+      html: getLimitedTimeDealInternalEmailTemplate(data),
+    });
+    if (internalRes.success) results.internalEmailId = internalRes.messageId;
+    else errors.push(internalRes.error || 'Internal email failed');
+
+    const hasSuccess = !!(results.customerEmailId || results.internalEmailId);
+    return {
+      success: hasSuccess,
+      ...results,
+      ...(errors.length > 0 && { errors }),
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to send LTD email';
+    return { success: false, error: message };
+  }
+}
+
 // PDF Brochure Download Email
 export interface PdfBrochureEmailData {
   customerName: string;
