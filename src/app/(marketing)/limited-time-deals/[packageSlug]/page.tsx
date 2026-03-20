@@ -13,7 +13,7 @@ import LimitedTimeDealCalendar from '@/components/marketing/LimitedTimeDealCalen
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
 
-const BOOKING_FEE_AED = 100;
+const BOOKING_FEE_AED = 1; // TODO: revert to 100 after testing
 
 interface Package {
   package_id: string;
@@ -81,7 +81,7 @@ export default function LimitedTimeDealDetailPage() {
   const calendarRef = useRef<HTMLDivElement>(null);
 
   const pkg = deal?.package;
-  const bookingFeePerPerson = Number(deal?.booking_fee_aed) || BOOKING_FEE_AED;
+  const bookingFeePerPerson = BOOKING_FEE_AED; // TODO: revert to `Number(deal?.booking_fee_aed) || BOOKING_FEE_AED` after testing
   const totalPersons = isSoloTraveller ? 1 : persons.adult + persons.child + persons.infant;
   const totalAmount = totalPersons * bookingFeePerPerson;
 
