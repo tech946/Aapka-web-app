@@ -131,13 +131,14 @@ export default function Header() {
       } = await supabase.auth.getSession();
       if (session?.user) {
         setIsLoggedIn(true);
-        setUserEmail(session.user.email || '');
-        const name =
+        const email = session.user.email || '';
+        setUserEmail(email);
+        const fullName = (
           session.user.user_metadata?.full_name ||
           session.user.user_metadata?.name ||
-          session.user.email?.split('@')[0] ||
-          'User';
-        setUserName(name);
+          ''
+        ).trim();
+        setUserName(fullName || email);
       } else {
         setIsLoggedIn(false);
         setUserName('');
@@ -350,42 +351,6 @@ export default function Header() {
 
               <li
                 ref={el => {
-                  linkRefs.current['/blogs'] = el;
-                }}
-                className={
-                  pathname === '/blogs' || pathname?.startsWith('/blogs/')
-                    ? 'active'
-                    : ''
-                }
-              >
-                <Link
-                  href='/blogs'
-                  className={`header-nav-link ${
-                    pathname === '/blogs' || pathname?.startsWith('/blogs/')
-                      ? 'active'
-                      : ''
-                  }`}
-                >
-                  Blogs
-                </Link>
-              </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/About'] = el;
-                }}
-                className={pathname === '/About' ? 'active' : ''}
-              >
-                <Link
-                  href='/About'
-                  className={`header-nav-link ${
-                    pathname === '/About' ? 'active' : ''
-                  }`}
-                >
-                  About
-                </Link>
-              </li>
-              <li
-                ref={el => {
                   linkRefs.current['/travel-enquiry'] = el;
                 }}
                 className={pathname === '/travel-enquiry' ? 'active' : ''}
@@ -397,6 +362,21 @@ export default function Header() {
                   }`}
                 >
                   Submit your enquiry
+                </Link>
+              </li>
+              <li
+                ref={el => {
+                  linkRefs.current['/b2b-collaboration'] = el;
+                }}
+                className={pathname === '/b2b-collaboration' ? 'active' : ''}
+              >
+                <Link
+                  href='/b2b-collaboration'
+                  className={`header-nav-link ${
+                    pathname === '/b2b-collaboration' ? 'active' : ''
+                  }`}
+                >
+                  B2B collaboration
                 </Link>
               </li>
               <li
@@ -493,10 +473,10 @@ export default function Header() {
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
                     aria-label='User menu'
                   >
-                    {isLoggedIn && userName ? (
+                    {isLoggedIn && (userName || userEmail) ? (
                       <div className='header-user-avatar-wrapper'>
                         <div className='header-user-avatar'>
-                          {userName.charAt(0).toUpperCase()}
+                          {(userName || userEmail).charAt(0).toUpperCase()}
                         </div>
                         <span className='header-user-status-dot'></span>
                       </div>
@@ -532,11 +512,11 @@ export default function Header() {
                           {/* User Info Header - Highlighted */}
                           <div className='header-user-dropdown-header-active'>
                             <div className='header-user-dropdown-icon-square'>
-                              {userName.charAt(0).toUpperCase()}
+                              {(userName || userEmail).charAt(0).toUpperCase()}
                             </div>
                             <div className='header-user-dropdown-user-info'>
                               <div className='header-user-dropdown-name'>
-                                {userName}
+                                {userName || userEmail}
                               </div>
                             </div>
                             <span className='header-user-dropdown-notification-dot'></span>
@@ -751,28 +731,6 @@ export default function Header() {
             )}
 
             <Link
-              href='/blogs'
-              className={`mobile-sidebar-link ${
-                pathname === '/blogs' || pathname?.startsWith('/blogs/')
-                  ? 'active'
-                  : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Blogs
-            </Link>
-
-            <Link
-              href='/About'
-              className={`mobile-sidebar-link ${
-                pathname === '/About' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              About
-            </Link>
-
-            <Link
               href='/travel-enquiry'
               className={`mobile-sidebar-link ${
                 pathname === '/travel-enquiry' ? 'active' : ''
@@ -780,6 +738,16 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Submit your enquiry
+            </Link>
+
+            <Link
+              href='/b2b-collaboration'
+              className={`mobile-sidebar-link ${
+                pathname === '/b2b-collaboration' ? 'active' : ''
+              }`}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              B2B collaboration
             </Link>
 
             <Link
@@ -839,6 +807,33 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               View Cart
+            </Link>
+          </div>
+
+          <div className='mobile-sidebar-footer-icons'>
+            <Link
+              href='/auth/login'
+              className='mobile-sidebar-footer-icon-btn mobile-sidebar-footer-icon-left'
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label='Settings'
+            >
+              <Settings size={16} strokeWidth={2} />
+            </Link>
+            <Link
+              href={
+                isLoggedIn
+                  ? isAgent
+                    ? '/agent/dashboard'
+                    : '/auth/login'
+                  : '/auth/login'
+              }
+              className='mobile-sidebar-footer-icon-btn mobile-sidebar-footer-user'
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <User size={16} strokeWidth={2} aria-hidden />
+              <span className='mobile-sidebar-footer-user-text'>
+                {isLoggedIn ? userName || userEmail : 'Login'}
+              </span>
             </Link>
           </div>
         </div>
