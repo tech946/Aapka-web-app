@@ -6,6 +6,7 @@ import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
+import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
 import './booking-modal.css';
 
 interface BookingModalProps {
@@ -157,6 +158,8 @@ export default function BookingModal({
 }: BookingModalProps) {
   if (!isOpen) return null;
 
+  const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
+
   const modalClass = isMobile ? 'mobile-booking-modal' : 'desktop-booking-modal';
   const overlayClass = isMobile ? 'mobile-booking-modal-overlay' : 'desktop-booking-modal-overlay';
   const headerClass = isMobile ? 'mobile-booking-modal-header' : 'desktop-booking-modal-header';
@@ -284,14 +287,8 @@ export default function BookingModal({
             </div>
           )}
 
-          {/* Visa Option - hide when package has visa included at 0 price */}
-          {(slug === 'flexible-date-packages' || slug === 'offer-packages') &&
-            !(
-              pkg?.with_visa &&
-              (pkg?.adult_visa_price ?? 0) === 0 &&
-              (pkg?.child_visa_price ?? 0) === 0 &&
-              (pkg?.infant_visa_price ?? 0) === 0
-            ) && (
+          {/* Visa add-on: only when backend enables (with_visa) and at least one visa price is greater than 0 AED */}
+          {showVisaOption && (
             <div className='visa-option-block'>
               <label className='visa-checkbox'>
                 <input type='checkbox' checked={withVisa} onChange={e => handleVisaChange(e.target.checked)} />

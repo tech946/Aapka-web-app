@@ -41,6 +41,10 @@ import {
   getEarliestAvailableDateMonth,
 } from '@/lib/utils';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import {
+  shouldShowOptionalVisaInBookingModal,
+  hasVisaIncludedAtZeroPrice,
+} from '@/lib/package-visa';
 import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { gsap } from 'gsap';
 import 'react-day-picker/dist/style.css';
@@ -222,6 +226,24 @@ export default function PackageDetailsPage() {
       setVisaForInfants(0);
     }
   }, [isSoloTraveller, withVisa, visaForAdults]);
+
+  // Clear optional visa selection when backend does not offer a paid add-on (with_visa and visa price greater than 0)
+  useEffect(() => {
+    if (!pkg) return;
+    if (!shouldShowOptionalVisaInBookingModal(slug, pkg)) {
+      setWithVisa(false);
+      setVisaForAdults(0);
+      setVisaForChildren(0);
+      setVisaForInfants(0);
+    }
+  }, [
+    slug,
+    pkg?.package_id,
+    pkg?.with_visa,
+    pkg?.adult_visa_price,
+    pkg?.child_visa_price,
+    pkg?.infant_visa_price,
+  ]);
 
   // Client-side addon price calculation from cached addon data - instant, no fetch on selection change
   const addonPriceTotal = useMemo(() => {
@@ -1334,11 +1356,7 @@ export default function PackageDetailsPage() {
     }
 
     // When package has visa included at 0 price, visa block is hidden but we still pass visa data
-    const hasVisaIncludedAtZero =
-      pkg.with_visa &&
-      (pkg.adult_visa_price ?? 0) === 0 &&
-      (pkg.child_visa_price ?? 0) === 0 &&
-      (pkg.infant_visa_price ?? 0) === 0;
+    const hasVisaIncludedAtZero = hasVisaIncludedAtZeroPrice(pkg);
     const effectiveWithVisa = withVisa || hasVisaIncludedAtZero;
     const effectiveVisaForAdults = effectiveWithVisa
       ? hasVisaIncludedAtZero
