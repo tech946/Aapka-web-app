@@ -172,6 +172,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .package-hero-pricing {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
 }
 

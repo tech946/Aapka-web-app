@@ -27,6 +27,8 @@ import {
   usesFlexibleDatePackagesByName,
   usesBookingSlotsByName,
 } from '@/lib/package-config';
+import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import 'react-day-picker/dist/style.css';
 import './home.css';
@@ -498,6 +500,7 @@ export default function BannerSection() {
                         </div>
                       ) : packages.length > 0 ? (
                         packages.map(pkg => {
+                          const revealing = isPackagePriceRevealingSoon(pkg);
                           return (
                             <div
                               key={pkg.package_id}
@@ -511,8 +514,11 @@ export default function BannerSection() {
                                 {pkg.package_name}
                               </div>
                               <div className='dropdown_item_price'>
-                                AED{' '}
-                                {pkg.package_price?.toLocaleString() || 'N/A'}
+                                {revealing ? (
+                                  <PackagePriceRevealingSoonLabel variant='dropdown' />
+                                ) : (
+                                  `AED ${pkg.package_price?.toLocaleString() || 'N/A'}`
+                                )}
                               </div>
                             </div>
                           );

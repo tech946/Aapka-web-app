@@ -40,6 +40,8 @@ import {
   parseDateStringToLocal,
   getEarliestAvailableDateMonth,
 } from '@/lib/utils';
+import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { gsap } from 'gsap';
 import 'react-day-picker/dist/style.css';
 import '../../packages.css';
@@ -1279,6 +1281,10 @@ export default function PackageDetailsPage() {
 
   const handleAddToCart = () => {
     if (!pkg) return;
+    if (isPackagePriceRevealingSoon(pkg)) {
+      toast.error('This package is not available for booking yet.');
+      return;
+    }
 
     // Get date - REQUIRED for ALL packages
     const dateToUse = isPackageType()
@@ -1591,6 +1597,8 @@ export default function PackageDetailsPage() {
         : pkg.package_price || 0;
   const originalPrice = getOriginalPrice();
 
+  const isPriceRevealingSoon = isPackagePriceRevealingSoon(pkg);
+
   // Determine which discount applies for display
   const hasAnyDiscount =
     (hasActiveAgentSubscription &&
@@ -1626,15 +1634,19 @@ export default function PackageDetailsPage() {
         <div className='package-hero-details'>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
           <div className='package-hero-pricing'>
+            {isPriceRevealingSoon ? (
+              <PackagePriceRevealingSoonLabel variant='hero' />
+            ) : (
             <span className='package-hero-price-current'>
               {formatPrice(currentPrice)}
             </span>
-            {showOriginalPrice && displayOriginalPrice && (
+            )}
+            {!isPriceRevealingSoon && showOriginalPrice && displayOriginalPrice && (
               <span className='package-hero-price-original'>
                 {formatPrice(displayOriginalPrice)}
               </span>
             )}
-            {discountLabel && (
+            {!isPriceRevealingSoon && discountLabel && (
               <span className='package-hero-discount-badge'>
                 {discountLabel}
               </span>
@@ -1646,7 +1658,8 @@ export default function PackageDetailsPage() {
             </p>
           )}
           {/* Price Breakdown */}
-          {(() => {
+          {!isPriceRevealingSoon &&
+            (() => {
             const prices = getPricesForDate();
             const hasPricing =
               prices.adultPrice > 0 ||
@@ -1797,6 +1810,7 @@ export default function PackageDetailsPage() {
               </div>
             );
           })()}
+          {isPriceRevealingSoon ? null : (
           <div className='package-hero-buttons'>
             <button
               ref={addToCartButtonRef}
@@ -1813,11 +1827,12 @@ export default function PackageDetailsPage() {
               Add to Cart
             </button>
           </div>
+          )}
         </div>
       </div>
 
       {/* Discount Banner */}
-      {isDiscountActive && (
+      {isDiscountActive && !isPriceRevealingSoon && (
         <div className='discount-banner'>
           <div className='discount-banner-content'>
             <div className='discount-badge'>

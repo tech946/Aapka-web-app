@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import { generateShortSlug } from '@/lib/utils';
+import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { useSliderDrag } from '@/lib/use-slider-drag';
 import { usePackagesByCategory } from '@/hooks/use-marketing-queries';
 import './home.css';
@@ -167,6 +169,7 @@ export default function ToursSection() {
                   pkg.package_nights
                 );
                 const url = `/category/uae-tours/${packageSlug}`;
+                const revealing = isPackagePriceRevealingSoon(pkg);
                 const hasAdult =
                   pkg.adult_price != null && pkg.adult_price > 0;
                 const hasChild =
@@ -213,28 +216,35 @@ export default function ToursSection() {
                           </p>
                         )}
                         <div className='section-tour-card-price-pills'>
-                          {hasAdult && (
-                            <span className='section-tour-card-price-pill'>
-                              Adult: AED{' '}
-                              {pkg.adult_price!.toLocaleString()}
-                            </span>
-                          )}
-                          {hasChild && (
-                            <span className='section-tour-card-price-pill'>
-                              Child: AED{' '}
-                              {pkg.child_price!.toLocaleString()}
-                            </span>
-                          )}
-                          {hasInfant && (
-                            <span className='section-tour-card-price-pill'>
-                              Infant: AED{' '}
-                              {pkg.infant_price!.toLocaleString()}
-                            </span>
-                          )}
-                          {!hasAdult && !hasChild && !hasInfant && (
-                            <span className='section-tour-card-price-pill'>
-                              AED {pkg.package_price?.toLocaleString() ?? 'N/A'}
-                            </span>
+                          {revealing ? (
+                            <PackagePriceRevealingSoonLabel variant='pill' />
+                          ) : (
+                            <>
+                              {hasAdult && (
+                                <span className='section-tour-card-price-pill'>
+                                  Adult: AED{' '}
+                                  {pkg.adult_price!.toLocaleString()}
+                                </span>
+                              )}
+                              {hasChild && (
+                                <span className='section-tour-card-price-pill'>
+                                  Child: AED{' '}
+                                  {pkg.child_price!.toLocaleString()}
+                                </span>
+                              )}
+                              {hasInfant && (
+                                <span className='section-tour-card-price-pill'>
+                                  Infant: AED{' '}
+                                  {pkg.infant_price!.toLocaleString()}
+                                </span>
+                              )}
+                              {!hasAdult && !hasChild && !hasInfant && (
+                                <span className='section-tour-card-price-pill'>
+                                  AED{' '}
+                                  {pkg.package_price?.toLocaleString() ?? 'N/A'}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                         <div className='section-tour-card-footer'>

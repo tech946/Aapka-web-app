@@ -19,6 +19,8 @@ import {
   type UserLocation,
 } from '@/lib/location-utils';
 import { generateShortSlug } from '@/lib/utils';
+import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import '../packages.css';
 
 interface Package {
@@ -383,6 +385,7 @@ function PackageCard({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const isRevealingSoon = isPackagePriceRevealingSoon(pkg);
 
   // Helper function to get location/description text
   const getLocationText = (): string | null => {
@@ -606,7 +609,7 @@ function PackageCard({
           <p className='suites-card-destinations'>{packageDescription}</p>
         )}
 
-        {discountPercentage && (
+        {discountPercentage && !isRevealingSoon && (
           <div className='suites-discount-badge'>{discountPercentage}% Off</div>
         )}
 
@@ -624,8 +627,14 @@ function PackageCard({
         })()}
 
         <div className='suites-card-price'>
-          <span className='suites-price-amount'>{pricePerPerson}</span>
-          <span className='suites-price-label'> / per person</span>
+          {isRevealingSoon ? (
+            <PackagePriceRevealingSoonLabel variant='card' />
+          ) : (
+            <>
+              <span className='suites-price-amount'>{pricePerPerson}</span>
+              <span className='suites-price-label'> / per person</span>
+            </>
+          )}
         </div>
 
         <Link href={`/category/${slug}/${packageSlug}`} className='suites-read-more'>
