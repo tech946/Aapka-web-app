@@ -103,7 +103,7 @@ export function AddonsSection({
       ? `Addon Private Transfers (${selectedTransfers.length} selected)`
       : 'Addon Private Transfers';
 
-  const wrapperClass = isMobile ? 'mobile-booking-input-wrapper' : 'booking-input-wrapper';
+  const wrapperClass = isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field';
   const inputClass = isMobile ? 'mobile-booking-input' : 'booking-input';
   const chevronClass = isMobile ? 'mobile-booking-dropdown-chevron' : 'booking-dropdown-chevron';
 

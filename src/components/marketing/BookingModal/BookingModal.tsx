@@ -314,7 +314,7 @@ export default function BookingModal({
                           }}
                           disabled={visaForAdults === 0 || (isSoloTraveller && visaForAdults === 1)}
                         >
-                          <Minus size={14} style={{ color: '#1e40af' }} />
+                          <Minus size={14} style={{ color: '#fd6b06' }} />
                         </button>
                         <span className='visa-counter-value'>{visaForAdults}</span>
                         <button
@@ -325,7 +325,7 @@ export default function BookingModal({
                           }}
                           disabled={visaForAdults >= (isSoloTraveller ? 1 : persons.adult)}
                         >
-                          <Plus size={14} style={{ color: '#1e40af' }} />
+                          <Plus size={14} style={{ color: '#fd6b06' }} />
                         </button>
                       </div>
                     </div>
@@ -339,7 +339,7 @@ export default function BookingModal({
                           onClick={() => setVisaForChildren(Math.max(0, visaForChildren - 1))}
                           disabled={visaForChildren === 0}
                         >
-                          <Minus size={14} style={{ color: '#1e40af' }} />
+                          <Minus size={14} style={{ color: '#fd6b06' }} />
                         </button>
                         <span className='visa-counter-value'>{visaForChildren}</span>
                         <button
@@ -347,7 +347,7 @@ export default function BookingModal({
                           onClick={() => setVisaForChildren(Math.min(persons.child, visaForChildren + 1))}
                           disabled={visaForChildren >= persons.child}
                         >
-                          <Plus size={14} style={{ color: '#1e40af' }} />
+                          <Plus size={14} style={{ color: '#fd6b06' }} />
                         </button>
                       </div>
                     </div>
@@ -361,7 +361,7 @@ export default function BookingModal({
                           onClick={() => setVisaForInfants(Math.max(0, visaForInfants - 1))}
                           disabled={visaForInfants === 0}
                         >
-                          <Minus size={14} style={{ color: '#1e40af' }} />
+                          <Minus size={14} style={{ color: '#fd6b06' }} />
                         </button>
                         <span className='visa-counter-value'>{visaForInfants}</span>
                         <button
@@ -369,7 +369,7 @@ export default function BookingModal({
                           onClick={() => setVisaForInfants(Math.min(persons.infant, visaForInfants + 1))}
                           disabled={visaForInfants >= persons.infant}
                         >
-                          <Plus size={14} style={{ color: '#1e40af' }} />
+                          <Plus size={14} style={{ color: '#fd6b06' }} />
                         </button>
                       </div>
                     </div>
@@ -382,7 +382,10 @@ export default function BookingModal({
           {/* Input Selectors */}
           <div className={inputSelectorsClass}>
             {/* Persons Selector */}
-            <div className={isMobile ? 'mobile-booking-input-wrapper' : 'booking-input-wrapper'} ref={personsDropdownRef}>
+            <div
+              className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
+              ref={personsDropdownRef}
+            >
               <Users className={isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'} />
               <input
                 type='text'
@@ -474,7 +477,10 @@ export default function BookingModal({
 
             {/* Date Picker / Calendar */}
             {isPackageType() ? (
-              <div className={isMobile ? 'mobile-booking-input-wrapper' : 'booking-input-wrapper'} ref={dateDropdownRef}>
+              <div
+                className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
+                ref={dateDropdownRef}
+              >
                 <Calendar className={isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'} />
                 <input
                   type='text'
@@ -518,7 +524,10 @@ export default function BookingModal({
                 )}
               </div>
             ) : (
-              <div className={isMobile ? 'mobile-booking-input-wrapper' : 'booking-input-wrapper'} ref={datePickerRef}>
+              <div
+                className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
+                ref={datePickerRef}
+              >
                 <Calendar className={isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'} />
                 <input
                   type='text'

@@ -79,7 +79,7 @@ export default function PdfDownloadModal({
   const titleClass = isMobile ? 'mobile-booking-modal-title' : 'desktop-booking-modal-title';
   const closeClass = isMobile ? 'mobile-booking-modal-close' : 'desktop-booking-modal-close';
   const contentClass = isMobile ? 'mobile-booking-modal-content' : 'desktop-booking-modal-content';
-  const inputWrapperClass = isMobile ? 'mobile-booking-input-wrapper' : 'booking-input-wrapper';
+  const inputWrapperClass = isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field';
   const inputClass = isMobile ? 'mobile-booking-input' : 'booking-input';
   const inputIconClass = isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon';
   const actionsClass = isMobile ? 'mobile-booking-actions' : 'booking-actions';

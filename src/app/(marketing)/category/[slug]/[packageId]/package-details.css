@@ -1746,19 +1746,50 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .desktop-booking-modal-content .booking-input-wrapper {
   width: 100%;
   min-width: unset;
-  background: transparent;
-  border-radius: 0;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper:hover {
+/* Icon + field (persons / date / add-ons): one border only */
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0;
+  background: #fff;
+}
+
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field:hover {
   border-color: #d1d5db;
-  background: #f3f4f6;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper:focus-within {
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field:focus-within {
   border-color: #fd6b06;
-  box-shadow: 0 0 0 3px rgba(255, 77, 0, 0.1);
+  box-shadow: 0 0 0 3px rgba(253, 107, 6, 0.12);
+}
+
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input-icon {
+  left: 16px;
+}
+
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-dropdown-chevron {
+  right: 14px;
+}
+
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input {
+  border: none;
+  border-bottom: none;
+  border-radius: 0;
+  height: 48px;
+  padding: 12px 42px 12px 48px;
+  background: transparent;
+}
+
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input:hover,
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input:focus {
+  background: transparent;
+}
+
+.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input:focus {
+  outline: none;
 }
 
 .desktop-booking-modal-content .booking-actions {
@@ -1836,12 +1867,14 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   flex: 1;
   height: 52px;
 }
-.desktop-booking-modal-content .booking-input-wrapper {
+/* Lead passenger etc.: label + control (LTD step 2) */
+.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) {
   border: 1px solid #e5e7eb;
   padding: 12px 14px;
-  border-radius: 0;
+  border-radius: 8px;
+  background: #fff;
 }
-.desktop-booking-modal-content .booking-input-wrapper label {
+.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) label {
   display: block;
   font-size: 13px;
   font-weight: 500;
@@ -1849,12 +1882,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   margin-bottom: 6px;
   font-family: var(--font-inter);
 }
-.desktop-booking-modal-content .booking-input-wrapper input,
-.desktop-booking-modal-content .booking-input-wrapper select {
+.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) input,
+.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #e5e7eb;
-  border-radius: 0;
+  border-radius: 6px;
   font-size: 14px;
   font-family: var(--font-inter);
   color: #111827;
@@ -2108,17 +2141,18 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 /* Visa Option Styles */
 .visa-option-block {
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   background: #fff;
-  padding: 12px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
 .visa-option-block:hover {
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: #d1d5db;
 }
 
 /* Add-ons Section (Offer Packages booking modal) */
@@ -2159,14 +2193,14 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: #fd6b06;
   border: 2px solid #d1d5db;
   border-radius: 4px;
 }
 
 .visa-checkbox input[type='checkbox']:checked {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+  background-color: #fd6b06;
+  border-color: #fd6b06;
 }
 
 .visa-options {
@@ -2212,7 +2246,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .visa-counter-button:hover:not(:disabled) {
   background: #f3f4f6;
-  border-color: #3b82f6;
+  border-color: #fd6b06;
 }
 
 .visa-counter-button:disabled {
@@ -3129,19 +3163,19 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
   .mobile-booking-input-icon {
     position: absolute;
-    left: 12px;
+    left: 16px;
     top: 50%;
     transform: translateY(-50%);
     width: 20px;
     height: 20px;
-    color: #4b5563;
+    color: #fd6b06;
     pointer-events: none;
     z-index: 1;
   }
 
   .mobile-booking-dropdown-chevron {
     position: absolute;
-    right: 12px;
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
     width: 20px;
@@ -3154,13 +3188,13 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   .mobile-booking-input {
     width: 100%;
     height: 48px;
-    padding: 12px 40px 12px 44px;
+    padding: 12px 42px 12px 48px;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     font-size: 14px;
     color: #1f2937;
     background: white;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
   }
 
@@ -3170,7 +3204,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
   .mobile-booking-input:focus {
     outline: none;
-    border-color: #d1d5db;
+    border-color: #fd6b06;
+    box-shadow: 0 0 0 3px rgba(253, 107, 6, 0.12);
   }
 
   .mobile-booking-input:disabled {
