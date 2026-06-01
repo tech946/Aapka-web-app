@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { syncActivePackageDealsToLimitedTimeDeals } from '@/lib/limited-time-deals-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,9 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const includeExpired = searchParams.get('include_expired') === 'true';
+
+    // Deals of the Day (package_deals) should appear on the Limited Time Deals website page
+    await syncActivePackageDealsToLimitedTimeDeals();
 
     let query = supabaseAdmin
       .from('limited_time_deals')
@@ -59,12 +63,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Flatten packages relation
-    const mapped = (data || []).map((d: any) => ({
-      ...d,
-      package: d.packages || null,
-      packages: undefined,
-    }));
+    // Flatten packages relation; hide deals whose package is missing or inactive on public pages
+    const mapped = (data || [])
+      .map((d: any) => ({
+        ...d,
+        package: d.packages || null,
+        packages: undefined,
+      }))
+      .filter((d: any) => {
+        if (includeExpired) return true;
+        return d.package && d.package.status === 'active';
+      });
 
     return NextResponse.json({ success: true, data: mapped });
   } catch (e: any) {

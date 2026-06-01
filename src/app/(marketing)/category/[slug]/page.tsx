@@ -96,6 +96,7 @@ export default function CategoryPage() {
     status: 'active',
     page,
     sort_by: sortBy,
+    listing_page_only: true,
   });
   const packagesData = packagesResult?.data ?? [];
   const total = packagesResult?.total ?? 0;

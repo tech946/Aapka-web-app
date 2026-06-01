@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { REFERRAL_COOKIE_NAME } from '@/lib/influencer-referral';
 import { getLtdOccupiedSeatsByDate } from '@/lib/ltd-occupied-seats';
+import { getOfferPackageTravelDates } from '@/lib/offer-package-dates';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -166,15 +167,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const selectedDate = new Date(selectedDateStr);
-    const startDate = new Date(deal.start_date);
-    const endDate = new Date(deal.end_date);
+    const { data: pkgForDates } = await supabaseAdmin
+      .from('packages')
+      .select('travel_dates')
+      .eq('package_id', deal.offer_package_id)
+      .maybeSingle();
 
-    if (selectedDate < startDate || selectedDate > endDate) {
-      return NextResponse.json(
-        { error: 'Selected date is outside the deal date range' },
-        { status: 400 }
-      );
+    const allowedTravelDates = getOfferPackageTravelDates(
+      pkgForDates?.travel_dates as Array<{ id?: string; value: string } | string> | null
+    );
+
+    if (allowedTravelDates.length > 0) {
+      if (!allowedTravelDates.includes(selectedDateStr)) {
+        return NextResponse.json(
+          { error: 'Selected date is not an available travel date for this package' },
+          { status: 400 }
+        );
+      }
+    } else {
+      const selectedDate = new Date(selectedDateStr);
+      const startDate = new Date(deal.start_date);
+      const endDate = new Date(deal.end_date);
+      if (selectedDate < startDate || selectedDate > endDate) {
+        return NextResponse.json(
+          { error: 'Selected date is outside the deal date range' },
+          { status: 400 }
+        );
+      }
     }
 
     // Check availability: occupied < max_bookings_per_day

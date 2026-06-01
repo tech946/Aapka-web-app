@@ -219,7 +219,7 @@ export default function DealsOfTheDayClient() {
     <div className="dashboard_page">
       <div className="heading_block">
         <h3>Deals of the Day</h3>
-        <p>Manage special pricing deals for packages</p>
+        <p>Manage special pricing deals for packages. Active deals also appear on the Limited Time Deals website page.</p>
       </div>
 
       <div className="deals-toolbar">

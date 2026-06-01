@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { setLimitedTimeDealActiveForPackage } from '@/lib/limited-time-deals-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +136,13 @@ export async function PUT(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    if (body?.is_active !== undefined) {
+      await setLimitedTimeDealActiveForPackage(
+        existingDeal.package_id,
+        Boolean(body.is_active)
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data,
@@ -163,6 +171,12 @@ export async function DELETE(
       );
     }
 
+    const { data: dealBeforeDelete } = await supabaseAdmin
+      .from('package_deals')
+      .select('package_id')
+      .eq('id', dealId)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from('package_deals')
       .delete()
@@ -170,6 +184,10 @@ export async function DELETE(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (dealBeforeDelete?.package_id) {
+      await setLimitedTimeDealActiveForPackage(dealBeforeDelete.package_id, false);
     }
 
     return NextResponse.json({

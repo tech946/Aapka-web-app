@@ -6,6 +6,7 @@ import {
   useEffect,
   useLayoutEffect,
   useCallback,
+  useMemo,
   useRef,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -20,12 +21,16 @@ import {
   Calendar,
   ChevronDown,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO, startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
 import PackageGallery from '@/app/(marketing)/category/[slug]/[packageId]/PackageGallery';
 import PackageDetailsTabs from '@/app/(marketing)/category/[slug]/[packageId]/PackageDetailsTabs';
 import LimitedTimeDealCalendar from '@/components/marketing/LimitedTimeDealCalendar';
 import { computeLtdPayableTotal } from '@/lib/ltd-copy';
+import {
+  getOfferPackageTravelDates,
+  getOfferPackageTravelDatesStatus,
+} from '@/lib/offer-package-dates';
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
 
@@ -143,6 +148,7 @@ interface Package {
   infant_visa_price?: number | null;
   package_days?: number | null;
   package_nights?: number | null;
+  travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   thumbnail_image?: string | null;
   gallery?: string[] | null;
   terms_html?: string | null;
@@ -192,6 +198,14 @@ export default function LimitedTimeDealDetailPage() {
     useState<CSSProperties>({});
 
   const pkg = deal?.package;
+  const availableTravelDates = useMemo(
+    () => getOfferPackageTravelDates(pkg?.travel_dates),
+    [pkg?.travel_dates]
+  );
+  const travelDatesStatus = useMemo(
+    () => getOfferPackageTravelDatesStatus(pkg?.travel_dates),
+    [pkg?.travel_dates]
+  );
   const bookingFeePerPerson = Number(deal?.booking_fee_aed) || BOOKING_FEE_AED;
   const totalPersons = isSoloTraveller
     ? 1
@@ -284,8 +298,10 @@ export default function LimitedTimeDealDetailPage() {
           );
           if (matchingDeal) {
             setDeal({ ...matchingDeal, package: foundPkg });
-            const start = new Date(matchingDeal.start_date);
-            if (month < start) setMonth(start);
+            const travelDates = getOfferPackageTravelDates(foundPkg.travel_dates);
+            if (travelDates.length > 0) {
+              setMonth(startOfMonth(parseISO(travelDates[0])));
+            }
           }
         }
       } catch (e) {
@@ -601,8 +617,8 @@ export default function LimitedTimeDealDetailPage() {
                         >
                           <LimitedTimeDealCalendar
                             dealId={deal.id}
-                            startDate={deal.start_date}
-                            endDate={deal.end_date}
+                            availableDates={availableTravelDates}
+                            travelDatesStatus={travelDatesStatus}
                             selectedDate={selectedDate}
                             onDateSelect={d => {
                               setSelectedDate(d);

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { AlertCircle, X, Trash2, Link2 } from 'lucide-react';
 import { type CRMPackageOption } from '@/components/crm/CRMPackageSelector';
 import { AttachCrmModal } from './AttachCrmModal';
+import { supportsListingPageToggle } from '@/lib/package-config';
 
 type Pkg = {
   package_id: string;
@@ -19,6 +20,7 @@ type Pkg = {
   child_price?: number | null;
   infant_price?: number | null;
   status?: string | null;
+  show_listing_page?: boolean | null;
   crm_package_id?: string | null;
   created_at: string | null;
 };
@@ -47,6 +49,9 @@ export default function CategoryPackagesClient({
   );
   const [reloadKey, setReloadKey] = useState(0);
   const [updatingStatus, setUpdatingStatus] = useState<Set<string>>(new Set());
+  const [updatingListingPage, setUpdatingListingPage] = useState<Set<string>>(new Set());
+  const showListingToggle = supportsListingPageToggle(categorySlug);
+  const tableColSpan = showListingToggle ? 13 : 12;
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     packageId: string;
@@ -192,6 +197,57 @@ export default function CategoryPackagesClient({
 
   const handleCancelStatusChange = () => {
     setConfirmModal(null);
+  };
+
+  const handleListingPageToggle = async (
+    packageId: string,
+    currentValue: boolean
+  ) => {
+    const newValue = !currentValue;
+    setUpdatingListingPage(prev => new Set(prev).add(packageId));
+
+    try {
+      const response = await fetch('/api/packages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: packageId,
+          show_listing_page: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result?.error ?? 'Failed to update listing visibility');
+      }
+
+      setRows(prev =>
+        prev.map(pkg =>
+          pkg.package_id === packageId
+            ? { ...pkg, show_listing_page: newValue }
+            : pkg
+        )
+      );
+
+      toast.success(
+        newValue
+          ? 'Package will appear on listing page'
+          : 'Package hidden from listing page'
+      );
+    } catch (error) {
+      console.error('Error updating listing visibility:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update listing visibility'
+      );
+    } finally {
+      setUpdatingListingPage(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(packageId);
+        return newSet;
+      });
+    }
   };
 
   const handleDeleteClick = (packageId: string, packageName: string) => {
@@ -345,6 +401,7 @@ export default function CategoryPackagesClient({
               <th>Child</th>
               <th>Infant</th>
               <th>Status</th>
+              {showListingToggle && <th>Listing Page</th>}
               <th>CRM</th>
               <th>Description</th>
               <th>Created</th>
@@ -354,14 +411,14 @@ export default function CategoryPackagesClient({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={12} className='table_loading'>
+                <td colSpan={tableColSpan} className='table_loading'>
                   Loading...
                 </td>
               </tr>
             )}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={12} className='table_empty'>
+                <td colSpan={tableColSpan} className='table_empty'>
                   No packages found
                 </td>
               </tr>
@@ -406,6 +463,31 @@ export default function CategoryPackagesClient({
                       </span>
                     </div>
                   </td>
+                  {showListingToggle && (
+                    <td>
+                      <div
+                        className='status_toggle_wrapper'
+                        onClick={() =>
+                          !updatingListingPage.has(p.package_id) &&
+                          handleListingPageToggle(
+                            p.package_id,
+                            p.show_listing_page !== false
+                          )
+                        }
+                      >
+                        <input
+                          type='checkbox'
+                          checked={p.show_listing_page !== false}
+                          readOnly
+                          disabled={updatingListingPage.has(p.package_id)}
+                          className='status_toggle'
+                        />
+                        <span className='status_toggle_label'>
+                          {p.show_listing_page !== false ? 'Visible' : 'Hidden'}
+                        </span>
+                      </div>
+                    </td>
+                  )}
                   <td>
                     {p.crm_package_id ? (
                       <span

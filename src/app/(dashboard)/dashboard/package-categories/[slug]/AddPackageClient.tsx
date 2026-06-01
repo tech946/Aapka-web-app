@@ -11,7 +11,7 @@ import {
   uploadPdfToSupabase,
   deletePdfFromSupabase,
 } from '@/lib/supabase-storage';
-import { usesBookingSlots, usesFlexibleDatePackages } from '@/lib/package-config';
+import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
 import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
@@ -56,6 +56,8 @@ export default function AddPackageClient({
 
   const usesSlots = usesBookingSlots(categorySlug);
   const usesFlexibleDate = usesFlexibleDatePackages(categorySlug);
+  const showListingToggle = supportsListingPageToggle(categorySlug);
+  const [showListingPage, setShowListingPage] = useState<boolean>(true);
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
@@ -578,6 +580,64 @@ export default function AddPackageClient({
                   rows={3}
                 />
               </div>
+
+              {showListingToggle && (
+                <div className='form_row full_width'>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                    <div style={{ position: 'relative', width: '20px', height: '20px' }}>
+                      <input
+                        type='checkbox'
+                        checked={showListingPage}
+                        onChange={e => setShowListingPage(e.target.checked)}
+                        style={{
+                          position: 'absolute',
+                          opacity: 0,
+                          width: '100%',
+                          height: '100%',
+                          cursor: 'pointer',
+                          margin: 0,
+                        }}
+                      />
+                      <div
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          border: '2px solid #d1d5db',
+                          borderRadius: '4px',
+                          backgroundColor: showListingPage ? '#f97316' : '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          borderColor: showListingPage ? '#f97316' : '#d1d5db',
+                        }}
+                      >
+                        {showListingPage && (
+                          <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 14 14'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                          >
+                            <path
+                              d='M11.6667 3.5L5.25 9.91667L2.33334 7'
+                              stroke='white'
+                              strokeWidth='2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span>Show on Listing Page</span>
+                  </label>
+                  <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#6b7280' }}>
+                    When enabled, this package appears on the public category listing page.
+                  </p>
+                </div>
+              )}
 
               <div className='form_row'>
                 <label>Days</label>
@@ -1307,6 +1367,7 @@ export default function AddPackageClient({
                     thumbnail_image: thumbnailImageUrl || undefined,
                     gallery: galleryImages.length > 0 ? galleryImages : undefined,
                     pdf_url: pdfUrl || undefined,
+                    show_listing_page: showListingToggle ? showListingPage : undefined,
                   };
 
                   // Add date-related fields based on package type

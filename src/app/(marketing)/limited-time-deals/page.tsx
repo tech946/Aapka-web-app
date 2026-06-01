@@ -68,7 +68,7 @@ export default function LimitedTimeDealsPage() {
   useEffect(() => {
     const fetchDeals = async () => {
       try {
-        const res = await fetch('/api/limited-time-deals?include_expired=true');
+        const res = await fetch('/api/limited-time-deals');
         const json = await res.json();
         if (json.success && json.data) {
           setDeals(json.data);
@@ -94,7 +94,9 @@ export default function LimitedTimeDealsPage() {
     );
   }
 
-  if (deals.length === 0) {
+  const visibleDeals = deals.filter(deal => deal.package);
+
+  if (visibleDeals.length === 0) {
     return (
       <div className='packages-page'>
         <div className='container'>
@@ -120,7 +122,7 @@ export default function LimitedTimeDealsPage() {
           <div className='packages-found'>
             <span className='packages-found-label'>Limited Time Deals</span>
             <span className='packages-found-value'>
-              {deals.length} deal{deals.length !== 1 ? 's' : ''}
+              {visibleDeals.length} deal{visibleDeals.length !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
@@ -128,7 +130,7 @@ export default function LimitedTimeDealsPage() {
         {/* Packages Grid - same structure as category/offer-packages */}
         <div className='packages-cards-container'>
           <div className='packages-cards-grid'>
-            {deals.map(deal => {
+            {visibleDeals.map(deal => {
               const pkg = deal.package;
               if (!pkg) return null;
 

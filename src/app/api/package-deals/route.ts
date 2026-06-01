@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import {
+  ensureLimitedTimeDealForPackageDeal,
+} from '@/lib/limited-time-deals-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -169,6 +172,13 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    await ensureLimitedTimeDealForPackageDeal({
+      package_id: packageId,
+      start_date: startDate,
+      end_date: endDate,
+      is_active: isActive,
+    });
 
     return NextResponse.json({
       success: true,

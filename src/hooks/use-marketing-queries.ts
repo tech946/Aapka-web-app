@@ -131,8 +131,9 @@ export function usePackagesByCategory(options: {
   status?: string;
   page?: number;
   sort_by?: string;
+  listing_page_only?: boolean;
 }) {
-  const { categoryId, categorySlug, limit = 100, status = 'active', page = 1, sort_by } = options;
+  const { categoryId, categorySlug, limit = 100, status = 'active', page = 1, sort_by, listing_page_only } = options;
   const params = new URLSearchParams();
   if (categoryId) params.set('category_id', categoryId);
   if (categorySlug) params.set('categorySlug', categorySlug);
@@ -140,9 +141,10 @@ export function usePackagesByCategory(options: {
   params.set('page', String(page));
   if (status) params.set('status', status);
   if (sort_by) params.set('sort_by', sort_by);
+  if (listing_page_only) params.set('listing_page_only', 'true');
 
   return useQuery({
-    queryKey: ['marketing', 'packages', categoryId ?? categorySlug ?? 'list', limit, status, page, sort_by],
+    queryKey: ['marketing', 'packages', categoryId ?? categorySlug ?? 'list', limit, status, page, sort_by, listing_page_only],
     queryFn: () =>
       fetcher<{ data: Array<Record<string, unknown>>; total?: number }>(
         `/api/packages?${params.toString()}`

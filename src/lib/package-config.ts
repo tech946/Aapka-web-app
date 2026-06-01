@@ -12,6 +12,14 @@ export const BOOKING_SLOTS_CATEGORIES = ['uae-tours'] as const;
 export const FLEXIBLE_DATE_PACKAGES_CATEGORIES = ['flexible-date-packages'] as const;
 
 /**
+ * Categories that support the show_listing_page toggle (offer & flexible date packages)
+ */
+export const LISTING_PAGE_TOGGLE_CATEGORIES = [
+  'offer-packages',
+  'flexible-date-packages',
+] as const;
+
+/**
  * Check if a category uses booking slots based on its slug
  * @param categorySlug - The slug of the category (e.g., 'uae-tours')
  * @returns true if the category uses booking slots, false otherwise
@@ -49,4 +57,13 @@ export function usesFlexibleDatePackagesByName(categoryName: string): boolean {
   // Convert name to slug format for comparison
   const slug = categoryName.toLowerCase().replace(/\s+/g, '-').trim();
   return usesFlexibleDatePackages(slug);
+}
+
+/**
+ * Check if a category supports the show_listing_page toggle
+ */
+export function supportsListingPageToggle(categorySlug: string): boolean {
+  return LISTING_PAGE_TOGGLE_CATEGORIES.includes(
+    categorySlug.toLowerCase() as (typeof LISTING_PAGE_TOGGLE_CATEGORIES)[number]
+  );
 }

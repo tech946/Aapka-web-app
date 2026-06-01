@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { DayPicker } from 'react-day-picker';
-import { format, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import 'react-day-picker/dist/style.css';
 import '../FlexibleDateCalendar/flexible-date-calendar.css';
 
 interface LimitedTimeDealCalendarProps {
   dealId: string;
-  startDate: string;
-  endDate: string;
+  availableDates: string[];
+  travelDatesStatus?: 'none' | 'all_past' | 'available';
   selectedDate?: Date;
   onDateSelect: (date: Date | undefined) => void;
   month: Date;
@@ -18,22 +18,43 @@ interface LimitedTimeDealCalendarProps {
 
 export default function LimitedTimeDealCalendar({
   dealId,
-  startDate,
-  endDate,
+  availableDates,
+  travelDatesStatus = 'none',
   selectedDate,
   onDateSelect,
   month,
   onMonthChange,
 }: LimitedTimeDealCalendarProps) {
-  const [availability, setAvailability] = useState<Record<string, { available: number; isSoldOut: boolean }>>({});
+  const [availability, setAvailability] = useState<
+    Record<string, { available: number; isSoldOut: boolean }>
+  >({});
   const [maxPerDay, setMaxPerDay] = useState(48);
+
+  const availableDateSet = useMemo(
+    () => new Set(availableDates),
+    [availableDates]
+  );
+
+  const { minMonth, maxMonth } = useMemo(() => {
+    if (availableDates.length === 0) {
+      const now = new Date();
+      return { minMonth: startOfMonth(now), maxMonth: endOfMonth(now) };
+    }
+    const sorted = [...availableDates].sort();
+    return {
+      minMonth: startOfMonth(parseISO(sorted[0])),
+      maxMonth: endOfMonth(parseISO(sorted[sorted.length - 1])),
+    };
+  }, [availableDates]);
 
   useEffect(() => {
     if (!dealId) return;
 
     const fetchAvailability = async () => {
       try {
-        const res = await fetch(`/api/limited-time-deals/availability?deal_id=${dealId}`);
+        const res = await fetch(
+          `/api/limited-time-deals/availability?deal_id=${dealId}`
+        );
         const json = await res.json();
         if (json.success && json.data) {
           setAvailability(json.data);
@@ -49,27 +70,15 @@ export default function LimitedTimeDealCalendar({
 
   const getDisabledDates = useCallback(
     (date: Date): boolean => {
-      const today = startOfDay(new Date());
-      const sixDaysFromNow = new Date(today);
-      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
-      const checkDate = startOfDay(date);
-
-      if (checkDate < today) return true;
-      if (checkDate <= sixDaysFromNow) return true;
-
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      if (checkDate < start || checkDate > end) return true;
-
       const dateStr = format(date, 'yyyy-MM-dd');
+      if (!availableDateSet.has(dateStr)) return true;
+
       const info = availability[dateStr];
       if (info?.isSoldOut) return true;
 
       return false;
     },
-    [startDate, endDate, availability]
+    [availableDateSet, availability]
   );
 
   const getDateInfo = useCallback(
@@ -78,9 +87,6 @@ export default function LimitedTimeDealCalendar({
     },
     [availability, maxPerDay]
   );
-
-  const minMonth = startOfMonth(new Date(startDate));
-  const maxMonth = endOfMonth(new Date(endDate));
 
   const CustomDayButton = ({ day, modifiers, ...buttonProps }: any) => {
     const date = day.date;
@@ -111,6 +117,18 @@ export default function LimitedTimeDealCalendar({
       </button>
     );
   };
+
+  if (availableDates.length === 0) {
+    return (
+      <div className="flexible-date-calendar-wrapper">
+        <p className="ltd-calendar-cap-hint">
+          {travelDatesStatus === 'all_past'
+            ? 'All configured travel dates have passed. Add new future dates in Dashboard → Offer Packages → edit this package.'
+            : 'No travel dates configured for this package. Add dates in Dashboard → Offer Packages → edit this package.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flexible-date-calendar-wrapper">
@@ -152,9 +170,9 @@ export default function LimitedTimeDealCalendar({
       />
       <div className="flexible-calendar-footer">
         <p className="ltd-calendar-cap-hint">
-          Up to <strong>{maxPerDay}</strong> seats per day · each date shows{' '}
-          <strong>seats left</strong> (only <strong>completed</strong> LTD payments
-          count; pending or cancelled do not reduce availability).
+          Dates from offer package travel dates · up to <strong>{maxPerDay}</strong>{' '}
+          seats per day · each date shows <strong>seats left</strong> (only{' '}
+          <strong>completed</strong> LTD payments count).
         </p>
         <button
           type="button"
@@ -166,4 +184,4 @@ export default function LimitedTimeDealCalendar({
       </div>
     </div>
   );
-}
+};

@@ -794,7 +794,7 @@ export default function BannerSection() {
                 className='search_button banner_submit_btn'
                 onClick={handleSearch}
               >
-                Submit
+                Search
               </button>
             </div>
             <p className='banner_form_footer'>

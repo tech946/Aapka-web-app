@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { eachDayOfInterval, format, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { getLtdOccupiedSeatsByDate } from '@/lib/ltd-occupied-seats';
+import { getOfferPackageTravelDates } from '@/lib/offer-package-dates';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const { data: deal, error: dealError } = await supabaseAdmin
       .from('limited_time_deals')
-      .select('start_date, end_date, max_bookings_per_day')
+      .select('start_date, end_date, max_bookings_per_day, offer_package_id')
       .eq('id', dealId)
       .single();
 
@@ -34,19 +35,35 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const { data: pkg } = await supabaseAdmin
+      .from('packages')
+      .select('travel_dates')
+      .eq('package_id', deal.offer_package_id)
+      .maybeSingle();
+
     const occupiedMap = await getLtdOccupiedSeatsByDate(dealId);
     const maxPerDay = Number(deal.max_bookings_per_day) || 48;
 
-    const startStr = String(deal.start_date).split('T')[0];
-    const endStr = String(deal.end_date).split('T')[0];
-    const startDate = parseISO(startStr);
-    const endDate = parseISO(endStr);
+    let dateStrings = getOfferPackageTravelDates(
+      pkg?.travel_dates as Array<{ id?: string; value: string } | string> | null
+    );
+
+    // Fallback to deal date range if package has no travel dates configured
+    if (dateStrings.length === 0) {
+      const startStr = String(deal.start_date).split('T')[0];
+      const endStr = String(deal.end_date).split('T')[0];
+      const startDate = parseISO(startStr);
+      const endDate = parseISO(endStr);
+      const current = new Date(startDate);
+      while (current <= endDate) {
+        dateStrings.push(format(current, 'yyyy-MM-dd'));
+        current.setDate(current.getDate() + 1);
+      }
+    }
 
     const result: Record<string, { available: number; isSoldOut: boolean }> = {};
 
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-    for (const day of days) {
-      const dateStr = format(day, 'yyyy-MM-dd');
+    for (const dateStr of dateStrings) {
       const occupied = occupiedMap.get(dateStr) || 0;
       const available = Math.max(0, maxPerDay - occupied);
       const isSoldOut = available <= 0;

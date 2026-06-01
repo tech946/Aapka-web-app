@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -83,6 +83,12 @@ export async function GET(req: NextRequest) {
       query = query.eq('status', 'active');
     }
     // If statusParam is 'all', don't filter by status (show all packages for dashboard)
+
+    // Category listing pages: only show packages with show_listing_page=true
+    const listingPageOnly = searchParams.get('listing_page_only') === 'true';
+    if (listingPageOnly) {
+      query = query.eq('show_listing_page', true);
+    }
 
     // Filter by hasAgentDiscount - only return packages with agent_discount > 0
     const hasAgentDiscount = searchParams.get('hasAgentDiscount');
@@ -308,6 +314,10 @@ export async function POST(req: NextRequest) {
     const discountEndDate = body?.discount_end_date && String(body.discount_end_date).trim() !== '' ? String(body.discount_end_date).trim() : null;
     const agentDiscount = body?.agent_discount !== undefined && body?.agent_discount !== null && body?.agent_discount !== '' && !Number.isNaN(Number(body.agent_discount)) ? Number(body.agent_discount) : null;
     const minAdults = body?.min_adults !== undefined && body?.min_adults !== null && body?.min_adults !== '' && !Number.isNaN(Number(body.min_adults)) ? Math.max(1, Number(body.min_adults)) : 1;
+    const showListingPage =
+      body?.show_listing_page !== undefined
+        ? Boolean(body.show_listing_page)
+        : true;
 
     console.log('POST - Discount fields received:', {
       adult_discount_amount: adultDiscountAmount,
@@ -350,6 +360,7 @@ export async function POST(req: NextRequest) {
       discount_end_date: discountEndDate,
       agent_discount: agentDiscount,
       min_adults: minAdults,
+      show_listing_page: showListingPage,
       terms_html: termsHtml,
       inclusion_html: inclusionHtml,
       exclusion_html: exclusionHtml,
@@ -552,6 +563,10 @@ export async function PUT(req: NextRequest) {
       body?.crm_package_id !== undefined
         ? (body.crm_package_id === null || body.crm_package_id === '' ? null : String(body.crm_package_id).trim())
         : undefined;
+    const showListingPage =
+      body?.show_listing_page !== undefined
+        ? Boolean(body.show_listing_page)
+        : undefined;
 
     if (!id) {
       return NextResponse.json(
@@ -633,6 +648,7 @@ export async function PUT(req: NextRequest) {
     if (galleryImages !== undefined) updates.gallery = galleryImages;
     if (status !== undefined) updates.status = status;
     if (crmPackageId !== undefined) updates.crm_package_id = crmPackageId || null;
+    if (showListingPage !== undefined) updates.show_listing_page = showListingPage;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
