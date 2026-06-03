@@ -587,9 +587,7 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
     // Check if SMTP is configured
     console.log(`📧 [EMAIL] Checking SMTP configuration...`);
     const configured = isEmailConfigured();
-    console.log(
-      `📧 [EMAIL] Nodemailer/SMTP: ${configured ? '✅' : '❌'}`
-    );
+    console.log(`📧 [EMAIL] Nodemailer/SMTP: ${configured ? '✅' : '❌'}`);
 
     if (!configured) {
       console.error(
@@ -598,7 +596,7 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const internalRecipientEmail = 'rawatajay9092@gmail.com';
+    const internalRecipientEmail = 'sam@aapkatourism.com';
     const customerEmail = data.customerEmail;
 
     // Prepare email subjects
@@ -724,7 +722,10 @@ function getLtdEmailAssetsBase(): string {
 }
 
 function getLtdSiteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || getLtdEmailAssetsBase()).replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL || getLtdEmailAssetsBase()).replace(
+    /\/$/,
+    ''
+  );
 }
 
 function formatLtdCurrency(amount: number, currency: string): string {
@@ -734,12 +735,15 @@ function formatLtdCurrency(amount: number, currency: string): string {
   })}`;
 }
 
-function getLimitedTimeDealCustomerEmailTemplate(data: LimitedTimeDealBookingEmailData): string {
+function getLimitedTimeDealCustomerEmailTemplate(
+  data: LimitedTimeDealBookingEmailData
+): string {
   const base = getLtdEmailAssetsBase();
   const siteUrl = getLtdSiteUrl();
   const logoUrl = `${base.replace(/\/$/, '')}/aapka-tourism-logo.png`;
   const dealsUrl = `${siteUrl}/limited-time-deals`;
-  const fullName = `${data.salutation} ${data.firstName} ${data.lastName}`.trim();
+  const fullName =
+    `${data.salutation} ${data.firstName} ${data.lastName}`.trim();
   const partySummary = data.isSoloTraveller
     ? 'Solo traveller'
     : `${data.adults} adult(s), ${data.children} child(ren), ${data.infants} infant(s)`;
@@ -824,11 +828,14 @@ function getLimitedTimeDealCustomerEmailTemplate(data: LimitedTimeDealBookingEma
 </html>`;
 }
 
-function getLimitedTimeDealInternalEmailTemplate(data: LimitedTimeDealBookingEmailData): string {
+function getLimitedTimeDealInternalEmailTemplate(
+  data: LimitedTimeDealBookingEmailData
+): string {
   const base = getLtdEmailAssetsBase();
   const siteUrl = getLtdSiteUrl();
   const logoUrl = `${base.replace(/\/$/, '')}/aapka-tourism-logo.png`;
-  const fullName = `${data.salutation} ${data.firstName} ${data.lastName}`.trim();
+  const fullName =
+    `${data.salutation} ${data.firstName} ${data.lastName}`.trim();
   const partySummary = data.isSoloTraveller
     ? 'Solo traveller'
     : `${data.adults} adult(s), ${data.children} child(ren), ${data.infants} infant(s)`;
@@ -901,7 +908,9 @@ export async function sendLimitedTimeDealBookingConfirmationEmail(
   errors?: string[];
   error?: string;
 }> {
-  console.log(`📧 [LTD EMAIL] Booking #${data.bookingId} — fee ${formatLtdCurrency(data.bookingFeePaid, data.currency)}`);
+  console.log(
+    `📧 [LTD EMAIL] Booking #${data.bookingId} — fee ${formatLtdCurrency(data.bookingFeePaid, data.currency)}`
+  );
 
   try {
     if (!isEmailConfigured()) {
@@ -945,7 +954,8 @@ export async function sendLimitedTimeDealBookingConfirmationEmail(
       ...(errors.length > 0 && { errors }),
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to send LTD email';
+    const message =
+      error instanceof Error ? error.message : 'Failed to send LTD email';
     return { success: false, error: message };
   }
 }
@@ -961,7 +971,8 @@ export interface PdfBrochureEmailData {
 function getPdfBrochureEmailTemplate(data: PdfBrochureEmailData): string {
   // Use production URL for logo - emails need publicly accessible image URLs.
   // Set EMAIL_ASSETS_BASE_URL if your site uses a different domain (e.g. Vercel).
-  const base = process.env.EMAIL_ASSETS_BASE_URL || 'https://www.aapkatourism.com';
+  const base =
+    process.env.EMAIL_ASSETS_BASE_URL || 'https://www.aapkatourism.com';
   const logoUrl = `${base.replace(/\/$/, '')}/aapka-tourism-logo.png`;
 
   return `
@@ -1023,7 +1034,9 @@ function getPdfBrochureEmailTemplate(data: PdfBrochureEmailData): string {
 </html>`;
 }
 
-export async function sendPdfBrochureEmail(data: PdfBrochureEmailData): Promise<{
+export async function sendPdfBrochureEmail(
+  data: PdfBrochureEmailData
+): Promise<{
   success: boolean;
   error?: string;
 }> {
@@ -1037,5 +1050,7 @@ export async function sendPdfBrochureEmail(data: PdfBrochureEmailData): Promise<
     html: getPdfBrochureEmailTemplate(data),
   });
 
-  return result.success ? { success: true } : { success: false, error: result.error };
+  return result.success
+    ? { success: true }
+    : { success: false, error: result.error };
 }

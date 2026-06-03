@@ -1504,6 +1504,11 @@ function CheckoutPageContent() {
                             })()
                           : 'Not selected'}
                       </p>
+                      {item.dateSurcharge != null && item.dateSurcharge > 0 && (
+                        <span className='date-surcharge-badge'>
+                          Surcharge +{formatPrice(item.dateSurcharge)}
+                        </span>
+                      )}
                       <p className='package-persons'>
                         {item.isSoloTraveller
                           ? `Solo Traveller – ${

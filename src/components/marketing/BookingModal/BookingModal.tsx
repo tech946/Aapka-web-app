@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
+import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import './booking-modal.css';
 
 interface BookingModalProps {
@@ -87,6 +88,9 @@ interface BookingModalProps {
   onToggleAddonHotelService?: (id: string) => void;
   onToggleAddonPrivateTransfer?: (id: string) => void;
   addonNights?: number;
+  /** Date-range surcharges (offer packages) */
+  surcharges?: Array<{ id: string; price: number; from_date: string; to_date: string }>;
+  selectedDateSurcharge?: number;
 }
 
 export default function BookingModal({
@@ -155,6 +159,8 @@ export default function BookingModal({
   onToggleAddonHotelService,
   onToggleAddonPrivateTransfer,
   addonNights = 0,
+  surcharges = [],
+  selectedDateSurcharge = 0,
 }: BookingModalProps) {
   if (!isOpen) return null;
 
@@ -502,7 +508,9 @@ export default function BookingModal({
                 <ChevronDown className={isMobile ? 'mobile-booking-dropdown-chevron' : 'booking-dropdown-chevron'} />
                 {showDateDropdown && getAvailableDates().length > 0 && (
                   <div className={isMobile ? 'mobile-booking-dates-dropdown' : 'booking-dates-dropdown'}>
-                    {getAvailableDates().map((dateStr, idx) => (
+                    {getAvailableDates().map((dateStr, idx) => {
+                      const dateSurcharge = getSurchargeAmountForDate(dateStr, surcharges);
+                      return (
                       <div
                         key={idx}
                         className={isMobile ? 'mobile-booking-date-item' : 'booking-date-item'}
@@ -511,13 +519,28 @@ export default function BookingModal({
                           handleDateStringSelect(dateStr);
                         }}
                       >
-                        {(() => {
-                          const d = parseDateStringToLocal(dateStr);
-                          return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
-                        })()}
+                        <div className='booking-date-item-row'>
+                          <span>
+                            {(() => {
+                              const d = parseDateStringToLocal(dateStr);
+                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
+                            })()}
+                          </span>
+                          {dateSurcharge > 0 && (
+                            <span className='date-surcharge-badge'>
+                              +AED {dateSurcharge.toFixed(0)} surcharge
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
+                )}
+                {selectedDateSurcharge > 0 && (
+                  <span className='date-surcharge-badge date-surcharge-badge-inline'>
+                    Surcharge +AED {selectedDateSurcharge.toFixed(2)}
+                  </span>
                 )}
               </div>
             ) : (

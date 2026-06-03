@@ -1746,7 +1746,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .desktop-booking-modal-content .booking-input-wrapper {
   width: 100%;
   min-width: unset;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 /* Icon + field (persons / date / add-ons): one border only */
@@ -1757,24 +1759,32 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   background: #fff;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field:hover {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field:hover {
   border-color: #d1d5db;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field:focus-within {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field:focus-within {
   border-color: #fd6b06;
   box-shadow: 0 0 0 3px rgba(253, 107, 6, 0.12);
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input-icon {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-input-icon {
   left: 16px;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-dropdown-chevron {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-dropdown-chevron {
   right: 14px;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-input {
   border: none;
   border-bottom: none;
   border-radius: 0;
@@ -1783,12 +1793,18 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   background: transparent;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input:hover,
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input:focus {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-input:hover,
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-input:focus {
   background: transparent;
 }
 
-.desktop-booking-modal-content .booking-input-wrapper.booking-modal-field .booking-input:focus {
+.desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-input:focus {
   outline: none;
 }
 
@@ -1868,13 +1884,16 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   height: 52px;
 }
 /* Lead passenger etc.: label + control (LTD step 2) */
-.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) {
+.desktop-booking-modal-content
+  .booking-input-wrapper:not(.booking-modal-field) {
   border: 1px solid #e5e7eb;
   padding: 12px 14px;
   border-radius: 8px;
   background: #fff;
 }
-.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) label {
+.desktop-booking-modal-content
+  .booking-input-wrapper:not(.booking-modal-field)
+  label {
   display: block;
   font-size: 13px;
   font-weight: 500;
@@ -1882,8 +1901,12 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   margin-bottom: 6px;
   font-family: var(--font-inter);
 }
-.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) input,
-.desktop-booking-modal-content .booking-input-wrapper:not(.booking-modal-field) select {
+.desktop-booking-modal-content
+  .booking-input-wrapper:not(.booking-modal-field)
+  input,
+.desktop-booking-modal-content
+  .booking-input-wrapper:not(.booking-modal-field)
+  select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #e5e7eb;
@@ -2523,6 +2546,39 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   background: linear-gradient(135deg, #fff7ed 0%, #fef3e2 100%);
   color: #c2410c;
   transform: translateX(4px);
+}
+
+.booking-date-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.date-surcharge-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.date-surcharge-badge-inline {
+  margin-top: 6px;
+}
+
+.flexible-day-surcharge {
+  font-size: 9px;
+  font-weight: 700;
+  color: #b45309;
+  line-height: 1.1;
 }
 
 .booking-date-item.selected {
@@ -3194,7 +3250,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     font-size: 14px;
     color: #1f2937;
     background: white;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
     cursor: pointer;
   }
 

@@ -10,7 +10,7 @@ import {
   useRef,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -26,15 +26,15 @@ import { toast } from 'sonner';
 import PackageGallery from '@/app/(marketing)/category/[slug]/[packageId]/PackageGallery';
 import PackageDetailsTabs from '@/app/(marketing)/category/[slug]/[packageId]/PackageDetailsTabs';
 import LimitedTimeDealCalendar from '@/components/marketing/LimitedTimeDealCalendar';
-import { computeLtdPayableTotal } from '@/lib/ltd-copy';
+import { useCart, type CartItemStorage } from '@/context/CartContext';
 import {
   getOfferPackageTravelDates,
   getOfferPackageTravelDatesStatus,
 } from '@/lib/offer-package-dates';
+import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
+import { useSurchargeMaster } from '@/hooks/use-marketing-queries';
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
-
-const BOOKING_FEE_AED = 100;
 
 function formatAedAmount(n: number) {
   return `AED ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -171,22 +171,14 @@ interface LimitedTimeDeal {
 
 export default function LimitedTimeDealDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { addToCart } = useCart();
   const packageSlug = params?.packageSlug as string;
 
   const [deal, setDeal] = useState<LimitedTimeDeal | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [modalStep, setModalStep] = useState<1 | 2>(1);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [leadPassenger, setLeadPassenger] = useState({
-    salutation: 'Mr',
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    whatsapp: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [month, setMonth] = useState<Date>(new Date());
   const [persons, setPersons] = useState({ adult: 2, child: 0, infant: 0 });
   const [isSoloTraveller, setIsSoloTraveller] = useState(false);
@@ -206,20 +198,45 @@ export default function LimitedTimeDealDetailPage() {
     () => getOfferPackageTravelDatesStatus(pkg?.travel_dates),
     [pkg?.travel_dates]
   );
-  const bookingFeePerPerson = Number(deal?.booking_fee_aed) || BOOKING_FEE_AED;
-  const totalPersons = isSoloTraveller
-    ? 1
-    : persons.adult + persons.child + persons.infant;
-  const bookingFeeSubtotal = totalPersons * bookingFeePerPerson;
-  const {
-    subtotal: ltdSubtotal,
-    surcharge: ltdSurcharge,
-    total: totalAmount,
-  } = computeLtdPayableTotal(bookingFeeSubtotal);
+  const { data: surchargeMaster = [] } = useSurchargeMaster();
+  const selectedTravelDateStr = selectedDate
+    ? format(selectedDate, 'yyyy-MM-dd')
+    : null;
+  const selectedDateSurcharge = useMemo(
+    () => getSurchargeAmountForDate(selectedTravelDateStr, surchargeMaster),
+    [selectedTravelDateStr, surchargeMaster]
+  );
+
+  const calculatedPrice = useMemo(() => {
+    if (!pkg) return 0;
+    if (isSoloTraveller && pkg.solo_traveller_enabled) {
+      const solo =
+        Number(pkg.solo_traveller_price) ||
+        Number(pkg.adult_price) ||
+        Number(pkg.package_price) ||
+        0;
+      return solo + selectedDateSurcharge;
+    }
+    const adultP = Number(pkg.adult_price) || 0;
+    const childP = Number(pkg.child_price) || 0;
+    const infantP = Number(pkg.infant_price) || 0;
+    let total =
+      persons.adult * adultP +
+      persons.child * childP +
+      persons.infant * infantP;
+    if (
+      total === 0 &&
+      !adultP &&
+      !childP &&
+      !infantP &&
+      pkg.package_price
+    ) {
+      total = Number(pkg.package_price) || 0;
+    }
+    return total + selectedDateSurcharge;
+  }, [pkg, persons, isSoloTraveller, selectedDateSurcharge]);
 
   const formatPrice = (price: number) => formatAedAmount(price);
-
-  const continueButtonLabel = `Continue – ${formatPrice(totalAmount)}`;
 
   const updateCalendarPopoverPosition = useCallback(() => {
     const el = dateTriggerRef.current;
@@ -313,7 +330,7 @@ export default function LimitedTimeDealDetailPage() {
     fetchData();
   }, [packageSlug]);
 
-  const handleStep1Continue = () => {
+  const handleAddToCart = () => {
     if (!deal || !pkg) return;
     if (!selectedDate) {
       setShowDateRequiredError(true);
@@ -326,131 +343,40 @@ export default function LimitedTimeDealDetailPage() {
       toast.error(`Minimum ${minAdults} adults required`);
       return;
     }
-    if (totalPersons === 0) {
+    const totalPassengers = isSoloTraveller
+      ? 1
+      : persons.adult + persons.child + persons.infant;
+    if (totalPassengers === 0) {
       toast.error('Select at least one passenger');
       return;
     }
-    setModalStep(2);
-  };
 
-  const handleProceedToPayment = async () => {
-    if (!deal || !pkg || !selectedDate) return;
-    const { salutation, firstName, lastName, email, phone, whatsapp } =
-      leadPassenger;
-    if (
-      !firstName.trim() ||
-      !lastName.trim() ||
-      !email.trim() ||
-      !phone.trim() ||
-      !whatsapp.trim()
-    ) {
-      toast.error('Please fill all required passenger details');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const bookingRes = await fetch(
-        '/api/checkout-limited-time-deal/create-booking',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            limitedTimeDealId: deal.id,
-            cartItems: [
-              {
-                packageId: pkg.package_id,
-                adults: isSoloTraveller ? 1 : persons.adult,
-                children: isSoloTraveller ? 0 : persons.child,
-                infants: persons.infant,
-                selectedDate: format(selectedDate, 'yyyy-MM-dd'),
-                isSoloTraveller,
-                withVisa: false,
-                price: totalAmount,
-              },
-            ],
-            passengers: [
-              {
-                salutation,
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                email: email.trim(),
-                phone: phone.trim(),
-                whatsapp: whatsapp.trim(),
-              },
-            ],
-            infantDocuments: [],
-            paymentMethod: 'ccavenue',
-            totalAmount,
-            paymentType: 'full',
-            paymentAmount: totalAmount,
-            currency: 'AED',
-          }),
-        }
-      );
+    const cartItem: CartItemStorage = {
+      packageId: pkg.package_id,
+      packageSlug,
+      categorySlug: 'offer-packages',
+      adults: isSoloTraveller ? 1 : persons.adult,
+      children: isSoloTraveller ? 0 : persons.child,
+      infants: isSoloTraveller ? 0 : persons.infant,
+      selectedDate: format(selectedDate, 'yyyy-MM-dd'),
+      isSoloTraveller,
+      withVisa: false,
+    };
 
-      const bookingResult = await bookingRes.json();
-      if (!bookingRes.ok || !bookingResult.success) {
-        throw new Error(bookingResult.error || 'Failed to create booking');
-      }
-
-      const origin =
-        typeof window !== 'undefined' ? window.location.origin : '';
-      const cancelUrl = `${origin}/limited-time-deals/${packageSlug}?error=payment_cancelled`;
-
-      const orderRes = await fetch('/api/payments/ccavenue/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: bookingResult.bookingId,
-          amount: totalAmount,
-          currency: 'AED',
-          customerName: `${firstName} ${lastName}`.trim(),
-          customerEmail: email.trim(),
-          customerPhone: phone.trim(),
-          paymentType: 'full',
-          cancelUrl,
-        }),
-      });
-
-      const orderData = await orderRes.json();
-      if (!orderRes.ok || !orderData.success) {
-        throw new Error(orderData.error || 'Failed to create payment order');
-      }
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = orderData.redirectUrl;
-      const encInput = document.createElement('input');
-      encInput.type = 'hidden';
-      encInput.name = 'encRequest';
-      encInput.value = orderData.encRequest;
-      form.appendChild(encInput);
-      const accessInput = document.createElement('input');
-      accessInput.type = 'hidden';
-      accessInput.name = 'access_code';
-      accessInput.value = orderData.accessCode;
-      form.appendChild(accessInput);
-      document.body.appendChild(form);
-      form.submit();
-    } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to process payment'
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    addToCart(cartItem);
+    toast.success('Package added to cart!');
+    setShowModal(false);
+    router.push('/checkout');
   };
 
   const handleOpenModal = () => {
     setShowDateRequiredError(false);
     setShowModal(true);
     setShowCalendar(false);
-    setModalStep(1);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setModalStep(1);
     setShowCalendar(false);
     setShowDateRequiredError(false);
   };
@@ -517,12 +443,6 @@ export default function LimitedTimeDealDetailPage() {
           </div>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
           <LtdPackagePricingDisplay pkg={pkg} />
-          <p className='ltd-hero-booking-fee-note'>
-            <strong>Limited time deal — booking fee:</strong>{' '}
-            {formatPrice(bookingFeePerPerson)} per person when you book. A{' '}
-            <strong>3% platform fee</strong> is added to the booking-fee total
-            at checkout.
-          </p>
           {pkg.package_description && (
             <p className='package-hero-description'>
               {pkg.package_description}
@@ -555,9 +475,7 @@ export default function LimitedTimeDealDetailPage() {
             >
               <div className='desktop-booking-modal-header'>
                 <h3 className='desktop-booking-modal-title'>
-                  {modalStep === 1
-                    ? 'Select Date & Travellers'
-                    : 'Lead Passenger Details'}
+                  Select Date & Travellers
                 </h3>
                 <button
                   type='button'
@@ -570,14 +488,11 @@ export default function LimitedTimeDealDetailPage() {
               </div>
               <div
                 className='desktop-booking-modal-content'
-                style={
-                  modalStep === 1
-                    ? { overflow: 'visible', maxHeight: 'calc(100vh - 120px)' }
-                    : { overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }
-                }
+                style={{
+                  overflow: 'visible',
+                  maxHeight: 'calc(100vh - 120px)',
+                }}
               >
-                {modalStep === 1 ? (
-                  <>
                     {/* Date field — calendar opens in a fixed portal (true dropdown), not inline */}
                     <div className='ltd-date-dropdown-wrapper'>
                       <div ref={dateTriggerRef}>
@@ -603,6 +518,11 @@ export default function LimitedTimeDealDetailPage() {
                             className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`}
                           />
                         </button>
+                        {selectedDateSurcharge > 0 && (
+                          <span className='date-surcharge-badge date-surcharge-badge-inline'>
+                            Surcharge +AED {selectedDateSurcharge.toFixed(2)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     {showCalendar &&
@@ -664,11 +584,6 @@ export default function LimitedTimeDealDetailPage() {
                         </label>
                       </div>
                     )}
-
-                    <p className='ltd-modal-per-person-note'>
-                      Booking fee for this offer is charged{' '}
-                      <strong>per person</strong>.
-                    </p>
 
                     <div className='ltd-person-counters'>
                       <div className='person-counter-row'>
@@ -754,159 +669,32 @@ export default function LimitedTimeDealDetailPage() {
                       </div>
                     </div>
 
-                    {/* Price summary — booking fee + platform fee (3%) at checkout */}
-                    <div className='ltd-price-summary ltd-price-summary-stacked'>
-                      <div className='ltd-price-line'>
-                        <span>Booking fee</span>
-                        <span>{formatPrice(ltdSubtotal)}</span>
+                    <div className='booking-price-section'>
+                      <div className='booking-price-row'>
+                        <span className='booking-price-label'>TOTAL</span>
+                        <span className='booking-price-amount'>
+                          {formatPrice(calculatedPrice)}
+                        </span>
                       </div>
-                      <div className='ltd-price-line ltd-price-line-muted'>
-                        <span>Platform fee (3%)</span>
-                        <span>{formatPrice(ltdSurcharge)}</span>
-                      </div>
-                      <div className='ltd-price-line ltd-price-line-total'>
-                        <span>Total due</span>
-                        <strong>{formatPrice(totalAmount)}</strong>
-                      </div>
-                      <span className='ltd-price-breakdown'>
-                        {totalPersons}{' '}
-                        {totalPersons === 1 ? 'person' : 'persons'} ×{' '}
-                        {formatPrice(bookingFeePerPerson)} + 3%
-                      </span>
                     </div>
-                  </>
-                ) : (
-                  <div
-                    className='input-selectors'
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 14,
-                    }}
-                  >
-                    <div className='booking-input-wrapper'>
-                      <label>Salutation *</label>
-                      <select
-                        value={leadPassenger.salutation}
-                        onChange={e =>
-                          setLeadPassenger(p => ({
-                            ...p,
-                            salutation: e.target.value,
-                          }))
-                        }
-                      >
-                        <option value='Mr'>Mr</option>
-                        <option value='Mrs'>Mrs</option>
-                        <option value='Ms'>Ms</option>
-                        <option value='Dr'>Dr</option>
-                      </select>
-                    </div>
-                    <div className='booking-input-wrapper'>
-                      <label>First Name *</label>
-                      <input
-                        type='text'
-                        value={leadPassenger.firstName}
-                        onChange={e =>
-                          setLeadPassenger(p => ({
-                            ...p,
-                            firstName: e.target.value,
-                          }))
-                        }
-                        placeholder='First name'
-                      />
-                    </div>
-                    <div className='booking-input-wrapper'>
-                      <label>Last Name *</label>
-                      <input
-                        type='text'
-                        value={leadPassenger.lastName}
-                        onChange={e =>
-                          setLeadPassenger(p => ({
-                            ...p,
-                            lastName: e.target.value,
-                          }))
-                        }
-                        placeholder='Last name'
-                      />
-                    </div>
-                    <div className='booking-input-wrapper'>
-                      <label>Email *</label>
-                      <input
-                        type='email'
-                        value={leadPassenger.email}
-                        onChange={e =>
-                          setLeadPassenger(p => ({
-                            ...p,
-                            email: e.target.value,
-                          }))
-                        }
-                        placeholder='Email'
-                      />
-                    </div>
-                    <div className='booking-input-wrapper'>
-                      <label>Phone *</label>
-                      <input
-                        type='tel'
-                        value={leadPassenger.phone}
-                        onChange={e =>
-                          setLeadPassenger(p => ({
-                            ...p,
-                            phone: e.target.value,
-                          }))
-                        }
-                        placeholder='Phone'
-                      />
-                    </div>
-                    <div className='booking-input-wrapper'>
-                      <label>WhatsApp *</label>
-                      <input
-                        type='tel'
-                        value={leadPassenger.whatsapp}
-                        onChange={e =>
-                          setLeadPassenger(p => ({
-                            ...p,
-                            whatsapp: e.target.value,
-                          }))
-                        }
-                        placeholder='WhatsApp number'
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
               <div className='ltd-modal-footer'>
                 <button
                   type='button'
-                  onClick={
-                    modalStep === 1 ? handleCloseModal : () => setModalStep(1)
-                  }
+                  onClick={handleCloseModal}
                   className='pdf-modal-cancel-button'
                   style={{ flex: 1 }}
                 >
-                  {modalStep === 1 ? 'Cancel' : 'Back'}
+                  Cancel
                 </button>
-                {modalStep === 1 ? (
-                  <button
-                    type='button'
-                    onClick={handleStep1Continue}
-                    className='booking-add-to-cart-button'
-                    style={{ flex: 1 }}
-                  >
-                    {continueButtonLabel}
-                  </button>
-                ) : (
-                  <button
-                    type='button'
-                    onClick={handleProceedToPayment}
-                    className='booking-add-to-cart-button'
-                    disabled={isSubmitting}
-                    style={{ flex: 1 }}
-                  >
-                    {isSubmitting
-                      ? 'Processing...'
-                      : `Proceed to Payment – ${formatPrice(totalAmount)}`}
-                  </button>
-                )}
+                <button
+                  type='button'
+                  onClick={handleAddToCart}
+                  className='booking-add-to-cart-button'
+                  style={{ flex: 1 }}
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
           </div>,

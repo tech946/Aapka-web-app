@@ -154,6 +154,18 @@ export function usePackagesByCategory(options: {
   });
 }
 
+// --- Surcharge master (date-range surcharges for offer packages) ---
+export function useSurchargeMaster() {
+  return useQuery({
+    queryKey: ['marketing', 'surcharge-master'],
+    queryFn: () =>
+      fetcher<{ data?: Array<{ id: string; price: number; from_date: string; to_date: string }> }>(
+        '/api/surcharge-master?limit=100&page=1'
+      ).then(r => r.data ?? []),
+    ...defaultOptions,
+  });
+}
+
 // --- Footer packages (offer + tours) ---
 export function useFooterPackages() {
   const offer = useQuery({

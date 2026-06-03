@@ -14,6 +14,10 @@ interface Package {
   adult_price: number | null;
   child_price: number | null;
   infant_price: number | null;
+  with_visa?: boolean | null;
+  adult_visa_price?: number | null;
+  child_visa_price?: number | null;
+  infant_visa_price?: number | null;
   package_days?: number | null;
   package_nights?: number | null;
   thumbnail_image: string | null;
@@ -144,15 +148,11 @@ export default function LimitedTimeDealsPage() {
               const duration = getDurationLabel(pkg);
               const packageDescription = getPackageDescription(pkg);
               const pricePerPerson = formatPrice(pkg.adult_price || 0);
-              const bookingFeeNum = Number(deal.booking_fee_aed);
-              const feeForBracket =
-                Number.isFinite(bookingFeeNum) && bookingFeeNum > 0
-                  ? bookingFeeNum
-                  : 100;
-              const feeBracketText =
-                feeForBracket % 1 === 0
-                  ? `${feeForBracket} AED`
-                  : formatPrice(feeForBracket);
+              const hasVisaIncludedAtZero =
+                pkg.with_visa &&
+                (pkg.adult_visa_price ?? 0) === 0 &&
+                (pkg.child_visa_price ?? 0) === 0 &&
+                (pkg.infant_visa_price ?? 0) === 0;
 
               return (
                 <div key={deal.id} className='package-card-wrapper'>
@@ -185,23 +185,14 @@ export default function LimitedTimeDealsPage() {
                         </p>
                       )}
                       <span className='package-visa-badge'>
-                        {feeForBracket % 1 === 0
-                          ? feeForBracket
-                          : feeForBracket.toFixed(2)}{' '}
-                        AED booking fee
+                        {hasVisaIncludedAtZero ? 'With visa' : 'Without visa'}
                       </span>
                       <div className='suites-card-price'>
                         <span className='suites-price-amount'>
                           {pricePerPerson}
                         </span>
-                        <span className='suites-price-label'>
-                          {' '}
-                          ({feeBracketText} booking fee) / per person
-                        </span>
+                        <span className='suites-price-label'> / per person</span>
                       </div>
-                      <p className='ltd-listing-checkout-note'>
-                        + 3% platform fee on the booking-fee total at checkout
-                      </p>
                       <Link href={url} className='suites-read-more'>
                         <span>View Details</span>
                         <PackageSliderArrowRight

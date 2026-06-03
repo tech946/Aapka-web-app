@@ -62,6 +62,8 @@ export interface CartItem extends CartItemStorage {
   // Referral discount info (for customers via referral link)
   referralDiscountAmount?: number | null;
   priceBeforeReferralDiscount?: number | null;
+  /** Date-range surcharge from surcharge_master (included in price) */
+  dateSurcharge?: number | null;
 }
 
 interface CartContextType {
@@ -150,7 +152,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           setCartItems(prev =>
             prev.map(item => {
               const validated = result.items.find(
-                (v: any) => v.packageId === item.packageId && v.valid
+                (v: any) =>
+                  v.valid &&
+                  v.packageId === item.packageId &&
+                  (v.selectedDate ?? null) === (item.selectedDate ?? null)
               );
               if (validated) {
                 return {
@@ -177,6 +182,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   // Referral discount info (for customers via referral link)
                   referralDiscountAmount: validated.referralDiscountAmount,
                   priceBeforeReferralDiscount: validated.priceBeforeReferralDiscount,
+                  dateSurcharge: validated.dateSurcharge ?? null,
                 };
               }
               return item;

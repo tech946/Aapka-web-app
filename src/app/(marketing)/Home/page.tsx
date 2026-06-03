@@ -1,6 +1,6 @@
 import BannerSection from './BannerSection';
 import EleganceSection from './EleganceSection';
-import OfferPackagesSection from './OfferPackagesSection';
+// import OfferPackagesSection from './OfferPackagesSection';
 import ToursSection from './ToursSection';
 import BlogsSection from './BlogsSection';
 import TestimonialsSection from './TestimonialsSection';
@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div>
       <BannerSection />
-      <OfferPackagesSection />
+      {/* <OfferPackagesSection /> */}
       <ToursSection />
       <EleganceSection />
       <BlogsSection />

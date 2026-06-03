@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -214,6 +215,17 @@ export async function POST(req: NextRequest) {
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
     }
+
+    const { data: surchargeRows } = await supabaseAdmin
+      .from('surcharge_master')
+      .select('id, price, from_date, to_date');
+
+    const surchargeMaster = (surchargeRows || []).map((r: { id: string; price: number; from_date: string; to_date: string }) => ({
+      id: r.id,
+      price: Number(r.price) || 0,
+      from_date: r.from_date,
+      to_date: r.to_date,
+    }));
 
     // Fetch active deals for all packages
     const fetchedPackageIds = packages?.map(p => p.package_id) || [];
@@ -521,6 +533,15 @@ export async function POST(req: NextRequest) {
       calculatedPrice += addonPrice;
       originalPrice += addonPrice;
 
+      const dateSurcharge = item.selectedDate
+        ? getSurchargeAmountForDate(
+            item.selectedDate.split('T')[0],
+            surchargeMaster
+          )
+        : 0;
+      calculatedPrice += dateSurcharge;
+      originalPrice += dateSurcharge;
+
       // SECURITY: Apply discount based on verified data, not client-provided values
       // Priority 1: Agent with active subscription gets agent discount
       // Priority 2: Customer via discount-type referral link gets referral discount (verified from DB)
@@ -588,10 +609,12 @@ export async function POST(req: NextRequest) {
         }
         originalPriceForDisplay += visaPrice;
         originalPriceForDisplay += addonPrice;
+        originalPriceForDisplay += dateSurcharge;
       }
 
       return {
         packageId: item.packageId,
+        selectedDate: item.selectedDate ?? null,
         valid: true,
         packageName: pkg.package_name,
         price: calculatedPrice,
@@ -622,6 +645,7 @@ export async function POST(req: NextRequest) {
         verifiedReferralLinkType: verifiedReferral?.linkType || null,
         // Visa info
         visaPrice: visaPrice,
+        dateSurcharge: dateSurcharge > 0 ? dateSurcharge : null,
         adultVisaPrice: pkg.adult_visa_price,
         childVisaPrice: pkg.child_visa_price,
         infantVisaPrice: pkg.infant_visa_price,
