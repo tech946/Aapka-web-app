@@ -525,6 +525,14 @@ export default function LimitedTimeDealDetailPage() {
                         )}
                       </div>
                     </div>
+                    <div className='booking-flexible-date-link-wrap'>
+                      <Link
+                        href='/travel-enquiry'
+                        className='booking-flexible-date-link'
+                      >
+                        Looking for flexible date package?
+                      </Link>
+                    </div>
                     {showCalendar &&
                       typeof window !== 'undefined' &&
                       createPortal(

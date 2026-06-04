@@ -255,6 +255,11 @@ export default function SubmitLeadPage() {
       newErrors.whatsapp_number = 'WhatsApp number is required';
     }
 
+    if (!formData.tours_and_activities.length) {
+      newErrors.tours_and_activities =
+        'Please select at least one tour or activity';
+    }
+
     if (
       formData.email_id &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email_id)
@@ -672,7 +677,10 @@ export default function SubmitLeadPage() {
           <div className='lead-section'>
             <h3 className='lead-section-title'>6. Tours & Activities</h3>
             <div className='lead-form-group full-width'>
-              <Label>Select Tours & Activities</Label>
+              <Label>
+                Select Tours & Activities{' '}
+                <span className='required'>*</span>
+              </Label>
 
               {/* Selected Attractions Chips */}
               {formData.tours_and_activities.length > 0 && (
@@ -841,6 +849,9 @@ export default function SubmitLeadPage() {
                   </>
                 )}
               </div>
+              {errors.tours_and_activities && (
+                <p className='lead-error'>{errors.tours_and_activities}</p>
+              )}
             </div>
           </div>
 

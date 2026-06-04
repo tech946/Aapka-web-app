@@ -2574,6 +2574,20 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   margin-top: 6px;
 }
 
+.booking-flexible-date-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fd6b06;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.booking-flexible-date-link:hover {
+  text-decoration: underline;
+  color: #e64500;
+}
+
 .flexible-day-surcharge {
   font-size: 9px;
   font-weight: 700;
@@ -4098,7 +4112,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 /* LTD date dropdown */
 .ltd-date-dropdown-wrapper {
   position: relative;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .ltd-date-required-msg {

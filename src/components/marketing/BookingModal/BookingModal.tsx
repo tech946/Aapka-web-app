@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { X, Users, Calendar, ChevronDown, Plus, Minus } from 'lucide-react';
 import { AddonsSection } from '@/components/marketing/AddonsModal/AddonsSection';
 import { DayPicker } from 'react-day-picker';
@@ -633,6 +634,14 @@ export default function BookingModal({
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {slug === 'offer-packages' && (
+              <div className='booking-flexible-date-link-wrap'>
+                <Link href='/travel-enquiry' className='booking-flexible-date-link'>
+                  Looking for flexible date package?
+                </Link>
               </div>
             )}
           </div>
