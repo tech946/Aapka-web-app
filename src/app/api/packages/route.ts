@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import {
+  normalizePackageGallery,
+  normalizePdfUrl,
+} from '@/lib/package-gallery';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -280,11 +284,14 @@ export async function POST(req: NextRequest) {
         : null;
     const pdfUrl: string | null =
       body?.pdf_url !== undefined
-        ? String(body.pdf_url).trim() || null
+        ? normalizePdfUrl(body.pdf_url) || null
         : null;
     const galleryImages: string[] | null =
-      Array.isArray(body?.gallery) && body.gallery.length > 0
-        ? body.gallery.filter((url: any) => typeof url === 'string' && url.trim())
+      body?.gallery !== undefined
+        ? (() => {
+            const normalized = normalizePackageGallery(body.gallery);
+            return normalized.length > 0 ? normalized : null;
+          })()
         : null;
 
     if (!name) {
@@ -565,13 +572,11 @@ export async function PUT(req: NextRequest) {
         : undefined;
     const pdfUrl =
       body?.pdf_url !== undefined
-        ? String(body.pdf_url).trim() || null
+        ? normalizePdfUrl(body.pdf_url) || null
         : undefined;
     const galleryImages =
       body?.gallery !== undefined
-        ? Array.isArray(body.gallery)
-          ? body.gallery.filter((url: any) => typeof url === 'string' && url.trim())
-          : undefined
+        ? normalizePackageGallery(body.gallery)
         : undefined;
     const status =
       body?.status !== undefined

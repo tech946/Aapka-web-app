@@ -30,6 +30,10 @@ import {
   usesFlexibleDatePackages,
 } from '@/lib/package-config';
 import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
+import {
+  getPackageDisplayImages,
+  normalizePackageGallery,
+} from '@/lib/package-gallery';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import BookingModal from '@/components/marketing/BookingModal';
 import {
@@ -1115,6 +1119,8 @@ export default function PackageDetailsPage() {
           packageData.date_ranges = null;
         }
 
+        packageData.gallery = normalizePackageGallery(packageData.gallery);
+
         // Ensure with_visa is a boolean
         if (
           packageData.with_visa !== undefined &&
@@ -1616,12 +1622,7 @@ export default function PackageDetailsPage() {
   }
 
   // Get images array
-  const images =
-    pkg.gallery && Array.isArray(pkg.gallery) && pkg.gallery.length > 0
-      ? pkg.gallery
-      : pkg.thumbnail_image && pkg.thumbnail_image.trim()
-        ? [pkg.thumbnail_image]
-        : [];
+  const images = getPackageDisplayImages(pkg.gallery, pkg.thumbnail_image);
 
   // Calculate pricing for display
   const prices = getPricesForDate();

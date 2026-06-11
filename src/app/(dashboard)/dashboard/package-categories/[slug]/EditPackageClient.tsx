@@ -15,10 +15,9 @@ import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle }
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
-import {
-  ALL_TOUR_BOOKING_DAYS,
-  normalizeTourBookingDays,
-} from '@/lib/tour-booking-days';
+import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
+import { normalizePdfUrl } from '@/lib/package-gallery';
+import { mapPackageToEditForm } from '@/lib/package-form';
 import { parseDateStringToLocal } from '@/lib/utils';
 import '../../dashboard.css';
 
@@ -175,6 +174,7 @@ export default function EditPackageClient({
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
+  const [isLoadingForm, setIsLoadingForm] = useState(false);
   const router = useRouter();
 
   const handleGalleryUpload = async (files: File[]) => {
@@ -213,128 +213,91 @@ export default function EditPackageClient({
     }
   };
 
-  // Prefill fields when modal opens
-  useEffect(() => {
-    if (!open) return;
-    if (pkg.package_days != null) setDays(String(pkg.package_days));
-    if (pkg.package_nights != null) setNights(String(pkg.package_nights));
-    if (pkg.end_date != null) setEndDate(pkg.end_date);
-    if (pkg.adult_price != null) setAdultPrice(String(pkg.adult_price));
-    if (pkg.child_price != null) setChildPrice(String(pkg.child_price));
-    if (pkg.infant_price != null) setInfantPrice(String(pkg.infant_price));
-    if (pkg.solo_traveller_enabled != null)
-      setSoloTravellerEnabled(Boolean(pkg.solo_traveller_enabled));
-    if (pkg.solo_traveller_price != null)
-      setSoloTravellerPrice(String(pkg.solo_traveller_price));
-    if (pkg.with_visa != null) setWithVisa(Boolean(pkg.with_visa));
-    if (pkg.show_listing_page != null) setShowListingPage(Boolean(pkg.show_listing_page));
-    else setShowListingPage(true);
-    if (pkg.adult_visa_price != null) setAdultVisaPrice(String(pkg.adult_visa_price));
-    if (pkg.child_visa_price != null) setChildVisaPrice(String(pkg.child_visa_price));
-    if (pkg.infant_visa_price != null) setInfantVisaPrice(String(pkg.infant_visa_price));
-    if (pkg.adult_discount_amount != null) setAdultDiscountAmount(String(pkg.adult_discount_amount));
-    if (pkg.child_discount_amount != null) setChildDiscountAmount(String(pkg.child_discount_amount));
-    if (pkg.infant_discount_amount != null) setInfantDiscountAmount(String(pkg.infant_discount_amount));
-    if (pkg.agent_discount != null) setAgentDiscount(String(pkg.agent_discount));
-    if (pkg.min_adults != null) setMinAdults(String(pkg.min_adults));
-    else setMinAdults('1');
-    // Convert date strings to datetime-local format (YYYY-MM-DDTHH:mm)
-    if (pkg.discount_start_date != null) {
-      const startDate = new Date(pkg.discount_start_date);
-      if (!isNaN(startDate.getTime())) {
-        const year = startDate.getFullYear();
-        const month = String(startDate.getMonth() + 1).padStart(2, '0');
-        const day = String(startDate.getDate()).padStart(2, '0');
-        const hours = String(startDate.getHours()).padStart(2, '0');
-        const minutes = String(startDate.getMinutes()).padStart(2, '0');
-        setDiscountStartDate(`${year}-${month}-${day}T${hours}:${minutes}`);
-      } else {
-        setDiscountStartDate(pkg.discount_start_date);
-      }
-    }
-    if (pkg.discount_end_date != null) {
-      const endDate = new Date(pkg.discount_end_date);
-      if (!isNaN(endDate.getTime())) {
-        const year = endDate.getFullYear();
-        const month = String(endDate.getMonth() + 1).padStart(2, '0');
-        const day = String(endDate.getDate()).padStart(2, '0');
-        const hours = String(endDate.getHours()).padStart(2, '0');
-        const minutes = String(endDate.getMinutes()).padStart(2, '0');
-        setDiscountEndDate(`${year}-${month}-${day}T${hours}:${minutes}`);
-      } else {
-        setDiscountEndDate(pkg.discount_end_date);
-      }
-    }
-    setTermsHtml(pkg.terms_html || '');
-    setInclusionHtml(pkg.inclusion_html || '');
-    setExclusionHtml(pkg.exclusion_html || '');
-    setOverview(pkg.overview || '');
-    setHolidayDescHtml(pkg.holiday_description_html || '');
-    if (Array.isArray(pkg.itinerary)) {
-      const norm = (
-        pkg.itinerary as Array<{ id?: string; heading: string; desc: string }>
-      ).map((it, idx) => ({
-        id: it.id || crypto.randomUUID?.() || String(Date.now() + idx),
-        heading: it.heading,
-        desc: it.desc,
-      }));
-      setItinerary(norm);
-    }
-    if (usesSlots) {
-      // Load booking slots for UAE Tours
-      if (Array.isArray(pkg.booking_slots)) {
-        setBookingSlots(pkg.booking_slots);
-      } else {
-        setBookingSlots([]);
-      }
-      setBookingDays(normalizeTourBookingDays(pkg.booking_days));
-    } else if (usesFlexibleDate) {
-      // Load date ranges from pkg.date_ranges (stored in packages table as JSONB)
-      if (Array.isArray(pkg.date_ranges)) {
-        const normalized = pkg.date_ranges.map((d: any) => ({
-          id: d.id || crypto.randomUUID?.() || String(Date.now()),
-          fromDate: d.fromDate,
-          toDate: d.toDate,
-          adultPrice: d.adultPrice || 0,
-          childPrice: d.childPrice || 0,
-          infantPrice: d.infantPrice || 0,
-          soloTravellerPrice: d.soloTravellerPrice ?? null,
-          isSoldOut: d.isSoldOut || false,
-        }));
-        setDateRanges(normalized);
-      } else {
-        setDateRanges([]);
-      }
-    } else {
-      // Load travel dates for other categories
-      if (Array.isArray(pkg.travel_dates)) {
-        const normalized = (pkg.travel_dates as any[]).map((d: any) =>
-          typeof d === 'string'
-            ? { id: crypto.randomUUID?.() || String(Date.now()) + d, value: d }
-            : d
-        );
-        setTravelDates(normalized);
-      } else {
-        setTravelDates([]);
-      }
-    }
-    // Set thumbnail image
-    const thumbUrl = pkg.thumbnail_image || '';
-    setThumbnailImageUrl(thumbUrl);
-    setOriginalThumbnailImageUrl(thumbUrl);
-    setThumbnailImagePreview(thumbUrl || '');
+  const applyFormData = (source: Pkg) => {
+    const form = mapPackageToEditForm(source, {
+      usesSlots,
+      usesFlexibleDate,
+    });
+
+    setName(form.name);
+    setDescription(form.description);
+    setPrice(form.price);
+    setDays(form.days);
+    setNights(form.nights);
+    setEndDate(form.endDate);
+    setAdultPrice(form.adultPrice);
+    setChildPrice(form.childPrice);
+    setInfantPrice(form.infantPrice);
+    setSoloTravellerEnabled(form.soloTravellerEnabled);
+    setSoloTravellerPrice(form.soloTravellerPrice);
+    setWithVisa(form.withVisa);
+    setShowListingPage(form.showListingPage);
+    setAdultVisaPrice(form.adultVisaPrice);
+    setChildVisaPrice(form.childVisaPrice);
+    setInfantVisaPrice(form.infantVisaPrice);
+    setAdultDiscountAmount(form.adultDiscountAmount);
+    setChildDiscountAmount(form.childDiscountAmount);
+    setInfantDiscountAmount(form.infantDiscountAmount);
+    setDiscountStartDate(form.discountStartDate);
+    setDiscountEndDate(form.discountEndDate);
+    setAgentDiscount(form.agentDiscount);
+    setMinAdults(form.minAdults);
+    setTermsHtml(form.termsHtml);
+    setInclusionHtml(form.inclusionHtml);
+    setExclusionHtml(form.exclusionHtml);
+    setOverview(form.overview);
+    setHolidayDescHtml(form.holidayDescHtml);
+    setItinerary(form.itinerary);
+    setBookingSlots(form.bookingSlots);
+    setBookingDays(form.bookingDays);
+    setDateRanges(form.dateRanges);
+    setTravelDates(form.travelDates);
+    setThumbnailImageUrl(form.thumbnailImageUrl);
+    setOriginalThumbnailImageUrl(form.thumbnailImageUrl);
+    setThumbnailImagePreview(form.thumbnailImageUrl);
     setThumbnailImage(null);
     setImageLoadError(false);
-    // Set gallery images
-    const galleryUrls = Array.isArray(pkg.gallery) ? pkg.gallery : [];
-    setGalleryImages(galleryUrls);
-    setOriginalGalleryImages(galleryUrls);
-    // Set PDF URL
-    const pdf = (pkg as { pdf_url?: string | null }).pdf_url || '';
-    setPdfUrl(pdf);
-    setOriginalPdfUrl(pdf);
-    setPdfFileName(pdf ? (pdf.split('/').pop() || '') : '');
-  }, [open, pkg]);
+    setGalleryImages(form.galleryImages);
+    setOriginalGalleryImages(form.galleryImages);
+    setPdfUrl(form.pdfUrl);
+    setOriginalPdfUrl(form.pdfUrl);
+    setPdfFileName(form.pdfFileName);
+  };
+
+  // Load the latest package data (including gallery) when the modal opens
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+
+    async function loadPackageForEdit() {
+      setIsLoadingForm(true);
+      try {
+        const res = await fetch(
+          `/api/packages/${encodeURIComponent(pkg.package_id)}`
+        );
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+
+        if (res.ok && json.data) {
+          applyFormData(json.data as Pkg);
+        } else {
+          applyFormData(pkg);
+        }
+      } catch (error) {
+        console.error('Failed to load package for edit:', error);
+        if (!cancelled) applyFormData(pkg);
+      } finally {
+        if (!cancelled) setIsLoadingForm(false);
+      }
+    }
+
+    loadPackageForEdit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, pkg.package_id]);
 
   const modalContent = open ? (
     <div className='modal_overlay' onClick={() => setOpen(false)}>
@@ -1461,7 +1424,11 @@ export default function EditPackageClient({
           <button
             className='btn_primary'
             disabled={
-              !name.trim() || !price || Number.isNaN(Number(price)) || isPending
+              !name.trim() ||
+              !price ||
+              Number.isNaN(Number(price)) ||
+              isPending ||
+              isLoadingForm
             }
             onClick={() =>
               startTransition(async () => {
@@ -1583,7 +1550,7 @@ export default function EditPackageClient({
                       thumbnail_image: imageChanged
                         ? finalThumbnailUrl || null
                         : undefined,
-                      pdf_url: pdfUrl || null,
+                      pdf_url: normalizePdfUrl(pdfUrl) || null,
                       gallery: galleryImages.length > 0 ? galleryImages : [],
                       show_listing_page: showListingToggle ? showListingPage : undefined,
                     }),
@@ -1607,7 +1574,7 @@ export default function EditPackageClient({
               })
             }
           >
-            {isPending ? 'Saving...' : 'Save'}
+            {isPending ? 'Saving...' : isLoadingForm ? 'Loading...' : 'Save'}
           </button>
         </div>
       </div>
