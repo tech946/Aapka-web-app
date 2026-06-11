@@ -14,7 +14,9 @@ import {
 import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
 import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
+import TourBookingDaysSelector from './TourBookingDaysSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
+import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import '../../dashboard.css';
 
 export default function AddPackageClient({
@@ -40,6 +42,9 @@ export default function AddPackageClient({
   const [bookingSlots, setBookingSlots] = useState<
     Array<{ id: string; fromDate: string; toDate: string }>
   >([]);
+  const [bookingDays, setBookingDays] = useState<number[]>([
+    ...ALL_TOUR_BOOKING_DAYS,
+  ]);
   // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
   const [dateRanges, setDateRanges] = useState<
     Array<{
@@ -685,10 +690,16 @@ export default function AddPackageClient({
               </div>
 
               {usesSlots ? (
-                <BookingSlotsCalendar
-                  bookingSlots={bookingSlots}
-                  onBookingSlotsChange={setBookingSlots}
-                />
+                <>
+                  <TourBookingDaysSelector
+                    selectedDays={bookingDays}
+                    onSelectedDaysChange={setBookingDays}
+                  />
+                  <BookingSlotsCalendar
+                    bookingSlots={bookingSlots}
+                    onBookingSlotsChange={setBookingSlots}
+                  />
+                </>
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
                   dateRanges={dateRanges}
@@ -1373,6 +1384,7 @@ export default function AddPackageClient({
                   // Add date-related fields based on package type
                   if (usesSlots) {
                     payload.booking_slots = bookingSlots.length > 0 ? bookingSlots : [];
+                    payload.booking_days = bookingDays;
                   } else if (usesFlexibleDate) {
                     // Always include date_ranges for flexible date packages (even if empty, validation will catch it)
                     payload.date_ranges = dateRangesPayload;
@@ -1421,6 +1433,7 @@ export default function AddPackageClient({
                   setNights('');
                   setTravelDates([]);
                   setBookingSlots([]);
+                  setBookingDays([...ALL_TOUR_BOOKING_DAYS]);
                   setDateRanges([]);
                   setAdultPrice('');
                   setChildPrice('');

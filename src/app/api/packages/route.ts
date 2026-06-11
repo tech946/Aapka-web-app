@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, booking_days, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -195,6 +195,12 @@ export async function POST(req: NextRequest) {
     let bookingSlots: any[] | null = null;
     if (Array.isArray(body?.booking_slots)) {
       bookingSlots = body.booking_slots;
+    }
+    let bookingDays: number[] | null = null;
+    if (Array.isArray(body?.booking_days)) {
+      bookingDays = body.booking_days.filter(
+        (d: unknown) => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
+      );
     }
     // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, soloTravellerPrice, isSoldOut })
     let dateRanges: any[] | null = null;
@@ -377,6 +383,9 @@ export async function POST(req: NextRequest) {
     if (bookingSlots !== null) {
       insertData.booking_slots = bookingSlots;
     }
+    if (bookingDays !== null) {
+      insertData.booking_days = bookingDays.length > 0 ? bookingDays : null;
+    }
     if (dateRanges !== null) {
       // Store date ranges directly in packages table as JSONB
       insertData.date_ranges = dateRanges;
@@ -462,6 +471,15 @@ export async function PUT(req: NextRequest) {
       bookingSlotsUpdate = Array.isArray(body.booking_slots)
         ? body.booking_slots
         : undefined;
+    }
+    let bookingDaysUpdate: number[] | null | undefined = undefined;
+    if (body?.booking_days !== undefined) {
+      bookingDaysUpdate = Array.isArray(body.booking_days)
+        ? body.booking_days.filter(
+            (d: unknown) =>
+              Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
+          )
+        : null;
     }
     // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, soloTravellerPrice, isSoldOut })
     let dateRangesUpdate: any[] | undefined = undefined;
@@ -583,6 +601,12 @@ export async function PUT(req: NextRequest) {
     if (days !== undefined) updates.package_days = days;
     if (nights !== undefined) updates.package_nights = nights;
     if (endDate !== undefined) updates.end_date = endDate;
+    if (bookingDaysUpdate !== undefined) {
+      updates.booking_days =
+        bookingDaysUpdate && bookingDaysUpdate.length > 0
+          ? bookingDaysUpdate
+          : null;
+    }
     if (bookingSlotsUpdate !== undefined) {
       updates.booking_slots = bookingSlotsUpdate;
       // Clear travel_dates and date_ranges if booking_slots is being set

@@ -13,7 +13,12 @@ import {
 } from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
+import TourBookingDaysSelector from './TourBookingDaysSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
+import {
+  ALL_TOUR_BOOKING_DAYS,
+  normalizeTourBookingDays,
+} from '@/lib/tour-booking-days';
 import { parseDateStringToLocal } from '@/lib/utils';
 import '../../dashboard.css';
 
@@ -31,6 +36,7 @@ type Pkg = {
     fromDate: string;
     toDate: string;
   }> | null;
+  booking_days?: number[] | null;
   date_ranges?: Array<{
     id: string;
     fromDate: string;
@@ -95,6 +101,9 @@ export default function EditPackageClient({
   const [bookingSlots, setBookingSlots] = useState<
     Array<{ id: string; fromDate: string; toDate: string }>
   >([]);
+  const [bookingDays, setBookingDays] = useState<number[]>([
+    ...ALL_TOUR_BOOKING_DAYS,
+  ]);
   // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
   const [dateRanges, setDateRanges] = useState<
     Array<{
@@ -278,6 +287,7 @@ export default function EditPackageClient({
       } else {
         setBookingSlots([]);
       }
+      setBookingDays(normalizeTourBookingDays(pkg.booking_days));
     } else if (usesFlexibleDate) {
       // Load date ranges from pkg.date_ranges (stored in packages table as JSONB)
       if (Array.isArray(pkg.date_ranges)) {
@@ -872,10 +882,16 @@ export default function EditPackageClient({
               </div>
 
               {usesSlots ? (
-                <BookingSlotsCalendar
-                  bookingSlots={bookingSlots}
-                  onBookingSlotsChange={setBookingSlots}
-                />
+                <>
+                  <TourBookingDaysSelector
+                    selectedDays={bookingDays}
+                    onSelectedDaysChange={setBookingDays}
+                  />
+                  <BookingSlotsCalendar
+                    bookingSlots={bookingSlots}
+                    onBookingSlotsChange={setBookingSlots}
+                  />
+                </>
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
                   dateRanges={dateRanges}
@@ -1516,7 +1532,7 @@ export default function EditPackageClient({
                       days: days ? Number(days) : undefined,
                       nights: nights ? Number(nights) : undefined,
                       ...(usesSlots
-                        ? { booking_slots: bookingSlots }
+                        ? { booking_slots: bookingSlots, booking_days: bookingDays }
                         : usesFlexibleDate
                           ? (() => {
                               const mappedRanges = dateRanges.map((d: any) => ({
