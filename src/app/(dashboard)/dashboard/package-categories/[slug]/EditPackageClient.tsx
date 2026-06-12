@@ -70,6 +70,7 @@ type Pkg = {
   thumbnail_image?: string | null;
   gallery?: string[] | null;
   pdf_url?: string | null;
+  pickup_location?: string | null;
   show_listing_page?: boolean | null;
 };
 
@@ -103,6 +104,7 @@ export default function EditPackageClient({
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
   ]);
+  const [pickupLocation, setPickupLocation] = useState('');
   // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
   const [dateRanges, setDateRanges] = useState<
     Array<{
@@ -250,6 +252,7 @@ export default function EditPackageClient({
     setItinerary(form.itinerary);
     setBookingSlots(form.bookingSlots);
     setBookingDays(form.bookingDays);
+    setPickupLocation(form.pickupLocation);
     setDateRanges(form.dateRanges);
     setTravelDates(form.travelDates);
     setThumbnailImageUrl(form.thumbnailImageUrl);
@@ -850,6 +853,24 @@ export default function EditPackageClient({
                     selectedDays={bookingDays}
                     onSelectedDaysChange={setBookingDays}
                   />
+                  <div className='form_row full_width'>
+                    <label>Tour Pickup Location</label>
+                    <input
+                      type='text'
+                      value={pickupLocation}
+                      onChange={e => setPickupLocation(e.target.value)}
+                      placeholder='e.g. Dubai Marina Hotel lobby'
+                    />
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: '#6b7280',
+                        marginTop: '4px',
+                      }}
+                    >
+                      Tour only pickup — shown read-only at checkout
+                    </span>
+                  </div>
                   <BookingSlotsCalendar
                     bookingSlots={bookingSlots}
                     onBookingSlotsChange={setBookingSlots}
@@ -1499,7 +1520,11 @@ export default function EditPackageClient({
                       days: days ? Number(days) : undefined,
                       nights: nights ? Number(nights) : undefined,
                       ...(usesSlots
-                        ? { booking_slots: bookingSlots, booking_days: bookingDays }
+                        ? {
+                            booking_slots: bookingSlots,
+                            booking_days: bookingDays,
+                            pickup_location: pickupLocation.trim() || null,
+                          }
                         : usesFlexibleDate
                           ? (() => {
                               const mappedRanges = dateRanges.map((d: any) => ({

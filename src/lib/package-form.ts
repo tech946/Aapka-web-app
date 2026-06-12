@@ -47,6 +47,7 @@ type PackageFormSource = {
   thumbnail_image?: string | null;
   gallery?: unknown;
   pdf_url?: string | null;
+  pickup_location?: string | null;
 };
 
 function toDateTimeLocal(value: string | null | undefined): string {
@@ -166,6 +167,7 @@ export function mapPackageToEditForm(
     bookingDays: normalizeTourBookingDays(pkg.booking_days),
     dateRanges: normalizeDateRanges(pkg.date_ranges),
     travelDates: normalizeTravelDates(pkg.travel_dates),
+    pickupLocation: pkg.pickup_location || '',
     thumbnailImageUrl: pkg.thumbnail_image || '',
     galleryImages: galleryUrls,
     pdfUrl: pdf,

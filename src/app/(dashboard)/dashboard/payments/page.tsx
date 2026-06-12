@@ -3,6 +3,59 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
+import { parseDateStringToLocal } from '@/lib/utils';
+
+function cartItemIsTour(
+  cartItem: any,
+  packageDetails: Record<string, any>
+): boolean {
+  const packageData = packageDetails[cartItem?.packageId];
+  const slug =
+    (cartItem?.categorySlug || '').toLowerCase() ||
+    (packageData?.category_slug || '').toLowerCase() ||
+    (packageData?.category_name || '')
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '') ||
+    '';
+  return slug.includes('tour');
+}
+
+function formatBookingDate(dateStr: string | null | undefined): string {
+  const d = parseDateStringToLocal(dateStr);
+  return d ? format(d, 'MMM dd, yyyy') : 'N/A';
+}
+
+function getTourPickupLocation(
+  cartItem: any,
+  packageData: any,
+  passengers: any[] | null | undefined
+): string {
+  const fromPackage = packageData?.pickup_location?.trim();
+  if (fromPackage) return fromPackage;
+
+  const leadPickup = passengers?.[0]?.pickupLocation?.trim();
+  if (!leadPickup) return 'N/A';
+
+  // Legacy bookings: combined "Tour Name: location" or plain customer-entered text
+  if (leadPickup.includes(':')) {
+    const tourName = (packageData?.package_name || cartItem?.packageName || '')
+      .trim()
+      .toLowerCase();
+    if (tourName) {
+      const match = leadPickup
+        .split('|')
+        .map((part: string) => part.trim())
+        .find((part: string) => part.toLowerCase().startsWith(tourName));
+      if (match) {
+        const colonIdx = match.indexOf(':');
+        if (colonIdx >= 0) return match.slice(colonIdx + 1).trim() || 'N/A';
+      }
+    }
+  }
+
+  return leadPickup;
+}
 
 type PaymentRow = {
   id: string;
@@ -40,6 +93,20 @@ export default function PaymentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [packageDetails, setPackageDetails] = useState<Record<string, any>>({});
   const [loadingPackages, setLoadingPackages] = useState(false);
+
+  const selectedHasTourItems = useMemo(() => {
+    if (!selectedPayment?.cart_items?.length) return false;
+    return selectedPayment.cart_items.some((item: any) =>
+      cartItemIsTour(item, packageDetails)
+    );
+  }, [selectedPayment, packageDetails]);
+
+  const selectedHasOnlyTours = useMemo(() => {
+    if (!selectedPayment?.cart_items?.length) return false;
+    return selectedPayment.cart_items.every((item: any) =>
+      cartItemIsTour(item, packageDetails)
+    );
+  }, [selectedPayment, packageDetails]);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / limit)),
@@ -817,62 +884,63 @@ export default function PaymentsPage() {
                               <strong>Passport Expiry:</strong>
                               <span>
                                 {passenger.passportExpiry
-                                  ? format(
-                                      new Date(passenger.passportExpiry),
-                                      'MMM dd, yyyy'
-                                    )
+                                  ? formatBookingDate(passenger.passportExpiry)
                                   : 'N/A'}
                               </span>
                             </div>
-                            <div className='detail_item'>
-                              <strong>Pickup Location:</strong>
-                              <span>{passenger.pickupLocation || 'N/A'}</span>
-                            </div>
-                            <div
-                              className='detail_item'
-                              style={{ gridColumn: '1 / -1' }}
-                            >
-                              <strong>Permanent Address:</strong>
+                            {!selectedHasTourItems && (
+                              <div className='detail_item'>
+                                <strong>Pickup Location:</strong>
+                                <span>{passenger.pickupLocation || 'N/A'}</span>
+                              </div>
+                            )}
+                            {!selectedHasOnlyTours && (
                               <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                }}
+                                className='detail_item'
+                                style={{ gridColumn: '1 / -1' }}
                               >
-                                <span
-                                  title={address || 'N/A'}
+                                <strong>Permanent Address:</strong>
+                                <div
                                   style={{
-                                    flex: 1,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
                                   }}
                                 >
-                                  {address || 'N/A'}
-                                </span>
-                                {address && address.length > 50 && (
                                   <span
-                                    title={address}
+                                    title={address || 'N/A'}
                                     style={{
-                                      cursor: 'help',
-                                      color: 'var(--accent)',
-                                      fontSize: '14px',
-                                      lineHeight: 1,
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      padding: '2px 6px',
-                                      backgroundColor: 'var(--panel-2)',
-                                      borderRadius: '4px',
-                                      border: '1px solid var(--border)',
-                                      fontWeight: 600,
+                                      flex: 1,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
                                     }}
                                   >
-                                    i
+                                    {address || 'N/A'}
                                   </span>
-                                )}
+                                  {address && address.length > 50 && (
+                                    <span
+                                      title={address}
+                                      style={{
+                                        cursor: 'help',
+                                        color: 'var(--accent)',
+                                        fontSize: '14px',
+                                        lineHeight: 1,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        padding: '2px 6px',
+                                        backgroundColor: 'var(--panel-2)',
+                                        borderRadius: '4px',
+                                        border: '1px solid var(--border)',
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      i
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
 
                           {/* Documents Section */}
@@ -1423,7 +1491,13 @@ export default function PaymentsPage() {
                 Array.isArray(selectedPayment.cart_items) &&
                 selectedPayment.cart_items.length > 0 && (
                   <div className='detail_section'>
-                    <h4 className='detail_section_title'>Package Details</h4>
+                    <h4 className='detail_section_title'>
+                      {selectedHasTourItems && !selectedHasOnlyTours
+                        ? 'Tour & Package Details'
+                        : selectedHasOnlyTours
+                          ? 'Tour Details'
+                          : 'Package Details'}
+                    </h4>
                     {loadingPackages ? (
                       <div className='detail_message'>
                         Loading package details...
@@ -1433,6 +1507,15 @@ export default function PaymentsPage() {
                         (cartItem: any, idx: number) => {
                           const packageData =
                             packageDetails[cartItem.packageId];
+                          const isTour = cartItemIsTour(
+                            cartItem,
+                            packageDetails
+                          );
+                          const passengers = Array.isArray(
+                            selectedPayment.passengers
+                          )
+                            ? selectedPayment.passengers
+                            : [];
                           return (
                             <div
                               key={idx}
@@ -1455,25 +1538,55 @@ export default function PaymentsPage() {
                                   borderBottom: '2px solid var(--accent)',
                                 }}
                               >
-                                Package {idx + 1}
+                                {isTour ? `Tour ${idx + 1}` : `Package ${idx + 1}`}
                               </h5>
                               <div className='detail_grid'>
                                 {packageData ? (
                                   <>
                                     {/* First Row: Package Name and Duration */}
                                     <div className='detail_item'>
-                                      <strong>Package Name:</strong>
+                                      <strong>
+                                        {isTour ? 'Tour Name:' : 'Package Name:'}
+                                      </strong>
                                       <span>
-                                        {packageData.package_name || 'N/A'}
+                                        {packageData.package_name ||
+                                          cartItem.packageName ||
+                                          'N/A'}
                                       </span>
                                     </div>
-                                    <div className='detail_item'>
-                                      <strong>Duration:</strong>
-                                      <span>
-                                        {packageData.package_days || 0} Days/
-                                        {packageData.package_nights || 0} Nights
-                                      </span>
-                                    </div>
+                                    {!isTour && (
+                                      <div className='detail_item'>
+                                        <strong>Duration:</strong>
+                                        <span>
+                                          {packageData.package_days || 0} Days/
+                                          {packageData.package_nights || 0}{' '}
+                                          Nights
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {isTour && (
+                                      <>
+                                        <div className='detail_item'>
+                                          <strong>Tour Date:</strong>
+                                          <span>
+                                            {formatBookingDate(
+                                              cartItem.selectedDate
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className='detail_item'>
+                                          <strong>Tour Pickup Location:</strong>
+                                          <span>
+                                            {getTourPickupLocation(
+                                              cartItem,
+                                              packageData,
+                                              passengers
+                                            )}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
 
                                     {/* Second Row: Adults, Children, Infants */}
                                     <div className='detail_item'>
@@ -1512,14 +1625,13 @@ export default function PaymentsPage() {
                                       </div>
                                     )}
 
-                                    {/* Selected Date if available */}
-                                    {cartItem.selectedDate && (
+                                    {/* Selected date for non-tour packages */}
+                                    {!isTour && cartItem.selectedDate && (
                                       <div className='detail_item'>
                                         <strong>Selected Date:</strong>
                                         <span>
-                                          {format(
-                                            new Date(cartItem.selectedDate),
-                                            'MMM dd, yyyy'
+                                          {formatBookingDate(
+                                            cartItem.selectedDate
                                           )}
                                         </span>
                                       </div>
@@ -1581,18 +1693,48 @@ export default function PaymentsPage() {
                                 ) : (
                                   <>
                                     <div className='detail_item'>
-                                      <strong>Package ID:</strong>
-                                      <span>{cartItem.packageId || 'N/A'}</span>
-                                      <div
-                                        style={{
-                                          marginTop: '8px',
-                                          fontSize: '12px',
-                                          color: 'var(--text-muted)',
-                                        }}
-                                      >
-                                        Package details not found
-                                      </div>
+                                      <strong>
+                                        {isTour ? 'Tour Name:' : 'Package ID:'}
+                                      </strong>
+                                      <span>
+                                        {cartItem.packageName ||
+                                          cartItem.packageId ||
+                                          'N/A'}
+                                      </span>
+                                      {!cartItem.packageName && (
+                                        <div
+                                          style={{
+                                            marginTop: '8px',
+                                            fontSize: '12px',
+                                            color: 'var(--text-muted)',
+                                          }}
+                                        >
+                                          Package details not found
+                                        </div>
+                                      )}
                                     </div>
+                                    {isTour && (
+                                      <>
+                                        <div className='detail_item'>
+                                          <strong>Tour Date:</strong>
+                                          <span>
+                                            {formatBookingDate(
+                                              cartItem.selectedDate
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className='detail_item'>
+                                          <strong>Tour Pickup Location:</strong>
+                                          <span>
+                                            {getTourPickupLocation(
+                                              cartItem,
+                                              null,
+                                              passengers
+                                            )}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
                                     <div className='detail_item'>
                                       <strong>Adults:</strong>
                                       <span>{cartItem.adults || 0}</span>
@@ -1605,13 +1747,12 @@ export default function PaymentsPage() {
                                       <strong>Infants:</strong>
                                       <span>{cartItem.infants || 0}</span>
                                     </div>
-                                    {cartItem.selectedDate && (
+                                    {!isTour && cartItem.selectedDate && (
                                       <div className='detail_item'>
                                         <strong>Selected Date:</strong>
                                         <span>
-                                          {format(
-                                            new Date(cartItem.selectedDate),
-                                            'MMM dd, yyyy'
+                                          {formatBookingDate(
+                                            cartItem.selectedDate
                                           )}
                                         </span>
                                       </div>

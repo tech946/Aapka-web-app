@@ -113,9 +113,41 @@
   font-size: 0.85rem;
 }
 
-/* Full width fields - Only permanent address */
-.form-group:has(input[placeholder='Enter Permanent Address']) {
+/* Full width fields - permanent address and tour pickup */
+.form-group:has(input[placeholder='Enter Permanent Address']),
+.checkout-tour-pickup-text {
   grid-column: 1 / -1;
+}
+
+.checkout-tour-pickup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkout-tour-pickup-item {
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.checkout-tour-pickup-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+}
+
+.checkout-tour-pickup-item p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.checkout-tour-pickup-loading {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
 /* Documents Section */

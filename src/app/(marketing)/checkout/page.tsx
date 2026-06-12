@@ -55,6 +55,12 @@ interface InfantDocuments {
   // Pancard not collected for infants
 }
 
+type TourPickupInfo = {
+  packageId: string;
+  packageName: string;
+  pickupLocation: string;
+};
+
 function CheckoutPageContent() {
   const router = useRouter();
   const { cartItems, getTotalPrice, clearCart } = useCart();
@@ -104,6 +110,25 @@ function CheckoutPageContent() {
   // Check if any cart item has visa selected
   const hasVisaSelected = cartItems.some(item => item.withVisa === true);
 
+  const tourCartItems = useMemo(
+    () =>
+      cartItems.filter(item => {
+        const categorySlug = item.categorySlug?.toLowerCase() || '';
+        return categorySlug.includes('tour');
+      }),
+    [cartItems]
+  );
+
+  const tourCartItemIds = useMemo(
+    () => tourCartItems.map(item => item.packageId).join(','),
+    [tourCartItems]
+  );
+
+  const [tourPickupLocations, setTourPickupLocations] = useState<
+    TourPickupInfo[]
+  >([]);
+  const [loadingTourPickups, setLoadingTourPickups] = useState(false);
+
   // For tours: only full payment. For packages/offer packages: allow half or full
   // Update payment type if cart changes and becomes a tour
   useEffect(() => {
@@ -112,6 +137,74 @@ function CheckoutPageContent() {
       setPaymentType('full');
     }
   }, [isTourCheckout, cartItems.length]); // Update when tour status or cart changes
+
+  // Load tour pickup locations from package data (read-only at checkout)
+  useEffect(() => {
+    if (!isTourCheckout || tourCartItems.length === 0) {
+      setTourPickupLocations([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchTourPickups() {
+      setLoadingTourPickups(true);
+      try {
+        const results = await Promise.all(
+          tourCartItems.map(async item => {
+            try {
+              const res = await fetch(
+                `/api/packages/${encodeURIComponent(item.packageId)}`
+              );
+              const json = await res.json().catch(() => ({}));
+              const pickup =
+                res.ok && json.data?.pickup_location
+                  ? String(json.data.pickup_location).trim()
+                  : '';
+              return {
+                packageId: item.packageId,
+                packageName: item.packageName,
+                pickupLocation: pickup,
+              };
+            } catch {
+              return {
+                packageId: item.packageId,
+                packageName: item.packageName,
+                pickupLocation: '',
+              };
+            }
+          })
+        );
+
+        if (cancelled) return;
+
+        setTourPickupLocations(results);
+
+        const combinedPickup = results
+          .filter(r => r.pickupLocation)
+          .map(r =>
+            tourCartItems.length > 1
+              ? `${r.packageName}: ${r.pickupLocation}`
+              : r.pickupLocation
+          )
+          .join(' | ');
+
+        setPassengers(prev => {
+          if (prev.length === 0) return prev;
+          if (prev[0].pickupLocation === combinedPickup) return prev;
+          return [{ ...prev[0], pickupLocation: combinedPickup }, ...prev.slice(1)];
+        });
+      } finally {
+        if (!cancelled) setLoadingTourPickups(false);
+      }
+    }
+
+    fetchTourPickups();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isTourCheckout, tourCartItemIds, tourCartItems]);
 
   // Calculate total passengers
   const totalAdults = cartItems.reduce(
@@ -376,6 +469,11 @@ function CheckoutPageContent() {
     const leadPassenger = passengers[0];
     const isOtherCountry = leadPassenger?.country === 'Other';
 
+    if (isTourCheckout && loadingTourPickups) {
+      newErrors.tourPickupLocation =
+        'Please wait while pickup details load.';
+    }
+
     // When "Other" is selected, only validate the first passenger
     const passengersToValidate = isOtherCountry ? [passengers[0]] : passengers;
 
@@ -420,12 +518,11 @@ function CheckoutPageContent() {
         if (!passenger.country) {
           newErrors[`passenger_${actualIndex}_country`] = 'Country is required';
         }
-        // Only require pickup location for tours
         if (isTourCheckout && !passenger.pickupLocation.trim()) {
-          newErrors[`passenger_${actualIndex}_pickupLocation`] =
-            'Pickup location is required';
+          newErrors.tourPickupLocation =
+            'Pickup location is not configured for one or more tours. Please contact support.';
         }
-        if (!passenger.permanentAddress.trim()) {
+        if (!hasOnlyTours && !passenger.permanentAddress.trim()) {
           newErrors[`passenger_${actualIndex}_permanentAddress`] =
             'Permanent address is required';
         }
@@ -641,6 +738,8 @@ function CheckoutPageContent() {
         body: JSON.stringify({
           cartItems: cartItems.map(item => ({
             packageId: item.packageId,
+            packageName: item.packageName,
+            categorySlug: item.categorySlug,
             adults: item.adults,
             children: item.children,
             infants: item.infants || 0,
@@ -1118,34 +1217,35 @@ function CheckoutPageContent() {
                         </div>
                       )}
 
-                      {/* Pickup Location - Only for tours and first passenger */}
+                      {/* Tour pickup location — read-only from package settings */}
                       {index === 0 && isTourCheckout && (
-                        <div className='form-group'>
-                          <label>
-                            Pickup Location in Dubai{' '}
-                            <span className='required'>*</span>
-                          </label>
-                          <input
-                            type='text'
-                            placeholder='Enter Residence/Hotel Name'
-                            value={passenger.pickupLocation}
-                            onChange={e =>
-                              updatePassenger(
-                                index,
-                                'pickupLocation',
-                                e.target.value
-                              )
-                            }
-                            className={
-                              errors[`passenger_${index}_pickupLocation`]
-                                ? 'error'
-                                : ''
-                            }
-                            data-field={`passenger_${index}_pickupLocation`}
-                          />
-                          {errors[`passenger_${index}_pickupLocation`] && (
+                        <div className='form-group checkout-tour-pickup-text'>
+                          <label>Tour Pickup Location</label>
+                          {loadingTourPickups ? (
+                            <p className='checkout-tour-pickup-loading'>
+                              Loading pickup details...
+                            </p>
+                          ) : (
+                            <div className='checkout-tour-pickup-list'>
+                              {tourPickupLocations.map(tour => (
+                                <div
+                                  key={tour.packageId}
+                                  className='checkout-tour-pickup-item'
+                                >
+                                  {tourCartItems.length > 1 && (
+                                    <strong>{tour.packageName}</strong>
+                                  )}
+                                  <p>
+                                    {tour.pickupLocation.trim() ||
+                                      'Not specified — please contact support'}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {errors.tourPickupLocation && (
                             <span className='error-message'>
-                              {errors[`passenger_${index}_pickupLocation`]}
+                              {errors.tourPickupLocation}
                             </span>
                           )}
                         </div>
@@ -1183,8 +1283,8 @@ function CheckoutPageContent() {
                         </div>
                       )}
 
-                      {/* Permanent Address - Only for first passenger */}
-                      {index === 0 && (
+                      {/* Permanent Address - hidden when cart has only tours */}
+                      {index === 0 && !hasOnlyTours && (
                         <div className='form-group'>
                           <label>
                             Permanent Address{' '}

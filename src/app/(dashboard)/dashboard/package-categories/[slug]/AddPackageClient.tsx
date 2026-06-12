@@ -45,6 +45,7 @@ export default function AddPackageClient({
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
   ]);
+  const [pickupLocation, setPickupLocation] = useState('');
   // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
   const [dateRanges, setDateRanges] = useState<
     Array<{
@@ -695,6 +696,24 @@ export default function AddPackageClient({
                     selectedDays={bookingDays}
                     onSelectedDaysChange={setBookingDays}
                   />
+                  <div className='form_row full_width'>
+                    <label>Tour Pickup Location</label>
+                    <input
+                      type='text'
+                      value={pickupLocation}
+                      onChange={e => setPickupLocation(e.target.value)}
+                      placeholder='e.g. Dubai Marina Hotel lobby'
+                    />
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: '#6b7280',
+                        marginTop: '4px',
+                      }}
+                    >
+                      Tour only pickup — shown read-only at checkout
+                    </span>
+                  </div>
                   <BookingSlotsCalendar
                     bookingSlots={bookingSlots}
                     onBookingSlotsChange={setBookingSlots}
@@ -1385,6 +1404,7 @@ export default function AddPackageClient({
                   if (usesSlots) {
                     payload.booking_slots = bookingSlots.length > 0 ? bookingSlots : [];
                     payload.booking_days = bookingDays;
+                    payload.pickup_location = pickupLocation.trim() || null;
                   } else if (usesFlexibleDate) {
                     // Always include date_ranges for flexible date packages (even if empty, validation will catch it)
                     payload.date_ranges = dateRangesPayload;
@@ -1434,6 +1454,7 @@ export default function AddPackageClient({
                   setTravelDates([]);
                   setBookingSlots([]);
                   setBookingDays([...ALL_TOUR_BOOKING_DAYS]);
+                  setPickupLocation('');
                   setDateRanges([]);
                   setAdultPrice('');
                   setChildPrice('');

@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
-import { getTourSingleFixedBookingDate } from '@/lib/package-config';
+import { getTourFixedBookingDates, hasTourFixedBookingDates } from '@/lib/package-config';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import './booking-modal.css';
 
@@ -167,12 +167,19 @@ export default function BookingModal({
   if (!isOpen) return null;
 
   const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
-  const fixedTourDateStr = getTourSingleFixedBookingDate(pkg?.package_id);
-  const fixedTourDateLabel = (() => {
-    if (!fixedTourDateStr) return '';
-    const parsed = parseDateStringToLocal(fixedTourDateStr);
-    return parsed ? format(parsed, 'd MMMM') : fixedTourDateStr;
-  })();
+  const fixedTourDates = getTourFixedBookingDates(pkg?.package_id);
+  const usesFixedTourDates = hasTourFixedBookingDates(pkg?.package_id);
+
+  const formatFixedTourDateLabel = (dateStr: string) => {
+    const parsed = parseDateStringToLocal(dateStr);
+    return parsed ? format(parsed, 'd MMMM') : dateStr;
+  };
+
+  const selectedFixedTourDateLabel = selectedDate
+    ? format(selectedDate, 'd MMMM')
+    : fixedTourDates?.[0]
+      ? formatFixedTourDateLabel(fixedTourDates[0])
+      : '';
 
   const modalClass = isMobile ? 'mobile-booking-modal' : 'desktop-booking-modal';
   const overlayClass = isMobile ? 'mobile-booking-modal-overlay' : 'desktop-booking-modal-overlay';
@@ -487,13 +494,14 @@ export default function BookingModal({
             </div>
 
             {/* Date Picker / Calendar */}
-            {fixedTourDateStr ? (
+            {usesFixedTourDates && fixedTourDates ? (
               <div
                 className={
                   isMobile
-                    ? 'mobile-booking-input-wrapper booking-modal-field booking-fixed-date-field'
-                    : 'booking-input-wrapper booking-modal-field booking-fixed-date-field'
+                    ? 'mobile-booking-input-wrapper booking-modal-field'
+                    : 'booking-input-wrapper booking-modal-field'
                 }
+                ref={dateDropdownRef}
               >
                 <Calendar
                   className={
@@ -504,13 +512,47 @@ export default function BookingModal({
                   type='text'
                   readOnly
                   aria-label='Tour date'
+                  className={isMobile ? 'mobile-booking-input' : 'booking-input'}
+                  value={selectedFixedTourDateLabel}
+                  onClick={() => setShowDateDropdown(!showDateDropdown)}
+                />
+                <ChevronDown
                   className={
                     isMobile
-                      ? 'mobile-booking-input booking-fixed-date-input'
-                      : 'booking-input booking-fixed-date-input'
+                      ? 'mobile-booking-dropdown-chevron'
+                      : 'booking-dropdown-chevron'
                   }
-                  value={fixedTourDateLabel}
                 />
+                {showDateDropdown && (
+                  <div
+                    className={
+                      isMobile
+                        ? 'mobile-booking-dates-dropdown'
+                        : 'booking-dates-dropdown'
+                    }
+                  >
+                    {fixedTourDates.map(dateStr => (
+                      <div
+                        key={dateStr}
+                        className={
+                          isMobile
+                            ? 'mobile-booking-date-item'
+                            : 'booking-date-item'
+                        }
+                        onClick={e => {
+                          e.stopPropagation();
+                          const parsed = parseDateStringToLocal(dateStr);
+                          if (parsed) {
+                            handleDateSelect(parsed);
+                          }
+                          setShowDateDropdown(false);
+                        }}
+                      >
+                        <span>{formatFixedTourDateLabel(dateStr)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : isPackageType() ? (
               <div

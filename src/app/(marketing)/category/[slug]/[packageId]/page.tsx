@@ -29,7 +29,8 @@ import {
   usesBookingSlots,
   usesFlexibleDatePackages,
   getTourFixedBookingDates,
-  getTourSingleFixedBookingDate,
+  getTourDefaultFixedBookingDate,
+  hasTourFixedBookingDates,
 } from '@/lib/package-config';
 import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
 import {
@@ -1172,12 +1173,12 @@ export default function PackageDetailsPage() {
     }
   }, [slug, pkg?.date_ranges, pkg?.package_id]);
 
-  // Auto-select the only fixed date for tours configured with a single bookable date
+  // Pre-select default fixed date for tours with a configured allow-list
   useEffect(() => {
     if (!pkg?.package_id) return;
-    const fixedDate = getTourSingleFixedBookingDate(pkg.package_id);
-    if (!fixedDate) return;
-    const parsed = parseDateStringToLocal(fixedDate);
+    const defaultDate = getTourDefaultFixedBookingDate(pkg.package_id);
+    if (!defaultDate) return;
+    const parsed = parseDateStringToLocal(defaultDate);
     if (parsed) {
       setSelectedDate(parsed);
       setShowDatePicker(false);

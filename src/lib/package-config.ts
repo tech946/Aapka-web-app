@@ -76,7 +76,14 @@ export const TOUR_FIXED_BOOKING_DATES: Partial<
   Record<string, readonly string[]>
 > = {
   // Dhow Cruise Dinner - Marina (Unlimited buffet with Complimentary Drink)
-  '2418e694-9c5a-4821-b1a7-88ce02aada59': ['2026-06-13'],
+  '2418e694-9c5a-4821-b1a7-88ce02aada59': ['2026-06-13', '2026-06-14'],
+};
+
+/** Default pre-selected date for tours with fixed dates (yyyy-MM-dd). */
+export const TOUR_FIXED_BOOKING_DEFAULT_DATE: Partial<
+  Record<string, string>
+> = {
+  '2418e694-9c5a-4821-b1a7-88ce02aada59': '2026-06-13',
 };
 
 export function getTourFixedBookingDates(
@@ -87,11 +94,24 @@ export function getTourFixedBookingDates(
   return dates && dates.length > 0 ? [...dates] : null;
 }
 
-/** When a tour has exactly one fixed date, hide the calendar and show that date only. */
-export function getTourSingleFixedBookingDate(
+/** When a tour has fixed bookable dates, hide the calendar and use a date list instead. */
+export function hasTourFixedBookingDates(
+  packageId: string | null | undefined
+): boolean {
+  const dates = getTourFixedBookingDates(packageId);
+  return Boolean(dates && dates.length > 0);
+}
+
+export function getTourDefaultFixedBookingDate(
   packageId: string | null | undefined
 ): string | null {
   const dates = getTourFixedBookingDates(packageId);
-  if (!dates || dates.length !== 1) return null;
+  if (!dates || dates.length === 0) return null;
+  const configuredDefault = packageId
+    ? TOUR_FIXED_BOOKING_DEFAULT_DATE[packageId]
+    : undefined;
+  if (configuredDefault && dates.includes(configuredDefault)) {
+    return configuredDefault;
+  }
   return dates[0];
 }
