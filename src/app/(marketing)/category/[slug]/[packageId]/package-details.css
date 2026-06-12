@@ -2312,6 +2312,24 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   overflow: visible;
 }
 
+.booking-fixed-date-field {
+  cursor: default;
+}
+
+.booking-fixed-date-input {
+  cursor: default;
+  pointer-events: none;
+  color: #111827;
+  font-weight: 500;
+}
+
+.mobile-booking-input.booking-fixed-date-input {
+  cursor: default;
+  pointer-events: none;
+  color: #111827;
+  font-weight: 500;
+}
+
 .booking-input-icon {
   position: absolute;
   left: 14px;

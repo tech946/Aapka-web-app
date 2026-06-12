@@ -67,3 +67,31 @@ export function supportsListingPageToggle(categorySlug: string): boolean {
     categorySlug.toLowerCase() as (typeof LISTING_PAGE_TOGGLE_CATEGORIES)[number]
   );
 }
+
+/**
+ * One-off bookable dates for specific tours only (yyyy-MM-dd).
+ * Other tours ignore this and use booking_days / booking_slots as normal.
+ */
+export const TOUR_FIXED_BOOKING_DATES: Partial<
+  Record<string, readonly string[]>
+> = {
+  // Dhow Cruise Dinner - Marina (Unlimited buffet with Complimentary Drink)
+  '2418e694-9c5a-4821-b1a7-88ce02aada59': ['2026-06-13'],
+};
+
+export function getTourFixedBookingDates(
+  packageId: string | null | undefined
+): string[] | null {
+  if (!packageId) return null;
+  const dates = TOUR_FIXED_BOOKING_DATES[packageId];
+  return dates && dates.length > 0 ? [...dates] : null;
+}
+
+/** When a tour has exactly one fixed date, hide the calendar and show that date only. */
+export function getTourSingleFixedBookingDate(
+  packageId: string | null | undefined
+): string | null {
+  const dates = getTourFixedBookingDates(packageId);
+  if (!dates || dates.length !== 1) return null;
+  return dates[0];
+}

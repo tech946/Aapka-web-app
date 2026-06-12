@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
+import { getTourSingleFixedBookingDate } from '@/lib/package-config';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import './booking-modal.css';
 
@@ -166,6 +167,12 @@ export default function BookingModal({
   if (!isOpen) return null;
 
   const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
+  const fixedTourDateStr = getTourSingleFixedBookingDate(pkg?.package_id);
+  const fixedTourDateLabel = (() => {
+    if (!fixedTourDateStr) return '';
+    const parsed = parseDateStringToLocal(fixedTourDateStr);
+    return parsed ? format(parsed, 'd MMMM') : fixedTourDateStr;
+  })();
 
   const modalClass = isMobile ? 'mobile-booking-modal' : 'desktop-booking-modal';
   const overlayClass = isMobile ? 'mobile-booking-modal-overlay' : 'desktop-booking-modal-overlay';
@@ -480,7 +487,32 @@ export default function BookingModal({
             </div>
 
             {/* Date Picker / Calendar */}
-            {isPackageType() ? (
+            {fixedTourDateStr ? (
+              <div
+                className={
+                  isMobile
+                    ? 'mobile-booking-input-wrapper booking-modal-field booking-fixed-date-field'
+                    : 'booking-input-wrapper booking-modal-field booking-fixed-date-field'
+                }
+              >
+                <Calendar
+                  className={
+                    isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'
+                  }
+                />
+                <input
+                  type='text'
+                  readOnly
+                  aria-label='Tour date'
+                  className={
+                    isMobile
+                      ? 'mobile-booking-input booking-fixed-date-input'
+                      : 'booking-input booking-fixed-date-input'
+                  }
+                  value={fixedTourDateLabel}
+                />
+              </div>
+            ) : isPackageType() ? (
               <div
                 className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
                 ref={dateDropdownRef}

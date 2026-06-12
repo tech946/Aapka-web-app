@@ -28,12 +28,10 @@ import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import {
   usesBookingSlots,
   usesFlexibleDatePackages,
+  getTourFixedBookingDates,
+  getTourSingleFixedBookingDate,
 } from '@/lib/package-config';
 import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
-import {
-  hasTourBookingDateWhitelist,
-  isDateOnTourBookingDateList,
-} from '@/lib/tour-booking-dates';
 import {
   getPackageDisplayImages,
   normalizePackageGallery,
@@ -125,7 +123,6 @@ interface Package {
     toDate: string;
   }> | null;
   booking_days?: number[] | null;
-  booking_dates?: string[] | null;
   // Date ranges for flexible date packages (stored as JSONB in packages table)
   date_ranges?: DateRange[] | null;
   end_date?: string | null;
@@ -1175,6 +1172,18 @@ export default function PackageDetailsPage() {
     }
   }, [slug, pkg?.date_ranges, pkg?.package_id]);
 
+  // Auto-select the only fixed date for tours configured with a single bookable date
+  useEffect(() => {
+    if (!pkg?.package_id) return;
+    const fixedDate = getTourSingleFixedBookingDate(pkg.package_id);
+    if (!fixedDate) return;
+    const parsed = parseDateStringToLocal(fixedDate);
+    if (parsed) {
+      setSelectedDate(parsed);
+      setShowDatePicker(false);
+    }
+  }, [pkg?.package_id]);
+
   const fetchCategory = async () => {
     if (!pkg?.package_category_id) return;
     try {
@@ -1312,9 +1321,10 @@ export default function PackageDetailsPage() {
       return false;
     }
 
-    // Disable dates outside the allow-list or weekday rules
-    if (hasTourBookingDateWhitelist(pkg?.booking_dates)) {
-      if (!isDateOnTourBookingDateList(date, pkg?.booking_dates)) {
+    // Disable dates outside fixed allow-list (one tour only) or weekday rules
+    const fixedBookingDates = getTourFixedBookingDates(pkg?.package_id);
+    if (fixedBookingDates) {
+      if (!fixedBookingDates.includes(format(date, 'yyyy-MM-dd'))) {
         return true;
       }
     } else if (!isDateOnTourBookingDay(date, pkg?.booking_days)) {

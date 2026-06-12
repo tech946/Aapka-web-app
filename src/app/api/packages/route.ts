@@ -4,7 +4,6 @@ import {
   normalizePackageGallery,
   normalizePdfUrl,
 } from '@/lib/package-gallery';
-import { normalizeTourBookingDates } from '@/lib/tour-booking-dates';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +29,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, booking_days, booking_dates, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, booking_days, date_ranges, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -206,11 +205,6 @@ export async function POST(req: NextRequest) {
       bookingDays = body.booking_days.filter(
         (d: unknown) => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
       );
-    }
-    let bookingDates: string[] | null = null;
-    if (body?.booking_dates !== undefined) {
-      const normalized = normalizeTourBookingDates(body.booking_dates);
-      bookingDates = normalized.length > 0 ? normalized : null;
     }
     // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, soloTravellerPrice, isSoldOut })
     let dateRanges: any[] | null = null;
@@ -399,9 +393,6 @@ export async function POST(req: NextRequest) {
     if (bookingDays !== null) {
       insertData.booking_days = bookingDays.length > 0 ? bookingDays : null;
     }
-    if (bookingDates !== null) {
-      insertData.booking_dates = bookingDates;
-    }
     if (dateRanges !== null) {
       // Store date ranges directly in packages table as JSONB
       insertData.date_ranges = dateRanges;
@@ -496,11 +487,6 @@ export async function PUT(req: NextRequest) {
               Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
           )
         : null;
-    }
-    let bookingDatesUpdate: string[] | null | undefined = undefined;
-    if (body?.booking_dates !== undefined) {
-      const normalized = normalizeTourBookingDates(body.booking_dates);
-      bookingDatesUpdate = normalized.length > 0 ? normalized : null;
     }
     // date_ranges array support (expects array of objects { id, fromDate, toDate, adultPrice, childPrice, infantPrice, soloTravellerPrice, isSoldOut })
     let dateRangesUpdate: any[] | undefined = undefined;
@@ -625,9 +611,6 @@ export async function PUT(req: NextRequest) {
         bookingDaysUpdate && bookingDaysUpdate.length > 0
           ? bookingDaysUpdate
           : null;
-    }
-    if (bookingDatesUpdate !== undefined) {
-      updates.booking_dates = bookingDatesUpdate;
     }
     if (bookingSlotsUpdate !== undefined) {
       updates.booking_slots = bookingSlotsUpdate;
