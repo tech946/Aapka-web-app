@@ -1,4 +1,5 @@
 import { normalizeTourBookingDays } from '@/lib/tour-booking-days';
+import { normalizeTourBookingDates } from '@/lib/tour-booking-dates';
 import { normalizePackageGallery, normalizePdfUrl } from '@/lib/package-gallery';
 
 type PackageFormSource = {
@@ -33,6 +34,7 @@ type PackageFormSource = {
   itinerary?: Array<{ id?: string; heading: string; desc: string }> | null;
   booking_slots?: Array<{ id: string; fromDate: string; toDate: string }> | null;
   booking_days?: number[] | null;
+  booking_dates?: unknown;
   date_ranges?: Array<{
     id?: string;
     fromDate: string;
@@ -164,6 +166,10 @@ export function mapPackageToEditForm(
     itinerary: normalizeItinerary(pkg.itinerary),
     bookingSlots: Array.isArray(pkg.booking_slots) ? pkg.booking_slots : [],
     bookingDays: normalizeTourBookingDays(pkg.booking_days),
+    bookingDates: normalizeTourBookingDates(pkg.booking_dates).map(value => ({
+      id: crypto.randomUUID?.() || `${Date.now()}-${value}`,
+      value,
+    })),
     dateRanges: normalizeDateRanges(pkg.date_ranges),
     travelDates: normalizeTravelDates(pkg.travel_dates),
     thumbnailImageUrl: pkg.thumbnail_image || '',

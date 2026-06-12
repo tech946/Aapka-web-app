@@ -15,6 +15,7 @@ import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle }
 import { parseDateStringToLocal } from '@/lib/utils';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
+import TourBookingDatesSelector from './TourBookingDatesSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
 import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import '../../dashboard.css';
@@ -45,6 +46,9 @@ export default function AddPackageClient({
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
   ]);
+  const [bookingDates, setBookingDates] = useState<
+    Array<{ id: string; value: string }>
+  >([]);
   // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
   const [dateRanges, setDateRanges] = useState<
     Array<{
@@ -694,6 +698,10 @@ export default function AddPackageClient({
                   <TourBookingDaysSelector
                     selectedDays={bookingDays}
                     onSelectedDaysChange={setBookingDays}
+                  />
+                  <TourBookingDatesSelector
+                    bookingDates={bookingDates}
+                    onBookingDatesChange={setBookingDates}
                   />
                   <BookingSlotsCalendar
                     bookingSlots={bookingSlots}
@@ -1385,6 +1393,7 @@ export default function AddPackageClient({
                   if (usesSlots) {
                     payload.booking_slots = bookingSlots.length > 0 ? bookingSlots : [];
                     payload.booking_days = bookingDays;
+                    payload.booking_dates = bookingDates.map(d => d.value);
                   } else if (usesFlexibleDate) {
                     // Always include date_ranges for flexible date packages (even if empty, validation will catch it)
                     payload.date_ranges = dateRangesPayload;
@@ -1434,6 +1443,7 @@ export default function AddPackageClient({
                   setTravelDates([]);
                   setBookingSlots([]);
                   setBookingDays([...ALL_TOUR_BOOKING_DAYS]);
+                  setBookingDates([]);
                   setDateRanges([]);
                   setAdultPrice('');
                   setChildPrice('');

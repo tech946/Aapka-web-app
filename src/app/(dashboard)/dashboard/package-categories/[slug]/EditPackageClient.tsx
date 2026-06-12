@@ -14,6 +14,7 @@ import {
 import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
+import TourBookingDatesSelector from './TourBookingDatesSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
 import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import { normalizePdfUrl } from '@/lib/package-gallery';
@@ -36,6 +37,7 @@ type Pkg = {
     toDate: string;
   }> | null;
   booking_days?: number[] | null;
+  booking_dates?: unknown;
   date_ranges?: Array<{
     id: string;
     fromDate: string;
@@ -103,6 +105,9 @@ export default function EditPackageClient({
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
   ]);
+  const [bookingDates, setBookingDates] = useState<
+    Array<{ id: string; value: string }>
+  >([]);
   // Date ranges for flexible date packages (stored in packages.date_ranges JSONB column)
   const [dateRanges, setDateRanges] = useState<
     Array<{
@@ -250,6 +255,7 @@ export default function EditPackageClient({
     setItinerary(form.itinerary);
     setBookingSlots(form.bookingSlots);
     setBookingDays(form.bookingDays);
+    setBookingDates(form.bookingDates);
     setDateRanges(form.dateRanges);
     setTravelDates(form.travelDates);
     setThumbnailImageUrl(form.thumbnailImageUrl);
@@ -849,6 +855,10 @@ export default function EditPackageClient({
                   <TourBookingDaysSelector
                     selectedDays={bookingDays}
                     onSelectedDaysChange={setBookingDays}
+                  />
+                  <TourBookingDatesSelector
+                    bookingDates={bookingDates}
+                    onBookingDatesChange={setBookingDates}
                   />
                   <BookingSlotsCalendar
                     bookingSlots={bookingSlots}
@@ -1499,7 +1509,11 @@ export default function EditPackageClient({
                       days: days ? Number(days) : undefined,
                       nights: nights ? Number(nights) : undefined,
                       ...(usesSlots
-                        ? { booking_slots: bookingSlots, booking_days: bookingDays }
+                        ? {
+                            booking_slots: bookingSlots,
+                            booking_days: bookingDays,
+                            booking_dates: bookingDates.map(d => d.value),
+                          }
                         : usesFlexibleDate
                           ? (() => {
                               const mappedRanges = dateRanges.map((d: any) => ({
