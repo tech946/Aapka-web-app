@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
-import { getTourFixedBookingDates, hasTourFixedBookingDates } from '@/lib/package-config';
+import { getTourFixedBookingDates, getTourWeekendMonthRule, hasTourFixedBookingDates } from '@/lib/package-config';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import './booking-modal.css';
 
@@ -169,6 +169,13 @@ export default function BookingModal({
   const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
   const fixedTourDates = getTourFixedBookingDates(pkg?.package_id);
   const usesFixedTourDates = hasTourFixedBookingDates(pkg?.package_id);
+  const weekendMonthRule = getTourWeekendMonthRule(pkg?.package_id);
+  const weekendMonthCalendarBounds = weekendMonthRule
+    ? {
+        fromMonth: new Date(weekendMonthRule.year, weekendMonthRule.month - 1, 1),
+        toMonth: new Date(weekendMonthRule.year, weekendMonthRule.month - 1, 1),
+      }
+    : null;
 
   const formatFixedTourDateLabel = (dateStr: string) => {
     const parsed = parseDateStringToLocal(dateStr);
@@ -686,6 +693,8 @@ export default function BookingModal({
                           showOutsideDays={true}
                           month={month}
                           onMonthChange={setMonth}
+                          fromMonth={weekendMonthCalendarBounds?.fromMonth}
+                          toMonth={weekendMonthCalendarBounds?.toMonth}
                           className={isMobile ? 'mobile-custom-calendar' : 'custom-calendar'}
                           modifiersClassNames={{
                             disabled: 'rdp-day_unavailable',

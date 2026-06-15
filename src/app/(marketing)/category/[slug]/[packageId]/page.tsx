@@ -30,7 +30,10 @@ import {
   usesFlexibleDatePackages,
   getTourFixedBookingDates,
   getTourDefaultFixedBookingDate,
-  hasTourFixedBookingDates,
+  getTourDefaultWeekendMonthDate,
+  getTourWeekendMonthCalendarMonth,
+  getTourWeekendMonthRule,
+  isDateOnTourWeekendMonth,
 } from '@/lib/package-config';
 import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
 import {
@@ -1173,9 +1176,33 @@ export default function PackageDetailsPage() {
     }
   }, [slug, pkg?.date_ranges, pkg?.package_id]);
 
-  // Pre-select default fixed date for tours with a configured allow-list
+  // Pre-select default date for tours with special booking rules
   useEffect(() => {
     if (!pkg?.package_id) return;
+
+    const weekendRule = getTourWeekendMonthRule(pkg.package_id);
+    if (weekendRule) {
+      const calendarMonth = getTourWeekendMonthCalendarMonth(pkg.package_id);
+      if (calendarMonth) setMonth(calendarMonth);
+
+      const today = startOfDay(new Date());
+      const dayAfterTomorrow = new Date(today);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+      const defaultDate = getTourDefaultWeekendMonthDate(
+        pkg.package_id,
+        dayAfterTomorrow
+      );
+      if (defaultDate) {
+        const parsed = parseDateStringToLocal(defaultDate);
+        if (parsed) {
+          setSelectedDate(parsed);
+          setShowDatePicker(false);
+        }
+      }
+      return;
+    }
+
     const defaultDate = getTourDefaultFixedBookingDate(pkg.package_id);
     if (!defaultDate) return;
     const parsed = parseDateStringToLocal(defaultDate);
@@ -1322,14 +1349,21 @@ export default function PackageDetailsPage() {
       return false;
     }
 
-    // Disable dates outside fixed allow-list (one tour only) or weekday rules
-    const fixedBookingDates = getTourFixedBookingDates(pkg?.package_id);
-    if (fixedBookingDates) {
-      if (!fixedBookingDates.includes(format(date, 'yyyy-MM-dd'))) {
+    // Disable dates outside weekend-month rule, fixed allow-list, or weekday rules
+    const weekendMonthRule = getTourWeekendMonthRule(pkg?.package_id);
+    if (weekendMonthRule) {
+      if (!isDateOnTourWeekendMonth(date, pkg?.package_id)) {
         return true;
       }
-    } else if (!isDateOnTourBookingDay(date, pkg?.booking_days)) {
-      return true;
+    } else {
+      const fixedBookingDates = getTourFixedBookingDates(pkg?.package_id);
+      if (fixedBookingDates) {
+        if (!fixedBookingDates.includes(format(date, 'yyyy-MM-dd'))) {
+          return true;
+        }
+      } else if (!isDateOnTourBookingDay(date, pkg?.booking_days)) {
+        return true;
+      }
     }
 
     if (!pkg?.booking_slots || !Array.isArray(pkg.booking_slots)) {

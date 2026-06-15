@@ -74,17 +74,90 @@ export function supportsListingPageToggle(categorySlug: string): boolean {
  */
 export const TOUR_FIXED_BOOKING_DATES: Partial<
   Record<string, readonly string[]>
-> = {
-  // Dhow Cruise Dinner - Marina (Unlimited buffet with Complimentary Drink)
-  '2418e694-9c5a-4821-b1a7-88ce02aada59': ['2026-06-13', '2026-06-14'],
-};
+> = {};
 
 /** Default pre-selected date for tours with fixed dates (yyyy-MM-dd). */
 export const TOUR_FIXED_BOOKING_DEFAULT_DATE: Partial<
   Record<string, string>
-> = {
-  '2418e694-9c5a-4821-b1a7-88ce02aada59': '2026-06-13',
+> = {};
+
+/**
+ * Tours that only allow specific weekdays within a single calendar month.
+ * All other dates show as N/A. Uses the normal calendar UI (not a date dropdown).
+ */
+export type TourWeekendMonthRule = {
+  year: number;
+  /** 1–12 */
+  month: number;
+  /** JS getDay(): 0 = Sunday, 6 = Saturday */
+  weekdays: readonly number[];
 };
+
+export const TOUR_WEEKEND_MONTH_BOOKING: Partial<
+  Record<string, TourWeekendMonthRule>
+> = {
+  // Dhow Cruise Dinner - Marina (Unlimited buffet with Complimentary Drink)
+  '2418e694-9c5a-4821-b1a7-88ce02aada59': {
+    year: 2026,
+    month: 9,
+    weekdays: [0, 6],
+  },
+};
+
+function toDateString(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function getTourWeekendMonthRule(
+  packageId: string | null | undefined
+): TourWeekendMonthRule | null {
+  if (!packageId) return null;
+  return TOUR_WEEKEND_MONTH_BOOKING[packageId] ?? null;
+}
+
+export function hasTourWeekendMonthBooking(
+  packageId: string | null | undefined
+): boolean {
+  return Boolean(getTourWeekendMonthRule(packageId));
+}
+
+export function isDateOnTourWeekendMonth(
+  date: Date,
+  packageId: string | null | undefined
+): boolean {
+  const rule = getTourWeekendMonthRule(packageId);
+  if (!rule) return false;
+  return (
+    date.getFullYear() === rule.year &&
+    date.getMonth() + 1 === rule.month &&
+    rule.weekdays.includes(date.getDay())
+  );
+}
+
+/** All yyyy-MM-dd dates allowed by a tour's weekend-month rule. */
+export function getTourWeekendMonthAllowedDates(
+  packageId: string | null | undefined
+): string[] {
+  const rule = getTourWeekendMonthRule(packageId);
+  if (!rule) return [];
+  const dates: string[] = [];
+  const daysInMonth = new Date(rule.year, rule.month, 0).getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(rule.year, rule.month - 1, day);
+    if (rule.weekdays.includes(d.getDay())) {
+      dates.push(toDateString(rule.year, rule.month, day));
+    }
+  }
+  return dates;
+}
+
+export function getTourWeekendMonthCalendarMonth(
+  packageId: string | null | undefined
+): Date | null {
+  const rule = getTourWeekendMonthRule(packageId);
+  if (!rule) return null;
+  return new Date(rule.year, rule.month - 1, 1);
+}
 
 export function getTourFixedBookingDates(
   packageId: string | null | undefined
@@ -114,4 +187,26 @@ export function getTourDefaultFixedBookingDate(
     return configuredDefault;
   }
   return dates[0];
+}
+
+/**
+ * First bookable date for a weekend-month tour (respects today/tomorrow buffer).
+ */
+export function getTourDefaultWeekendMonthDate(
+  packageId: string | null | undefined,
+  earliestBookable: Date
+): string | null {
+  const allowed = getTourWeekendMonthAllowedDates(packageId);
+  const earliestMs = earliestBookable.getTime();
+  for (const dateStr of allowed) {
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) continue;
+    const d = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3])
+    );
+    if (d.getTime() >= earliestMs) return dateStr;
+  }
+  return allowed[0] ?? null;
 }
