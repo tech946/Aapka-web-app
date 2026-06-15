@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { X, Users, Calendar, ChevronDown, Plus, Minus } from 'lucide-react';
 import { AddonsSection } from '@/components/marketing/AddonsModal/AddonsSection';
@@ -251,6 +252,17 @@ export default function BookingModal({
   surcharges = [],
   selectedDateSurcharge = 0,
 }: BookingModalProps) {
+  useEffect(() => {
+    if (!isOpen || !isMobile || !showDatePicker || !datePickerRef.current) return;
+    const timer = window.setTimeout(() => {
+      datePickerRef.current?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, isMobile, showDatePicker]);
+
   if (!isOpen) return null;
 
   const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
@@ -496,7 +508,9 @@ export default function BookingModal({
           )}
 
           {/* Input Selectors */}
-          <div className={inputSelectorsClass}>
+          <div
+            className={`${inputSelectorsClass}${isMobile && showDatePicker ? ' mobile-date-picker-open' : ''}`}
+          >
             {/* Persons Selector */}
             <div
               className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
