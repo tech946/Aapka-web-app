@@ -31,9 +31,11 @@ import {
   getTourFixedBookingDates,
   getTourDefaultFixedBookingDate,
   getTourDefaultWeekendRangeDate,
+  getTourWeekendRangeEarliestBookable,
   getTourWeekendRangeInitialMonth,
   getTourWeekendRangeRule,
   isDateOnTourWeekendRange,
+  isTourWeekendRangeExtraDate,
 } from '@/lib/package-config';
 import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
 import {
@@ -1185,13 +1187,13 @@ export default function PackageDetailsPage() {
       const calendarMonth = getTourWeekendRangeInitialMonth(pkg.package_id);
       if (calendarMonth) setMonth(calendarMonth);
 
-      const today = startOfDay(new Date());
-      const dayAfterTomorrow = new Date(today);
-      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+      const earliestBookable = getTourWeekendRangeEarliestBookable(
+        pkg.package_id
+      );
 
       const defaultDate = getTourDefaultWeekendRangeDate(
         pkg.package_id,
-        dayAfterTomorrow
+        earliestBookable
       );
       if (defaultDate) {
         const parsed = parseDateStringToLocal(defaultDate);
@@ -1319,11 +1321,33 @@ export default function PackageDetailsPage() {
     // Disable past dates
     if (checkDate < today) return true;
 
-    // For tours only: disable today and tomorrow (tours can only be booked from day after tomorrow onwards)
+    const tourWeekendRangeRule = getTourWeekendRangeRule(pkg?.package_id);
+    const onTourWeekendRange =
+      tourWeekendRangeRule &&
+      isDateOnTourWeekendRange(date, pkg?.package_id);
+    const isExtraTourDate = isTourWeekendRangeExtraDate(
+      date,
+      pkg?.package_id
+    );
+
+    // For tours only: disable today and tomorrow (day after tomorrow earliest)
+    // Exception: allowTodayBooking for today; extraDates bypass tomorrow block too
     if (slug && usesBookingSlots(slug)) {
-      // Disable today and tomorrow - tours can only be booked from day after tomorrow onwards
-      if (checkDate.getTime() === today.getTime()) return true;
-      if (checkDate.getTime() === tomorrow.getTime()) return true;
+      const allowToday = tourWeekendRangeRule?.allowTodayBooking === true;
+      if (!allowToday && checkDate.getTime() === today.getTime()) return true;
+      if (
+        checkDate.getTime() === tomorrow.getTime() &&
+        !isExtraTourDate
+      ) {
+        return true;
+      }
+      if (
+        allowToday &&
+        checkDate.getTime() === today.getTime() &&
+        !onTourWeekendRange
+      ) {
+        return true;
+      }
     }
 
     // For flexible date packages, check if date falls within a valid date range
@@ -1350,11 +1374,12 @@ export default function PackageDetailsPage() {
     }
 
     // Disable dates outside weekend-month rule, fixed allow-list, or weekday rules
-    const weekendRangeRule = getTourWeekendRangeRule(pkg?.package_id);
-    if (weekendRangeRule) {
+    if (tourWeekendRangeRule) {
       if (!isDateOnTourWeekendRange(date, pkg?.package_id)) {
         return true;
       }
+      // Explicit allow-list dates are not blocked by dashboard booking_slots
+      return false;
     } else {
       const fixedBookingDates = getTourFixedBookingDates(pkg?.package_id);
       if (fixedBookingDates) {

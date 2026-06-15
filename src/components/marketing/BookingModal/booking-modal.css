@@ -1,4 +1,9 @@
 /* Month label with ‹ › arrows on the same row (booking modal) */
+.booking-modal-calendar.custom-calendar,
+.booking-modal-calendar.mobile-custom-calendar {
+  --rdp-today-color: #1f2937;
+}
+
 .booking-inline-month-caption {
   display: flex;
   align-items: center;
@@ -35,4 +40,47 @@
 .booking-modal-calendar.custom-calendar .rdp-caption_label,
 .booking-modal-calendar.mobile-custom-calendar .rdp-caption_label {
   display: none;
+}
+
+/* Today uses accent orange by default — match other bookable dates unless selected */
+.booking-modal-calendar.custom-calendar
+  .rdp-day.rdp-today:not(.rdp-selected):not(.rdp-day_selected)
+  .rdp-day_button,
+.booking-modal-calendar.mobile-custom-calendar
+  .rdp-day.rdp-today:not(.rdp-selected):not(.rdp-day_selected)
+  .rdp-day_button,
+.booking-modal-calendar.custom-calendar
+  .rdp-day_today:not(.rdp-day_selected):not(.rdp-selected)
+  button,
+.booking-modal-calendar.mobile-custom-calendar
+  .rdp-day_today:not(.rdp-day_selected):not(.rdp-selected)
+  button {
+  color: #1f2937 !important;
+  font-weight: 400;
+}
+
+/* Mobile booking modal — compact calendar above date field */
+@media (max-width: 767px) {
+  .mobile-booking-calendar-dropdown .booking-modal-calendar.mobile-custom-calendar {
+    --rdp-cell-size: 36px;
+    --rdp-today-color: #1f2937;
+    width: 100%;
+  }
+
+  .mobile-booking-calendar-dropdown
+    .booking-modal-calendar.mobile-custom-calendar
+    .rdp-month_grid {
+    width: 100%;
+  }
+
+  .mobile-booking-calendar-dropdown
+    .booking-modal-calendar.mobile-custom-calendar
+    .rdp-day {
+    width: var(--rdp-cell-size);
+    height: var(--rdp-cell-size);
+  }
+
+  .mobile-booking-calendar-dropdown .booking-inline-month-caption-label {
+    font-size: 15px;
+  }
 }

@@ -718,7 +718,11 @@ export default function BookingModal({
               </div>
             ) : (
               <div
-                className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
+                className={
+                  isMobile
+                    ? `mobile-booking-input-wrapper booking-modal-field${showDatePicker ? ' mobile-booking-date-picker-open' : ''}`
+                    : 'booking-input-wrapper booking-modal-field'
+                }
                 ref={datePickerRef}
               >
                 <Calendar className={isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'} />

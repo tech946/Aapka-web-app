@@ -3435,12 +3435,11 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     background-color: #f9fafb;
   }
 
-  /* Mobile Calendar Dropdown */
+  /* Mobile Calendar Dropdown — opens above the date field (date sits low in modal) */
   .mobile-booking-calendar-dropdown {
-    /* Match desktop behavior: render as a dropdown overlay */
     position: absolute;
-    top: calc(100% + 8px);
-    bottom: auto;
+    bottom: calc(100% + 8px);
+    top: auto;
     left: 0;
     right: 0;
     background: white;
@@ -3452,18 +3451,16 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     z-index: 2010;
-    padding: 16px;
+    padding: 12px;
     margin: 0;
     width: 100%;
-    overflow: visible !important;
-    max-height: none !important;
-  }
-
-  /* Constrain dropdown height so it never gets clipped inside the modal */
-  .mobile-booking-calendar-dropdown {
-    max-height: min(70vh, 440px) !important;
+    max-height: min(55vh, 400px) !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
+  }
+
+  .mobile-booking-input-wrapper.mobile-booking-date-picker-open {
+    z-index: 2025;
   }
 
   .mobile-booking-calendar-dropdown .rdp,

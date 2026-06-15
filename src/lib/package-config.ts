@@ -91,6 +91,10 @@ export type TourWeekendRangeRule = {
   endMonth: number;
   /** JS getDay(): 0 = Sunday, 6 = Saturday */
   weekdays: readonly number[];
+  /** Additional yyyy-MM-dd dates always allowed within the window */
+  extraDates?: readonly string[];
+  /** Allow booking today (other UAE tours require day after tomorrow) */
+  allowTodayBooking?: boolean;
 };
 
 export const TOUR_WEEKEND_RANGE_BOOKING: Partial<
@@ -101,6 +105,8 @@ export const TOUR_WEEKEND_RANGE_BOOKING: Partial<
     endYear: 2026,
     endMonth: 9,
     weekdays: [0, 6],
+    extraDates: ['2026-06-15'],
+    allowTodayBooking: true,
   },
 };
 
@@ -134,6 +140,28 @@ export function getTourWeekendRangeEndDate(
   return new Date(rule.endYear, rule.endMonth, 0);
 }
 
+function dateToYmd(date: Date): string {
+  return toDateString(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
+function parseYmdDate(dateStr: string): Date | null {
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+export function getTourWeekendRangeEarliestBookable(
+  packageId: string | null | undefined,
+  now: Date = new Date()
+): Date {
+  const rule = getTourWeekendRangeRule(packageId);
+  const today = startOfLocalDay(now);
+  if (rule?.allowTodayBooking) return today;
+  const earliest = new Date(today);
+  earliest.setDate(earliest.getDate() + 2);
+  return earliest;
+}
+
 export function isDateOnTourWeekendRange(
   date: Date,
   packageId: string | null | undefined
@@ -145,7 +173,31 @@ export function isDateOnTourWeekendRange(
 
   const check = startOfLocalDay(date);
   if (check > endDate) return false;
+
+  const dateStr = dateToYmd(check);
+  if (rule.extraDates?.includes(dateStr)) return true;
+
   return rule.weekdays.includes(check.getDay());
+}
+
+export function isTourWeekendRangeExtraDate(
+  date: Date,
+  packageId: string | null | undefined
+): boolean {
+  const rule = getTourWeekendRangeRule(packageId);
+  if (!rule?.extraDates?.length) return false;
+  return rule.extraDates.includes(dateToYmd(startOfLocalDay(date)));
+}
+
+/** Allowed weekend-range dates ignore dashboard booking_slots blocks. */
+export function shouldSkipTourBookingSlotsForDate(
+  date: Date,
+  packageId: string | null | undefined
+): boolean {
+  return (
+    hasTourWeekendRangeBooking(packageId) &&
+    isDateOnTourWeekendRange(date, packageId)
+  );
 }
 
 /** Calendar bounds: current month → end month (past months excluded). */
@@ -207,6 +259,15 @@ export function getTourWeekendRangeAllowedDates(
     cursor = new Date(year, month, 1);
   }
 
+  if (rule.extraDates?.length) {
+    for (const dateStr of rule.extraDates) {
+      const d = parseYmdDate(dateStr);
+      if (!d || d < earliest || d > endDate) continue;
+      if (!dates.includes(dateStr)) dates.push(dateStr);
+    }
+  }
+
+  dates.sort();
   return dates;
 }
 
