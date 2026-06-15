@@ -30,10 +30,10 @@ import {
   usesFlexibleDatePackages,
   getTourFixedBookingDates,
   getTourDefaultFixedBookingDate,
-  getTourDefaultWeekendMonthDate,
-  getTourWeekendMonthCalendarMonth,
-  getTourWeekendMonthRule,
-  isDateOnTourWeekendMonth,
+  getTourDefaultWeekendRangeDate,
+  getTourWeekendRangeInitialMonth,
+  getTourWeekendRangeRule,
+  isDateOnTourWeekendRange,
 } from '@/lib/package-config';
 import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
 import {
@@ -1180,16 +1180,16 @@ export default function PackageDetailsPage() {
   useEffect(() => {
     if (!pkg?.package_id) return;
 
-    const weekendRule = getTourWeekendMonthRule(pkg.package_id);
+    const weekendRule = getTourWeekendRangeRule(pkg.package_id);
     if (weekendRule) {
-      const calendarMonth = getTourWeekendMonthCalendarMonth(pkg.package_id);
+      const calendarMonth = getTourWeekendRangeInitialMonth(pkg.package_id);
       if (calendarMonth) setMonth(calendarMonth);
 
       const today = startOfDay(new Date());
       const dayAfterTomorrow = new Date(today);
       dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
 
-      const defaultDate = getTourDefaultWeekendMonthDate(
+      const defaultDate = getTourDefaultWeekendRangeDate(
         pkg.package_id,
         dayAfterTomorrow
       );
@@ -1350,9 +1350,9 @@ export default function PackageDetailsPage() {
     }
 
     // Disable dates outside weekend-month rule, fixed allow-list, or weekday rules
-    const weekendMonthRule = getTourWeekendMonthRule(pkg?.package_id);
-    if (weekendMonthRule) {
-      if (!isDateOnTourWeekendMonth(date, pkg?.package_id)) {
+    const weekendRangeRule = getTourWeekendRangeRule(pkg?.package_id);
+    if (weekendRangeRule) {
+      if (!isDateOnTourWeekendRange(date, pkg?.package_id)) {
         return true;
       }
     } else {

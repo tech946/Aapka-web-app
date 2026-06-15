@@ -8,9 +8,96 @@ import { format } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
-import { getTourFixedBookingDates, getTourWeekendMonthRule, hasTourFixedBookingDates } from '@/lib/package-config';
+import {
+  getTourFixedBookingDates,
+  getTourWeekendRangeCalendarBounds,
+  hasTourFixedBookingDates,
+} from '@/lib/package-config';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import './booking-modal.css';
+
+function calendarMonthKey(date: Date): number {
+  return date.getFullYear() * 12 + date.getMonth();
+}
+
+function BookingInlineMonthCaption({
+  calendarMonth,
+  setMonth,
+  weekendRangeCalendarBounds,
+  navButtonClass,
+}: {
+  calendarMonth: { date: Date };
+  setMonth: (value: Date) => void;
+  weekendRangeCalendarBounds: ReturnType<
+    typeof getTourWeekendRangeCalendarBounds
+  >;
+  navButtonClass: string;
+}) {
+  const displayMonth = calendarMonth.date;
+  const prevMonth = new Date(
+    displayMonth.getFullYear(),
+    displayMonth.getMonth() - 1,
+    1
+  );
+  const nextMonth = new Date(
+    displayMonth.getFullYear(),
+    displayMonth.getMonth() + 1,
+    1
+  );
+
+  const canGoPrev = weekendRangeCalendarBounds
+    ? calendarMonthKey(prevMonth) >=
+      calendarMonthKey(weekendRangeCalendarBounds.fromMonth)
+    : true;
+
+  const canGoNext = weekendRangeCalendarBounds
+    ? calendarMonthKey(nextMonth) <=
+      calendarMonthKey(weekendRangeCalendarBounds.toMonth)
+    : true;
+
+  return (
+    <div
+      className='booking-inline-month-caption'
+      onClick={e => e.stopPropagation()}
+    >
+      <button
+        type='button'
+        className={navButtonClass}
+        aria-label='Previous month'
+        disabled={!canGoPrev}
+        style={{
+          opacity: canGoPrev ? 1 : 0.35,
+          cursor: canGoPrev ? 'pointer' : 'not-allowed',
+        }}
+        onClick={e => {
+          e.stopPropagation();
+          if (canGoPrev) setMonth(prevMonth);
+        }}
+      >
+        ‹
+      </button>
+      <span className='booking-inline-month-caption-label'>
+        {format(displayMonth, 'MMMM yyyy')}
+      </span>
+      <button
+        type='button'
+        className={navButtonClass}
+        aria-label='Next month'
+        disabled={!canGoNext}
+        style={{
+          opacity: canGoNext ? 1 : 0.35,
+          cursor: canGoNext ? 'pointer' : 'not-allowed',
+        }}
+        onClick={e => {
+          e.stopPropagation();
+          if (canGoNext) setMonth(nextMonth);
+        }}
+      >
+        ›
+      </button>
+    </div>
+  );
+}
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -169,13 +256,17 @@ export default function BookingModal({
   const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
   const fixedTourDates = getTourFixedBookingDates(pkg?.package_id);
   const usesFixedTourDates = hasTourFixedBookingDates(pkg?.package_id);
-  const weekendMonthRule = getTourWeekendMonthRule(pkg?.package_id);
-  const weekendMonthCalendarBounds = weekendMonthRule
-    ? {
-        fromMonth: new Date(weekendMonthRule.year, weekendMonthRule.month - 1, 1),
-        toMonth: new Date(weekendMonthRule.year, weekendMonthRule.month - 1, 1),
-      }
-    : null;
+  const weekendRangeCalendarBounds = getTourWeekendRangeCalendarBounds(
+    pkg?.package_id
+  );
+
+  const calendarClassName = isMobile
+    ? 'mobile-custom-calendar booking-modal-calendar'
+    : 'custom-calendar booking-modal-calendar';
+
+  const calendarNavButtonClass = isMobile
+    ? 'mobile-calendar-nav-button'
+    : 'calendar-nav-button';
 
   const formatFixedTourDateLabel = (dateStr: string) => {
     const parsed = parseDateStringToLocal(dateStr);
@@ -658,32 +749,6 @@ export default function BookingModal({
                       />
                     ) : (
                       <>
-                        {isMobile && (
-                          <div className='mobile-calendar-header-nav'>
-                            <button
-                              className='mobile-calendar-nav-button'
-                              onClick={e => {
-                                e.stopPropagation();
-                                const newMonth = new Date(month);
-                                newMonth.setMonth(newMonth.getMonth() - 1);
-                                setMonth(newMonth);
-                              }}
-                            >
-                              ‹
-                            </button>
-                            <button
-                              className='mobile-calendar-nav-button'
-                              onClick={e => {
-                                e.stopPropagation();
-                                const newMonth = new Date(month);
-                                newMonth.setMonth(newMonth.getMonth() + 1);
-                                setMonth(newMonth);
-                              }}
-                            >
-                              ›
-                            </button>
-                          </div>
-                        )}
                         <DayPicker
                           mode='single'
                           selected={selectedDate}
@@ -693,11 +758,24 @@ export default function BookingModal({
                           showOutsideDays={true}
                           month={month}
                           onMonthChange={setMonth}
-                          fromMonth={weekendMonthCalendarBounds?.fromMonth}
-                          toMonth={weekendMonthCalendarBounds?.toMonth}
-                          className={isMobile ? 'mobile-custom-calendar' : 'custom-calendar'}
+                          fromMonth={weekendRangeCalendarBounds?.fromMonth}
+                          toMonth={weekendRangeCalendarBounds?.toMonth}
+                          className={calendarClassName}
                           modifiersClassNames={{
                             disabled: 'rdp-day_unavailable',
+                          }}
+                          components={{
+                            Nav: () => null,
+                            MonthCaption: captionProps => (
+                              <BookingInlineMonthCaption
+                                calendarMonth={captionProps.calendarMonth}
+                                setMonth={setMonth}
+                                weekendRangeCalendarBounds={
+                                  weekendRangeCalendarBounds
+                                }
+                                navButtonClass={calendarNavButtonClass}
+                              />
+                            ),
                           }}
                         />
                         {isMobile && (

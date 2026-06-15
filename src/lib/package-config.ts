@@ -82,24 +82,24 @@ export const TOUR_FIXED_BOOKING_DEFAULT_DATE: Partial<
 > = {};
 
 /**
- * Tours that only allow specific weekdays within a single calendar month.
- * All other dates show as N/A. Uses the normal calendar UI (not a date dropdown).
+ * Tours that allow specific weekdays from the current month through an end month.
+ * Past months are hidden; past dates within the window are disabled in the calendar.
  */
-export type TourWeekendMonthRule = {
-  year: number;
-  /** 1–12 */
-  month: number;
+export type TourWeekendRangeRule = {
+  endYear: number;
+  /** 1–12, inclusive through the last day of this month */
+  endMonth: number;
   /** JS getDay(): 0 = Sunday, 6 = Saturday */
   weekdays: readonly number[];
 };
 
-export const TOUR_WEEKEND_MONTH_BOOKING: Partial<
-  Record<string, TourWeekendMonthRule>
+export const TOUR_WEEKEND_RANGE_BOOKING: Partial<
+  Record<string, TourWeekendRangeRule>
 > = {
   // Dhow Cruise Dinner - Marina (Unlimited buffet with Complimentary Drink)
   '2418e694-9c5a-4821-b1a7-88ce02aada59': {
-    year: 2026,
-    month: 9,
+    endYear: 2026,
+    endMonth: 9,
     weekdays: [0, 6],
   },
 };
@@ -108,55 +108,166 @@ function toDateString(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-export function getTourWeekendMonthRule(
-  packageId: string | null | undefined
-): TourWeekendMonthRule | null {
-  if (!packageId) return null;
-  return TOUR_WEEKEND_MONTH_BOOKING[packageId] ?? null;
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+export function getTourWeekendRangeRule(
+  packageId: string | null | undefined
+): TourWeekendRangeRule | null {
+  if (!packageId) return null;
+  return TOUR_WEEKEND_RANGE_BOOKING[packageId] ?? null;
+}
+
+export function hasTourWeekendRangeBooking(
+  packageId: string | null | undefined
+): boolean {
+  return Boolean(getTourWeekendRangeRule(packageId));
+}
+
+/** Last calendar day included in the booking window. */
+export function getTourWeekendRangeEndDate(
+  packageId: string | null | undefined
+): Date | null {
+  const rule = getTourWeekendRangeRule(packageId);
+  if (!rule) return null;
+  return new Date(rule.endYear, rule.endMonth, 0);
+}
+
+export function isDateOnTourWeekendRange(
+  date: Date,
+  packageId: string | null | undefined
+): boolean {
+  const rule = getTourWeekendRangeRule(packageId);
+  if (!rule) return false;
+  const endDate = getTourWeekendRangeEndDate(packageId);
+  if (!endDate) return false;
+
+  const check = startOfLocalDay(date);
+  if (check > endDate) return false;
+  return rule.weekdays.includes(check.getDay());
+}
+
+/** Calendar bounds: current month → end month (past months excluded). */
+export function getTourWeekendRangeCalendarBounds(
+  packageId: string | null | undefined,
+  now: Date = new Date()
+): { fromMonth: Date; toMonth: Date } | null {
+  const rule = getTourWeekendRangeRule(packageId);
+  if (!rule) return null;
+
+  const endDate = getTourWeekendRangeEndDate(packageId)!;
+  const today = startOfLocalDay(now);
+
+  if (today > endDate) return null;
+
+  const fromMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const toMonth = new Date(rule.endYear, rule.endMonth - 1, 1);
+
+  if (fromMonth > toMonth) return null;
+
+  return { fromMonth, toMonth };
+}
+
+export function getTourWeekendRangeInitialMonth(
+  packageId: string | null | undefined,
+  now: Date = new Date()
+): Date | null {
+  return getTourWeekendRangeCalendarBounds(packageId, now)?.fromMonth ?? null;
+}
+
+/** Sat/Sun dates from earliestBookable through end of the configured month. */
+export function getTourWeekendRangeAllowedDates(
+  packageId: string | null | undefined,
+  earliestBookable: Date
+): string[] {
+  const rule = getTourWeekendRangeRule(packageId);
+  const endDate = getTourWeekendRangeEndDate(packageId);
+  if (!rule || !endDate) return [];
+
+  const earliest = startOfLocalDay(earliestBookable);
+  const dates: string[] = [];
+
+  let cursor = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
+  const endMonthStart = new Date(rule.endYear, rule.endMonth - 1, 1);
+
+  while (cursor <= endMonthStart) {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth() + 1;
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, month - 1, day);
+      if (d < earliest || d > endDate) continue;
+      if (rule.weekdays.includes(d.getDay())) {
+        dates.push(toDateString(year, month, day));
+      }
+    }
+
+    cursor = new Date(year, month, 1);
+  }
+
+  return dates;
+}
+
+/**
+ * First bookable Sat/Sun on or after earliestBookable, within the range window.
+ */
+export function getTourDefaultWeekendRangeDate(
+  packageId: string | null | undefined,
+  earliestBookable: Date
+): string | null {
+  const allowed = getTourWeekendRangeAllowedDates(packageId, earliestBookable);
+  return allowed[0] ?? null;
+}
+
+/** @deprecated Use getTourWeekendRangeRule */
+export type TourWeekendMonthRule = TourWeekendRangeRule;
+
+/** @deprecated Use getTourWeekendRangeRule */
+export function getTourWeekendMonthRule(
+  packageId: string | null | undefined
+): TourWeekendRangeRule | null {
+  return getTourWeekendRangeRule(packageId);
+}
+
+/** @deprecated Use hasTourWeekendRangeBooking */
 export function hasTourWeekendMonthBooking(
   packageId: string | null | undefined
 ): boolean {
-  return Boolean(getTourWeekendMonthRule(packageId));
+  return hasTourWeekendRangeBooking(packageId);
 }
 
+/** @deprecated Use isDateOnTourWeekendRange */
 export function isDateOnTourWeekendMonth(
   date: Date,
   packageId: string | null | undefined
 ): boolean {
-  const rule = getTourWeekendMonthRule(packageId);
-  if (!rule) return false;
-  return (
-    date.getFullYear() === rule.year &&
-    date.getMonth() + 1 === rule.month &&
-    rule.weekdays.includes(date.getDay())
-  );
+  return isDateOnTourWeekendRange(date, packageId);
 }
 
-/** All yyyy-MM-dd dates allowed by a tour's weekend-month rule. */
+/** @deprecated Use getTourWeekendRangeAllowedDates */
 export function getTourWeekendMonthAllowedDates(
   packageId: string | null | undefined
 ): string[] {
-  const rule = getTourWeekendMonthRule(packageId);
-  if (!rule) return [];
-  const dates: string[] = [];
-  const daysInMonth = new Date(rule.year, rule.month, 0).getDate();
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(rule.year, rule.month - 1, day);
-    if (rule.weekdays.includes(d.getDay())) {
-      dates.push(toDateString(rule.year, rule.month, day));
-    }
-  }
-  return dates;
+  const tomorrow = startOfLocalDay(new Date());
+  tomorrow.setDate(tomorrow.getDate() + 2);
+  return getTourWeekendRangeAllowedDates(packageId, tomorrow);
 }
 
+/** @deprecated Use getTourWeekendRangeInitialMonth */
 export function getTourWeekendMonthCalendarMonth(
   packageId: string | null | undefined
 ): Date | null {
-  const rule = getTourWeekendMonthRule(packageId);
-  if (!rule) return null;
-  return new Date(rule.year, rule.month - 1, 1);
+  return getTourWeekendRangeInitialMonth(packageId);
+}
+
+/** @deprecated Use getTourDefaultWeekendRangeDate */
+export function getTourDefaultWeekendMonthDate(
+  packageId: string | null | undefined,
+  earliestBookable: Date
+): string | null {
+  return getTourDefaultWeekendRangeDate(packageId, earliestBookable);
 }
 
 export function getTourFixedBookingDates(
@@ -189,24 +300,3 @@ export function getTourDefaultFixedBookingDate(
   return dates[0];
 }
 
-/**
- * First bookable date for a weekend-month tour (respects today/tomorrow buffer).
- */
-export function getTourDefaultWeekendMonthDate(
-  packageId: string | null | undefined,
-  earliestBookable: Date
-): string | null {
-  const allowed = getTourWeekendMonthAllowedDates(packageId);
-  const earliestMs = earliestBookable.getTime();
-  for (const dateStr of allowed) {
-    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) continue;
-    const d = new Date(
-      Number(match[1]),
-      Number(match[2]) - 1,
-      Number(match[3])
-    );
-    if (d.getTime() >= earliestMs) return dateStr;
-  }
-  return allowed[0] ?? null;
-}
