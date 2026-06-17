@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Marina Cruise Dinner | Aapka Tourism',
+  title: 'Marina Cruise | Aapka Tourism',
   description:
-    'Book exclusive Marina Cruise Dinner experiences in Dubai. Dhow cruise with buffet dining on Dubai Marina.',
+    'Book exclusive Marina Cruise experiences in Dubai. Dhow cruise with buffet dining on Dubai Marina.',
 };
 
 export default function MarinaCruiseDinnerLayout({

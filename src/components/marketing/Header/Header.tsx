@@ -343,7 +343,7 @@ export default function Header() {
                                     className='header-dropdown-item'
                                     onClick={() => setShowPackagesDropdown(false)}
                                   >
-                                    Marina Cruise Dinner
+                                    Marina Cruise
                                   </Link>
                                 )}
                               </Fragment>
@@ -739,7 +739,7 @@ export default function Header() {
                                 setMobilePackagesExpanded(false);
                               }}
                             >
-                              Marina Cruise Dinner
+                              Marina Cruise
                             </Link>
                           )}
                         </Fragment>

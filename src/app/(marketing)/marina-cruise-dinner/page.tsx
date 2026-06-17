@@ -218,7 +218,7 @@ export default function MarinaCruiseDinnerPage() {
     <div className='packages-page marina-cruise-dinner-page'>
       <div className='container'>
         <div className='marina-hero'>
-          <h1>Marina Cruise Dinner</h1>
+          <h1>Marina Cruise</h1>
           <p>Exclusive dhow cruise experiences on Dubai Marina</p>
         </div>
 

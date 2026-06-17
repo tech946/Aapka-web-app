@@ -127,7 +127,7 @@ export default function MarinaCruiseSection() {
                 fill='currentColor'
               />
             </svg>
-            <span>Marina Cruise Dinner</span>
+            <span>Marina Cruise</span>
           </div>
           <h2 className='section-heading-pill'>
             Premium dhow cruise dinners on Dubai Marina.
