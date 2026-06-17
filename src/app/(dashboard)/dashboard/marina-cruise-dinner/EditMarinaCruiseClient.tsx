@@ -469,7 +469,7 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                   />
                 </div>
                 <div className='form_row full_width'>
-                  <label>Holiday Description</label>
+                  <label>Tour Description</label>
                   <TipTapEditor
                     content={holidayDescHtml}
                     onChange={setHolidayDescHtml}

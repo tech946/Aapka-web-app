@@ -69,7 +69,7 @@ export default function PackageDetailsTabs({
     if (hasContent(pkg?.package_description))
       tabs.push({ id: 'description', label: 'Description' });
     if (hasHtmlContent(pkg?.holiday_description_html))
-      tabs.push({ id: 'holiday', label: 'Holiday Description' });
+      tabs.push({ id: 'holiday', label: 'Tour Description' });
     if (hasItineraryContent(pkg?.itinerary))
       tabs.push({ id: 'itinerary', label: 'Itinerary' });
     if (hasHtmlContent(pkg?.inclusion_html))
@@ -219,7 +219,7 @@ export default function PackageDetailsTabs({
 
         {activeTab === 'holiday' && pkg.holiday_description_html && (
           <div className='package-section'>
-            <h2>Holiday Description</h2>
+            <h2>Tour Description</h2>
             <div
               className='package-html-content'
               dangerouslySetInnerHTML={{

@@ -422,7 +422,7 @@ export default function AddMarinaCruiseClient() {
               />
             </div>
             <div className='form_row full_width'>
-              <label>Holiday Description</label>
+              <label>Tour Description</label>
               <TipTapEditor content={holidayDescHtml} onChange={setHolidayDescHtml} />
             </div>
             <div className='form_row full_width'>
