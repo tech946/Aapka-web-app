@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -109,9 +109,12 @@ export default function Header() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // Expand mobile packages when on a category page
+  // Expand mobile packages when on a category or marina page
   useEffect(() => {
-    if (pathname.startsWith('/category')) {
+    if (
+      pathname.startsWith('/category') ||
+      pathname.startsWith('/marina-cruise-dinner')
+    ) {
       setMobilePackagesExpanded(true);
     }
   }, [pathname]);
@@ -290,9 +293,11 @@ export default function Header() {
                         setShowPackagesDropdown(!showPackagesDropdown)
                       }
                       style={{
-                        color: pathname.startsWith('/category')
-                          ? '#fd6b06'
-                          : undefined,
+                        color:
+                          pathname.startsWith('/category') ||
+                          pathname.startsWith('/marina-cruise-dinner')
+                            ? '#fd6b06'
+                            : undefined,
                       }}
                     >
                       Tours & Packages
@@ -319,19 +324,29 @@ export default function Header() {
                               category.categoryId ??
                               category.name;
                             return (
-                              <Link
-                                key={String(key)}
-                                href={href}
-                                className={`header-dropdown-item ${isFlexibleDatePackages ? 'header-dropdown-item-with-badge' : ''}`}
-                                onClick={() => setShowPackagesDropdown(false)}
-                              >
-                                {isFlexibleDatePackages && (
-                                  <span className='header-dropdown-badge'>
-                                    NEW
-                                  </span>
+                              <Fragment key={String(key)}>
+                                <Link
+                                  href={href}
+                                  className={`header-dropdown-item ${isFlexibleDatePackages ? 'header-dropdown-item-with-badge' : ''}`}
+                                  onClick={() => setShowPackagesDropdown(false)}
+                                >
+                                  {isFlexibleDatePackages && (
+                                    <span className='header-dropdown-badge'>
+                                      NEW
+                                    </span>
+                                  )}
+                                  {category.name}
+                                </Link>
+                                {category.name === 'UAE Tours' && (
+                                  <Link
+                                    href='/marina-cruise-dinner'
+                                    className='header-dropdown-item'
+                                    onClick={() => setShowPackagesDropdown(false)}
+                                  >
+                                    Marina Cruise Dinner
+                                  </Link>
                                 )}
-                                {category.name}
-                              </Link>
+                              </Fragment>
                             );
                           })}
                           <Link
@@ -665,7 +680,10 @@ export default function Header() {
                 <button
                   type='button'
                   className={`mobile-sidebar-link mobile-sidebar-dropdown-button ${
-                    pathname.startsWith('/category') ? 'active' : ''
+                    pathname.startsWith('/category') ||
+                    pathname.startsWith('/marina-cruise-dinner')
+                      ? 'active'
+                      : ''
                   }`}
                   onClick={() => setMobilePackagesExpanded(e => !e)}
                   style={{
@@ -698,20 +716,33 @@ export default function Header() {
                         category.categoryId ??
                         category.name;
                       return (
-                        <Link
-                          key={String(key)}
-                          href={href}
-                          className={`mobile-sidebar-dropdown-item ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
-                          onClick={() => {
-                            setIsMobileMenuOpen(false);
-                            setMobilePackagesExpanded(false);
-                          }}
-                        >
-                          {isFlexibleDatePackages && (
-                            <span className='mobile-sidebar-badge'>NEW</span>
+                        <Fragment key={String(key)}>
+                          <Link
+                            href={href}
+                            className={`mobile-sidebar-dropdown-item ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              setMobilePackagesExpanded(false);
+                            }}
+                          >
+                            {isFlexibleDatePackages && (
+                              <span className='mobile-sidebar-badge'>NEW</span>
+                            )}
+                            {category.name}
+                          </Link>
+                          {category.name === 'UAE Tours' && (
+                            <Link
+                              href='/marina-cruise-dinner'
+                              className='mobile-sidebar-dropdown-item'
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setMobilePackagesExpanded(false);
+                              }}
+                            >
+                              Marina Cruise Dinner
+                            </Link>
                           )}
-                          {category.name}
-                        </Link>
+                        </Fragment>
                       );
                     })}
                     <Link

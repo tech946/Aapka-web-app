@@ -389,7 +389,7 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                               )
                             }
                           >
-                            Remove
+                            ×
                           </button>
                         </div>
                       ))}

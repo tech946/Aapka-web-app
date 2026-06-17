@@ -352,7 +352,7 @@ export default function AddMarinaCruiseClient() {
                           );
                         }}
                       >
-                        Remove
+                        ×
                       </button>
                     </div>
                   ))}
