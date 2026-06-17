@@ -119,11 +119,7 @@ function MarinaPackageCard({ pkg }: { pkg: MarinaPackage }) {
       </div>
       <div className='suites-card-content'>
         <h3 className='suites-card-title'>{pkg.package_name}</h3>
-        {(pkg.category || pkg.timing) && (
-          <p className='suites-card-destinations'>
-            {[pkg.category, pkg.timing].filter(Boolean).join(' · ')}
-          </p>
-        )}
+        {/* category / timing hidden for now */}
         {packageDescription && (
           <p className='suites-card-destinations'>{packageDescription}</p>
         )}

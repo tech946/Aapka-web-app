@@ -45,9 +45,9 @@ function getPackageDescription(pkg: MarinaPackage): string {
   return '';
 }
 
-function getMetaLabel(pkg: MarinaPackage): string {
-  const parts = [pkg.category?.trim(), pkg.timing?.trim()].filter(Boolean);
-  return parts.join(' · ');
+function getMetaLabel(_pkg: MarinaPackage): string {
+  // category / timing hidden from cards for now
+  return '';
 }
 
 export default function MarinaCruiseSection() {
