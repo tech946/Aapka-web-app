@@ -1,0 +1,378 @@
+/* Calendar Dropdown - Same as package details page */
+.booking-calendar-dropdown {
+  position: absolute !important;
+  left: 0 !important;
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  z-index: 10000 !important;
+  padding: 20px !important;
+  min-width: 350px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+.booking-calendar-dropdown * {
+  box-sizing: border-box !important;
+}
+
+/* Position above the input */
+.booking-calendar-dropdown.calendar-dropdown-above {
+  bottom: calc(100% + 8px);
+  top: auto;
+}
+
+/* Position below the input */
+.booking-calendar-dropdown.calendar-dropdown-below {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.calendar-header-nav {
+  position: relative !important;
+  display: flex !important;
+  gap: 4px !important;
+  z-index: 10 !important;
+  margin-bottom: 12px !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  min-height: 40px !important;
+  width: 100% !important;
+  overflow: visible !important;
+  visibility: visible !important;
+}
+
+.booking-calendar-dropdown .calendar-header-nav .calendar-nav-button {
+  position: absolute !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.booking-calendar-dropdown
+  .calendar-header-nav
+  .calendar-nav-button:first-child {
+  left: 0 !important;
+}
+
+.booking-calendar-dropdown
+  .calendar-header-nav
+  .calendar-nav-button:last-child {
+  right: 0 !important;
+}
+
+.booking-calendar-dropdown .calendar-nav-button {
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #1f2937 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s !important;
+  padding: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 11 !important;
+}
+
+.booking-calendar-dropdown .calendar-nav-button:hover {
+  background: #374151 !important;
+}
+
+.custom-calendar {
+  --rdp-cell-size: 40px !important;
+  --rdp-accent-color: #fd6b06 !important;
+  --rdp-background-color: #fef3e2 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+/* Completely isolate calendar from dashboard table styles */
+.custom-calendar table,
+.custom-calendar .rdp-month_grid,
+.custom-calendar .rdp-month_grid table,
+.custom-calendar .rdp-months table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.custom-calendar thead,
+.custom-calendar tbody,
+.custom-calendar tr {
+  border: none !important;
+  background: transparent !important;
+}
+
+.custom-calendar thead th,
+.custom-calendar tbody td,
+.custom-calendar .rdp-weekday,
+.custom-calendar .rdp-day {
+  border: none !important;
+  background: transparent !important;
+}
+
+.custom-calendar .rdp-month_caption {
+  justify-content: center;
+}
+
+.custom-calendar .rdp-months {
+  display: flex;
+  gap: 20px;
+}
+
+.custom-calendar .rdp-month {
+  width: 100%;
+}
+
+.custom-calendar .rdp-caption {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 0 !important;
+  margin-bottom: 8px !important;
+  position: relative !important;
+  width: 100% !important;
+}
+
+.custom-calendar .rdp-caption_label {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  text-align: center !important;
+}
+
+.custom-calendar .rdp-nav {
+  display: none !important;
+}
+
+.custom-calendar .rdp-head_cell {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  text-transform: uppercase !important;
+  padding: 8px 0 !important;
+  text-align: center !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+/* Override dashboard.css table styles for calendar */
+.custom-calendar table,
+.custom-calendar .rdp-month_grid,
+.custom-calendar .rdp-month_grid table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+}
+
+.custom-calendar .rdp-month_grid th,
+.custom-calendar .rdp-month_grid td,
+.custom-calendar [role='gridcell'],
+.custom-calendar [role='grid'] th,
+.custom-calendar [role='grid'] td {
+  text-align: center !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  border: none !important;
+  vertical-align: middle !important;
+}
+
+.custom-calendar .rdp-day {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.custom-calendar
+  .rdp-day:hover:not([disabled]):not(.rdp-day_selected):not(
+    .rdp-day_range_start
+  ):not(.rdp-day_range_end) {
+  background: #f3f4f6;
+}
+
+.custom-calendar .rdp-day_selected {
+  background: #fd6b06;
+  color: #fff;
+}
+
+.custom-calendar .rdp-day_selected:hover {
+  background: #e64500;
+}
+
+/* Range styles */
+.custom-calendar .rdp-day_range_start {
+  background: #fd6b06 !important;
+  color: #fff !important;
+}
+
+.custom-calendar .rdp-day_range_end {
+  background: #fd6b06 !important;
+  color: #fff !important;
+}
+
+.custom-calendar .rdp-day_range_middle {
+  background: #fef3e2;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.custom-calendar .rdp-day[disabled] {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.custom-calendar .rdp-day_outside {
+  color: #9ca3af;
+}
+
+/* Hover range styles */
+.custom-calendar .rdp-day.hover-range {
+  background: #fef3e2 !important;
+  color: #1f2937 !important;
+  font-weight: 600;
+}
+
+.custom-calendar .rdp-day.hover-end {
+  background: #fd6b06 !important;
+  color: #fff !important;
+  font-weight: 500;
+}
+
+.custom-calendar .rdp-day_range_start.hover-range {
+  background: #fd6b06 !important;
+  color: #fff !important;
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.clear-dates-button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.clear-dates-button:hover {
+  color: #6b7280;
+}
+.custom-calendar .rdp-weekdays th {
+  font-size: 15px !important;
+}
+.table_actions button {
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  border: none !important;
+  font: inherit !important;
+  color: inherit !important;
+  font-size: 13px !important;
+  justify-content: center;
+  align-items: center !important;
+  display: flex !important;
+  width: var(--rdp-day_button-width);
+  height: var(--rdp-day_button-height);
+  border: var(--rdp-day_button-border);
+  border-radius: var(--rdp-day_button-border-radius);
+}
+.table_actions button.btn_primary {
+  background: var(--accent) !important;
+  color: #fff !important;
+  height: 40px !important;
+  border-radius: 4px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+  margin-left: 12px !important;
+  text-transform: uppercase !important;
+}
+.calendar-footer .clear-dates-button {
+  background: none;
+  border: none !important;
+  color: #9ca3af !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.2s !important;
+}
+.custom-calendar .rdp-month_caption {
+  margin-bottom: 12px !important;
+}
+.booking-calendar-dropdown .calendar-header-nav .calendar-nav-button {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  border-radius: 90px !important;
+}
+.booking-calendar-dropdown
+  .calendar-header-nav
+  .calendar-nav-button:last-child {
+  position: absolute;
+  right: 0;
+  left: auto;
+  top: 12px;
+  border-radius: 90px !important;
+}
+.calendar-header-nav {
+  min-height: max-content !important;
+}
+.custom-calendar .rdp-month_grid td.rdp-selected,
+.custom-calendar .rdp-month_grid td.rdp-selected.rdp-range_end,
+.custom-calendar .rdp-month_grid td.rdp-outside.rdp-range_end {
+  background: var(--accent) !important;
+  border-radius: 90px !important;
+  color: #fff !important;
+  opacity: 1;
+}
+.custom-calendar .rdp-month_grid td.rdp-selected.rdp-range_middle {
+  background: #f7f7f7 !important;
+  font-weight: 400 !important;
+  border-radius: 90px !important;
+  color: #121212 !important;
+}
+.date_chip {
+  display: inline-flex !important ;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 12px !important;
+  background: var(--badge-bg) !important    ;
+  color: var(--badge-fg) !important;
+  border: 1px solid var(--badge-fg) !important;
+  border-radius: 20px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  max-height: 32px !important;
+}

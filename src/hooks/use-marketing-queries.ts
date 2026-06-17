@@ -154,6 +154,28 @@ export function usePackagesByCategory(options: {
   });
 }
 
+export function useMarinaCruiseDinners(options?: {
+  limit?: number;
+  listingPageOnly?: boolean;
+}) {
+  const limit = options?.limit ?? 20;
+  const listingPageOnly = options?.listingPageOnly ?? true;
+  const params = new URLSearchParams({
+    limit: String(limit),
+    status: 'active',
+    ...(listingPageOnly ? { listing_page_only: 'true' } : {}),
+  });
+
+  return useQuery({
+    queryKey: ['marketing', 'marina-cruise-dinners', limit, listingPageOnly],
+    queryFn: () =>
+      fetcher<{ data?: unknown[]; total?: number }>(
+        `/api/marina-cruise-dinners?${params.toString()}`
+      ),
+    ...defaultOptions,
+  });
+}
+
 // --- Surcharge master (date-range surcharges for offer packages) ---
 export function useSurchargeMaster() {
   return useQuery({

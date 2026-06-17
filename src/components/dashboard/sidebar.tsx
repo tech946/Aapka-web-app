@@ -156,6 +156,15 @@ export function Sidebar() {
                 })}
             </div>
 
+            {/* Marina Cruise Dinner */}
+            <Link
+              href='/dashboard/marina-cruise-dinner'
+              className={`sidebar_item ${pathname === '/dashboard/marina-cruise-dinner' ? 'active' : ''}`}
+            >
+              <Bus width={20} height={20} aria-hidden='true' />
+              <span>Marina Cruise Dinner</span>
+            </Link>
+
             {/* Payments - Super Admin only */}
             <Link
               href='/dashboard/payments'

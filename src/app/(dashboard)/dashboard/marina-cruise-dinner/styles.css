@@ -1,0 +1,55 @@
+/* Styles scoped for Marina Cruise Dinner admin page */
+
+.marina_cruise_page .heading_block h3 {
+  color: #0c4a6e;
+}
+
+.marina_toolbar {
+  padding-top: 0;
+}
+
+.category_toolbar {
+  padding-top: 0;
+}
+
+.category_back_pagination {
+  padding-top: 8px;
+}
+
+.itinerary_item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.itinerary_actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.itinerary_remove_btn {
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+/* Wider modal just for category pages */
+.category_modal {
+  width: 990px;
+}
+
+/* 3-column compact grid for short inputs */
+.form_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.form_grid .form_row {
+  margin: 0;
+}

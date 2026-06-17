@@ -1,6 +1,7 @@
 import BannerSection from './BannerSection';
 import EleganceSection from './EleganceSection';
 // import OfferPackagesSection from './OfferPackagesSection';
+import MarinaCruiseSection from './MarinaCruiseSection';
 import ToursSection from './ToursSection';
 import BlogsSection from './BlogsSection';
 import TestimonialsSection from './TestimonialsSection';
@@ -13,6 +14,7 @@ export default function Home() {
     <div>
       <BannerSection />
       {/* <OfferPackagesSection /> */}
+      <MarinaCruiseSection />
       <ToursSection />
       <EleganceSection />
       <BlogsSection />
