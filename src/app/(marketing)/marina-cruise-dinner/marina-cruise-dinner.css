@@ -623,6 +623,22 @@
   letter-spacing: 0.05em;
 }
 
+.marina-register-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fd6b06;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 0;
+  font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .package-card-image:has(.package-deal-badge) .package-new-badge {
   top: 48px;
 }

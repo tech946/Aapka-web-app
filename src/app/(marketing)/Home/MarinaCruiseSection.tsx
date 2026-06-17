@@ -194,6 +194,9 @@ export default function MarinaCruiseSection() {
                   >
                     <Link href={url} className='section-tour-card'>
                       <div className='section-tour-card-image'>
+                        {registrationMode && (
+                          <div className='marina-register-badge'>Registration</div>
+                        )}
                         <Image
                           src={pkg.thumbnail_image || '/images/package-1.png'}
                           alt={pkg.package_name}

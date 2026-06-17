@@ -117,6 +117,9 @@ function MarinaPackageCard({ pkg }: { pkg: MarinaPackage }) {
     <div className='suites-card' ref={cardRef}>
       <div className='suites-card-image' ref={imageRef}>
         {isNew && <div className='package-new-badge'>New</div>}
+        {registrationMode && (
+          <div className='marina-register-badge'>Registration</div>
+        )}
         {pkg.thumbnail_image?.trim() ? (
           <img
             src={pkg.thumbnail_image}
