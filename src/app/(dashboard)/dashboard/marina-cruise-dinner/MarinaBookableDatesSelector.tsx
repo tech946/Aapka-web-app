@@ -36,8 +36,8 @@ export default function MarinaBookableDatesSelector({
     <div className='form_row full_width'>
       <label>Select Dates</label>
       <p className='tour-booking-days-hint'>
-        Add specific calendar dates in addition to the available booking days
-        above. Customers can book on a selected weekday or any date listed here.
+        Add specific calendar dates customers can book. Required if no booking
+        days are selected above; otherwise optional extras on top of weekdays.
       </p>
       <div className='date_input_group'>
         <input

@@ -325,7 +325,7 @@ export default function CartPage() {
                     </div>
                   )}
 
-                  {/* Add-ons (below Visa) - offer packages only */}
+                  {/* Add-ons (below Visa) - offer packages */}
                   {item.categorySlug === 'offer-packages' && (() => {
                     const ids: string[] = [
                       ...(item.addonDeals || []),
@@ -360,6 +360,25 @@ export default function CartPage() {
                       </div>
                     );
                   })()}
+
+                  {/* Marina cruise add-ons */}
+                  {item.categorySlug === 'marina-cruise-dinner' &&
+                    (item.marinaAddonLabels?.length || item.marinaAddons?.length) ? (
+                    <div className='cart-item-addons'>
+                      <span className='cart-item-addons-label'>Add-ons:</span>
+                      {(item.marinaAddonLabels?.length
+                        ? item.marinaAddonLabels
+                        : item.marinaAddons || []
+                      ).map(label => (
+                        <span
+                          key={label}
+                          className='cart-item-addon-badge'
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className='cart-item-price-section'>

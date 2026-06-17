@@ -1,9 +1,99 @@
 /**
  * Configuration for Marina Cruise Dinner (standalone entity, not part of tour packages)
  */
-import { isDateOnTourBookingDay } from '@/lib/tour-booking-days';
 
 export const MARINA_CRUISE_SLUG = 'marina-cruise-dinner' as const;
+
+export type MarinaRegistrationFields = {
+  registration_only?: boolean | null;
+  registration_adult_price?: number | null;
+  registration_child_price?: number | null;
+  adult_price?: number | null;
+  child_price?: number | null;
+  package_price?: number | null;
+};
+
+export function hasMarinaRegularPricing(
+  pkg: MarinaRegistrationFields | null | undefined
+): boolean {
+  if (!pkg) return false;
+  const ap = Number(pkg.adult_price) || 0;
+  const cp = Number(pkg.child_price) || 0;
+  const pp = Number(pkg.package_price) || 0;
+  return ap > 0 || cp > 0 || pp > 0;
+}
+
+/** Registration-only when flag is on and no regular adult/child/package price. */
+export function isMarinaRegistrationMode(
+  pkg: MarinaRegistrationFields | null | undefined
+): boolean {
+  if (!pkg?.registration_only) return false;
+  return !hasMarinaRegularPricing(pkg);
+}
+
+export function getMarinaRegistrationPrices(
+  pkg: MarinaRegistrationFields | null | undefined
+): { adultPrice: number; childPrice: number } {
+  return {
+    adultPrice: Number(pkg?.registration_adult_price) || 0,
+    childPrice: Number(pkg?.registration_child_price) || 0,
+  };
+}
+
+export type MarinaAddon = {
+  id: string;
+  name: string;
+  adult_price: number | null;
+  child_price: number | null;
+};
+
+export function parseMarinaAddons(raw: unknown): MarinaAddon[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')
+    .map(a => ({
+      id: String(a.id ?? ''),
+      name: String(a.name ?? '').trim(),
+      adult_price:
+        a.adult_price != null && a.adult_price !== ''
+          ? Number(a.adult_price)
+          : null,
+      child_price:
+        a.child_price != null && a.child_price !== ''
+          ? Number(a.child_price)
+          : null,
+    }))
+    .filter(a => a.id && a.name);
+}
+
+export function calcMarinaAddonsPrice(
+  allAddons: MarinaAddon[] | unknown,
+  selectedIds: string[] | undefined,
+  adults: number,
+  children: number
+): number {
+  const ids = selectedIds?.filter(Boolean) || [];
+  if (!ids.length) return 0;
+  const list = parseMarinaAddons(allAddons);
+  let total = 0;
+  for (const id of ids) {
+    const addon = list.find(a => a.id === id);
+    if (!addon) continue;
+    total += (Number(addon.adult_price) || 0) * adults;
+    total += (Number(addon.child_price) || 0) * children;
+  }
+  return total;
+}
+
+export function getMarinaAddonLabels(
+  allAddons: MarinaAddon[] | unknown,
+  selectedIds: string[] | undefined
+): string[] {
+  const list = parseMarinaAddons(allAddons);
+  return (selectedIds || [])
+    .map(id => list.find(a => a.id === id)?.name)
+    .filter((n): n is string => Boolean(n));
+}
 
 export function formatMarinaDateYmd(date: Date): string {
   return toDateString(date.getFullYear(), date.getMonth() + 1, date.getDate());
@@ -16,8 +106,92 @@ export function isMarinaCruiseDateBookable(
   bookableDates: string[] | null | undefined
 ): boolean {
   const dateStr = formatMarinaDateYmd(date);
-  if (bookableDates?.includes(dateStr)) return true;
-  return isDateOnTourBookingDay(date, bookingDays);
+  const days = Array.isArray(bookingDays)
+    ? bookingDays.filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+    : [];
+  const dates = Array.isArray(bookableDates) ? bookableDates : [];
+
+  if (dates.includes(dateStr)) return true;
+  if (days.length > 0) return days.includes(date.getDay());
+  return false;
+}
+
+export type MarinaCalendarBounds = { fromMonth: Date; toMonth: Date };
+
+/** Limit month navigation to months that have at least one selectable date. */
+export function getMarinaCruiseCalendarBounds(
+  bookingDays: number[] | null | undefined,
+  bookableDates: string[] | null | undefined,
+  now: Date = new Date()
+): MarinaCalendarBounds | null {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const days = Array.isArray(bookingDays)
+    ? bookingDays.filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+    : [];
+  const dates = Array.isArray(bookableDates) ? bookableDates.filter(Boolean) : [];
+
+  const monthKeys = new Set<number>();
+
+  const considerDate = (date: Date) => {
+    const normalized = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    if (normalized.getTime() <= tomorrow.getTime()) return;
+    if (!isMarinaCruiseDateBookable(normalized, bookingDays, dates)) return;
+    monthKeys.add(normalized.getFullYear() * 12 + normalized.getMonth());
+  };
+
+  for (const dateStr of dates) {
+    const ymd = dateStr.split('T')[0];
+    const [y, m, d] = ymd.split('-').map(Number);
+    if (!y || !m || !d) continue;
+    considerDate(new Date(y, m - 1, d));
+  }
+
+  if (days.length > 0) {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    for (let offset = 0; offset < 24; offset++) {
+      const monthStart = new Date(
+        start.getFullYear(),
+        start.getMonth() + offset,
+        1
+      );
+      const daysInMonth = new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() + 1,
+        0
+      ).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        considerDate(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), day)
+        );
+      }
+    }
+  }
+
+  if (monthKeys.size === 0) return null;
+
+  const sorted = [...monthKeys].sort((a, b) => a - b);
+  const min = sorted[0];
+  const max = sorted[sorted.length - 1];
+  return {
+    fromMonth: new Date(Math.floor(min / 12), min % 12, 1),
+    toMonth: new Date(Math.floor(max / 12), max % 12, 1),
+  };
+}
+
+export function getMarinaCruiseInitialMonth(
+  bookingDays: number[] | null | undefined,
+  bookableDates: string[] | null | undefined,
+  now: Date = new Date()
+): Date | null {
+  return getMarinaCruiseCalendarBounds(bookingDays, bookableDates, now)
+    ?.fromMonth ?? null;
 }
 
 export function usesBookingSlots(_categorySlug?: string): boolean {

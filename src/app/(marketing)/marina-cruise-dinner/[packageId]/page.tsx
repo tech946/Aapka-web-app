@@ -36,6 +36,12 @@ import {
   isDateOnTourWeekendRange,
   isTourWeekendRangeExtraDate,
   isMarinaCruiseDateBookable,
+  isMarinaRegistrationMode,
+  getMarinaRegistrationPrices,
+  parseMarinaAddons,
+  calcMarinaAddonsPrice,
+  getMarinaCruiseInitialMonth,
+  type MarinaAddon,
 } from '@/lib/marina-cruise-config';
 import {
   getPackageDisplayImages,
@@ -89,6 +95,9 @@ interface Package {
   package_category_id?: string;
   adult_price?: number | null;
   child_price?: number | null;
+  registration_only?: boolean | null;
+  registration_adult_price?: number | null;
+  registration_child_price?: number | null;
   infant_price?: number | null;
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
@@ -124,6 +133,7 @@ interface Package {
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   bookable_dates?: string[] | null;
   booking_days?: number[] | null;
+  addons?: MarinaAddon[] | null;
   // Date ranges for flexible date packages (stored as JSONB in packages table)
   date_ranges?: DateRange[] | null;
   end_date?: string | null;
@@ -226,6 +236,43 @@ export default function PackageDetailsPage() {
     () => (Array.isArray(transfersRaw) ? transfersRaw.map((t: any) => ({ ...t, id: String(t?.id ?? ''), adult_price: t?.adult_price ?? 0, child_price: t?.child_price ?? 0, infant_price: t?.infant_price ?? 0 })) : []),
     [transfersRaw]
   );
+
+  /* Marina cruise add-ons (from package JSONB) */
+  const marinaAddonsList = useMemo(
+    () => parseMarinaAddons(pkg?.addons),
+    [pkg?.addons]
+  );
+  const [selectedMarinaAddons, setSelectedMarinaAddons] = useState<string[]>([]);
+  const toggleMarinaAddon = useCallback((id: string) => {
+    setSelectedMarinaAddons(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }, []);
+  const marinaAddonPriceTotal = useMemo(() => {
+    const adults = isSoloTraveller ? 1 : persons.adult;
+    const children = isSoloTraveller ? 0 : persons.child;
+    return calcMarinaAddonsPrice(
+      marinaAddonsList,
+      selectedMarinaAddons,
+      adults,
+      children
+    );
+  }, [
+    marinaAddonsList,
+    selectedMarinaAddons,
+    persons.adult,
+    persons.child,
+    isSoloTraveller,
+  ]);
+
+  useEffect(() => {
+    if (!pkg) return;
+    const initialMonth = getMarinaCruiseInitialMonth(
+      pkg.booking_days,
+      pkg.bookable_dates
+    );
+    if (initialMonth) setMonth(initialMonth);
+  }, [pkg?.package_id, pkg?.booking_days, pkg?.bookable_dates]);
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -848,13 +895,23 @@ export default function PackageDetailsPage() {
         }
       }
     } else {
-      // For non-flexible date packages, use package base prices
-      basePrices = {
-        adultPrice: pkg?.adult_price || 0,
-        childPrice: pkg?.child_price || 0,
-        infantPrice: pkg?.infant_price || 0,
-        soloTravellerPrice: pkg?.solo_traveller_price || null,
-      };
+      if (slug === 'marina-cruise-dinner' && isMarinaRegistrationMode(pkg)) {
+        const reg = getMarinaRegistrationPrices(pkg);
+        basePrices = {
+          adultPrice: reg.adultPrice,
+          childPrice: reg.childPrice,
+          infantPrice: 0,
+          soloTravellerPrice: null,
+        };
+      } else {
+        // For non-flexible date packages, use package base prices
+        basePrices = {
+          adultPrice: pkg?.adult_price || 0,
+          childPrice: pkg?.child_price || 0,
+          infantPrice: pkg?.infant_price || 0,
+          soloTravellerPrice: pkg?.solo_traveller_price || null,
+        };
+      }
     }
 
     // Apply deal prices if active deal exists
@@ -944,7 +1001,7 @@ export default function PackageDetailsPage() {
       // getPricesForDate already applies deal prices if active
       const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
       const visaPrice = getVisaPrice();
-      const addonPrice = slug === 'offer-packages' ? addonPriceTotal : 0;
+      const addonPrice = slug === 'offer-packages' ? addonPriceTotal : marinaAddonPriceTotal;
       let finalSoloPrice = soloPrice + visaPrice + addonPrice + selectedDateSurcharge;
       if (hasActiveAgentSubscription && (pkg?.agent_discount ?? 0) > 0) {
         finalSoloPrice = Math.max(0, finalSoloPrice - (finalSoloPrice * (pkg.agent_discount ?? 0)) / 100);
@@ -1005,7 +1062,7 @@ export default function PackageDetailsPage() {
 
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
-    const addonPrice = slug === 'offer-packages' ? addonPriceTotal : 0;
+    const addonPrice = slug === 'offer-packages' ? addonPriceTotal : marinaAddonPriceTotal;
     let finalPrice = totalPrice + visaPrice + addonPrice + selectedDateSurcharge;
 
     // Apply discount logic:
@@ -1070,6 +1127,7 @@ export default function PackageDetailsPage() {
     hasActiveAgentSubscription,
     referralData,
     addonPriceTotal,
+    marinaAddonPriceTotal,
     selectedDateSurcharge,
   ]);
 
@@ -1353,7 +1411,8 @@ export default function PackageDetailsPage() {
 
   const handleAddToCart = () => {
     if (!pkg) return;
-    if (isPackagePriceRevealingSoon(pkg)) {
+    const registrationMode = isMarinaRegistrationMode(pkg);
+    if (!registrationMode && isPackagePriceRevealingSoon(pkg)) {
       toast.error('This package is not available for booking yet.');
       return;
     }
@@ -1462,6 +1521,8 @@ export default function PackageDetailsPage() {
         slug === 'offer-packages' && addonPrivateTransfers.length > 0
           ? addonPrivateTransfers
           : undefined,
+      marinaAddons:
+        selectedMarinaAddons.length > 0 ? selectedMarinaAddons : undefined,
     };
 
     addToCart(cartItem);
@@ -1660,7 +1721,10 @@ export default function PackageDetailsPage() {
         : pkg.package_price || 0;
   const originalPrice = getOriginalPrice();
 
-  const isPriceRevealingSoon = isPackagePriceRevealingSoon(pkg);
+  const isRegistrationMode = isMarinaRegistrationMode(pkg);
+  const isPriceRevealingSoon =
+    !isRegistrationMode && isPackagePriceRevealingSoon(pkg);
+  const primaryActionLabel = isRegistrationMode ? 'Register' : 'Add to Cart';
 
   // Determine which discount applies for display
   const hasAnyDiscount =
@@ -1697,7 +1761,14 @@ export default function PackageDetailsPage() {
         <div className='package-hero-details'>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
           <div className='package-hero-pricing'>
-            {isPriceRevealingSoon ? (
+            {isRegistrationMode ? (
+              <span
+                role='status'
+                className='package-price-revealing-soon package-price-revealing-soon--hero'
+              >
+                Register
+              </span>
+            ) : isPriceRevealingSoon ? (
               <PackagePriceRevealingSoonLabel variant='hero' />
             ) : (
             <span className='package-hero-price-current'>
@@ -1721,7 +1792,7 @@ export default function PackageDetailsPage() {
             </p>
           )}
           {/* Price Breakdown */}
-          {!isPriceRevealingSoon &&
+          {(!isPriceRevealingSoon || isRegistrationMode) &&
             (() => {
             const prices = getPricesForDate();
             const hasPricing =
@@ -1754,7 +1825,9 @@ export default function PackageDetailsPage() {
               <div className='package-hero-price-breakdown'>
                 {prices.adultPrice > 0 && (
                   <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>Adult</span>
+                    <span className='package-hero-price-item-label'>
+                      {isRegistrationMode ? 'Registration Adult' : 'Adult'}
+                    </span>
                     <span className='package-hero-price-item-age'>
                       12+ Years
                     </span>
@@ -1785,7 +1858,9 @@ export default function PackageDetailsPage() {
                 )}
                 {prices.childPrice > 0 && (
                   <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>Child</span>
+                    <span className='package-hero-price-item-label'>
+                      {isRegistrationMode ? 'Registration Child' : 'Child'}
+                    </span>
                     <span className='package-hero-price-item-age'>
                       2-8 Years
                     </span>
@@ -1873,7 +1948,7 @@ export default function PackageDetailsPage() {
               </div>
             );
           })()}
-          {isPriceRevealingSoon ? null : (
+          {(isRegistrationMode || !isPriceRevealingSoon) ? (
           <div className='package-hero-buttons'>
             <button
               ref={addToCartButtonRef}
@@ -1887,10 +1962,10 @@ export default function PackageDetailsPage() {
               }}
             >
               <ShoppingCartIcon ref={addToCartIconRef} size={24} />
-              Add to Cart
+              {primaryActionLabel}
             </button>
           </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -2001,6 +2076,16 @@ export default function PackageDetailsPage() {
         dateRangesReady={dateRangesReady}
         handleAddToCart={handleAddToCart}
         showAddons={false}
+        primaryActionLabel={primaryActionLabel}
+        showUnitPriceBreakdown={
+          isRegistrationMode ||
+          marinaAddonsList.length > 0 ||
+          selectedMarinaAddons.length > 0
+        }
+        unitPriceLabelPrefix={isRegistrationMode ? 'Registration' : undefined}
+        marinaAddons={marinaAddonsList}
+        selectedMarinaAddons={selectedMarinaAddons}
+        onToggleMarinaAddon={toggleMarinaAddon}
         surcharges={slug === 'offer-packages' ? surchargeMaster : []}
         selectedDateSurcharge={selectedDateSurcharge}
       />

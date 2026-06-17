@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { X, Users, Calendar, ChevronDown, Plus, Minus } from 'lucide-react';
 import { AddonsSection } from '@/components/marketing/AddonsModal/AddonsSection';
 import { DayPicker } from 'react-day-picker';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { shouldShowOptionalVisaInBookingModal } from '@/lib/package-visa';
@@ -15,6 +15,9 @@ import {
   hasTourFixedBookingDates,
 } from '@/lib/package-config';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
+import { MarinaAddonsSection } from '@/components/marketing/MarinaAddonsSection/MarinaAddonsSection';
+import type { MarinaAddon } from '@/lib/marina-cruise-config';
+import { getMarinaCruiseCalendarBounds } from '@/lib/marina-cruise-config';
 import './booking-modal.css';
 
 function calendarMonthKey(date: Date): number {
@@ -181,6 +184,15 @@ interface BookingModalProps {
   /** Date-range surcharges (offer packages) */
   surcharges?: Array<{ id: string; price: number; from_date: string; to_date: string }>;
   selectedDateSurcharge?: number;
+  /** Override primary CTA label (e.g. Register for marina registration-only) */
+  primaryActionLabel?: string;
+  /** Show per-person unit prices above total (marina registration) */
+  showUnitPriceBreakdown?: boolean;
+  unitPriceLabelPrefix?: string;
+  /** Marina cruise add-ons from package JSONB */
+  marinaAddons?: MarinaAddon[];
+  selectedMarinaAddons?: string[];
+  onToggleMarinaAddon?: (id: string) => void;
 }
 
 export default function BookingModal({
@@ -251,7 +263,35 @@ export default function BookingModal({
   addonNights = 0,
   surcharges = [],
   selectedDateSurcharge = 0,
+  primaryActionLabel = 'Add to Cart',
+  showUnitPriceBreakdown = false,
+  unitPriceLabelPrefix,
+  marinaAddons = [],
+  selectedMarinaAddons = [],
+  onToggleMarinaAddon,
 }: BookingModalProps) {
+  const isMarinaCruise = slug === 'marina-cruise-dinner';
+
+  const marinaCalendarBounds = useMemo(() => {
+    if (!isMarinaCruise || !pkg) return null;
+    return getMarinaCruiseCalendarBounds(pkg.booking_days, pkg.bookable_dates);
+  }, [isMarinaCruise, pkg?.booking_days, pkg?.bookable_dates]);
+
+  useEffect(() => {
+    if (!isOpen || !isMarinaCruise || !marinaCalendarBounds) return;
+    const key = calendarMonthKey(month);
+    const from = calendarMonthKey(marinaCalendarBounds.fromMonth);
+    const to = calendarMonthKey(marinaCalendarBounds.toMonth);
+    if (key < from) setMonth(marinaCalendarBounds.fromMonth);
+    else if (key > to) setMonth(marinaCalendarBounds.toMonth);
+  }, [
+    isOpen,
+    isMarinaCruise,
+    marinaCalendarBounds,
+    month,
+    setMonth,
+  ]);
+
   useEffect(() => {
     if (!isOpen || !isMobile || !showDatePicker || !datePickerRef.current) return;
     const timer = window.setTimeout(() => {
@@ -271,10 +311,20 @@ export default function BookingModal({
   const weekendRangeCalendarBounds = getTourWeekendRangeCalendarBounds(
     pkg?.package_id
   );
+  const calendarBounds = isMarinaCruise
+    ? marinaCalendarBounds
+    : weekendRangeCalendarBounds;
 
-  const calendarClassName = isMobile
-    ? 'mobile-custom-calendar booking-modal-calendar'
-    : 'custom-calendar booking-modal-calendar';
+  const calendarClassName = [
+    isMobile
+      ? 'mobile-custom-calendar booking-modal-calendar'
+      : 'custom-calendar booking-modal-calendar',
+    slug === 'marina-cruise-dinner' ? 'marina-cruise-calendar' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const marinaHideToday = isMarinaCruise ? startOfDay(new Date()) : undefined;
 
   const calendarNavButtonClass = isMobile
     ? 'mobile-calendar-nav-button'
@@ -773,14 +823,20 @@ export default function BookingModal({
                           onSelect={handleDateSelect}
                           disabled={getDisabledDates}
                           numberOfMonths={1}
-                          showOutsideDays={true}
+                          showOutsideDays={!isMarinaCruise}
                           month={month}
                           onMonthChange={setMonth}
-                          fromMonth={weekendRangeCalendarBounds?.fromMonth}
-                          toMonth={weekendRangeCalendarBounds?.toMonth}
+                          fromMonth={calendarBounds?.fromMonth}
+                          toMonth={calendarBounds?.toMonth}
                           className={calendarClassName}
+                          modifiers={
+                            marinaHideToday
+                              ? { hidden: marinaHideToday }
+                              : undefined
+                          }
                           modifiersClassNames={{
                             disabled: 'rdp-day_unavailable',
+                            ...(isMarinaCruise ? { hidden: 'rdp-day_hidden' } : {}),
                           }}
                           components={{
                             Nav: () => null,
@@ -788,9 +844,7 @@ export default function BookingModal({
                               <BookingInlineMonthCaption
                                 calendarMonth={captionProps.calendarMonth}
                                 setMonth={setMonth}
-                                weekendRangeCalendarBounds={
-                                  weekendRangeCalendarBounds
-                                }
+                                weekendRangeCalendarBounds={calendarBounds}
                                 navButtonClass={calendarNavButtonClass}
                               />
                             ),
@@ -842,8 +896,77 @@ export default function BookingModal({
             />
           )}
 
+          {/* Marina cruise add-ons */}
+          {slug === 'marina-cruise-dinner' &&
+            marinaAddons.length > 0 &&
+            onToggleMarinaAddon && (
+              <MarinaAddonsSection
+                addons={marinaAddons}
+                selectedIds={selectedMarinaAddons}
+                onToggle={onToggleMarinaAddon}
+                adults={isSoloTraveller ? 1 : persons.adult}
+                children={isSoloTraveller ? 0 : persons.child}
+              />
+            )}
+
           {/* Price Section */}
           <div className={priceSectionClass}>
+            {showUnitPriceBreakdown && (() => {
+              const prices = getPricesForDate();
+              const prefix = unitPriceLabelPrefix ? `${unitPriceLabelPrefix} ` : '';
+              const marinaAddonRows =
+                slug === 'marina-cruise-dinner' && selectedMarinaAddons.length > 0
+                  ? marinaAddons.filter(a => selectedMarinaAddons.includes(a.id))
+                  : [];
+              const adults = isSoloTraveller ? 1 : persons.adult;
+              const children = isSoloTraveller ? 0 : persons.child;
+              return (
+                <div className='booking-unit-price-breakdown'>
+                  {prices.adultPrice > 0 && persons.adult > 0 && (
+                    <div className={`${isMobile ? 'mobile-booking-price-row' : 'booking-price-row'} booking-unit-price-row`}>
+                      <span className={isMobile ? 'mobile-booking-price-label' : 'booking-price-label'}>
+                        {prefix}Adult × {persons.adult}
+                      </span>
+                      <span className={isMobile ? 'mobile-booking-price-amount' : 'booking-price-amount'}>
+                        {formatPrice(prices.adultPrice * persons.adult)}
+                      </span>
+                    </div>
+                  )}
+                  {prices.childPrice > 0 && persons.child > 0 && (
+                    <div className={`${isMobile ? 'mobile-booking-price-row' : 'booking-price-row'} booking-unit-price-row`}>
+                      <span className={isMobile ? 'mobile-booking-price-label' : 'booking-price-label'}>
+                        {prefix}Child × {persons.child}
+                      </span>
+                      <span className={isMobile ? 'mobile-booking-price-amount' : 'booking-price-amount'}>
+                        {formatPrice(prices.childPrice * persons.child)}
+                      </span>
+                    </div>
+                  )}
+                  {marinaAddonRows.map(addon => {
+                    const lineTotal =
+                      (Number(addon.adult_price) || 0) * adults +
+                      (Number(addon.child_price) || 0) * children;
+                    if (lineTotal <= 0) return null;
+                    return (
+                      <div
+                        key={addon.id}
+                        className={`${isMobile ? 'mobile-booking-price-row' : 'booking-price-row'} booking-unit-price-row`}
+                      >
+                        <span className={isMobile ? 'mobile-booking-price-label' : 'booking-price-label'}>
+                          {addon.name}
+                        </span>
+                        <span className={isMobile ? 'mobile-booking-price-amount' : 'booking-price-amount'}>
+                          {formatPrice(lineTotal)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {(prices.adultPrice > 0 || prices.childPrice > 0 || marinaAddonRows.length > 0) && (
+                    <div className='booking-unit-price-divider' />
+                  )}
+                </div>
+              );
+            })()}
             {hasActiveAgentSubscription && agentDiscountAmount && agentDiscountAmount > 0 && priceBeforeAgentDiscount && (
               <>
                 <span className={`${isMobile ? 'mobile-booking-price-original' : 'booking-price-original'} agent-discount-original`}>
@@ -877,7 +1000,7 @@ export default function BookingModal({
           {/* Action Buttons */}
           <div className={actionsClass}>
             <button onClick={handleAddToCart} className={addToCartButtonClass}>
-              Add to Cart
+              {primaryActionLabel}
             </button>
           </div>
         </div>

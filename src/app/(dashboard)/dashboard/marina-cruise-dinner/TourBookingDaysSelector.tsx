@@ -9,15 +9,18 @@ import './tour-booking-days.css';
 type TourBookingDaysSelectorProps = {
   selectedDays: number[];
   onSelectedDaysChange: (days: number[]) => void;
+  /** When true, all days can be deselected (requires specific dates instead). */
+  allowEmpty?: boolean;
 };
 
 export default function TourBookingDaysSelector({
   selectedDays,
   onSelectedDaysChange,
+  allowEmpty = false,
 }: TourBookingDaysSelectorProps) {
   const toggleDay = (day: number) => {
     if (selectedDays.includes(day)) {
-      if (selectedDays.length <= 1) return;
+      if (!allowEmpty && selectedDays.length <= 1) return;
       onSelectedDaysChange(selectedDays.filter(d => d !== day));
       return;
     }
@@ -25,18 +28,25 @@ export default function TourBookingDaysSelector({
   };
 
   const selectAll = () => onSelectedDaysChange([...ALL_TOUR_BOOKING_DAYS]);
+  const clearAll = () => onSelectedDaysChange([]);
 
   return (
     <div className='form_row full_width'>
-      <label>Available Booking Days *</label>
+      <label>Available Booking Days{allowEmpty ? '' : ' *'}</label>
       <p className='tour-booking-days-hint'>
-        Select which days of the week customers can book this tour. Only these
-        days will be selectable on the website calendar.
+        {allowEmpty
+          ? 'Optional — select weekdays customers can book. If none are selected, add at least one specific date below.'
+          : 'Select which days of the week customers can book this tour. Only these days will be selectable on the website calendar.'}
       </p>
       <div className='tour-booking-days-toolbar'>
         <button type='button' className='tour-booking-days-select-all' onClick={selectAll}>
           Select all
         </button>
+        {allowEmpty && (
+          <button type='button' className='tour-booking-days-select-all' onClick={clearAll}>
+            Clear all
+          </button>
+        )}
       </div>
       <div className='tour-booking-days-grid'>
         {TOUR_WEEKDAYS.map(({ value, label, short }) => {

@@ -751,6 +751,7 @@ function CheckoutPageContent() {
             addonDeals: item.addonDeals && item.addonDeals.length > 0 ? item.addonDeals : null,
             addonHotelServices: item.addonHotelServices && item.addonHotelServices.length > 0 ? item.addonHotelServices : null,
             addonPrivateTransfers: item.addonPrivateTransfers && item.addonPrivateTransfers.length > 0 ? item.addonPrivateTransfers : null,
+            marinaAddons: item.marinaAddons && item.marinaAddons.length > 0 ? item.marinaAddons : null,
           })),
           passengers: passengersWithBase64,
           infantDocuments: infantDocumentsBase64,
@@ -1659,6 +1660,20 @@ function CheckoutPageContent() {
                           </div>
                         );
                       })()}
+                      {item.categorySlug === 'marina-cruise-dinner' &&
+                        (item.marinaAddonLabels?.length || item.marinaAddons?.length) ? (
+                        <div className='package-addons'>
+                          <span className='package-addons-label'>Add-ons:</span>
+                          {(item.marinaAddonLabels?.length
+                            ? item.marinaAddonLabels
+                            : item.marinaAddons || []
+                          ).map(label => (
+                            <span key={label} className='package-addon-badge'>
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                       {item.hasActiveDeal && (
                         <span className='checkout-discount-badge' style={{ 
                           background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',

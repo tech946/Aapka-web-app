@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const SELECT_FIELDS =
-  'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, bookable_dates, booking_days, pickup_location, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, crm_package_id, created_at';
+  'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, registration_only, registration_adult_price, registration_child_price, bookable_dates, booking_days, pickup_location, addons, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, crm_package_id, created_at';
 
 function parseBookableDates(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
@@ -14,6 +14,24 @@ function parseBookableDates(value: unknown): string[] | null {
     .map(d => String(d).trim())
     .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
   return dates;
+}
+
+function parseBookingDays(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (d: unknown) =>
+      Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
+  );
+}
+
+function validateMarinaBookingAvailability(
+  bookingDays: number[],
+  bookableDates: string[]
+): string | null {
+  if (bookingDays.length === 0 && bookableDates.length === 0) {
+    return 'Select at least one booking day or add at least one specific date';
+  }
+  return null;
 }
 
 export async function GET(req: NextRequest) {
@@ -111,17 +129,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let bookableDates: string[] | null = null;
+    let bookableDates: string[] = [];
     if (body?.bookable_dates !== undefined) {
       bookableDates = parseBookableDates(body.bookable_dates) ?? [];
     }
 
-    let bookingDays: number[] | null = null;
-    if (Array.isArray(body?.booking_days)) {
-      bookingDays = body.booking_days.filter(
-        (d: unknown) =>
-          Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
-      );
+    const bookingDays = parseBookingDays(body?.booking_days);
+
+    const bookingError = validateMarinaBookingAvailability(
+      bookingDays,
+      bookableDates
+    );
+    if (bookingError) {
+      return NextResponse.json({ error: bookingError }, { status: 400 });
     }
 
     const insertData: Record<string, unknown> = {
@@ -169,12 +189,31 @@ export async function POST(req: NextRequest) {
           : null,
     };
 
-    if (bookableDates !== null) {
-      insertData.bookable_dates = bookableDates.length > 0 ? bookableDates : null;
+    if (bookableDates.length > 0) {
+      insertData.bookable_dates = bookableDates;
+    } else {
+      insertData.bookable_dates = null;
     }
-    if (bookingDays !== null) {
-      insertData.booking_days = bookingDays.length > 0 ? bookingDays : null;
+
+    if (body?.addons !== undefined) {
+      insertData.addons = Array.isArray(body.addons) && body.addons.length > 0
+        ? body.addons
+        : null;
     }
+    if (body?.registration_only !== undefined) {
+      insertData.registration_only = Boolean(body.registration_only);
+    }
+    if (body?.registration_adult_price !== undefined) {
+      insertData.registration_adult_price = parseOptionalNumber(
+        body.registration_adult_price
+      );
+    }
+    if (body?.registration_child_price !== undefined) {
+      insertData.registration_child_price = parseOptionalNumber(
+        body.registration_child_price
+      );
+    }
+    insertData.booking_days = bookingDays.length > 0 ? bookingDays : null;
 
     const { data, error } = await supabaseAdmin
       .from('marina_cruise_dinners')
@@ -244,13 +283,16 @@ export async function PUT(req: NextRequest) {
       updates.bookable_dates = dates.length > 0 ? dates : null;
     }
     if (body?.booking_days !== undefined) {
-      const days = Array.isArray(body.booking_days)
-        ? body.booking_days.filter(
-            (d: unknown) =>
-              Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6
-          )
-        : null;
-      updates.booking_days = days && days.length > 0 ? days : null;
+      const days = parseBookingDays(body.booking_days);
+      updates.booking_days = days.length > 0 ? days : null;
+    }
+    if (body?.booking_days !== undefined && body?.bookable_dates !== undefined) {
+      const days = parseBookingDays(body.booking_days);
+      const dates = parseBookableDates(body.bookable_dates) ?? [];
+      const bookingError = validateMarinaBookingAvailability(days, dates);
+      if (bookingError) {
+        return NextResponse.json({ error: bookingError }, { status: 400 });
+      }
     }
     if (body?.pickup_location !== undefined) {
       updates.pickup_location = String(body.pickup_location).trim() || null;
@@ -277,6 +319,28 @@ export async function PUT(req: NextRequest) {
         body.crm_package_id === null || body.crm_package_id === ''
           ? null
           : String(body.crm_package_id).trim();
+    }
+    if (body?.addons !== undefined) {
+      updates.addons = Array.isArray(body.addons) && body.addons.length > 0
+        ? body.addons
+        : null;
+    }
+    if (body?.registration_only !== undefined) {
+      updates.registration_only = Boolean(body.registration_only);
+      if (!body.registration_only) {
+        updates.registration_adult_price = null;
+        updates.registration_child_price = null;
+      }
+    }
+    if (body?.registration_adult_price !== undefined) {
+      updates.registration_adult_price = parseOptionalNumber(
+        body.registration_adult_price
+      );
+    }
+    if (body?.registration_child_price !== undefined) {
+      updates.registration_child_price = parseOptionalNumber(
+        body.registration_child_price
+      );
     }
 
     if (Object.keys(updates).length === 0) {

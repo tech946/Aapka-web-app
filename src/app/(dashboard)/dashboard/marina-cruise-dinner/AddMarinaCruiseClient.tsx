@@ -10,6 +10,8 @@ import {
   deleteImageFromSupabase,
 } from '@/lib/supabase-storage';
 import MarinaBookableDatesSelector from './MarinaBookableDatesSelector';
+import MarinaAddonsEditor, { type MarinaAddon } from './MarinaAddonsEditor';
+import MarinaRegistrationPricing from './MarinaRegistrationPricing';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
 import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import '../dashboard.css';
@@ -26,6 +28,10 @@ export default function AddMarinaCruiseClient() {
   const [timing, setTiming] = useState('');
   const [adultPrice, setAdultPrice] = useState('');
   const [childPrice, setChildPrice] = useState('');
+  const [registrationOnly, setRegistrationOnly] = useState(false);
+  const [registrationAdultPrice, setRegistrationAdultPrice] = useState('');
+  const [registrationChildPrice, setRegistrationChildPrice] = useState('');
+  const [addons, setAddons] = useState<MarinaAddon[]>([]);
   const [bookableDates, setBookableDates] = useState<string[]>([]);
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
@@ -55,6 +61,10 @@ export default function AddMarinaCruiseClient() {
     setTiming('');
     setAdultPrice('');
     setChildPrice('');
+    setRegistrationOnly(false);
+    setRegistrationAdultPrice('');
+    setRegistrationChildPrice('');
+    setAddons([]);
     setBookableDates([]);
     setBookingDays([...ALL_TOUR_BOOKING_DAYS]);
     setPickupLocation('');
@@ -108,6 +118,12 @@ export default function AddMarinaCruiseClient() {
       toast.error('Adult price is required');
       return;
     }
+    if (bookingDays.length === 0 && bookableDates.length === 0) {
+      toast.error(
+        'Select at least one booking day or add at least one specific date'
+      );
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -121,6 +137,20 @@ export default function AddMarinaCruiseClient() {
           childPrice && !Number.isNaN(Number(childPrice))
             ? Number(childPrice)
             : null,
+        registration_only: registrationOnly,
+        registration_adult_price:
+          registrationOnly &&
+          registrationAdultPrice &&
+          !Number.isNaN(Number(registrationAdultPrice))
+            ? Number(registrationAdultPrice)
+            : null,
+        registration_child_price:
+          registrationOnly &&
+          registrationChildPrice &&
+          !Number.isNaN(Number(registrationChildPrice))
+            ? Number(registrationChildPrice)
+            : null,
+        addons: addons.length > 0 ? addons : [],
         bookable_dates: bookableDates,
         booking_days: bookingDays,
         pickup_location: pickupLocation.trim() || null,
@@ -228,6 +258,20 @@ export default function AddMarinaCruiseClient() {
                 />
               </div>
             </div>
+            <MarinaRegistrationPricing
+              enabled={registrationOnly}
+              adultPrice={registrationAdultPrice}
+              childPrice={registrationChildPrice}
+              onEnabledChange={checked => {
+                setRegistrationOnly(checked);
+                if (!checked) {
+                  setRegistrationAdultPrice('');
+                  setRegistrationChildPrice('');
+                }
+              }}
+              onAdultPriceChange={setRegistrationAdultPrice}
+              onChildPriceChange={setRegistrationChildPrice}
+            />
           </div>
 
           <div className='form_section'>
@@ -235,6 +279,7 @@ export default function AddMarinaCruiseClient() {
             <TourBookingDaysSelector
               selectedDays={bookingDays}
               onSelectedDaysChange={setBookingDays}
+              allowEmpty
             />
             <MarinaBookableDatesSelector
               dates={bookableDates}
@@ -249,6 +294,11 @@ export default function AddMarinaCruiseClient() {
                 placeholder='e.g. Dubai Marina Hotel lobby'
               />
             </div>
+          </div>
+
+          <div className='form_section'>
+            <h5 className='section_title'>Add-on Options</h5>
+            <MarinaAddonsEditor addons={addons} onChange={setAddons} />
           </div>
 
           <div className='form_section'>

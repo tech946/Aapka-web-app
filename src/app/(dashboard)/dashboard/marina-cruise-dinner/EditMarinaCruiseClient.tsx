@@ -11,6 +11,8 @@ import {
 } from '@/lib/supabase-storage';
 import { normalizePackageGallery } from '@/lib/package-gallery';
 import MarinaBookableDatesSelector from './MarinaBookableDatesSelector';
+import MarinaAddonsEditor, { type MarinaAddon } from './MarinaAddonsEditor';
+import MarinaRegistrationPricing from './MarinaRegistrationPricing';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
 import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import '../dashboard.css';
@@ -24,6 +26,9 @@ type Pkg = {
   package_price: number | null;
   adult_price?: number | null;
   child_price?: number | null;
+  registration_only?: boolean | null;
+  registration_adult_price?: number | null;
+  registration_child_price?: number | null;
   bookable_dates?: string[] | null;
   booking_days?: number[] | null;
   pickup_location?: string | null;
@@ -35,6 +40,7 @@ type Pkg = {
   holiday_description_html?: string | null;
   thumbnail_image?: string | null;
   gallery?: string[] | null;
+  addons?: MarinaAddon[] | null;
 };
 
 function numericInput(val: string) {
@@ -58,7 +64,11 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
   const [childPrice, setChildPrice] = useState(
     pkg.child_price != null ? String(pkg.child_price) : ''
   );
+  const [registrationOnly, setRegistrationOnly] = useState(false);
+  const [registrationAdultPrice, setRegistrationAdultPrice] = useState('');
+  const [registrationChildPrice, setRegistrationChildPrice] = useState('');
   const [status, setStatus] = useState(pkg.status || 'active');
+  const [addons, setAddons] = useState<MarinaAddon[]>([]);
   const [bookableDates, setBookableDates] = useState<string[]>([]);
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
@@ -94,14 +104,24 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
           : ''
     );
     setChildPrice(data.child_price != null ? String(data.child_price) : '');
+    setRegistrationOnly(Boolean(data.registration_only));
+    setRegistrationAdultPrice(
+      data.registration_adult_price != null
+        ? String(data.registration_adult_price)
+        : ''
+    );
+    setRegistrationChildPrice(
+      data.registration_child_price != null
+        ? String(data.registration_child_price)
+        : ''
+    );
     setStatus(data.status || 'active');
+    setAddons(Array.isArray(data.addons) ? data.addons : []);
     setBookableDates(
       Array.isArray(data.bookable_dates) ? data.bookable_dates : []
     );
     setBookingDays(
-      Array.isArray(data.booking_days) && data.booking_days.length > 0
-        ? data.booking_days
-        : [...ALL_TOUR_BOOKING_DAYS]
+      Array.isArray(data.booking_days) ? data.booking_days : []
     );
     setPickupLocation(data.pickup_location || '');
     setTermsHtml(data.terms_html || '');
@@ -172,6 +192,12 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
       toast.error('Adult price is required');
       return;
     }
+    if (bookingDays.length === 0 && bookableDates.length === 0) {
+      toast.error(
+        'Select at least one booking day or add at least one specific date'
+      );
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -189,7 +215,21 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
             childPrice && !Number.isNaN(Number(childPrice))
               ? Number(childPrice)
               : null,
+          registration_only: registrationOnly,
+          registration_adult_price:
+            registrationOnly &&
+            registrationAdultPrice &&
+            !Number.isNaN(Number(registrationAdultPrice))
+              ? Number(registrationAdultPrice)
+              : null,
+          registration_child_price:
+            registrationOnly &&
+            registrationChildPrice &&
+            !Number.isNaN(Number(registrationChildPrice))
+              ? Number(registrationChildPrice)
+              : null,
           status,
+          addons: addons.length > 0 ? addons : [],
           bookable_dates: bookableDates,
           booking_days: bookingDays,
           pickup_location: pickupLocation.trim() || null,
@@ -301,6 +341,20 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                     </select>
                   </div>
                 </div>
+                <MarinaRegistrationPricing
+                  enabled={registrationOnly}
+                  adultPrice={registrationAdultPrice}
+                  childPrice={registrationChildPrice}
+                  onEnabledChange={checked => {
+                    setRegistrationOnly(checked);
+                    if (!checked) {
+                      setRegistrationAdultPrice('');
+                      setRegistrationChildPrice('');
+                    }
+                  }}
+                  onAdultPriceChange={setRegistrationAdultPrice}
+                  onChildPriceChange={setRegistrationChildPrice}
+                />
               </div>
 
               <div className='form_section'>
@@ -308,6 +362,7 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                 <TourBookingDaysSelector
                   selectedDays={bookingDays}
                   onSelectedDaysChange={setBookingDays}
+                  allowEmpty
                 />
                 <MarinaBookableDatesSelector
                   dates={bookableDates}
@@ -321,6 +376,11 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                     onChange={e => setPickupLocation(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className='form_section'>
+                <h5 className='section_title'>Add-on Options</h5>
+                <MarinaAddonsEditor addons={addons} onChange={setAddons} />
               </div>
 
               <div className='form_section'>

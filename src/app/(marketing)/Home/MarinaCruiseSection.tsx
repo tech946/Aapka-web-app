@@ -7,6 +7,10 @@ import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import { generateShortSlug } from '@/lib/utils';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import {
+  isMarinaRegistrationMode,
+  getMarinaRegistrationPrices,
+} from '@/lib/marina-cruise-config';
 import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { useSliderDrag } from '@/lib/use-slider-drag';
 import { useMarinaCruiseDinners } from '@/hooks/use-marketing-queries';
@@ -18,6 +22,9 @@ interface MarinaPackage {
   package_price: number | null;
   adult_price?: number | null;
   child_price?: number | null;
+  registration_only?: boolean | null;
+  registration_adult_price?: number | null;
+  registration_child_price?: number | null;
   category?: string | null;
   timing?: string | null;
   thumbnail_image?: string | null;
@@ -39,7 +46,8 @@ function getPackageDescription(pkg: MarinaPackage): string {
       .replace(/\s+/g, ' ')
       .trim();
   if (pkg.overview?.trim()) return stripHtml(pkg.overview);
-  if (pkg.package_description?.trim()) return stripHtml(pkg.package_description);
+  if (pkg.package_description?.trim())
+    return stripHtml(pkg.package_description);
   if (pkg.holiday_description_html?.trim())
     return stripHtml(pkg.holiday_description_html);
   return '';
@@ -53,7 +61,7 @@ function getMetaLabel(_pkg: MarinaPackage): string {
 export default function MarinaCruiseSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { data, isLoading: loading } = useMarinaCruiseDinners({ limit: 20 });
-  const packages = ((data?.data ?? []) as unknown) as MarinaPackage[];
+  const packages = (data?.data ?? []) as unknown as MarinaPackage[];
   const cardsRef = useRef<HTMLDivElement>(null);
   const [cardsPerView, setCardsPerView] = useState(3);
 
@@ -95,8 +103,7 @@ export default function MarinaCruiseSection() {
   const sliderDrag = useSliderDrag({
     onSwipeLeft: () =>
       setCurrentIndex(p => Math.min(maxIndex, p + cardsPerView)),
-    onSwipeRight: () =>
-      setCurrentIndex(p => Math.max(0, p - cardsPerView)),
+    onSwipeRight: () => setCurrentIndex(p => Math.max(0, p - cardsPerView)),
   });
 
   if (loading) {
@@ -130,7 +137,7 @@ export default function MarinaCruiseSection() {
             <span>Marina Cruise</span>
           </div>
           <h2 className='section-heading-pill'>
-            Premium dhow cruise dinners on Dubai Marina.
+            Premium cruise dinners on Dubai Marina.
           </h2>
         </header>
 
@@ -158,11 +165,16 @@ export default function MarinaCruiseSection() {
                   pkg.package_id
                 );
                 const url = `/marina-cruise-dinner/${packageSlug}`;
-                const revealing = isPackagePriceRevealingSoon(pkg);
-                const hasAdult =
-                  pkg.adult_price != null && pkg.adult_price > 0;
-                const hasChild =
-                  pkg.child_price != null && pkg.child_price > 0;
+                const registrationMode = isMarinaRegistrationMode(pkg);
+                const revealing =
+                  !registrationMode && isPackagePriceRevealingSoon(pkg);
+                const regPrices = getMarinaRegistrationPrices(pkg);
+                const hasAdult = registrationMode
+                  ? regPrices.adultPrice > 0
+                  : pkg.adult_price != null && pkg.adult_price > 0;
+                const hasChild = registrationMode
+                  ? regPrices.childPrice > 0
+                  : pkg.child_price != null && pkg.child_price > 0;
                 const metaLabel = getMetaLabel(pkg);
 
                 return (
@@ -205,20 +217,33 @@ export default function MarinaCruiseSection() {
                           </p>
                         )}
                         <div className='section-tour-card-price-pills'>
-                          {revealing ? (
+                          {registrationMode && !hasAdult && !hasChild ? (
+                            <span
+                              role='status'
+                              className='package-price-revealing-soon package-price-revealing-soon--pill'
+                            >
+                              Register
+                            </span>
+                          ) : revealing ? (
                             <PackagePriceRevealingSoonLabel variant='pill' />
                           ) : (
                             <>
                               {hasAdult && (
                                 <span className='section-tour-card-price-pill'>
-                                  Adult: AED{' '}
-                                  {pkg.adult_price!.toLocaleString()}
+                                  {registrationMode ? 'Reg. Adult' : 'Adult'}: AED{' '}
+                                  {(registrationMode
+                                    ? regPrices.adultPrice
+                                    : pkg.adult_price!
+                                  ).toLocaleString()}
                                 </span>
                               )}
                               {hasChild && (
                                 <span className='section-tour-card-price-pill'>
-                                  Child: AED{' '}
-                                  {pkg.child_price!.toLocaleString()}
+                                  {registrationMode ? 'Reg. Child' : 'Child'}: AED{' '}
+                                  {(registrationMode
+                                    ? regPrices.childPrice
+                                    : pkg.child_price!
+                                  ).toLocaleString()}
                                 </span>
                               )}
                               {!hasAdult && !hasChild && (

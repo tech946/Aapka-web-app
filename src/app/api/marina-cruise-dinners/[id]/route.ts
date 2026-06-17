@@ -24,7 +24,7 @@ export async function GET(
     const { data: allPackages, error: fetchError } = await supabaseAdmin
       .from('marina_cruise_dinners')
       .select(
-        'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, bookable_dates, booking_days, pickup_location, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, created_at'
+        'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, registration_only, registration_adult_price, registration_child_price, bookable_dates, booking_days, pickup_location, addons, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, created_at'
       )
       .eq('status', 'active');
 

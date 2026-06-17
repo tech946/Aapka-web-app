@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
+import {
+  MARINA_CRUISE_SLUG,
+  calcMarinaAddonsPrice,
+  getMarinaAddonLabels,
+  getMarinaRegistrationPrices,
+  isMarinaCruiseDateBookable,
+  isMarinaRegistrationMode,
+  parseMarinaAddons,
+} from '@/lib/marina-cruise-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +45,8 @@ interface CartItemRequest {
   addonDeals?: string[];
   addonHotelServices?: string[];
   addonPrivateTransfers?: string[];
+  categorySlug?: string;
+  marinaAddons?: string[];
 }
 
 // Interface for verified referral data from database
@@ -62,6 +73,145 @@ function isDiscountActive(pkg: any): boolean {
   endDate.setHours(23, 59, 59, 999);
   
   return now >= startDate && now <= endDate;
+}
+
+function validateMarinaCartItem(
+  item: CartItemRequest,
+  marinaPkg: Record<string, unknown> | undefined
+) {
+  if (!marinaPkg) {
+    return {
+      packageId: item.packageId,
+      valid: false as const,
+      error: 'Package not found',
+    };
+  }
+
+  if (marinaPkg.status !== 'active') {
+    return {
+      packageId: item.packageId,
+      valid: false as const,
+      error: 'Package not available',
+    };
+  }
+
+  if (item.adults < 0 || item.children < 0 || item.infants < 0) {
+    return {
+      packageId: item.packageId,
+      valid: false as const,
+      error: 'Invalid person count',
+    };
+  }
+
+  if (!item.selectedDate) {
+    return {
+      packageId: item.packageId,
+      valid: false as const,
+      error: 'Date is required',
+    };
+  }
+
+  const dateStr = item.selectedDate.split('T')[0];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const checkDate = new Date(y, m - 1, d);
+  checkDate.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (checkDate < today) {
+    return {
+      packageId: item.packageId,
+      valid: false as const,
+      error: 'Invalid date',
+    };
+  }
+
+  if (
+    !isMarinaCruiseDateBookable(
+      checkDate,
+      marinaPkg.booking_days as number[] | null | undefined,
+      marinaPkg.bookable_dates as string[] | null | undefined
+    )
+  ) {
+    return {
+      packageId: item.packageId,
+      valid: false as const,
+      error: 'Date not available',
+    };
+  }
+
+  const adults = item.isSoloTraveller ? 1 : item.adults;
+  const children = item.isSoloTraveller ? 0 : item.children;
+
+  let adultPrice = 0;
+  let childPrice = 0;
+  if (isMarinaRegistrationMode(marinaPkg)) {
+    const reg = getMarinaRegistrationPrices(marinaPkg);
+    adultPrice = reg.adultPrice;
+    childPrice = reg.childPrice;
+  } else {
+    adultPrice = Number(marinaPkg.adult_price) || 0;
+    childPrice = Number(marinaPkg.child_price) || 0;
+  }
+
+  let calculatedPrice = adultPrice * adults + childPrice * children;
+  if (
+    calculatedPrice === 0 &&
+    marinaPkg.package_price &&
+    Number(marinaPkg.package_price) > 0
+  ) {
+    calculatedPrice = Number(marinaPkg.package_price);
+  }
+
+  const marinaAddonsList = parseMarinaAddons(marinaPkg.addons);
+  const selectedMarinaAddons = (item.marinaAddons || []).filter(id =>
+    marinaAddonsList.some(a => a.id === id)
+  );
+  const addonPrice = calcMarinaAddonsPrice(
+    marinaAddonsList,
+    selectedMarinaAddons,
+    adults,
+    children
+  );
+  calculatedPrice += addonPrice;
+
+  const marinaAddonLabels = getMarinaAddonLabels(
+    marinaAddonsList,
+    selectedMarinaAddons
+  );
+
+  return {
+    packageId: item.packageId,
+    selectedDate: item.selectedDate ?? null,
+    valid: true as const,
+    packageName: String(marinaPkg.package_name ?? ''),
+    price: calculatedPrice,
+    originalPrice: null,
+    adultPrice,
+    childPrice,
+    infantPrice: 0,
+    basePrice: marinaPkg.package_price != null ? Number(marinaPkg.package_price) : null,
+    nights: null,
+    days: null,
+    thumbnailImage: (marinaPkg.thumbnail_image as string | null) ?? null,
+    isDiscountActive: false,
+    hasActiveDeal: false,
+    adultDiscountAmount: null,
+    childDiscountAmount: null,
+    infantDiscountAmount: null,
+    agentDiscountAmount: null,
+    priceBeforeAgentDiscount: null,
+    referralDiscountAmount: null,
+    priceBeforeReferralDiscount: null,
+    verifiedReferralId: null,
+    verifiedReferralLinkType: null,
+    visaPrice: 0,
+    dateSurcharge: null,
+    adultVisaPrice: null,
+    childVisaPrice: null,
+    infantVisaPrice: null,
+    marinaAddonLabels,
+  };
 }
 
 const CRM_BASE_URL = 'https://crm.aapkatourism.com';
@@ -204,13 +354,51 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch all packages at once (including date_ranges for flexible date pricing)
-    const packageIds = items.map(item => item.packageId);
-    const { data: packages, error: fetchError } = await supabaseAdmin
-      .from('packages')
-      .select(
-        'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount'
-      )
-      .in('package_id', packageIds);
+    const regularItems = items.filter(
+      i => i.categorySlug !== MARINA_CRUISE_SLUG
+    );
+    const marinaItems = items.filter(
+      i => i.categorySlug === MARINA_CRUISE_SLUG
+    );
+
+    const packageIds = regularItems.map(item => item.packageId);
+    const marinaPackageIds = marinaItems.map(item => item.packageId);
+
+    let packages: any[] | null = [];
+    let fetchError: { message: string } | null = null;
+
+    if (packageIds.length > 0) {
+      const result = await supabaseAdmin
+        .from('packages')
+        .select(
+          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount'
+        )
+        .in('package_id', packageIds);
+      packages = result.data;
+      fetchError = result.error;
+    }
+
+    const marinaPackagesMap = new Map<string, Record<string, unknown>>();
+    if (marinaPackageIds.length > 0) {
+      const { data: marinaPackages, error: marinaFetchError } =
+        await supabaseAdmin
+          .from('marina_cruise_dinners')
+          .select(
+            'package_id, package_name, package_price, adult_price, child_price, registration_only, registration_adult_price, registration_child_price, bookable_dates, booking_days, addons, thumbnail_image, status'
+          )
+          .in('package_id', marinaPackageIds);
+
+      if (marinaFetchError) {
+        return NextResponse.json(
+          { error: marinaFetchError.message },
+          { status: 400 }
+        );
+      }
+
+      for (const row of marinaPackages || []) {
+        marinaPackagesMap.set(String(row.package_id), row);
+      }
+    }
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
@@ -308,6 +496,13 @@ export async function POST(req: NextRequest) {
 
     // Validate and calculate prices for each cart item
     const validatedItems = await Promise.all(items.map(async item => {
+      if (item.categorySlug === MARINA_CRUISE_SLUG) {
+        return validateMarinaCartItem(
+          item,
+          marinaPackagesMap.get(item.packageId)
+        );
+      }
+
       const pkg = packages?.find(p => p.package_id === item.packageId);
 
       if (!pkg) {

@@ -6,6 +6,10 @@ import { Grid3x3, List, ChevronDown, MapPin } from 'lucide-react';
 import { gsap } from 'gsap';
 import { generateShortSlug } from '@/lib/utils';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
+import {
+  isMarinaRegistrationMode,
+  getMarinaRegistrationPrices,
+} from '@/lib/marina-cruise-config';
 import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import PackageSliderArrowRight from '@/components/icons/PackageSliderArrowRight';
 import {
@@ -22,6 +26,9 @@ interface MarinaPackage {
   package_price: number | null;
   adult_price?: number | null;
   child_price?: number | null;
+  registration_only?: boolean | null;
+  registration_adult_price?: number | null;
+  registration_child_price?: number | null;
   category?: string | null;
   timing?: string | null;
   overview?: string | null;
@@ -48,7 +55,9 @@ function getSortLabel(sortBy: string): string {
 function MarinaPackageCard({ pkg }: { pkg: MarinaPackage }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
-  const isRevealingSoon = isPackagePriceRevealingSoon(pkg);
+  const registrationMode = isMarinaRegistrationMode(pkg);
+  const isRevealingSoon =
+    !registrationMode && isPackagePriceRevealingSoon(pkg);
 
   const packageSlug = generateShortSlug(pkg.package_name, pkg.package_id);
 
@@ -73,9 +82,12 @@ function MarinaPackageCard({ pkg }: { pkg: MarinaPackage }) {
       .trim();
   };
 
-  const pricePerPerson = formatPrice(
-    pkg.adult_price ?? pkg.package_price ?? null
-  );
+  const regPrices = getMarinaRegistrationPrices(pkg);
+  const pricePerPerson = registrationMode
+    ? regPrices.adultPrice > 0
+      ? formatPrice(regPrices.adultPrice)
+      : 'Register'
+    : formatPrice(pkg.adult_price ?? pkg.package_price ?? null);
   const packageDescription = getPackageDescription();
   const isNew = pkg.created_at
     ? Date.now() - new Date(pkg.created_at).getTime() < 30 * 24 * 60 * 60 * 1000
@@ -124,7 +136,14 @@ function MarinaPackageCard({ pkg }: { pkg: MarinaPackage }) {
           <p className='suites-card-destinations'>{packageDescription}</p>
         )}
         <div className='suites-card-price'>
-          {isRevealingSoon ? (
+          {registrationMode && regPrices.adultPrice <= 0 && regPrices.childPrice <= 0 ? (
+            <span
+              role='status'
+              className='package-price-revealing-soon package-price-revealing-soon--card'
+            >
+              Register
+            </span>
+          ) : isRevealingSoon ? (
             <PackagePriceRevealingSoonLabel variant='card' />
           ) : (
             <>

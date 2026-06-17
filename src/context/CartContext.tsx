@@ -35,6 +35,8 @@ export interface CartItemStorage {
   addonDeals?: string[];
   addonHotelServices?: string[];
   addonPrivateTransfers?: string[];
+  // Marina cruise add-ons (package JSONB)
+  marinaAddons?: string[];
 }
 
 // Full cart item with validated prices from server
@@ -64,6 +66,8 @@ export interface CartItem extends CartItemStorage {
   priceBeforeReferralDiscount?: number | null;
   /** Date-range surcharge from surcharge_master (included in price) */
   dateSurcharge?: number | null;
+  /** Resolved add-on names after server validation (marina cruise) */
+  marinaAddonLabels?: string[];
 }
 
 interface CartContextType {
@@ -105,6 +109,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
           const itemsToValidate = currentItems.map(item => ({
             packageId: item.packageId,
+            categorySlug: item.categorySlug,
             adults: item.adults,
             children: item.children,
             infants: item.infants,
@@ -122,6 +127,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             addonDeals: item.addonDeals,
             addonHotelServices: item.addonHotelServices,
             addonPrivateTransfers: item.addonPrivateTransfers,
+            marinaAddons: item.marinaAddons,
           }));
 
           const response = await fetch('/api/cart/validate', {
@@ -183,6 +189,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   referralDiscountAmount: validated.referralDiscountAmount,
                   priceBeforeReferralDiscount: validated.priceBeforeReferralDiscount,
                   dateSurcharge: validated.dateSurcharge ?? null,
+                  marinaAddonLabels: validated.marinaAddonLabels,
                 };
               }
               return item;
@@ -267,6 +274,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           addonDeals: item.addonDeals,
           addonHotelServices: item.addonHotelServices,
           addonPrivateTransfers: item.addonPrivateTransfers,
+          marinaAddons: item.marinaAddons,
         }));
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageItems));
       } catch (error) {
@@ -306,6 +314,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           addonDeals: item.addonDeals ?? updated[existingIndex].addonDeals,
           addonHotelServices: item.addonHotelServices ?? updated[existingIndex].addonHotelServices,
           addonPrivateTransfers: item.addonPrivateTransfers ?? updated[existingIndex].addonPrivateTransfers,
+          marinaAddons: item.marinaAddons ?? updated[existingIndex].marinaAddons,
           validated: false, // Mark as needing validation
         };
         // Validate after update
