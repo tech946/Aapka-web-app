@@ -3095,6 +3095,12 @@
   font-weight: 600;
 }
 
+.marina-registration-pill {
+  background: #fd6b06;
+  border-color: #fd6b06;
+  color: #fff;
+}
+
 .section-tour-card-footer {
   margin-top: auto;
   padding-top: 8px;

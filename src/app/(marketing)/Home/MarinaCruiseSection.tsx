@@ -231,9 +231,14 @@ export default function MarinaCruiseSection() {
                             <PackagePriceRevealingSoonLabel variant='pill' />
                           ) : (
                             <>
+                              {registrationMode && (
+                                <span className='section-tour-card-price-pill marina-registration-pill'>
+                                  Registration
+                                </span>
+                              )}
                               {hasAdult && (
                                 <span className='section-tour-card-price-pill'>
-                                  {registrationMode ? 'Reg. Adult' : 'Adult'}: AED{' '}
+                                  Adult: AED{' '}
                                   {(registrationMode
                                     ? regPrices.adultPrice
                                     : pkg.adult_price!
@@ -242,14 +247,14 @@ export default function MarinaCruiseSection() {
                               )}
                               {hasChild && (
                                 <span className='section-tour-card-price-pill'>
-                                  {registrationMode ? 'Reg. Child' : 'Child'}: AED{' '}
+                                  Child: AED{' '}
                                   {(registrationMode
                                     ? regPrices.childPrice
                                     : pkg.child_price!
                                   ).toLocaleString()}
                                 </span>
                               )}
-                              {!hasAdult && !hasChild && (
+                              {!registrationMode && !hasAdult && !hasChild && (
                                 <span className='section-tour-card-price-pill'>
                                   AED{' '}
                                   {pkg.package_price?.toLocaleString() ?? 'N/A'}

@@ -313,6 +313,24 @@
   font-family: var(--font-inter);
 }
 
+.suites-price-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(253, 107, 6, 0.1);
+  border: 1px solid rgba(253, 107, 6, 0.3);
+  color: #ea580c;
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.marina-registration-pill {
+  background: #fd6b06;
+  border-color: #fd6b06;
+  color: #fff;
+}
+
 .suites-price-amount {
   font-family: var(--font-inter);
   font-size: 20px;

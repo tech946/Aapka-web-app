@@ -148,6 +148,22 @@ function MarinaPackageCard({ pkg }: { pkg: MarinaPackage }) {
             </span>
           ) : isRevealingSoon ? (
             <PackagePriceRevealingSoonLabel variant='card' />
+          ) : registrationMode ? (
+            <>
+              <span className='suites-price-pill marina-registration-pill'>
+                Registration
+              </span>
+              {regPrices.adultPrice > 0 && (
+                <span className='suites-price-pill'>
+                  Adult: AED {regPrices.adultPrice.toLocaleString()}
+                </span>
+              )}
+              {regPrices.childPrice > 0 && (
+                <span className='suites-price-pill'>
+                  Child: AED {regPrices.childPrice.toLocaleString()}
+                </span>
+              )}
+            </>
           ) : (
             <>
               <span className='suites-price-amount'>{pricePerPerson}</span>
