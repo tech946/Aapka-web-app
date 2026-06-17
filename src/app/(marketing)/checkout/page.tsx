@@ -89,13 +89,13 @@ function CheckoutPageContent() {
   );
 
   // Check if cart has only tours (no packages)
-  const hasOnlyTours = cartItems.length > 0 && cartItems.every(item =>
-    isFullPaymentOnlySlug(item.categorySlug || '')
-  );
+  const hasOnlyTours =
+    cartItems.length > 0 &&
+    cartItems.every(item => isFullPaymentOnlySlug(item.categorySlug || ''));
 
   // Check if cart has packages (not tours)
-  const hasPackages = cartItems.some(item =>
-    !isFullPaymentOnlySlug(item.categorySlug || '')
+  const hasPackages = cartItems.some(
+    item => !isFullPaymentOnlySlug(item.categorySlug || '')
   );
 
   // Show passport expiry only if cart has packages (or both tours and packages)
@@ -199,7 +199,10 @@ function CheckoutPageContent() {
         setPassengers(prev => {
           if (prev.length === 0) return prev;
           if (prev[0].pickupLocation === combinedPickup) return prev;
-          return [{ ...prev[0], pickupLocation: combinedPickup }, ...prev.slice(1)];
+          return [
+            { ...prev[0], pickupLocation: combinedPickup },
+            ...prev.slice(1),
+          ];
         });
       } finally {
         if (!cancelled) setLoadingTourPickups(false);
@@ -256,14 +259,15 @@ function CheckoutPageContent() {
   });
 
   // Infant documents - one full doc set per infant (all docs like lead + birth certificate)
-  const [infantDocuments, setInfantDocuments] = useState<InfantDocuments[]>(() =>
-    Array.from({ length: totalInfants }, () => ({
-      applicantPhoto: null,
-      passportMainCopy: null,
-      passportLastPage: null,
-      passportCover: null,
-      birthCertificate: null,
-    }))
+  const [infantDocuments, setInfantDocuments] = useState<InfantDocuments[]>(
+    () =>
+      Array.from({ length: totalInfants }, () => ({
+        applicantPhoto: null,
+        passportMainCopy: null,
+        passportLastPage: null,
+        passportCover: null,
+        birthCertificate: null,
+      }))
   );
 
   // Sync infantDocuments when totalInfants changes
@@ -271,14 +275,16 @@ function CheckoutPageContent() {
     const inf = cartItems.reduce((s, i) => s + (i.infants || 0), 0);
     setInfantDocuments(prev => {
       if (prev.length === inf) return prev;
-      return Array.from({ length: Math.max(inf, 0) }, (_, i) =>
-        prev[i] || {
-          applicantPhoto: null,
-          passportMainCopy: null,
-          passportLastPage: null,
-          passportCover: null,
-          birthCertificate: null,
-        }
+      return Array.from(
+        { length: Math.max(inf, 0) },
+        (_, i) =>
+          prev[i] || {
+            applicantPhoto: null,
+            passportMainCopy: null,
+            passportLastPage: null,
+            passportCover: null,
+            birthCertificate: null,
+          }
       );
     });
   }, [cartItems]);
@@ -336,15 +342,21 @@ function CheckoutPageContent() {
     if (isTourCheckout) {
       return false;
     }
-    
+
     // Offer packages or flexible date packages: only show if visa is selected
     if (hasOfferPackage || hasFlexibleDatePackage) {
       return hasVisaSelected;
     }
-    
+
     // Other packages: show for India
     return passengers[0]?.country === 'India';
-  }, [isTourCheckout, hasOfferPackage, hasFlexibleDatePackage, hasVisaSelected, passengers]);
+  }, [
+    isTourCheckout,
+    hasOfferPackage,
+    hasFlexibleDatePackage,
+    hasVisaSelected,
+    passengers,
+  ]);
 
   // Fetch platform fee and detect user location on mount
   useEffect(() => {
@@ -451,13 +463,14 @@ function CheckoutPageContent() {
   ) => {
     setInfantDocuments(prev => {
       const updated = [...prev];
-      if (!updated[infantIndex]) updated[infantIndex] = {
-        applicantPhoto: null,
-        passportMainCopy: null,
-        passportLastPage: null,
-        passportCover: null,
-        birthCertificate: null,
-      };
+      if (!updated[infantIndex])
+        updated[infantIndex] = {
+          applicantPhoto: null,
+          passportMainCopy: null,
+          passportLastPage: null,
+          passportCover: null,
+          birthCertificate: null,
+        };
       updated[infantIndex] = { ...updated[infantIndex], [field]: file };
       return updated;
     });
@@ -477,8 +490,7 @@ function CheckoutPageContent() {
     const isOtherCountry = leadPassenger?.country === 'Other';
 
     if (showTourPickup && loadingTourPickups) {
-      newErrors.tourPickupLocation =
-        'Please wait while pickup details load.';
+      newErrors.tourPickupLocation = 'Please wait while pickup details load.';
     }
 
     // When "Other" is selected, only validate the first passenger
@@ -547,9 +559,9 @@ function CheckoutPageContent() {
       // - For other packages: require if not "Other" country (preserve previous functionality)
       const requiresDocuments = isTourCheckout
         ? false // Tours: never require documents
-        : (hasOfferPackage || hasFlexibleDatePackage)
-        ? hasVisaSelected && !isOtherCountry // Offer/flexible: only if visa selected
-        : !isOtherCountry; // Other packages: require if not "Other"
+        : hasOfferPackage || hasFlexibleDatePackage
+          ? hasVisaSelected && !isOtherCountry // Offer/flexible: only if visa selected
+          : !isOtherCountry; // Other packages: require if not "Other"
 
       if (requiresDocuments) {
         if (!passenger.applicantPhoto) {
@@ -572,7 +584,7 @@ function CheckoutPageContent() {
     // Infant documents validation (when documents required)
     const requiresDocuments = isTourCheckout
       ? false
-      : (hasOfferPackage || hasFlexibleDatePackage)
+      : hasOfferPackage || hasFlexibleDatePackage
         ? hasVisaSelected && !isOtherCountry
         : !isOtherCountry;
     if (requiresDocuments && totalInfants > 0) {
@@ -755,10 +767,23 @@ function CheckoutPageContent() {
             soloTravellerGender: item.soloTravellerGender ?? null,
             soloTravellerShareConsent: item.soloTravellerShareConsent ?? false,
             // Add-ons (offer packages) - stored for booking reference, not pricing
-            addonDeals: item.addonDeals && item.addonDeals.length > 0 ? item.addonDeals : null,
-            addonHotelServices: item.addonHotelServices && item.addonHotelServices.length > 0 ? item.addonHotelServices : null,
-            addonPrivateTransfers: item.addonPrivateTransfers && item.addonPrivateTransfers.length > 0 ? item.addonPrivateTransfers : null,
-            marinaAddons: item.marinaAddons && item.marinaAddons.length > 0 ? item.marinaAddons : null,
+            addonDeals:
+              item.addonDeals && item.addonDeals.length > 0
+                ? item.addonDeals
+                : null,
+            addonHotelServices:
+              item.addonHotelServices && item.addonHotelServices.length > 0
+                ? item.addonHotelServices
+                : null,
+            addonPrivateTransfers:
+              item.addonPrivateTransfers &&
+              item.addonPrivateTransfers.length > 0
+                ? item.addonPrivateTransfers
+                : null,
+            marinaAddons:
+              item.marinaAddons && item.marinaAddons.length > 0
+                ? item.marinaAddons
+                : null,
           })),
           passengers: passengersWithBase64,
           infantDocuments: infantDocumentsBase64,
@@ -946,11 +971,24 @@ function CheckoutPageContent() {
             : 'Payment could not be completed. Please try again.';
       return (
         <div className='checkout-page'>
-          <div className='checkout-container' style={{ textAlign: 'center', padding: '48px 24px' }}>
+          <div
+            className='checkout-container'
+            style={{ textAlign: 'center', padding: '48px 24px' }}
+          >
             <h2>Payment Error</h2>
             <p style={{ marginBottom: 24 }}>{msg}</p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href='/visas/apply-for-oman-visa' className='checkout-back-button'>
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Link
+                href='/visas/apply-for-oman-visa'
+                className='checkout-back-button'
+              >
                 Oman Visa Application
               </Link>
               <Link href='/' className='checkout-back-button'>
@@ -1384,7 +1422,9 @@ function CheckoutPageContent() {
 
                             {/* Passport Last Page */}
                             <div className='document-upload-group'>
-                              <label>Passport Last Page [ Indian passport ]</label>
+                              <label>
+                                Passport Last Page [ Indian passport ]
+                              </label>
                               <FileUpload
                                 file={passenger.passportLastPage}
                                 onFileChange={file =>
@@ -1407,11 +1447,7 @@ function CheckoutPageContent() {
                               <FileUpload
                                 file={passenger.passportCover}
                                 onFileChange={file =>
-                                  handleFileUpload(
-                                    index,
-                                    'passportCover',
-                                    file
-                                  )
+                                  handleFileUpload(index, 'passportCover', file)
                                 }
                                 error={
                                   errors[`passenger_${index}_passportCover`]
@@ -1458,7 +1494,9 @@ function CheckoutPageContent() {
                                     )
                                   }
                                   error={
-                                    errors[`passenger_${index}_birthCertificate`]
+                                    errors[
+                                      `passenger_${index}_birthCertificate`
+                                    ]
                                   }
                                   fieldKey={`passenger_${index}_birthCertificate`}
                                 />
@@ -1494,8 +1532,7 @@ function CheckoutPageContent() {
                     <div className='documents-grid'>
                       <div className='document-upload-group'>
                         <label>
-                          Applicant Photo{' '}
-                          <span className='required'>*</span>
+                          Applicant Photo <span className='required'>*</span>
                         </label>
                         <FileUpload
                           file={infant.applicantPhoto}
@@ -1506,9 +1543,7 @@ function CheckoutPageContent() {
                               file
                             )
                           }
-                          error={
-                            errors[`infant_${infantIdx}_applicantPhoto`]
-                          }
+                          error={errors[`infant_${infantIdx}_applicantPhoto`]}
                           fieldKey={`infant_${infantIdx}_applicantPhoto`}
                         />
                       </div>
@@ -1526,9 +1561,7 @@ function CheckoutPageContent() {
                               file
                             )
                           }
-                          error={
-                            errors[`infant_${infantIdx}_passportMainCopy`]
-                          }
+                          error={errors[`infant_${infantIdx}_passportMainCopy`]}
                           fieldKey={`infant_${infantIdx}_passportMainCopy`}
                         />
                       </div>
@@ -1562,8 +1595,7 @@ function CheckoutPageContent() {
                       </div>
                       <div className='document-upload-group'>
                         <label>
-                          Birth Certificate{' '}
-                          <span className='required'>*</span>
+                          Birth Certificate <span className='required'>*</span>
                         </label>
                         <FileUpload
                           file={infant.birthCertificate}
@@ -1574,9 +1606,7 @@ function CheckoutPageContent() {
                               file
                             )
                           }
-                          error={
-                            errors[`infant_${infantIdx}_birthCertificate`]
-                          }
+                          error={errors[`infant_${infantIdx}_birthCertificate`]}
                           fieldKey={`infant_${infantIdx}_birthCertificate`}
                         />
                       </div>
@@ -1605,8 +1635,15 @@ function CheckoutPageContent() {
                                 item.selectedDate
                               );
                               if (date) {
-                                const isFlexibleDate = item.categorySlug === 'flexible-date-packages';
-                                return format(date, isFlexibleDate ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy');
+                                const isFlexibleDate =
+                                  item.categorySlug ===
+                                  'flexible-date-packages';
+                                return format(
+                                  date,
+                                  isFlexibleDate
+                                    ? 'MMM dd, yyyy hh:mm a'
+                                    : 'MMM dd, yyyy'
+                                );
                               }
                               return 'Not selected';
                             })()
@@ -1646,7 +1683,9 @@ function CheckoutPageContent() {
                         if (labels.length === 0) {
                           return (
                             <div className='package-addons'>
-                              <span className='package-addons-label'>Offer add-ons:</span>
+                              <span className='package-addons-label'>
+                                Offer add-ons:
+                              </span>
                               <span className='package-addon-badge package-addon-badge-muted'>
                                 {ids.length} selected
                               </span>
@@ -1655,12 +1694,11 @@ function CheckoutPageContent() {
                         }
                         return (
                           <div className='package-addons'>
-                            <span className='package-addons-label'>Offer add-ons:</span>
+                            <span className='package-addons-label'>
+                              Offer add-ons:
+                            </span>
                             {labels.map(label => (
-                              <span
-                                key={label}
-                                className='package-addon-badge'
-                              >
+                              <span key={label} className='package-addon-badge'>
                                 {label}
                               </span>
                             ))}
@@ -1668,7 +1706,8 @@ function CheckoutPageContent() {
                         );
                       })()}
                       {item.categorySlug === 'marina-cruise-dinner' &&
-                        (item.marinaAddonLabels?.length || item.marinaAddons?.length) ? (
+                      (item.marinaAddonLabels?.length ||
+                        item.marinaAddons?.length) ? (
                         <div className='package-addons'>
                           <span className='package-addons-label'>Add-ons:</span>
                           {(item.marinaAddonLabels?.length
@@ -1682,42 +1721,74 @@ function CheckoutPageContent() {
                         </div>
                       ) : null}
                       {item.hasActiveDeal && (
-                        <span className='checkout-discount-badge' style={{ 
-                          background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
-                          color: '#fff'
-                        }}>Deal of the Day</span>
+                        <span
+                          className='checkout-discount-badge'
+                          style={{
+                            background:
+                              'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                            color: '#fff',
+                          }}
+                        >
+                          Deal of the Day
+                        </span>
                       )}
                       {item.isDiscountActive && !item.hasActiveDeal && (
-                        <span className='checkout-discount-badge'>Limited Offer Applied</span>
+                        <span className='checkout-discount-badge'>
+                          Limited Offer Applied
+                        </span>
                       )}
                     </div>
                     <div className='package-price'>
-                      {(item.hasActiveDeal || item.isDiscountActive) && item.originalPrice && item.originalPrice > item.price && (
-                        <span className='checkout-original-price'>
-                          {formatPrice(item.originalPrice)}
-                        </span>
-                      )}
-                      {item.agentDiscountAmount && item.agentDiscountAmount > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                          <span style={{ 
-                            fontSize: '10px', 
-                            fontWeight: 600, 
-                            color: '#059669', 
-                            background: '#d1fae5', 
-                            padding: '2px 6px', 
-                            borderRadius: '4px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            Premium Partner Discount
-                            <span style={{ color: '#047857', fontWeight: 700 }}>
-                              -{formatPrice(item.agentDiscountAmount).replace('AED ', '')}
-                            </span>
+                      {(item.hasActiveDeal || item.isDiscountActive) &&
+                        item.originalPrice &&
+                        item.originalPrice > item.price && (
+                          <span className='checkout-original-price'>
+                            {formatPrice(item.originalPrice)}
                           </span>
-                        </div>
-                      )}
-                      <span className={(item.hasActiveDeal || item.isDiscountActive) ? 'checkout-discounted-price' : ''}>
+                        )}
+                      {item.agentDiscountAmount &&
+                        item.agentDiscountAmount > 0 && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                color: '#059669',
+                                background: '#d1fae5',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              Premium Partner Discount
+                              <span
+                                style={{ color: '#047857', fontWeight: 700 }}
+                              >
+                                -
+                                {formatPrice(item.agentDiscountAmount).replace(
+                                  'AED ',
+                                  ''
+                                )}
+                              </span>
+                            </span>
+                          </div>
+                        )}
+                      <span
+                        className={
+                          item.hasActiveDeal || item.isDiscountActive
+                            ? 'checkout-discounted-price'
+                            : ''
+                        }
+                      >
                         {formatPrice(item.price)}
                       </span>
                     </div>
@@ -1899,7 +1970,11 @@ export default function CheckoutPage() {
         <div className='checkout-page'>
           <div className='checkout-container'>
             <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-              <Loader2 size={32} className='spinning' style={{ margin: '0 auto 16px', display: 'block' }} />
+              <Loader2
+                size={32}
+                className='spinning'
+                style={{ margin: '0 auto 16px', display: 'block' }}
+              />
               <p>Loading...</p>
             </div>
           </div>
