@@ -74,22 +74,29 @@ function CheckoutPageContent() {
 
   // Check if any cart item is a tour (not a package)
   // Tours typically have "tour" in the category slug/name
-  const isTourCheckout = cartItems.some(item => {
-    const categorySlug = item.categorySlug?.toLowerCase() || '';
-    return categorySlug.includes('tour');
-  });
+  const isFullPaymentOnlySlug = (slug: string) => {
+    const s = slug.toLowerCase();
+    return s.includes('tour') || s === 'marina-cruise-dinner';
+  };
+
+  const isTourCheckout = cartItems.some(item =>
+    isFullPaymentOnlySlug(item.categorySlug || '')
+  );
+
+  // Pickup location only for real UAE tours, not marina cruise
+  const showTourPickup = cartItems.some(item =>
+    (item.categorySlug || '').toLowerCase().includes('tour')
+  );
 
   // Check if cart has only tours (no packages)
-  const hasOnlyTours = cartItems.length > 0 && cartItems.every(item => {
-    const categorySlug = item.categorySlug?.toLowerCase() || '';
-    return categorySlug.includes('tour');
-  });
+  const hasOnlyTours = cartItems.length > 0 && cartItems.every(item =>
+    isFullPaymentOnlySlug(item.categorySlug || '')
+  );
 
   // Check if cart has packages (not tours)
-  const hasPackages = cartItems.some(item => {
-    const categorySlug = item.categorySlug?.toLowerCase() || '';
-    return !categorySlug.includes('tour');
-  });
+  const hasPackages = cartItems.some(item =>
+    !isFullPaymentOnlySlug(item.categorySlug || '')
+  );
 
   // Show passport expiry only if cart has packages (or both tours and packages)
   // Hide passport expiry if cart has only tours
@@ -469,7 +476,7 @@ function CheckoutPageContent() {
     const leadPassenger = passengers[0];
     const isOtherCountry = leadPassenger?.country === 'Other';
 
-    if (isTourCheckout && loadingTourPickups) {
+    if (showTourPickup && loadingTourPickups) {
       newErrors.tourPickupLocation =
         'Please wait while pickup details load.';
     }
@@ -1218,8 +1225,8 @@ function CheckoutPageContent() {
                         </div>
                       )}
 
-                      {/* Tour pickup location — read-only from package settings */}
-                      {index === 0 && isTourCheckout && (
+                      {/* Tour pickup location — real UAE tours only, not marina cruise */}
+                      {index === 0 && showTourPickup && (
                         <div className='form-group checkout-tour-pickup-text'>
                           <label>Tour Pickup Location</label>
                           {loadingTourPickups ? (
