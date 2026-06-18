@@ -133,6 +133,7 @@ interface Package {
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   bookable_dates?: string[] | null;
   booking_days?: number[] | null;
+  excluded_dates?: string[] | null;
   addons?: MarinaAddon[] | null;
   // Date ranges for flexible date packages (stored as JSONB in packages table)
   date_ranges?: DateRange[] | null;
@@ -269,10 +270,12 @@ export default function PackageDetailsPage() {
     if (!pkg) return;
     const initialMonth = getMarinaCruiseInitialMonth(
       pkg.booking_days,
-      pkg.bookable_dates
+      pkg.bookable_dates,
+      new Date(),
+      pkg.excluded_dates
     );
     if (initialMonth) setMonth(initialMonth);
-  }, [pkg?.package_id, pkg?.booking_days, pkg?.bookable_dates]);
+  }, [pkg?.package_id, pkg?.booking_days, pkg?.bookable_dates, pkg?.excluded_dates]);
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -1395,7 +1398,8 @@ export default function PackageDetailsPage() {
       return !isMarinaCruiseDateBookable(
         date,
         pkg?.booking_days,
-        pkg?.bookable_dates
+        pkg?.bookable_dates,
+        pkg?.excluded_dates
       );
     }
 

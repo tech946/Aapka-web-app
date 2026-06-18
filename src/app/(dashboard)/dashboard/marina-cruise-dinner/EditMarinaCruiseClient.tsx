@@ -11,6 +11,7 @@ import {
 } from '@/lib/supabase-storage';
 import { normalizePackageGallery } from '@/lib/package-gallery';
 import MarinaBookableDatesSelector from './MarinaBookableDatesSelector';
+import MarinaExcludedDatesSelector from './MarinaExcludedDatesSelector';
 import MarinaAddonsEditor, { type MarinaAddon } from './MarinaAddonsEditor';
 import MarinaRegistrationPricing from './MarinaRegistrationPricing';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
@@ -31,6 +32,7 @@ type Pkg = {
   registration_child_price?: number | null;
   bookable_dates?: string[] | null;
   booking_days?: number[] | null;
+  excluded_dates?: string[] | null;
   pickup_location?: string | null;
   status?: string | null;
   terms_html?: string | null;
@@ -70,6 +72,7 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
   const [status, setStatus] = useState(pkg.status || 'active');
   const [addons, setAddons] = useState<MarinaAddon[]>([]);
   const [bookableDates, setBookableDates] = useState<string[]>([]);
+  const [excludedDates, setExcludedDates] = useState<string[]>([]);
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
   ]);
@@ -119,6 +122,9 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
     setAddons(Array.isArray(data.addons) ? data.addons : []);
     setBookableDates(
       Array.isArray(data.bookable_dates) ? data.bookable_dates : []
+    );
+    setExcludedDates(
+      Array.isArray(data.excluded_dates) ? data.excluded_dates : []
     );
     setBookingDays(
       Array.isArray(data.booking_days) ? data.booking_days : []
@@ -232,6 +238,7 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
           addons: addons.length > 0 ? addons : [],
           bookable_dates: bookableDates,
           booking_days: bookingDays,
+          excluded_dates: excludedDates,
           pickup_location: pickupLocation.trim() || null,
           terms_html: termsHtml,
           inclusion_html: inclusionHtml,
@@ -367,6 +374,10 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                 <MarinaBookableDatesSelector
                   dates={bookableDates}
                   onDatesChange={setBookableDates}
+                />
+                <MarinaExcludedDatesSelector
+                  dates={excludedDates}
+                  onDatesChange={setExcludedDates}
                 />
                 <div className='form_row full_width'>
                   <label>Tour Pickup Location</label>

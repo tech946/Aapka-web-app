@@ -99,13 +99,20 @@ export function formatMarinaDateYmd(date: Date): string {
   return toDateString(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 
-/** Bookable if the date matches a selected weekday or is in bookable_dates. */
+/** Bookable if the date matches a selected weekday or is in bookable_dates,
+ *  AND is NOT in excluded_dates. */
 export function isMarinaCruiseDateBookable(
   date: Date,
   bookingDays: number[] | null | undefined,
-  bookableDates: string[] | null | undefined
+  bookableDates: string[] | null | undefined,
+  excludedDates?: string[] | null | undefined
 ): boolean {
   const dateStr = formatMarinaDateYmd(date);
+  const excluded = Array.isArray(excludedDates) ? excludedDates : [];
+
+  // Always block excluded dates regardless of days/bookable_dates
+  if (excluded.includes(dateStr)) return false;
+
   const days = Array.isArray(bookingDays)
     ? bookingDays.filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
     : [];
@@ -122,7 +129,8 @@ export type MarinaCalendarBounds = { fromMonth: Date; toMonth: Date };
 export function getMarinaCruiseCalendarBounds(
   bookingDays: number[] | null | undefined,
   bookableDates: string[] | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
+  excludedDates?: string[] | null | undefined
 ): MarinaCalendarBounds | null {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tomorrow = new Date(today);
@@ -142,7 +150,7 @@ export function getMarinaCruiseCalendarBounds(
       date.getDate()
     );
     if (normalized.getTime() <= tomorrow.getTime()) return;
-    if (!isMarinaCruiseDateBookable(normalized, bookingDays, dates)) return;
+    if (!isMarinaCruiseDateBookable(normalized, bookingDays, dates, excludedDates)) return;
     monthKeys.add(normalized.getFullYear() * 12 + normalized.getMonth());
   };
 
@@ -188,10 +196,13 @@ export function getMarinaCruiseCalendarBounds(
 export function getMarinaCruiseInitialMonth(
   bookingDays: number[] | null | undefined,
   bookableDates: string[] | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
+  excludedDates?: string[] | null | undefined
 ): Date | null {
-  return getMarinaCruiseCalendarBounds(bookingDays, bookableDates, now)
-    ?.fromMonth ?? null;
+  return (
+    getMarinaCruiseCalendarBounds(bookingDays, bookableDates, now, excludedDates)
+      ?.fromMonth ?? null
+  );
 }
 
 export function usesBookingSlots(_categorySlug?: string): boolean {

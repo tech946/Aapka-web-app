@@ -274,8 +274,13 @@ export default function BookingModal({
 
   const marinaCalendarBounds = useMemo(() => {
     if (!isMarinaCruise || !pkg) return null;
-    return getMarinaCruiseCalendarBounds(pkg.booking_days, pkg.bookable_dates);
-  }, [isMarinaCruise, pkg?.booking_days, pkg?.bookable_dates]);
+    return getMarinaCruiseCalendarBounds(
+      pkg.booking_days,
+      pkg.bookable_dates,
+      new Date(),
+      pkg.excluded_dates
+    );
+  }, [isMarinaCruise, pkg?.booking_days, pkg?.bookable_dates, pkg?.excluded_dates]);
 
   useEffect(() => {
     if (!isOpen || !isMarinaCruise || !marinaCalendarBounds) return;
@@ -831,15 +836,15 @@ export default function BookingModal({
                           className={calendarClassName}
                           modifiers={
                             marinaHideToday
-                              ? { hidden: marinaHideToday }
+                              ? { marinaToday: marinaHideToday }
                               : undefined
                           }
                           modifiersClassNames={{
                             disabled: 'rdp-day_unavailable',
-                            ...(isMarinaCruise ? { hidden: 'rdp-day_hidden' } : {}),
+                            ...(isMarinaCruise ? { marinaToday: 'rdp-day_hidden' } : {}),
                           }}
                           components={{
-                            Nav: () => null,
+                            Nav: () => <></>,
                             MonthCaption: captionProps => (
                               <BookingInlineMonthCaption
                                 calendarMonth={captionProps.calendarMonth}

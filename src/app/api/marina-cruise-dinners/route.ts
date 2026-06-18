@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const SELECT_FIELDS =
-  'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, registration_only, registration_adult_price, registration_child_price, bookable_dates, booking_days, pickup_location, addons, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, crm_package_id, created_at';
+  'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, registration_only, registration_adult_price, registration_child_price, bookable_dates, booking_days, excluded_dates, pickup_location, addons, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, crm_package_id, created_at';
 
 function parseBookableDates(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
@@ -134,6 +134,11 @@ export async function POST(req: NextRequest) {
       bookableDates = parseBookableDates(body.bookable_dates) ?? [];
     }
 
+    const excludedDates: string[] =
+      body?.excluded_dates !== undefined
+        ? (parseBookableDates(body.excluded_dates) ?? [])
+        : [];
+
     const bookingDays = parseBookingDays(body?.booking_days);
 
     const bookingError = validateMarinaBookingAvailability(
@@ -194,6 +199,8 @@ export async function POST(req: NextRequest) {
     } else {
       insertData.bookable_dates = null;
     }
+
+    insertData.excluded_dates = excludedDates.length > 0 ? excludedDates : null;
 
     if (body?.addons !== undefined) {
       insertData.addons = Array.isArray(body.addons) && body.addons.length > 0
@@ -281,6 +288,10 @@ export async function PUT(req: NextRequest) {
     if (body?.bookable_dates !== undefined) {
       const dates = parseBookableDates(body.bookable_dates) ?? [];
       updates.bookable_dates = dates.length > 0 ? dates : null;
+    }
+    if (body?.excluded_dates !== undefined) {
+      const exDates = parseBookableDates(body.excluded_dates) ?? [];
+      updates.excluded_dates = exDates.length > 0 ? exDates : null;
     }
     if (body?.booking_days !== undefined) {
       const days = parseBookingDays(body.booking_days);

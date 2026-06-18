@@ -55,13 +55,14 @@
 .booking-modal-calendar.mobile-custom-calendar
   .rdp-day_today:not(.rdp-day_selected):not(.rdp-selected)
   button {
-  color: #1f2937 !important;
+  color: #1f2937;
   font-weight: 400;
 }
 
 /* Mobile booking modal — compact calendar above date field */
 @media (max-width: 767px) {
-  .mobile-booking-calendar-dropdown .booking-modal-calendar.mobile-custom-calendar {
+  .mobile-booking-calendar-dropdown
+    .booking-modal-calendar.mobile-custom-calendar {
     --rdp-cell-size: 36px;
     --rdp-today-color: #1f2937;
     width: 100%;
@@ -97,8 +98,12 @@
 }
 
 /* Compact line items — registration / add-ons (not TOTAL) */
-.booking-price-section .booking-unit-price-breakdown .booking-unit-price-row.booking-price-row,
-.booking-price-section .booking-unit-price-breakdown .booking-unit-price-row.mobile-booking-price-row {
+.booking-price-section
+  .booking-unit-price-breakdown
+  .booking-unit-price-row.booking-price-row,
+.booking-price-section
+  .booking-unit-price-breakdown
+  .booking-unit-price-row.mobile-booking-price-row {
   padding-top: 0;
   border-top: none;
   line-height: 1.3;
@@ -106,8 +111,14 @@
 
 .booking-unit-price-row .booking-price-label,
 .booking-unit-price-row .mobile-booking-price-label,
-.booking-price-section .booking-unit-price-breakdown .booking-unit-price-row .booking-price-label,
-.booking-price-section .booking-unit-price-breakdown .booking-unit-price-row .mobile-booking-price-label {
+.booking-price-section
+  .booking-unit-price-breakdown
+  .booking-unit-price-row
+  .booking-price-label,
+.booking-price-section
+  .booking-unit-price-breakdown
+  .booking-unit-price-row
+  .mobile-booking-price-label {
   font-size: 12px;
   font-weight: 500;
   text-transform: none;
@@ -117,8 +128,14 @@
 
 .booking-unit-price-row .booking-price-amount,
 .booking-unit-price-row .mobile-booking-price-amount,
-.booking-price-section .booking-unit-price-breakdown .booking-unit-price-row .booking-price-amount,
-.booking-price-section .booking-unit-price-breakdown .booking-unit-price-row .mobile-booking-price-amount {
+.booking-price-section
+  .booking-unit-price-breakdown
+  .booking-unit-price-row
+  .booking-price-amount,
+.booking-price-section
+  .booking-unit-price-breakdown
+  .booking-unit-price-row
+  .mobile-booking-price-amount {
   font-size: 14px;
   font-weight: 600;
   color: #fd6b06;
@@ -127,12 +144,29 @@
 
 /* Marina cruise calendar: hide today, only show current month days */
 .booking-modal-calendar.marina-cruise-calendar .rdp-day_hidden {
-  visibility: hidden;
   pointer-events: none;
 }
 
 .booking-modal-calendar.marina-cruise-calendar .rdp-day_hidden button {
-  display: none;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Today in marina calendar — strip the today highlight so it looks like other N/A dates */
+.booking-modal-calendar.marina-cruise-calendar .rdp-day_today button,
+.booking-modal-calendar.marina-cruise-calendar .rdp-day-today button,
+.booking-modal-calendar.marina-cruise-calendar .rdp-day.rdp-today button,
+.booking-modal-calendar.marina-cruise-calendar [data-today='true'] button {
+  color: #d1d5db !important;
+  font-weight: 400 !important;
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.booking-modal-calendar.marina-cruise-calendar [data-today='true'] {
+  background: #f9fafb !important;
 }
 
 /* Marina add-ons in booking modal */

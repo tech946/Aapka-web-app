@@ -1345,6 +1345,16 @@
   transform: scale(1.2);
 }
 
+.date_chip_excluded {
+  background: #fff1f0;
+  color: #cf1322;
+  border-color: #ffa39e;
+}
+
+.date_chip_excluded button {
+  color: #cf1322;
+}
+
 /* Itinerary Styling - Horizontal Layout */
 .itinerary_list {
   display: flex;

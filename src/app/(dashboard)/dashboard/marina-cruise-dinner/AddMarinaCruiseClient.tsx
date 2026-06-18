@@ -10,6 +10,7 @@ import {
   deleteImageFromSupabase,
 } from '@/lib/supabase-storage';
 import MarinaBookableDatesSelector from './MarinaBookableDatesSelector';
+import MarinaExcludedDatesSelector from './MarinaExcludedDatesSelector';
 import MarinaAddonsEditor, { type MarinaAddon } from './MarinaAddonsEditor';
 import MarinaRegistrationPricing from './MarinaRegistrationPricing';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
@@ -33,6 +34,7 @@ export default function AddMarinaCruiseClient() {
   const [registrationChildPrice, setRegistrationChildPrice] = useState('');
   const [addons, setAddons] = useState<MarinaAddon[]>([]);
   const [bookableDates, setBookableDates] = useState<string[]>([]);
+  const [excludedDates, setExcludedDates] = useState<string[]>([]);
   const [bookingDays, setBookingDays] = useState<number[]>([
     ...ALL_TOUR_BOOKING_DAYS,
   ]);
@@ -66,6 +68,7 @@ export default function AddMarinaCruiseClient() {
     setRegistrationChildPrice('');
     setAddons([]);
     setBookableDates([]);
+    setExcludedDates([]);
     setBookingDays([...ALL_TOUR_BOOKING_DAYS]);
     setPickupLocation('');
     setTermsHtml('');
@@ -153,6 +156,7 @@ export default function AddMarinaCruiseClient() {
         addons: addons.length > 0 ? addons : [],
         bookable_dates: bookableDates,
         booking_days: bookingDays,
+        excluded_dates: excludedDates,
         pickup_location: pickupLocation.trim() || null,
         terms_html: termsHtml || undefined,
         inclusion_html: inclusionHtml || undefined,
@@ -284,6 +288,10 @@ export default function AddMarinaCruiseClient() {
             <MarinaBookableDatesSelector
               dates={bookableDates}
               onDatesChange={setBookableDates}
+            />
+            <MarinaExcludedDatesSelector
+              dates={excludedDates}
+              onDatesChange={setExcludedDates}
             />
             <div className='form_row full_width'>
               <label>Tour Pickup Location</label>
