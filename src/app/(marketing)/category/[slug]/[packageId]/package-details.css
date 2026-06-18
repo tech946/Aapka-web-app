@@ -2539,9 +2539,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     0 0 0 1px rgba(0, 0, 0, 0.05);
   max-height: 300px;
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 2010;
   animation: dropdownSlideIn 0.2s ease-out;
-  overflow: visible;
 }
 
 .booking-date-item {
