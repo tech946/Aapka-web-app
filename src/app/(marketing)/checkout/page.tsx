@@ -537,7 +537,7 @@ function CheckoutPageContent() {
         if (!passenger.country) {
           newErrors[`passenger_${actualIndex}_country`] = 'Country is required';
         }
-        if (isTourCheckout && !passenger.pickupLocation.trim()) {
+        if (showTourPickup && !passenger.pickupLocation.trim()) {
           newErrors.tourPickupLocation =
             'Pickup location is not configured for one or more tours. Please contact support.';
         }
