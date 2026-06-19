@@ -1375,7 +1375,8 @@ export default function PackageDetailsPage() {
 
     // For tours only: disable today and tomorrow (day after tomorrow earliest)
     // Exception: allowTodayBooking for today; extraDates bypass tomorrow block too
-    if (slug && usesBookingSlots(slug)) {
+    // Marina cruise has its own booking-day logic below — skip this block for it
+    if (slug && slug !== 'marina-cruise-dinner' && usesBookingSlots(slug)) {
       const allowToday = tourWeekendRangeRule?.allowTodayBooking === true;
       if (!allowToday && checkDate.getTime() === today.getTime()) return true;
       if (
