@@ -1931,13 +1931,13 @@ export default function PackageDetailsPage() {
               </span>
             )}
           </div>
-          {pkg.package_description && (
+          {!isYogaSoldOut && pkg.package_description && (
             <p className='package-hero-description'>
               {pkg.package_description}
             </p>
           )}
           {/* Price Breakdown */}
-          {(!isPriceRevealingSoon || isRegistrationMode) &&
+          {!isYogaSoldOut && (!isPriceRevealingSoon || isRegistrationMode) &&
             (() => {
               const prices = getPricesForDate();
               const hasPricing =
