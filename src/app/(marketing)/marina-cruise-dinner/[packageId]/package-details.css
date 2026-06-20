@@ -227,7 +227,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .package-hero-alternate-booking-link {
   font-family: var(--font-inter);
-  font-size: 15px;
+  font-size: 20px;
+  line-height: 1.4;
   font-weight: 600;
   color: #fd6b06;
   text-decoration: underline;
