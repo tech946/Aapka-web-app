@@ -41,6 +41,8 @@ import {
   parseMarinaAddons,
   calcMarinaAddonsPrice,
   getMarinaCruiseInitialMonth,
+  isMarinaYogaSoldOutTour,
+  findMarinaCruiseDinnerBookingTarget,
   type MarinaAddon,
 } from '@/lib/marina-cruise-config';
 import {
@@ -57,6 +59,7 @@ import {
 import {
   parseDateStringToLocal,
   getEarliestAvailableDateMonth,
+  generateShortSlug,
 } from '@/lib/utils';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
 import {
@@ -72,7 +75,11 @@ import '../marina-cruise-dinner.css';
 import './package-details.css';
 import PackageGallery from './PackageGallery';
 import PackageDetailsTabs from './PackageDetailsTabs';
-import { useAddonDeals, useAddonHotelServices, useAddonPrivateTransfers } from '@/hooks/use-marketing-queries';
+import {
+  useAddonDeals,
+  useAddonHotelServices,
+  useAddonPrivateTransfers,
+} from '@/hooks/use-marketing-queries';
 
 interface DateRange {
   id: string;
@@ -154,6 +161,9 @@ export default function PackageDetailsPage() {
 
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
+  const [alternateBookingHref, setAlternateBookingHref] = useState<
+    string | null
+  >(null);
   const [dateRangesReady, setDateRangesReady] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [category, setCategory] = useState<any>(null);
@@ -216,25 +226,76 @@ export default function PackageDetailsPage() {
     []
   );
   // Addon data with prices - cached via TanStack Query when modal opens
-  type AddonDeal = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number; category_name?: string | null };
-  type AddonService = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number };
-  type AddonTransfer = { id: string; name?: string; adult_price?: number; child_price?: number; infant_price?: number; pax_type?: string; fixed_pax?: number | null; min_pax?: number | null; max_pax?: number | null };
+  type AddonDeal = {
+    id: string;
+    name?: string;
+    adult_price?: number;
+    child_price?: number;
+    infant_price?: number;
+    category_name?: string | null;
+  };
+  type AddonService = {
+    id: string;
+    name?: string;
+    adult_price?: number;
+    child_price?: number;
+    infant_price?: number;
+  };
+  type AddonTransfer = {
+    id: string;
+    name?: string;
+    adult_price?: number;
+    child_price?: number;
+    infant_price?: number;
+    pax_type?: string;
+    fixed_pax?: number | null;
+    min_pax?: number | null;
+    max_pax?: number | null;
+  };
   const modalOpen = showMobileDrawer || showDesktopPopover;
   const shouldFetchAddons = slug === 'offer-packages' && !!pkg && modalOpen;
   const nights = pkg?.package_nights ?? 0;
   const { data: dealsRaw = [] } = useAddonDeals(nights, !!shouldFetchAddons);
   const { data: servicesRaw = [] } = useAddonHotelServices(!!shouldFetchAddons);
-  const { data: transfersRaw = [] } = useAddonPrivateTransfers(!!shouldFetchAddons);
+  const { data: transfersRaw = [] } =
+    useAddonPrivateTransfers(!!shouldFetchAddons);
   const addonDealsData = useMemo(
-    () => (Array.isArray(dealsRaw) ? dealsRaw.map((d: any) => ({ ...d, id: String(d?.id ?? ''), adult_price: d?.adult_price ?? 0, child_price: d?.child_price ?? 0, infant_price: d?.infant_price ?? 0 })) : []),
+    () =>
+      Array.isArray(dealsRaw)
+        ? dealsRaw.map((d: any) => ({
+            ...d,
+            id: String(d?.id ?? ''),
+            adult_price: d?.adult_price ?? 0,
+            child_price: d?.child_price ?? 0,
+            infant_price: d?.infant_price ?? 0,
+          }))
+        : [],
     [dealsRaw]
   );
   const addonServicesData = useMemo(
-    () => (Array.isArray(servicesRaw) ? servicesRaw.map((s: any) => ({ ...s, id: String(s?.id ?? ''), adult_price: s?.adult_price ?? 0, child_price: s?.child_price ?? 0, infant_price: s?.infant_price ?? 0 })) : []),
+    () =>
+      Array.isArray(servicesRaw)
+        ? servicesRaw.map((s: any) => ({
+            ...s,
+            id: String(s?.id ?? ''),
+            adult_price: s?.adult_price ?? 0,
+            child_price: s?.child_price ?? 0,
+            infant_price: s?.infant_price ?? 0,
+          }))
+        : [],
     [servicesRaw]
   );
   const addonTransfersData = useMemo(
-    () => (Array.isArray(transfersRaw) ? transfersRaw.map((t: any) => ({ ...t, id: String(t?.id ?? ''), adult_price: t?.adult_price ?? 0, child_price: t?.child_price ?? 0, infant_price: t?.infant_price ?? 0 })) : []),
+    () =>
+      Array.isArray(transfersRaw)
+        ? transfersRaw.map((t: any) => ({
+            ...t,
+            id: String(t?.id ?? ''),
+            adult_price: t?.adult_price ?? 0,
+            child_price: t?.child_price ?? 0,
+            infant_price: t?.infant_price ?? 0,
+          }))
+        : [],
     [transfersRaw]
   );
 
@@ -243,7 +304,9 @@ export default function PackageDetailsPage() {
     () => parseMarinaAddons(pkg?.addons),
     [pkg?.addons]
   );
-  const [selectedMarinaAddons, setSelectedMarinaAddons] = useState<string[]>([]);
+  const [selectedMarinaAddons, setSelectedMarinaAddons] = useState<string[]>(
+    []
+  );
   const toggleMarinaAddon = useCallback((id: string) => {
     setSelectedMarinaAddons(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -275,7 +338,12 @@ export default function PackageDetailsPage() {
       pkg.excluded_dates
     );
     if (initialMonth) setMonth(initialMonth);
-  }, [pkg?.package_id, pkg?.booking_days, pkg?.bookable_dates, pkg?.excluded_dates]);
+  }, [
+    pkg?.package_id,
+    pkg?.booking_days,
+    pkg?.bookable_dates,
+    pkg?.excluded_dates,
+  ]);
 
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
@@ -322,22 +390,50 @@ export default function PackageDetailsPage() {
     const adults = isSoloTraveller ? 1 : persons.adult;
     const children = isSoloTraveller ? 0 : persons.child;
     const infants = isSoloTraveller ? 0 : persons.infant;
-    const calc = (a: number, c: number, i: number) => (a || 0) * adults + (c || 0) * children + (i || 0) * infants;
+    const calc = (a: number, c: number, i: number) =>
+      (a || 0) * adults + (c || 0) * children + (i || 0) * infants;
     let total = 0;
     for (const id of addonDeals) {
       const d = addonDealsData.find(x => String(x.id) === String(id));
-      if (d) total += calc(d.adult_price ?? 0, d.child_price ?? 0, d.infant_price ?? 0);
+      if (d)
+        total += calc(
+          d.adult_price ?? 0,
+          d.child_price ?? 0,
+          d.infant_price ?? 0
+        );
     }
     for (const id of addonHotelServices) {
       const s = addonServicesData.find(x => String(x.id) === String(id));
-      if (s) total += calc(s.adult_price ?? 0, s.child_price ?? 0, s.infant_price ?? 0);
+      if (s)
+        total += calc(
+          s.adult_price ?? 0,
+          s.child_price ?? 0,
+          s.infant_price ?? 0
+        );
     }
     for (const id of addonPrivateTransfers) {
       const t = addonTransfersData.find(x => String(x.id) === String(id));
-      if (t) total += calc(t.adult_price ?? 0, t.child_price ?? 0, t.infant_price ?? 0);
+      if (t)
+        total += calc(
+          t.adult_price ?? 0,
+          t.child_price ?? 0,
+          t.infant_price ?? 0
+        );
     }
     return total;
-  }, [slug, addonDeals, addonHotelServices, addonPrivateTransfers, addonDealsData, addonServicesData, addonTransfersData, persons.adult, persons.child, persons.infant, isSoloTraveller]);
+  }, [
+    slug,
+    addonDeals,
+    addonHotelServices,
+    addonPrivateTransfers,
+    addonDealsData,
+    addonServicesData,
+    addonTransfersData,
+    persons.adult,
+    persons.child,
+    persons.infant,
+    isSoloTraveller,
+  ]);
 
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [agentDiscountAmount, setAgentDiscountAmount] = useState<number | null>(
@@ -371,6 +467,37 @@ export default function PackageDetailsPage() {
       checkAgentStatus();
     }
   }, [packageSlug]);
+
+  useEffect(() => {
+    if (!pkg || !isMarinaYogaSoldOutTour(pkg)) {
+      setAlternateBookingHref(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch('/api/marina-cruise-dinners?limit=50');
+        const result = await response.json();
+        const target = findMarinaCruiseDinnerBookingTarget(result.data || []);
+        if (cancelled || !target) return;
+
+        setAlternateBookingHref(
+          `/marina-cruise-dinner/${generateShortSlug(
+            target.package_name,
+            target.package_id
+          )}`
+        );
+      } catch {
+        if (!cancelled) setAlternateBookingHref(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pkg?.package_id, pkg?.package_name]);
 
   // Detect and validate referral code from URL params
   // Track if we've already validated this ref to prevent re-validation
@@ -1004,12 +1131,24 @@ export default function PackageDetailsPage() {
       // getPricesForDate already applies deal prices if active
       const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
       const visaPrice = getVisaPrice();
-      const addonPrice = slug === 'offer-packages' ? addonPriceTotal : marinaAddonPriceTotal;
-      let finalSoloPrice = soloPrice + visaPrice + addonPrice + selectedDateSurcharge;
+      const addonPrice =
+        slug === 'offer-packages' ? addonPriceTotal : marinaAddonPriceTotal;
+      let finalSoloPrice =
+        soloPrice + visaPrice + addonPrice + selectedDateSurcharge;
       if (hasActiveAgentSubscription && (pkg?.agent_discount ?? 0) > 0) {
-        finalSoloPrice = Math.max(0, finalSoloPrice - (finalSoloPrice * (pkg.agent_discount ?? 0)) / 100);
-      } else if (referralData?.linkType === 'discount' && (referralData?.discountPercentage ?? 0) > 0) {
-        finalSoloPrice = Math.max(0, finalSoloPrice - (finalSoloPrice * (referralData.discountPercentage ?? 0)) / 100);
+        finalSoloPrice = Math.max(
+          0,
+          finalSoloPrice - (finalSoloPrice * (pkg.agent_discount ?? 0)) / 100
+        );
+      } else if (
+        referralData?.linkType === 'discount' &&
+        (referralData?.discountPercentage ?? 0) > 0
+      ) {
+        finalSoloPrice = Math.max(
+          0,
+          finalSoloPrice -
+            (finalSoloPrice * (referralData.discountPercentage ?? 0)) / 100
+        );
       }
       setCalculatedPrice(finalSoloPrice);
       return;
@@ -1065,8 +1204,10 @@ export default function PackageDetailsPage() {
 
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
-    const addonPrice = slug === 'offer-packages' ? addonPriceTotal : marinaAddonPriceTotal;
-    let finalPrice = totalPrice + visaPrice + addonPrice + selectedDateSurcharge;
+    const addonPrice =
+      slug === 'offer-packages' ? addonPriceTotal : marinaAddonPriceTotal;
+    let finalPrice =
+      totalPrice + visaPrice + addonPrice + selectedDateSurcharge;
 
     // Apply discount logic:
     // Priority 1: Agent with active subscription gets agent discount
@@ -1366,12 +1507,8 @@ export default function PackageDetailsPage() {
 
     const tourWeekendRangeRule = getTourWeekendRangeRule(pkg?.package_id);
     const onTourWeekendRange =
-      tourWeekendRangeRule &&
-      isDateOnTourWeekendRange(date, pkg?.package_id);
-    const isExtraTourDate = isTourWeekendRangeExtraDate(
-      date,
-      pkg?.package_id
-    );
+      tourWeekendRangeRule && isDateOnTourWeekendRange(date, pkg?.package_id);
+    const isExtraTourDate = isTourWeekendRangeExtraDate(date, pkg?.package_id);
 
     // For tours only: disable today and tomorrow (day after tomorrow earliest)
     // Exception: allowTodayBooking for today; extraDates bypass tomorrow block too
@@ -1379,10 +1516,7 @@ export default function PackageDetailsPage() {
     if (slug && slug !== 'marina-cruise-dinner' && usesBookingSlots(slug)) {
       const allowToday = tourWeekendRangeRule?.allowTodayBooking === true;
       if (!allowToday && checkDate.getTime() === today.getTime()) return true;
-      if (
-        checkDate.getTime() === tomorrow.getTime() &&
-        !isExtraTourDate
-      ) {
+      if (checkDate.getTime() === tomorrow.getTime() && !isExtraTourDate) {
         return true;
       }
       if (
@@ -1703,7 +1837,7 @@ export default function PackageDetailsPage() {
       <div className='package-details-page'>
         <div className='package-details-error'>
           <h2>Package not found</h2>
-          <Link href="/marina-cruise-dinner" className='back-button'>
+          <Link href='/marina-cruise-dinner' className='back-button'>
             <ArrowLeft /> Back to packages
           </Link>
         </div>
@@ -1727,6 +1861,7 @@ export default function PackageDetailsPage() {
   const originalPrice = getOriginalPrice();
 
   const isRegistrationMode = isMarinaRegistrationMode(pkg);
+  const isYogaSoldOut = isMarinaYogaSoldOutTour(pkg);
   const isPriceRevealingSoon =
     !isRegistrationMode && isPackagePriceRevealingSoon(pkg);
   const primaryActionLabel = isRegistrationMode ? 'Register' : 'Add to Cart';
@@ -1766,7 +1901,10 @@ export default function PackageDetailsPage() {
         <div className='package-hero-details'>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
           <div className='package-hero-pricing'>
-            {isRegistrationMode ? (
+            {isYogaSoldOut && (
+              <span className='package-hero-sold-out-badge'>Sold Out</span>
+            )}
+            {isRegistrationMode && !isYogaSoldOut ? (
               <span
                 role='status'
                 className='package-price-revealing-soon package-price-revealing-soon--hero'
@@ -1776,15 +1914,17 @@ export default function PackageDetailsPage() {
             ) : isPriceRevealingSoon ? (
               <PackagePriceRevealingSoonLabel variant='hero' />
             ) : (
-            <span className='package-hero-price-current'>
-              {formatPrice(currentPrice)}
-            </span>
-            )}
-            {!isPriceRevealingSoon && showOriginalPrice && displayOriginalPrice && (
-              <span className='package-hero-price-original'>
-                {formatPrice(displayOriginalPrice)}
+              <span className='package-hero-price-current'>
+                {formatPrice(currentPrice)}
               </span>
             )}
+            {!isPriceRevealingSoon &&
+              showOriginalPrice &&
+              displayOriginalPrice && (
+                <span className='package-hero-price-original'>
+                  {formatPrice(displayOriginalPrice)}
+                </span>
+              )}
             {!isPriceRevealingSoon && discountLabel && (
               <span className='package-hero-discount-badge'>
                 {discountLabel}
@@ -1799,178 +1939,188 @@ export default function PackageDetailsPage() {
           {/* Price Breakdown */}
           {(!isPriceRevealingSoon || isRegistrationMode) &&
             (() => {
-            const prices = getPricesForDate();
-            const hasPricing =
-              prices.adultPrice > 0 ||
-              prices.childPrice > 0 ||
-              prices.infantPrice > 0;
+              const prices = getPricesForDate();
+              const hasPricing =
+                prices.adultPrice > 0 ||
+                prices.childPrice > 0 ||
+                prices.infantPrice > 0;
 
-            if (!hasPricing && !pkg.package_price) return null;
+              if (!hasPricing && !pkg.package_price) return null;
 
-            // Calculate discounted prices if referral discount is active
-            const referralDiscountPercent =
-              referralData?.linkType === 'discount' &&
-              referralData?.discountPercentage > 0 &&
-              !hasActiveAgentSubscription
-                ? referralData.discountPercentage
-                : 0;
-            const agentDiscountPercent =
-              hasActiveAgentSubscription && (pkg?.agent_discount || 0) > 0
-                ? pkg?.agent_discount || 0
-                : 0;
-            const discountPercent =
-              agentDiscountPercent || referralDiscountPercent;
+              // Calculate discounted prices if referral discount is active
+              const referralDiscountPercent =
+                referralData?.linkType === 'discount' &&
+                referralData?.discountPercentage > 0 &&
+                !hasActiveAgentSubscription
+                  ? referralData.discountPercentage
+                  : 0;
+              const agentDiscountPercent =
+                hasActiveAgentSubscription && (pkg?.agent_discount || 0) > 0
+                  ? pkg?.agent_discount || 0
+                  : 0;
+              const discountPercent =
+                agentDiscountPercent || referralDiscountPercent;
 
-            const getDiscountedUnitPrice = (price: number) => {
-              if (discountPercent <= 0) return price;
-              return Math.max(0, price - (price * discountPercent) / 100);
-            };
+              const getDiscountedUnitPrice = (price: number) => {
+                if (discountPercent <= 0) return price;
+                return Math.max(0, price - (price * discountPercent) / 100);
+              };
 
-            return (
-              <div className='package-hero-price-breakdown'>
-                {prices.adultPrice > 0 && (
-                  <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>
-                      {isRegistrationMode ? 'Registration Adult' : 'Adult'}
-                    </span>
-                    <span className='package-hero-price-item-age'>
-                      12+ Years
-                    </span>
-                    {discountPercent > 0 ? (
-                      <>
-                        <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(
-                            getDiscountedUnitPrice(prices.adultPrice)
-                          )}
-                        </span>
-                        <span className='package-hero-price-item-original'>
+              return (
+                <div className='package-hero-price-breakdown'>
+                  {prices.adultPrice > 0 && (
+                    <div className='package-hero-price-item'>
+                      <span className='package-hero-price-item-label'>
+                        {isRegistrationMode ? 'Registration Adult' : 'Adult'}
+                      </span>
+                      <span className='package-hero-price-item-age'>
+                        12+ Years
+                      </span>
+                      {discountPercent > 0 ? (
+                        <>
+                          <span className='package-hero-price-item-amount discounted'>
+                            {formatPrice(
+                              getDiscountedUnitPrice(prices.adultPrice)
+                            )}
+                          </span>
+                          <span className='package-hero-price-item-original'>
+                            {formatPrice(prices.adultPrice)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className='package-hero-price-item-amount'>
                           {formatPrice(prices.adultPrice)}
                         </span>
-                      </>
-                    ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(prices.adultPrice)}
-                      </span>
-                    )}
-                    {isDiscountActive &&
-                      pkg.adult_discount_amount &&
-                      pkg.adult_discount_amount > 0 && (
-                        <span className='package-hero-price-item-discount'>
-                          Save {formatPrice(pkg.adult_discount_amount)}
-                        </span>
                       )}
-                  </div>
-                )}
-                {prices.childPrice > 0 && (
-                  <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>
-                      {isRegistrationMode ? 'Registration Child' : 'Child'}
-                    </span>
-                    <span className='package-hero-price-item-age'>
-                      2-8 Years
-                    </span>
-                    {discountPercent > 0 ? (
-                      <>
-                        <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(
-                            getDiscountedUnitPrice(prices.childPrice)
-                          )}
-                        </span>
-                        <span className='package-hero-price-item-original'>
+                      {isDiscountActive &&
+                        pkg.adult_discount_amount &&
+                        pkg.adult_discount_amount > 0 && (
+                          <span className='package-hero-price-item-discount'>
+                            Save {formatPrice(pkg.adult_discount_amount)}
+                          </span>
+                        )}
+                    </div>
+                  )}
+                  {prices.childPrice > 0 && (
+                    <div className='package-hero-price-item'>
+                      <span className='package-hero-price-item-label'>
+                        {isRegistrationMode ? 'Registration Child' : 'Child'}
+                      </span>
+                      <span className='package-hero-price-item-age'>
+                        2-8 Years
+                      </span>
+                      {discountPercent > 0 ? (
+                        <>
+                          <span className='package-hero-price-item-amount discounted'>
+                            {formatPrice(
+                              getDiscountedUnitPrice(prices.childPrice)
+                            )}
+                          </span>
+                          <span className='package-hero-price-item-original'>
+                            {formatPrice(prices.childPrice)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className='package-hero-price-item-amount'>
                           {formatPrice(prices.childPrice)}
                         </span>
-                      </>
-                    ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(prices.childPrice)}
-                      </span>
-                    )}
-                    {isDiscountActive &&
-                      pkg.child_discount_amount &&
-                      pkg.child_discount_amount > 0 && (
-                        <span className='package-hero-price-item-discount'>
-                          Save {formatPrice(pkg.child_discount_amount)}
-                        </span>
                       )}
-                  </div>
-                )}
-                {prices.infantPrice > 0 && (
-                  <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>
-                      Infant
-                    </span>
-                    <span className='package-hero-price-item-age'>
-                      &lt;2 Years
-                    </span>
-                    {discountPercent > 0 ? (
-                      <>
-                        <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(
-                            getDiscountedUnitPrice(prices.infantPrice)
-                          )}
-                        </span>
-                        <span className='package-hero-price-item-original'>
+                      {isDiscountActive &&
+                        pkg.child_discount_amount &&
+                        pkg.child_discount_amount > 0 && (
+                          <span className='package-hero-price-item-discount'>
+                            Save {formatPrice(pkg.child_discount_amount)}
+                          </span>
+                        )}
+                    </div>
+                  )}
+                  {prices.infantPrice > 0 && (
+                    <div className='package-hero-price-item'>
+                      <span className='package-hero-price-item-label'>
+                        Infant
+                      </span>
+                      <span className='package-hero-price-item-age'>
+                        &lt;2 Years
+                      </span>
+                      {discountPercent > 0 ? (
+                        <>
+                          <span className='package-hero-price-item-amount discounted'>
+                            {formatPrice(
+                              getDiscountedUnitPrice(prices.infantPrice)
+                            )}
+                          </span>
+                          <span className='package-hero-price-item-original'>
+                            {formatPrice(prices.infantPrice)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className='package-hero-price-item-amount'>
                           {formatPrice(prices.infantPrice)}
                         </span>
-                      </>
-                    ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(prices.infantPrice)}
-                      </span>
-                    )}
-                    {isDiscountActive &&
-                      pkg.infant_discount_amount &&
-                      pkg.infant_discount_amount > 0 && (
-                        <span className='package-hero-price-item-discount'>
-                          Save {formatPrice(pkg.infant_discount_amount)}
-                        </span>
                       )}
-                  </div>
-                )}
-                {!hasPricing && pkg.package_price && (
-                  <div className='package-hero-price-item'>
-                    <span className='package-hero-price-item-label'>
-                      Package Price
-                    </span>
-                    {discountPercent > 0 ? (
-                      <>
-                        <span className='package-hero-price-item-amount discounted'>
-                          {formatPrice(
-                            getDiscountedUnitPrice(pkg.package_price)
-                          )}
-                        </span>
-                        <span className='package-hero-price-item-original'>
+                      {isDiscountActive &&
+                        pkg.infant_discount_amount &&
+                        pkg.infant_discount_amount > 0 && (
+                          <span className='package-hero-price-item-discount'>
+                            Save {formatPrice(pkg.infant_discount_amount)}
+                          </span>
+                        )}
+                    </div>
+                  )}
+                  {!hasPricing && pkg.package_price && (
+                    <div className='package-hero-price-item'>
+                      <span className='package-hero-price-item-label'>
+                        Package Price
+                      </span>
+                      {discountPercent > 0 ? (
+                        <>
+                          <span className='package-hero-price-item-amount discounted'>
+                            {formatPrice(
+                              getDiscountedUnitPrice(pkg.package_price)
+                            )}
+                          </span>
+                          <span className='package-hero-price-item-original'>
+                            {formatPrice(pkg.package_price)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className='package-hero-price-item-amount'>
                           {formatPrice(pkg.package_price)}
                         </span>
-                      </>
-                    ) : (
-                      <span className='package-hero-price-item-amount'>
-                        {formatPrice(pkg.package_price)}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-          {(isRegistrationMode || !isPriceRevealingSoon) ? (
-          <div className='package-hero-buttons'>
-            <button
-              ref={addToCartButtonRef}
-              className='package-hero-add-to-cart-button'
-              onClick={() => {
-                if (isMobile) {
-                  setShowMobileDrawer(true);
-                } else {
-                  setShowDesktopPopover(true);
-                }
-              }}
-            >
-              <ShoppingCartIcon ref={addToCartIconRef} size={24} />
-              {primaryActionLabel}
-            </button>
-          </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          {!isYogaSoldOut && (isRegistrationMode || !isPriceRevealingSoon) ? (
+            <div className='package-hero-buttons'>
+              <button
+                ref={addToCartButtonRef}
+                className='package-hero-add-to-cart-button'
+                onClick={() => {
+                  if (isMobile) {
+                    setShowMobileDrawer(true);
+                  } else {
+                    setShowDesktopPopover(true);
+                  }
+                }}
+              >
+                <ShoppingCartIcon ref={addToCartIconRef} size={24} />
+                {primaryActionLabel}
+              </button>
+            </div>
           ) : null}
+          {isYogaSoldOut && alternateBookingHref && (
+            <div className='package-hero-alternate-booking'>
+              <Link
+                href={alternateBookingHref}
+                className='package-hero-alternate-booking-link'
+              >
+                Still want to cruise? Check out the Marina Cruise Dinner
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
