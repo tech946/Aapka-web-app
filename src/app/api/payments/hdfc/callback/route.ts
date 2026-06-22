@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendBookingConfirmationEmail } from '@/lib/email';
+import { buildBookingEmailPackages } from '@/lib/booking-package-details';
 import crypto from 'crypto';
 
 export const runtime = 'nodejs';
@@ -365,48 +366,13 @@ async function sendBookingEmails(
 
     // Fetch package details for all packages in booking
     console.log(`📧 [SEND EMAILS] Fetching package details...`);
-    const packageIds = Array.isArray(booking.package_ids)
-      ? booking.package_ids
-      : [];
     const cartItems = Array.isArray(booking.cart_items)
       ? booking.cart_items
       : [];
     
-    console.log(`📧 [SEND EMAILS] Package IDs: ${packageIds.join(', ')}`);
     console.log(`📧 [SEND EMAILS] Cart items count: ${cartItems.length}`);
 
-    // Fetch package names from database
-    console.log(`📧 [SEND EMAILS] Querying package names from database...`);
-    const packageDetails = await Promise.all(
-      packageIds.map(async (packageId: string) => {
-        const { data: pkg } = await supabaseAdmin
-          .from('packages')
-          .select('package_name, package_id')
-          .eq('package_id', packageId)
-          .single();
-
-        return {
-          packageId,
-          packageName: pkg?.package_name || 'Unknown Package',
-        };
-      })
-    );
-
-    // Map cart items with package names
-    const packages = cartItems.map((item: any) => {
-      const pkgDetail = packageDetails.find(
-        p => p.packageId === item.packageId
-      );
-      return {
-        packageName: pkgDetail?.packageName || 'Unknown Package',
-        packageId: item.packageId || '',
-        selectedDate: item.selectedDate || null,
-        adults: item.adults || 0,
-        children: item.children || 0,
-        infants: item.infants || 0,
-        price: item.price || 0,
-      };
-    });
+    const packages = await buildBookingEmailPackages(cartItems);
 
     // Prepare email data
     const emailData = {

@@ -4,33 +4,6 @@
 
 export const MARINA_CRUISE_SLUG = 'marina-cruise-dinner' as const;
 
-/** Yoga marina event — sold out; guests are directed to the main dinner cruise. */
-export const MARINA_YOGA_SOLD_OUT_NAME_MARKER =
-  'Yoga & Zumba Marina Cruise Party';
-
-/** Active marina dinner cruise to link from the sold-out yoga tour page. */
-export const MARINA_CRUISE_DINNER_BOOKING_NAME_MARKER =
-  'marina cruise dinner - (unlimited buffet';
-
-export function isMarinaYogaSoldOutTour(
-  pkg: { package_name?: string | null } | null | undefined
-): boolean {
-  const name = pkg?.package_name?.trim();
-  if (!name) return false;
-  return name.includes(MARINA_YOGA_SOLD_OUT_NAME_MARKER);
-}
-
-export function findMarinaCruiseDinnerBookingTarget<
-  T extends { package_id: string; package_name: string },
->(packages: T[]): T | null {
-  const marker = MARINA_CRUISE_DINNER_BOOKING_NAME_MARKER.toLowerCase();
-  return (
-    packages.find(p =>
-      p.package_name?.toLowerCase().includes(marker)
-    ) ?? null
-  );
-}
-
 export type MarinaRegistrationFields = {
   registration_only?: boolean | null;
   registration_adult_price?: number | null;

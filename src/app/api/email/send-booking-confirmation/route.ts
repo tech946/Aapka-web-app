@@ -5,6 +5,7 @@ import {
 } from '@/lib/email';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { parseDateStringToLocal } from '@/lib/utils';
+import { buildBookingEmailPackages } from '@/lib/booking-package-details';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -68,36 +69,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch package details
-    const packageIds = Array.isArray(booking.package_ids) ? booking.package_ids : [];
     const cartItems = Array.isArray(booking.cart_items) ? booking.cart_items : [];
 
-    const packageDetails = await Promise.all(
-      packageIds.map(async (packageId: string) => {
-        const { data: pkg } = await supabaseAdmin
-          .from('packages')
-          .select('package_name, package_id')
-          .eq('package_id', packageId)
-          .single();
-
-        return {
-          packageId,
-          packageName: pkg?.package_name || 'Unknown Package',
-        };
-      })
-    );
-
-    const packages = cartItems.map((item: any) => {
-      const pkgDetail = packageDetails.find((p) => p.packageId === item.packageId);
-      return {
-        packageName: pkgDetail?.packageName || 'Unknown Package',
-        packageId: item.packageId || '',
-        selectedDate: item.selectedDate || null,
-        adults: item.adults || 0,
-        children: item.children || 0,
-        infants: item.infants || 0,
-        price: item.price || 0,
-      };
-    });
+    const packages = await buildBookingEmailPackages(cartItems);
 
     // Limited Time Deal: dedicated “booking fee only” template (PDF-style), not full-package confirmation
     if (booking.limited_time_deal_id) {

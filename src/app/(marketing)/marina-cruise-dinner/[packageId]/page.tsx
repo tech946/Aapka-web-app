@@ -41,8 +41,6 @@ import {
   parseMarinaAddons,
   calcMarinaAddonsPrice,
   getMarinaCruiseInitialMonth,
-  isMarinaYogaSoldOutTour,
-  findMarinaCruiseDinnerBookingTarget,
   type MarinaAddon,
 } from '@/lib/marina-cruise-config';
 import {
@@ -59,7 +57,6 @@ import {
 import {
   parseDateStringToLocal,
   getEarliestAvailableDateMonth,
-  generateShortSlug,
 } from '@/lib/utils';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
 import {
@@ -161,9 +158,6 @@ export default function PackageDetailsPage() {
 
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
-  const [alternateBookingHref, setAlternateBookingHref] = useState<
-    string | null
-  >(null);
   const [dateRangesReady, setDateRangesReady] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [category, setCategory] = useState<any>(null);
@@ -467,37 +461,6 @@ export default function PackageDetailsPage() {
       checkAgentStatus();
     }
   }, [packageSlug]);
-
-  useEffect(() => {
-    if (!pkg || !isMarinaYogaSoldOutTour(pkg)) {
-      setAlternateBookingHref(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const response = await fetch('/api/marina-cruise-dinners?limit=50');
-        const result = await response.json();
-        const target = findMarinaCruiseDinnerBookingTarget(result.data || []);
-        if (cancelled || !target) return;
-
-        setAlternateBookingHref(
-          `/marina-cruise-dinner/${generateShortSlug(
-            target.package_name,
-            target.package_id
-          )}`
-        );
-      } catch {
-        if (!cancelled) setAlternateBookingHref(null);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pkg?.package_id, pkg?.package_name]);
 
   // Detect and validate referral code from URL params
   // Track if we've already validated this ref to prevent re-validation
@@ -1861,7 +1824,6 @@ export default function PackageDetailsPage() {
   const originalPrice = getOriginalPrice();
 
   const isRegistrationMode = isMarinaRegistrationMode(pkg);
-  const isYogaSoldOut = isMarinaYogaSoldOutTour(pkg);
   const isPriceRevealingSoon =
     !isRegistrationMode && isPackagePriceRevealingSoon(pkg);
   const primaryActionLabel = isRegistrationMode ? 'Register' : 'Add to Cart';
@@ -1901,10 +1863,7 @@ export default function PackageDetailsPage() {
         <div className='package-hero-details'>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
           <div className='package-hero-pricing'>
-            {isYogaSoldOut && (
-              <span className='package-hero-sold-out-badge'>Sold Out</span>
-            )}
-            {isRegistrationMode && !isYogaSoldOut ? (
+            {isRegistrationMode ? (
               <span
                 role='status'
                 className='package-price-revealing-soon package-price-revealing-soon--hero'
@@ -1931,13 +1890,13 @@ export default function PackageDetailsPage() {
               </span>
             )}
           </div>
-          {!isYogaSoldOut && pkg.package_description && (
+          {pkg.package_description && (
             <p className='package-hero-description'>
               {pkg.package_description}
             </p>
           )}
           {/* Price Breakdown */}
-          {!isYogaSoldOut && (!isPriceRevealingSoon || isRegistrationMode) &&
+          {(!isPriceRevealingSoon || isRegistrationMode) &&
             (() => {
               const prices = getPricesForDate();
               const hasPricing =
@@ -2093,7 +2052,7 @@ export default function PackageDetailsPage() {
                 </div>
               );
             })()}
-          {!isYogaSoldOut && (isRegistrationMode || !isPriceRevealingSoon) ? (
+          {(isRegistrationMode || !isPriceRevealingSoon) ? (
             <div className='package-hero-buttons'>
               <button
                 ref={addToCartButtonRef}
@@ -2111,16 +2070,6 @@ export default function PackageDetailsPage() {
               </button>
             </div>
           ) : null}
-          {isYogaSoldOut && alternateBookingHref && (
-            <div className='package-hero-alternate-booking'>
-              <Link
-                href={alternateBookingHref}
-                className='package-hero-alternate-booking-link'
-              >
-                Still want to cruise? Check out the Marina Cruise Dinner
-              </Link>
-            </div>
-          )}
         </div>
       </div>
 

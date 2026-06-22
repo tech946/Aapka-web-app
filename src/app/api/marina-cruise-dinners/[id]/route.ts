@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { isMarinaYogaSoldOutTour } from '@/lib/marina-cruise-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,12 +19,14 @@ export async function GET(
       );
     }
 
-    // Fetch packages and find by slug (inactive yoga sold-out tour is still viewable)
+    // Fetch all active packages and find by slug (name converted to slug)
+    // Marketing pages should only see active packages
     const { data: allPackages, error: fetchError } = await supabaseAdmin
       .from('marina_cruise_dinners')
       .select(
         'package_id, package_name, package_description, category, timing, package_price, adult_price, child_price, registration_only, registration_adult_price, registration_child_price, bookable_dates, booking_days, excluded_dates, pickup_location, addons, status, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, thumbnail_image, gallery, created_at'
-      );
+      )
+      .eq('status', 'active');
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
@@ -91,13 +92,6 @@ export async function GET(
     });
 
     if (!packageData) {
-      return NextResponse.json({ error: 'Package not found' }, { status: 404 });
-    }
-
-    if (
-      packageData.status !== 'active' &&
-      !isMarinaYogaSoldOutTour(packageData)
-    ) {
       return NextResponse.json({ error: 'Package not found' }, { status: 404 });
     }
 

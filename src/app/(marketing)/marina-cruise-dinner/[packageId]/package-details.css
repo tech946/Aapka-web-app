@@ -206,39 +206,6 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
-.package-hero-sold-out-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-  color: white;
-  font-family: var(--font-inter);
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(75, 85, 99, 0.3);
-}
-
-.package-hero-alternate-booking {
-  margin-top: 4px;
-}
-
-.package-hero-alternate-booking-link {
-  font-family: var(--font-inter);
-  font-size: 20px;
-  line-height: 1.4;
-  font-weight: 600;
-  color: #fd6b06;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.package-hero-alternate-booking-link:hover {
-  color: #e55f00;
-}
-
 .package-hero-description {
   font-family: var(--font-inter);
   font-size: 16px;
