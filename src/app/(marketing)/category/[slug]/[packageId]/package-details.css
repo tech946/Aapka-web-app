@@ -2479,8 +2479,8 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .counter-button {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
   border-radius: 0;
   background: transparent;

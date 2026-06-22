@@ -220,3 +220,231 @@
   background: #e5e7eb;
   margin: 2px 0 0;
 }
+
+/* ── Compact modal layout + dropdowns open below fields (avoid top clipping) ── */
+.desktop-booking-modal,
+.mobile-booking-modal {
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
+}
+
+.booking-modal-field-row {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.desktop-booking-modal
+  .booking-modal-field-row
+  .booking-input-icon,
+.mobile-booking-modal
+  .booking-modal-field-row
+  .mobile-booking-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.desktop-booking-modal .desktop-booking-modal-content,
+.mobile-booking-modal .mobile-booking-modal-content {
+  gap: 12px;
+  padding: 14px 16px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.desktop-booking-modal .desktop-booking-modal-header,
+.mobile-booking-modal .mobile-booking-modal-header {
+  padding: 12px 16px;
+}
+
+.desktop-booking-modal .desktop-booking-modal-title {
+  font-size: 16px !important;
+}
+
+.mobile-booking-modal .mobile-booking-modal-title {
+  font-size: 18px !important;
+}
+
+.desktop-booking-modal .desktop-booking-modal-content .input-selectors,
+.mobile-booking-modal .mobile-booking-modal-content .mobile-input-selectors {
+  gap: 10px;
+}
+
+.desktop-booking-modal
+  .desktop-booking-modal-content
+  .booking-input-wrapper.booking-modal-field
+  .booking-input,
+.mobile-booking-modal
+  .mobile-booking-input-wrapper.booking-modal-field
+  .mobile-booking-input {
+  height: 42px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.desktop-booking-modal .booking-input-wrapper:has(
+    .booking-persons-dropdown,
+    .booking-dates-dropdown
+  ),
+.mobile-booking-modal .mobile-booking-input-wrapper:has(
+    .mobile-booking-persons-dropdown,
+    .mobile-booking-dates-dropdown
+  ) {
+  z-index: 2025;
+}
+
+/* Desktop popovers — open downward inside the modal */
+.desktop-booking-modal .booking-persons-dropdown,
+.desktop-booking-modal .booking-dates-dropdown {
+  top: calc(100% + 6px);
+  bottom: auto;
+  padding: 10px 12px;
+  border-radius: 8px;
+  max-height: min(45vh, 240px);
+  overflow-y: auto;
+}
+
+/* Calendar expands inline (no overlay) so add-ons/price stay below */
+.desktop-booking-modal .booking-input-wrapper.booking-date-picker-open,
+.mobile-booking-modal
+  .mobile-booking-input-wrapper.mobile-booking-date-picker-open {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  z-index: 1;
+}
+
+.desktop-booking-modal
+  .booking-input-wrapper.booking-date-picker-open
+  .booking-calendar-dropdown,
+.mobile-booking-modal
+  .mobile-booking-input-wrapper.mobile-booking-date-picker-open
+  .mobile-booking-calendar-dropdown {
+  position: static;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 8px 4px;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 8px 8px;
+  box-shadow: none;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.desktop-booking-modal
+  .booking-input-wrapper.booking-date-picker-open.booking-modal-field,
+.mobile-booking-modal
+  .mobile-booking-input-wrapper.mobile-booking-date-picker-open.booking-modal-field {
+  padding-bottom: 0;
+}
+
+.desktop-booking-modal
+  .booking-input-wrapper.booking-date-picker-open
+  .booking-modal-field-row
+  .booking-input,
+.mobile-booking-modal
+  .mobile-booking-input-wrapper.mobile-booking-date-picker-open
+  .booking-modal-field-row
+  .mobile-booking-input {
+  border-radius: 8px 8px 0 0;
+}
+
+.desktop-booking-modal .booking-calendar-dropdown .booking-modal-calendar,
+.mobile-booking-modal
+  .mobile-booking-calendar-dropdown
+  .booking-modal-calendar.mobile-custom-calendar {
+  --rdp-cell-size: 34px;
+}
+
+.desktop-booking-modal
+  .booking-calendar-dropdown
+  .booking-inline-month-caption,
+.mobile-booking-modal
+  .mobile-booking-calendar-dropdown
+  .booking-inline-month-caption {
+  min-height: 30px;
+  margin-bottom: 2px;
+}
+
+.desktop-booking-modal
+  .booking-calendar-dropdown
+  .booking-inline-month-caption-label,
+.mobile-booking-modal
+  .mobile-booking-calendar-dropdown
+  .booking-inline-month-caption-label {
+  font-size: 14px;
+}
+
+.input-selectors.booking-date-picker-open,
+.mobile-input-selectors.mobile-date-picker-open {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.desktop-booking-modal .person-counter-row {
+  padding: 8px 0;
+}
+
+.desktop-booking-modal .booking-price-section .booking-price-row,
+.mobile-booking-modal .mobile-booking-price-row {
+  padding-top: 10px;
+}
+
+.desktop-booking-modal .booking-price-section .booking-price-amount,
+.mobile-booking-modal .mobile-booking-price-amount {
+  font-size: 20px;
+}
+
+.desktop-booking-modal .booking-add-to-cart-button,
+.mobile-booking-modal .mobile-booking-add-to-cart-button {
+  height: 46px;
+}
+
+.desktop-booking-modal .booking-addons-section,
+.mobile-booking-modal .booking-addons-section {
+  padding: 10px;
+  gap: 8px;
+}
+
+.desktop-booking-modal .marina-booking-addon-row,
+.mobile-booking-modal .marina-booking-addon-row {
+  padding: 8px 10px;
+}
+
+.mobile-booking-modal .mobile-person-counter-row {
+  padding: 8px 0;
+}
+
+.mobile-booking-modal .mobile-booking-persons-dropdown {
+  padding: 10px 12px;
+}
+
+.desktop-booking-modal-overlay,
+.mobile-booking-modal-overlay {
+  padding: 12px;
+  align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+  .desktop-booking-modal-overlay {
+    align-items: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-booking-modal .mobile-booking-modal-content {
+    max-height: calc(100dvh - 80px);
+  }
+}

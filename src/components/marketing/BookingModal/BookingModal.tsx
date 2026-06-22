@@ -564,7 +564,7 @@ export default function BookingModal({
 
           {/* Input Selectors */}
           <div
-            className={`${inputSelectorsClass}${isMobile && showDatePicker ? ' mobile-date-picker-open' : ''}`}
+            className={`${inputSelectorsClass}${showDatePicker ? (isMobile ? ' mobile-date-picker-open' : ' booking-date-picker-open') : ''}`}
           >
             {/* Persons Selector */}
             <div
@@ -790,19 +790,21 @@ export default function BookingModal({
                 className={
                   isMobile
                     ? `mobile-booking-input-wrapper booking-modal-field${showDatePicker ? ' mobile-booking-date-picker-open' : ''}`
-                    : 'booking-input-wrapper booking-modal-field'
+                    : `booking-input-wrapper booking-modal-field${showDatePicker ? ' booking-date-picker-open' : ''}`
                 }
                 ref={datePickerRef}
               >
-                <Calendar className={isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'} />
-                <input
-                  type='text'
-                  placeholder='Add dates'
-                  className={isMobile ? 'mobile-booking-input' : 'booking-input'}
-                  value={selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''}
-                  readOnly
-                  onClick={() => setShowDatePicker(!showDatePicker)}
-                />
+                <div className='booking-modal-field-row'>
+                  <Calendar className={isMobile ? 'mobile-booking-input-icon' : 'booking-input-icon'} />
+                  <input
+                    type='text'
+                    placeholder='Add dates'
+                    className={isMobile ? 'mobile-booking-input' : 'booking-input'}
+                    value={selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''}
+                    readOnly
+                    onClick={() => setShowDatePicker(!showDatePicker)}
+                  />
+                </div>
                 {showDatePicker && (
                   <div
                     className={isMobile ? 'mobile-booking-calendar-dropdown' : 'booking-calendar-dropdown'}
