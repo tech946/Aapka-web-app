@@ -1,37 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { buildCrmWebsiteLeadPayload } from '@/lib/website-lead-payload';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const CRM_LEADS_URL =
+  `${process.env.CRM_API_URL?.replace(/\/$/, '') || 'https://crm.aapkatourism.com'}/api/website/leads`;
+
+function corsHeaders(): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, x-api-key, Authorization',
+  };
+}
+
 // Handle CORS preflight
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, x-api-key, Authorization',
-    },
+    headers: corsHeaders(),
   });
 }
 
-// POST - Submit lead from website
+// POST - Submit lead from website (proxies to CRM; create or update by WhatsApp)
 export async function POST(req: NextRequest) {
   try {
-    // This endpoint proxies to the CRM leads API endpoint
-    // The API key (WEBSITE_API_KEY) is stored server-side in environment variables
-
-    // Get API key from environment
     const apiKey = process.env.WEBSITE_API_KEY?.trim();
 
     if (!apiKey) {
       console.error('WEBSITE_API_KEY is not configured');
-      console.error('Available env vars:', {
-        hasApiKey: !!process.env.WEBSITE_API_KEY,
-        hasCrmUrl: !!process.env.CRM_API_URL,
-        nodeEnv: process.env.NODE_ENV,
-      });
       return NextResponse.json(
         {
           error: 'API key not configured',
@@ -42,13 +40,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Use hardcoded CRM URL directly
-    const crmUrl = 'https://crm.aapkatourism.com/api/website/leads';
+    const body = (await req.json()) as Record<string, unknown>;
 
-    // Parse request body
-    const body = await req.json();
-
-    // Validate required fields
     if (!body.full_name_as_per_passport || !body.whatsapp_number) {
       return NextResponse.json(
         {
@@ -58,25 +51,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Transform body to match CRM API structure
-    // Convert tours_and_activities to selected_attractions
-    const { tours_and_activities, ...restBody } = body;
+    const crmRequestBody = buildCrmWebsiteLeadPayload(body);
 
-    const crmRequestBody = {
-      ...restBody,
-      // 6. Tours & Activities - Convert to selected_attractions
-      selected_attractions:
-        tours_and_activities && Array.isArray(tours_and_activities)
-          ? tours_and_activities
-          : null,
-      // Mark as coming from website
-      source: 'website',
-    };
-
-    // Proxy to external CRM endpoint
     try {
-      console.log('Calling CRM endpoint:', crmUrl);
-      const response = await fetch(crmUrl, {
+      const response = await fetch(CRM_LEADS_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,31 +63,12 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(crmRequestBody),
       });
 
-      // Check if response is ok
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('CRM API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText.substring(0, 500),
-        });
-        return NextResponse.json(
-          {
-            error: 'Failed to connect to CRM endpoint',
-            details: `CRM returned ${response.status}: ${response.statusText}`,
-          },
-          { status: response.status }
-        );
-      }
-
-      // Try to parse JSON response
-      let responseData;
       const responseText = await response.text();
+      let responseData: Record<string, unknown> = {};
       try {
         responseData = responseText ? JSON.parse(responseText) : {};
-      } catch (parseError) {
-        console.error('Failed to parse CRM response as JSON:', parseError);
-        console.error('Response text:', responseText.substring(0, 500));
+      } catch {
+        console.error('Failed to parse CRM response as JSON:', responseText.substring(0, 500));
         return NextResponse.json(
           {
             error: 'Failed to parse CRM response',
@@ -119,40 +78,46 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // CRM returns 201 (new lead) or 200 (updated existing lead by WhatsApp)
+      if (!response.ok) {
+        console.error('CRM API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: responseText.substring(0, 500),
+        });
+        return NextResponse.json(
+          {
+            error:
+              (typeof responseData.error === 'string' && responseData.error) ||
+              'Failed to submit lead to CRM',
+            details: responseData.details ?? `CRM returned ${response.status}`,
+          },
+          { status: response.status, headers: corsHeaders() }
+        );
+      }
+
       return NextResponse.json(responseData, {
         status: response.status,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers':
-            'Content-Type, x-api-key, Authorization',
-        },
+        headers: corsHeaders(),
       });
-    } catch (fetchError: any) {
+    } catch (fetchError: unknown) {
+      const message = fetchError instanceof Error ? fetchError.message : 'Network error';
       console.error('Error calling CRM endpoint:', fetchError);
       return NextResponse.json(
         {
           error: 'Failed to connect to CRM endpoint',
-          details: fetchError.message || 'Network error or invalid response',
+          details: message,
         },
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in website leads API:', error);
     return NextResponse.json(
       {
-        error: error?.message || 'Unexpected error occurred',
+        error: error instanceof Error ? error.message : 'Unexpected error occurred',
       },
-      {
-        status: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers':
-            'Content-Type, x-api-key, Authorization',
-        },
-      }
+      { status: 500, headers: corsHeaders() }
     );
   }
 }

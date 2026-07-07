@@ -10,6 +10,7 @@ import ConditionalHeader from '@/components/marketing/Header/ConditionalHeader';
 import ConditionalFooter from '@/components/marketing/Footer/ConditionalFooter';
 import { QueryProvider } from '@/providers/QueryProvider';
 import WhatsAppButton from '@/components/marketing/WhatsAppButton/WhatsAppButton';
+import ConditionalChatbot from '@/components/chatbot/ConditionalChatbot';
 import GTMPageViewTracker from '@/components/GTMPageViewTracker';
 import { CartProvider } from '@/context/CartContext';
 
@@ -81,6 +82,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <Toaster position='top-right' /> {/* Required */}
           {children}
           <ConditionalFooter />
+          <ConditionalChatbot />
           <WhatsAppButton />
         </CartProvider>
         </QueryProvider>
