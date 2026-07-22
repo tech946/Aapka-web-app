@@ -1,0 +1,93 @@
+.oman-visa-thank-you-page {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);
+}
+
+.oman-visa-thank-you-container {
+  max-width: 560px;
+  text-align: center;
+  background: white;
+  padding: 3rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.15);
+}
+
+.oman-visa-thank-you-icon {
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.oman-visa-thank-you-container h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.oman-visa-thank-you-message {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.oman-visa-thank-you-info {
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+}
+
+.oman-visa-thank-you-info a {
+  color: #f97316;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.oman-visa-thank-you-info a:hover {
+  text-decoration: underline;
+}
+
+.oman-visa-thank-you-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.oman-visa-thank-you-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.oman-visa-thank-you-btn.primary {
+  background: #f97316;
+  color: white;
+}
+
+.oman-visa-thank-you-btn.primary:hover {
+  background: #ea580c;
+}
+
+.oman-visa-thank-you-btn.secondary {
+  background: white;
+  color: #f97316;
+  border: 2px solid #f97316;
+}
+
+.oman-visa-thank-you-btn.secondary:hover {
+  background: #fff7ed;
+}

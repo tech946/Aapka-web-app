@@ -1,0 +1,445 @@
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { DayPicker } from 'react-day-picker';
+import { format, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
+import 'react-day-picker/dist/style.css';
+import './flexible-date-calendar.css';
+
+interface DateRange {
+  id: string;
+  fromDate: string;
+  toDate: string;
+  adultPrice: number;
+  childPrice: number;
+  infantPrice: number;
+  soloTravellerPrice?: number | null;
+  isSoldOut: boolean;
+}
+
+interface FlexibleDateCalendarProps {
+  packageId: string;
+  endDate?: string | null;
+  dateRanges?: DateRange[] | null;
+  selectedDate?: Date;
+  onDateSelect: (date: Date | undefined) => void;
+  month: Date;
+  onMonthChange: (month: Date) => void;
+}
+
+export default function FlexibleDateCalendar({
+  packageId,
+  endDate,
+  dateRanges,
+  selectedDate,
+  onDateSelect,
+  month,
+  onMonthChange,
+}: FlexibleDateCalendarProps) {
+  const [seatAvailability, setSeatAvailability] = useState<Record<string, number>>({});
+  const [defaultSeats, setDefaultSeats] = useState<number>(45);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Normalize dateRanges to ensure it's always an array
+  const normalizedDateRanges = useMemo(() => {
+    if (!dateRanges) return [];
+    if (Array.isArray(dateRanges)) return dateRanges;
+    return [];
+  }, [dateRanges]);
+
+  // Fetch seat availability
+  useEffect(() => {
+    if (!packageId) return;
+
+    const fetchSeatAvailability = async () => {
+      try {
+        const response = await fetch(
+          `/api/package-seat-availability?package_id=${packageId}`
+        );
+        const result = await response.json();
+        if (result.success && result.data) {
+          setSeatAvailability(result.data);
+          setDefaultSeats(result.defaultSeats || 45);
+        }
+      } catch (error) {
+        console.error('Failed to fetch seat availability:', error);
+      }
+    };
+
+    fetchSeatAvailability();
+  }, [packageId]);
+
+  // Find the date range that contains a specific date
+  // Priority: Sold out ranges take precedence (if a date is in both a sold out range and a regular range, it's sold out)
+  const findDateRangeForDate = useCallback(
+    (dateStr: string): DateRange | null => {
+      if (!normalizedDateRanges || normalizedDateRanges.length === 0) return null;
+      const targetDate = new Date(dateStr);
+      targetDate.setHours(0, 0, 0, 0);
+      
+      // First check for sold out ranges (they take priority)
+      for (const range of normalizedDateRanges) {
+        if (!range || !range.isSoldOut) continue;
+        const fromDate = new Date(range.fromDate);
+        const toDate = new Date(range.toDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+        
+        if (targetDate >= fromDate && targetDate <= toDate) {
+          return range; // Return sold out range immediately
+        }
+      }
+      
+      // Then check for regular (non-sold-out) ranges
+      for (const range of normalizedDateRanges) {
+        if (!range || range.isSoldOut) continue; // Skip sold out ranges (already checked)
+        const fromDate = new Date(range.fromDate);
+        const toDate = new Date(range.toDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+        
+        if (targetDate >= fromDate && targetDate <= toDate) {
+          return range;
+        }
+      }
+      return null;
+    },
+    [normalizedDateRanges]
+  );
+
+  // Get available seats for a date
+  const getAvailableSeats = useCallback(
+    (dateStr: string): number => {
+      // If date has specific availability, use it; otherwise use default
+      if (seatAvailability[dateStr] !== undefined) {
+        return seatAvailability[dateStr];
+      }
+      return defaultSeats;
+    },
+    [seatAvailability, defaultSeats]
+  );
+
+  // Calculate the last available date from date ranges
+  const lastAvailableDate = useMemo(() => {
+    if (!normalizedDateRanges || normalizedDateRanges.length === 0) return null;
+    
+    let maxDate: Date | null = null;
+    for (const range of normalizedDateRanges) {
+      if (!range) continue;
+      const toDate = new Date(range.toDate);
+      toDate.setHours(0, 0, 0, 0);
+      if (!maxDate || toDate > maxDate) {
+        maxDate = toDate;
+      }
+    }
+    return maxDate;
+  }, [normalizedDateRanges]);
+
+  // Calculate min month for navigation (earliest available date month)
+  const minNavigationMonth = useMemo(() => {
+    if (!normalizedDateRanges || normalizedDateRanges.length === 0) {
+      // If no date ranges, use current month
+      return startOfMonth(new Date());
+    }
+    return getEarliestAvailableDateMonth(normalizedDateRanges);
+  }, [normalizedDateRanges]);
+
+  // Calculate max month for navigation (use end_date or last date from ranges)
+  const maxNavigationMonth = useMemo(() => {
+    let maxDate: Date | null = null;
+    
+    // Use end_date if provided
+    if (endDate) {
+      const parsed = parseDateStringToLocal(endDate);
+      if (parsed) {
+        maxDate = parsed;
+      }
+    }
+    
+    // Also consider lastAvailableDate
+    if (lastAvailableDate) {
+      if (!maxDate || lastAvailableDate > maxDate) {
+        maxDate = lastAvailableDate;
+      }
+    }
+    
+    return maxDate ? endOfMonth(maxDate) : null;
+  }, [endDate, lastAvailableDate]);
+
+  // Check if can navigate to next month
+  const canNavigateNext = useMemo(() => {
+    if (!maxNavigationMonth) return true;
+    const nextMonthStart = startOfMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1));
+    return nextMonthStart <= maxNavigationMonth;
+  }, [month, maxNavigationMonth]);
+
+  // Check if can navigate to previous month (not before earliest available date month)
+  const canNavigatePrev = useMemo(() => {
+    const prevMonthStart = startOfMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1));
+    return prevMonthStart >= minNavigationMonth;
+  }, [month, minNavigationMonth]);
+
+  // Check if a date should be disabled
+  const getDisabledDates = useCallback(
+    (date: Date): boolean => {
+      const today = startOfDay(new Date());
+      const checkDate = startOfDay(date);
+
+      // Disable past dates
+      if (checkDate < today) return true;
+
+      // Disable dates within 6 days from today
+      const sixDaysFromNow = new Date(today);
+      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
+      if (checkDate <= sixDaysFromNow) return true;
+
+      // Disable dates after package end_date
+      if (endDate) {
+        const parsedEndDate = parseDateStringToLocal(endDate);
+        if (parsedEndDate) {
+          const endDateStart = startOfDay(parsedEndDate);
+          if (checkDate > endDateStart) return true;
+        }
+      }
+
+      // Check if date is within any date range
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const dateRange = findDateRangeForDate(dateStr);
+
+      // Disable if not in any date range
+      if (!dateRange) return true;
+
+      // Disable if range is sold out
+      if (dateRange.isSoldOut) return true;
+
+      return false;
+    },
+    [endDate, findDateRangeForDate]
+  );
+
+  // Check if device is touch-enabled (for disabling tooltips on mobile)
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+  // Custom DayButton to show price or status with tooltip (desktop only)
+  const CustomDayButton = ({ day, modifiers, ...buttonProps }: any) => {
+    const date = day.date;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateRange = findDateRangeForDate(dateStr);
+    const isDisabled = modifiers.disabled;
+    const isSelected = modifiers.selected;
+    const isSoldOut = dateRange?.isSoldOut;
+
+    // Desktop only: Show tooltip on hover
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (isTouchDevice) return; // No tooltip on touch devices
+      if (!isDisabled && !isSoldOut && dateRange) {
+        setHoveredDate(dateStr);
+        const rect = e.currentTarget.getBoundingClientRect();
+        const scrollX = window.scrollX || window.pageXOffset;
+        const scrollY = window.scrollY || window.pageYOffset;
+        setTooltipPosition({
+          x: rect.left + rect.width / 2 + scrollX,
+          y: rect.top - 10 + scrollY,
+        });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (isTouchDevice) return;
+      setHoveredDate(null);
+      setTooltipPosition(null);
+    };
+
+    // Determine what to show below the date
+    // Priority: Sold Out > Available (price) > N/A
+    let statusDisplay: React.ReactNode = null;
+    
+    // First check if date is in a range (regardless of disabled status)
+    if (dateRange) {
+      if (isSoldOut) {
+        // Show "Sold Out" if date is in a sold-out range
+        statusDisplay = <span className="flexible-day-soldout">Sold Out</span>;
+      } else if (!isDisabled) {
+        // Show price if date is available and not disabled (not past, not within 6 days, etc.)
+        statusDisplay = (
+          <span className="flexible-day-price">
+            {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
+          </span>
+        );
+      } else {
+        // Date is in range but disabled (past, within 6 days, etc.) - show N/A
+        statusDisplay = <span className="flexible-day-na">N/A</span>;
+      }
+    } else if (isDisabled) {
+      // Date is not in any range and is disabled - show N/A
+      statusDisplay = <span className="flexible-day-na">N/A</span>;
+    }
+
+    return (
+      <button
+        {...buttonProps}
+        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled || isSoldOut ? 'disabled' : ''} ${isSoldOut ? 'sold-out' : ''}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        disabled={isDisabled || isSoldOut}
+      >
+        <span className="flexible-day-number">{date.getDate()}</span>
+        {statusDisplay}
+      </button>
+    );
+  };
+
+  // Show message if no date ranges are configured
+  if (!normalizedDateRanges || normalizedDateRanges.length === 0) {
+    return (
+      <div className='flexible-date-calendar-wrapper'>
+        <div className='flexible-calendar-header-nav'>
+          <button
+            className='flexible-calendar-nav-button'
+            disabled={true}
+            onClick={e => {
+              e.stopPropagation();
+            }}
+            style={{ opacity: 0.3, cursor: 'not-allowed' }}
+          >
+            ‹
+          </button>
+          <button
+            className='flexible-calendar-nav-button'
+            disabled={!canNavigateNext}
+            onClick={e => {
+              e.stopPropagation();
+              if (canNavigateNext) {
+                const newMonth = new Date(month);
+                newMonth.setMonth(newMonth.getMonth() + 1);
+                onMonthChange(newMonth);
+              }
+            }}
+            style={{ opacity: canNavigateNext ? 1 : 0.3, cursor: canNavigateNext ? 'pointer' : 'not-allowed' }}
+          >
+            ›
+          </button>
+        </div>
+        <DayPicker
+          mode='single'
+          selected={selectedDate}
+          onSelect={onDateSelect}
+          disabled={() => true}
+          numberOfMonths={1}
+          showOutsideDays={true}
+          month={month}
+          onMonthChange={onMonthChange}
+          fromMonth={minNavigationMonth}
+          toMonth={maxNavigationMonth || undefined}
+          className='flexible-date-calendar'
+          modifiersClassNames={{
+            disabled: 'rdp-day_unavailable',
+          }}
+        />
+        <div className='flexible-calendar-no-dates'>
+          No dates available. Please contact support.
+        </div>
+        <div className='flexible-calendar-footer'>
+          <button
+            className='flexible-clear-dates-button'
+            onClick={e => {
+              e.stopPropagation();
+              onDateSelect(undefined);
+            }}
+          >
+            Clear dates
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className='flexible-date-calendar-wrapper'>
+      <div className='flexible-calendar-header-nav'>
+        <button
+          className='flexible-calendar-nav-button'
+          disabled={!canNavigatePrev}
+          onClick={e => {
+            e.stopPropagation();
+            if (canNavigatePrev) {
+              const newMonth = new Date(month);
+              newMonth.setMonth(newMonth.getMonth() - 1);
+              onMonthChange(newMonth);
+            }
+          }}
+          style={{ opacity: canNavigatePrev ? 1 : 0.3, cursor: canNavigatePrev ? 'pointer' : 'not-allowed' }}
+        >
+          ‹
+        </button>
+        <button
+          className='flexible-calendar-nav-button'
+          disabled={!canNavigateNext}
+          onClick={e => {
+            e.stopPropagation();
+            if (canNavigateNext) {
+              const newMonth = new Date(month);
+              newMonth.setMonth(newMonth.getMonth() + 1);
+              onMonthChange(newMonth);
+            }
+          }}
+          style={{ opacity: canNavigateNext ? 1 : 0.3, cursor: canNavigateNext ? 'pointer' : 'not-allowed' }}
+        >
+          ›
+        </button>
+      </div>
+      <DayPicker
+        mode='single'
+        selected={selectedDate}
+        onSelect={onDateSelect}
+        disabled={getDisabledDates}
+        numberOfMonths={1}
+        showOutsideDays={true}
+        month={month}
+        onMonthChange={onMonthChange}
+        fromMonth={minNavigationMonth}
+        toMonth={maxNavigationMonth || undefined}
+        className='flexible-date-calendar'
+        components={{
+          DayButton: CustomDayButton,
+        }}
+      />
+      <div className='flexible-calendar-footer'>
+        <button
+          className='flexible-clear-dates-button'
+          onClick={e => {
+            e.stopPropagation();
+            onDateSelect(undefined);
+          }}
+        >
+          Clear dates
+        </button>
+      </div>
+      {/* Tooltip rendered via portal */}
+      {hoveredDate && tooltipPosition && typeof window !== 'undefined' && createPortal(
+        <div
+          className="flexible-day-tooltip"
+          style={{
+            position: 'fixed',
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translate(-50%, -100%)',
+            zIndex: 10000,
+            pointerEvents: 'none',
+          }}
+        >
+          <div className="flexible-day-tooltip-content">
+            <div className="flexible-day-tooltip-seats">
+              {getAvailableSeats(hoveredDate)} seats left
+            </div>
+          </div>
+          <div className="flexible-day-tooltip-arrow"></div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}

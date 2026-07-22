@@ -1,0 +1,472 @@
+/* Auth Page Styles */
+.auth-container {
+  background: linear-gradient(135deg, #f8f8f8 0%, #e8f4f8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  position: relative;
+}
+
+.agent-login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255, 77, 0, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(0, 102, 204, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 40px 24px;
+  padding-top: 0;
+  border-radius: 20px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  background: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+.agent-login-card {
+  border: 2px solid #fd6b06;
+  border-top: 4px solid #fd6b06;
+  box-shadow: 
+    0 8px 24px rgba(149, 157, 165, 0.2),
+    0 0 0 1px rgba(255, 77, 0, 0.1);
+}
+
+/* Agent Portal Badge */
+.agent-portal-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 24px auto 20px;
+  width: fit-content;
+  box-shadow: 0 4px 12px rgba(255, 77, 0, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.agent-badge-icon {
+  animation: rotate 3s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(255, 77, 0, 0.3);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(255, 77, 0, 0.4);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Agent Exclusive Notice */
+.agent-exclusive-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 auto 24px;
+  width: fit-content;
+  max-width: 90%;
+}
+
+/* Logo Section */
+.auth-logo {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-logo-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+/* Tab Navigation */
+.auth-tabs {
+  margin-bottom: 32px;
+}
+
+.auth-tab-container {
+  display: flex;
+}
+
+.auth-tab-button {
+  flex: 1;
+  border: none;
+  background: none;
+  color: rgba(38, 38, 38, 0.64);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 90px;
+}
+.auth-tab-button a {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-tab-button.active {
+  color: #333333;
+  box-shadow:
+    rgba(0, 0, 0, 0.03) 0px 24px 32px -12px,
+    rgba(0, 0, 0, 0.03) 0px 16px 24px -8px,
+    rgba(0, 0, 0, 0.03) 0px 8px 16px -4px,
+    rgba(0, 0, 0, 0.03) 0px 0px 0px 1px;
+}
+
+.agent-tab {
+  background: linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%);
+  border: 1px solid #ffccb3;
+}
+
+.agent-tab.active {
+  background: linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%);
+  border: 1px solid #fd6b06;
+  color: #fd6b06;
+  font-weight: 700;
+}
+
+.auth-tab-button.signup {
+  flex: 1;
+  height: 44px;
+  border-radius: 90px;
+  border: none;
+  background: transparent;
+  margin-left: 8px;
+}
+
+.auth-tab-button.signup.active {
+  background: #ffffff;
+  color: #333333;
+}
+
+.auth-tab-button:hover {
+  color: #333333;
+}
+/* Form Styles */
+
+.auth-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.auth-field {
+  margin-bottom: 16px;
+}
+
+.auth-field.confirm-password {
+  margin-bottom: 24px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333333;
+  margin-bottom: 8px;
+  font-family:
+    'Inter',
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.auth-input {
+  width: 100%;
+  height: 44px;
+  padding-inline: 16px;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333333;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+  border-radius: 90px;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #fd6b06;
+}
+
+.auth-input.password {
+  padding-right: 48px;
+}
+
+.auth-input-container {
+  position: relative;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaaaaa;
+  padding: 4px;
+  transition: color 0.2s ease;
+}
+
+.auth-password-toggle:hover {
+  color: #666666;
+}
+
+.auth-error-message {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 4px 0 0 0;
+}
+
+/* Button Styles */
+.auth-submit-button {
+  width: 100%;
+  background-color: #fd6b06;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  color: #ffffff;
+  border: none;
+  border-radius: 90px;
+  height: 44px;
+  padding-inline: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  font-family:
+    'Inter',
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    sans-serif;
+  transition: opacity 0.2s ease;
+}
+
+.auth-submit-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.auth-submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Agent Benefits Preview */
+.agent-benefits-preview {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
+  flex-wrap: wrap;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.benefit-item svg {
+  color: #fd6b06;
+  flex-shrink: 0;
+}
+
+.auth-social-button {
+  width: 100%;
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family:
+    'Inter',
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    sans-serif;
+  transition: background-color 0.2s ease;
+}
+
+.auth-social-button:last-of-type {
+  margin-bottom: 24px;
+  border-radius: 90px;
+}
+
+.auth-social-button:hover {
+  background-color: #333333;
+}
+
+.auth-social-icon {
+  width: 20px;
+  height: 20px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #000000;
+}
+
+.auth-social-icon.github {
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.auth-social-text {
+  flex: 1;
+}
+
+.auth-social-subtext {
+  font-size: 12px;
+  color: #888888;
+  margin-left: auto;
+}
+
+/* Footer */
+.auth-footer {
+  font-size: 12px;
+  color: #aaaaaa;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+  font-family:
+    'Inter',
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.auth-footer-link {
+  color: #888888;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.auth-footer-link:hover {
+  color: #666666;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 16px;
+  }
+
+  .auth-card {
+    padding: 24px;
+  }
+
+  .agent-portal-badge {
+    font-size: 11px;
+    padding: 10px 20px;
+    margin: 16px auto 16px;
+  }
+
+  .agent-exclusive-notice {
+    font-size: 12px;
+    padding: 8px 12px;
+    margin: 0 auto 20px;
+  }
+
+  .agent-benefits-preview {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .benefit-item {
+    font-size: 11px;
+  }
+
+  .auth-tab-button.signup {
+    margin-left: 4px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .auth-tab-button {
+    font-size: 14px;
+  }
+}
+
+/* Focus states for accessibility */
+.auth-tab-button:focus {
+  outline: none;
+}
+
+.auth-input:focus {
+  outline: none;
+}
+
+.auth-submit-button:focus,
+.auth-social-button:focus {
+  outline: none;
+}

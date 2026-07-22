@@ -1,0 +1,21 @@
+-- Simplify marina_cruise_dinners: single price, days/nights/min_adults only (no per-person, visa, itinerary)
+ALTER TABLE marina_cruise_dinners
+  DROP COLUMN IF EXISTS end_date,
+  DROP COLUMN IF EXISTS travel_dates,
+  DROP COLUMN IF EXISTS date_ranges,
+  DROP COLUMN IF EXISTS adult_price,
+  DROP COLUMN IF EXISTS child_price,
+  DROP COLUMN IF EXISTS infant_price,
+  DROP COLUMN IF EXISTS solo_traveller_enabled,
+  DROP COLUMN IF EXISTS solo_traveller_price,
+  DROP COLUMN IF EXISTS with_visa,
+  DROP COLUMN IF EXISTS adult_visa_price,
+  DROP COLUMN IF EXISTS child_visa_price,
+  DROP COLUMN IF EXISTS infant_visa_price,
+  DROP COLUMN IF EXISTS adult_discount_amount,
+  DROP COLUMN IF EXISTS child_discount_amount,
+  DROP COLUMN IF EXISTS infant_discount_amount,
+  DROP COLUMN IF EXISTS discount_start_date,
+  DROP COLUMN IF EXISTS discount_end_date,
+  DROP COLUMN IF EXISTS agent_discount,
+  DROP COLUMN IF EXISTS itinerary;

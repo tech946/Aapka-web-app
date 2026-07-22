@@ -1,0 +1,493 @@
+.lead-page {
+  background: #f5f5f5;
+  padding: 3rem 0;
+  min-height: calc(100vh - 200px);
+}
+
+.lead-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.lead-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.lead-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #f97316;
+  margin: 0 0 1rem 0;
+}
+
+.lead-subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.lead-form {
+  background: white;
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.lead-section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lead-section:last-of-type {
+  border-bottom: none;
+}
+
+.lead-section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f97316;
+}
+
+.lead-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.lead-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lead-form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.lead-form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.lead-input {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.lead-input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.lead-input.error {
+  border-color: #dc2626;
+}
+
+.lead-input textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.lead-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.lead-form-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.lead-submit-btn {
+  background: #f97316;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem 3rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.lead-submit-btn:hover:not(:disabled) {
+  background: #ea580c;
+}
+
+.lead-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lead-success-message {
+  background: white;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.lead-success-message .success-icon {
+  color: #10b981;
+  margin: 0 auto 1.5rem;
+}
+
+.lead-success-message h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.lead-success-message p {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .lead-container {
+    padding: 0 1.5rem;
+  }
+
+  .lead-form {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .lead-page {
+    padding: 2rem 0;
+  }
+
+  .lead-title {
+    font-size: 2rem;
+  }
+
+  .lead-subtitle {
+    font-size: 15px;
+  }
+
+  .lead-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .lead-form {
+    padding: 1.5rem;
+  }
+
+  .lead-section-title {
+    font-size: 18px;
+  }
+
+  .lead-submit-btn {
+    width: 100%;
+    min-width: auto;
+  }
+  .lead-input {
+    height: 40px;
+    padding-block: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .lead-page {
+    background-color: transparent;
+  }
+
+  .lead-title {
+    font-size: 22px;
+  }
+
+  .lead-form {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .lead-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* Tours & Activities Multiselect Styles */
+.attractions-selected-container {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.attractions-selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.attractions-selected-count {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.attractions-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.attractions-toggle-btn:hover {
+  color: #374151;
+}
+
+.attractions-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.attraction-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.attraction-chip-name {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.attraction-chip-star {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.attraction-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+  margin-left: 0.25rem;
+}
+
+.attraction-chip-remove:hover {
+  color: #dc2626;
+}
+
+.attractions-selector-wrapper {
+  position: relative;
+}
+
+.attractions-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.attractions-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #6b7280;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.attractions-search-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.attractions-search-input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+.attractions-dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 998;
+  background: transparent;
+}
+
+.attractions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+.attractions-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.attractions-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.attractions-list {
+  padding: 0.5rem;
+}
+
+.attraction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.attraction-item:hover {
+  background: #f9fafb;
+}
+
+.attraction-item.selected {
+  background: #fef3c7;
+}
+
+.attraction-item.top-attraction {
+  font-weight: 500;
+}
+
+.attraction-item.top-attraction.selected {
+  background: #fef3c7;
+  border-left: 3px solid #fbbf24;
+}
+
+.attraction-item input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #f97316;
+}
+
+.attraction-item-name {
+  font-size: 0.9rem;
+  color: #374151;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.attraction-star-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.attraction-item-area {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.attraction-item-code {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.attraction-chip-star {
+  margin-right: 4px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+/* Responsive adjustments for attractions */
+@media (max-width: 768px) {
+  .attractions-dropdown {
+    max-height: 250px;
+  }
+}

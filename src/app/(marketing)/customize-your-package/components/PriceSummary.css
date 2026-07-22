@@ -1,0 +1,64 @@
+.customize-price-summary {
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.05);
+}
+
+.customize-price-title {
+  font-family: var(--font-work-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2d22;
+  margin: 0 0 12px 0;
+}
+
+.customize-price-empty {
+  margin: 0;
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.customize-price-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customize-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-inter);
+  font-size: 13px;
+}
+
+.customize-price-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.customize-price-value {
+  font-weight: 600;
+  color: #1f2d22;
+}
+
+.customize-price-subtotal {
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 2px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.customize-price-subtotal .customize-price-label {
+  font-weight: 700;
+  color: #1f2d22;
+}
+
+.customize-price-subtotal .customize-price-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fd6b06;
+}

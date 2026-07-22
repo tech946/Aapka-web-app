@@ -1,0 +1,157 @@
+/* PDF modal - matches CRM quotation-pdf-viewer style */
+.customize-pdf-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: customizePdfFadeIn 0.2s ease-in-out;
+}
+
+@keyframes customizePdfFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.customize-pdf-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: customizePdfSlideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes customizePdfSlideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.customize-pdf-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.customize-pdf-view-pdf-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #fd6b06 0%, #e64500 100%);
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.customize-pdf-view-pdf-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px -2px rgba(255, 77, 0, 0.4);
+}
+
+.customize-pdf-view-pdf-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Form modal overlay - appears on top of PDF preview */
+.customize-pdf-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10001;
+}
+
+.customize-pdf-form-modal {
+  max-width: calc(100vw - 40px);
+}
+
+/* Override booking modal width for PDF preview - needs to be wider */
+.customize-pdf-container.desktop-booking-modal,
+.customize-pdf-container.mobile-booking-modal {
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  max-height: 90vh;
+}
+
+/* Form + preview section - form stays at top, preview scrolls */
+.customize-pdf-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.customize-pdf-preview-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 8px;
+  background-color: #ffffff;
+}
+
+/* PDF export: zero padding, white bg, no page-break/margin - prevents blank pages & grey */
+.customize-pdf-preview-wrapper.customize-pdf-export-mode {
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: #ffffff !important;
+  overflow: visible !important;
+}
+
+.customize-pdf-export-mode .crm-itinerary-preview-container,
+.customize-pdf-export-mode .customize-preview-container {
+  background-color: #ffffff !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.customize-pdf-export-mode .customize-preview-page,
+.customize-pdf-export-mode .crm-itinerary-preview-page {
+  page-break-after: always;
+  break-after: page;
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Last page: NO break after - prevents extra blank page */
+.customize-pdf-export-mode .crm-itinerary-preview-container > .crm-itinerary-preview-page:last-child,
+.customize-pdf-export-mode .customize-preview-container > .customize-preview-page:last-child {
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+  margin-bottom: 0 !important;
+}

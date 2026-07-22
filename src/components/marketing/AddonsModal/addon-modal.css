@@ -1,0 +1,301 @@
+/* Addon Modal - Same design as master-modal, custom CSS only */
+
+.addon-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow: auto;
+}
+
+.addon-modal-container {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: visible;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.addon-modal-header {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.addon-modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.addon-modal-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.addon-modal-close-btn:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.addon-modal-close-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.addon-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: visible;
+}
+
+.addon-modal-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addon-modal-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.addon-modal-required {
+  color: #dc2626;
+}
+
+.addon-modal-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #ffffff;
+  color: #1f2937;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.addon-modal-select:focus {
+  outline: none;
+  border-color: #f97316;
+  border-width: 2px;
+}
+
+.addon-modal-select.error {
+  border-color: #dc2626;
+}
+
+.addon-modal-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.addon-modal-error {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.addon-modal-section {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.addon-modal-section:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.addon-modal-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.addon-modal-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.addon-modal-section-toggle:hover .addon-modal-section-title {
+  color: #111827;
+}
+
+.addon-modal-section-chevron {
+  transition: transform 0.2s ease;
+  color: #6b7280;
+}
+
+.addon-modal-section-chevron.open {
+  transform: rotate(180deg);
+}
+
+.addon-modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.addon-modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addon-modal-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.addon-modal-btn-primary {
+  border: none;
+  background: #f97316;
+  color: #ffffff;
+}
+
+.addon-modal-btn-primary:hover:not(:disabled) {
+  background: #ea580c;
+}
+
+.addon-modal-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.addon-modal-loading-spinner {
+  animation: addon-modal-spin 1s linear infinite;
+}
+
+@keyframes addon-modal-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dropdown lists (scrollable, checkbox-based) */
+.addon-modal-dropdown-wrapper {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.addon-modal-dropdown-list {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.addon-modal-dropdown-empty {
+  padding: 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.addon-modal-dropdown-item {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+  background: #ffffff;
+}
+
+.addon-modal-dropdown-item input {
+  margin-top: 4px;
+  height: 14px;
+  width: 14px;
+}
+.addon-modal-dropdown-item:hover {
+  background: #f9fafb;
+}
+
+.addon-modal-dropdown-item.selected {
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.addon-modal-dropdown-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #f97316;
+  flex-shrink: 0;
+}
+
+.addon-modal-dropdown-item-text {
+  font-size: 12px;
+  color: #374151;
+  flex: 1;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Global add-ons dropdown portal styles */
+.addons-dropdown-portal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: transparent;
+}
+
+.addons-dropdown-portal {
+  position: absolute;
+  max-height: 260px;
+  z-index: 3001;
+}

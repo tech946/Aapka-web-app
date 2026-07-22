@@ -1,0 +1,210 @@
+/* Styles scoped for Marina Cruise Dinner admin page */
+
+.marina_cruise_page .heading_block h3 {
+  color: #0c4a6e;
+}
+
+.marina_toolbar {
+  padding-top: 0;
+}
+
+.category_toolbar {
+  padding-top: 0;
+}
+
+.category_back_pagination {
+  padding-top: 8px;
+}
+
+.itinerary_item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.itinerary_actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.itinerary_remove_btn {
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+/* Wider modal just for category pages */
+.category_modal {
+  width: 990px;
+}
+
+/* 3-column compact grid for short inputs */
+.form_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.form_grid .form_row {
+  margin: 0;
+}
+
+/* ── Add-on Options Editor ── */
+.marina_addons_editor .tour-booking-days-hint {
+  margin-top: 0;
+}
+
+.marina_addons_list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.marina_addon_row,
+.marina_addon_new_row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: var(--panel-2, #f8f9fa);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.marina_addon_num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+
+.marina_addon_fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.marina_addon_field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.marina_addon_field_name {
+  flex: 1;
+}
+
+.marina_addon_field_price {
+  flex-shrink: 0;
+  width: 96px;
+}
+
+.marina_addon_field_label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+  min-height: 12px;
+}
+
+.marina_addon_field input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.marina_addon_add_btn {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #fd6b06);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.marina_addon_add_btn:hover {
+  opacity: 0.9;
+}
+
+.marina_addon_remove {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.marina_addon_remove:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+/* ── Registration Only ── */
+.marina_registration_block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.marina_registration_checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.marina_registration_checkbox input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent, #fd6b06);
+}
+
+.marina_registration_prices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.marina_registration_prices .form_row {
+  margin: 0;
+}

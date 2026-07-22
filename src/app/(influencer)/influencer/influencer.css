@@ -1,0 +1,383 @@
+/* Influencer - Aapka Tourism theme */
+/* Shared variables */
+.influencer-portal,
+.influencer-section {
+  --influencer-accent: #ff4c00;
+  --influencer-accent-hover: #e64500;
+  --influencer-accent-muted: rgba(255, 76, 0, 0.12);
+  --influencer-accent-ring: rgba(255, 76, 0, 0.25);
+}
+
+/* ------ Influencer Portal (user-facing) ------ */
+.influencer-portal .nav-link {
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.influencer-portal .nav-link:hover {
+  background: var(--influencer-accent-muted);
+  color: var(--influencer-accent);
+}
+
+.influencer-portal .nav-link.active {
+  background: var(--influencer-accent-muted);
+  color: var(--influencer-accent);
+  font-weight: 600;
+}
+
+.influencer-portal .btn-accent {
+  background: var(--influencer-accent);
+  color: white;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 76, 0, 0.25);
+}
+
+.influencer-portal .btn-accent:hover:not(:disabled) {
+  background: var(--influencer-accent-hover);
+  box-shadow: 0 4px 12px rgba(255, 76, 0, 0.35);
+}
+
+.influencer-portal .input-focus:focus {
+  outline: none;
+  border-color: var(--influencer-accent);
+  box-shadow: 0 0 0 3px rgba(255, 76, 0, 0.15);
+}
+
+.influencer-portal .card-accent {
+  border-color: hsl(var(--border));
+  transition: all 0.25s ease;
+}
+
+.influencer-portal .card-accent:hover {
+  border-color: var(--influencer-accent-ring);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.influencer-portal .badge-paid,
+.influencer-section .badge-paid {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.influencer-portal .badge-approved,
+.influencer-section .badge-approved {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.influencer-portal .badge-pending,
+.influencer-section .badge-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.influencer-portal .badge-rejected,
+.influencer-section .badge-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* ------ Dashboard Influencers Sidebar Section ------ */
+.influencer_sidebar_wrapper {
+  width: 100%;
+}
+
+.influencer_sidebar_toggle {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.influencer_sidebar_chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.influencer_sidebar_chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.influencer_sidebar_submenu {
+  padding-left: 24px;
+}
+
+/* ------ Dashboard Influencers Pages ------ */
+.influencer-section .invite_form_card {
+  max-width: 560px;
+}
+
+.influencer-section .invite_form_card .form_grid {
+  margin-bottom: 0;
+}
+
+.influencer-section .invite_form_row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 0;
+}
+
+.influencer-section .invite_form_row .form_row {
+  flex: 1;
+}
+
+.influencer-section .invite_submit_btn {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.influencer-section .invite_manual_link {
+  padding: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.influencer-section .invite_manual_link span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.influencer-section .invite_manual_link code {
+  flex: 1;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.influencer-section .table_cell_right {
+  text-align: right;
+}
+
+.influencer-section .table_cell_name {
+  font-weight: 600;
+}
+
+.influencer-section .table_cell_email {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.influencer-section .table_cell_mono {
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.influencer-section .table_cell_muted {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.influencer-section .table_actions_row {
+  display: flex;
+  gap: 8px;
+}
+
+.influencer-section .invite_empty_link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.influencer-section .commission_pkg_name {
+  font-weight: 600;
+}
+
+.influencer-section .commission_pkg_id {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.influencer-section .commission_input {
+  width: 100px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.influencer-section .commission_toggle_label {
+  cursor: pointer;
+}
+
+.influencer-section .commission_toggle_label input {
+  accent-color: var(--accent);
+}
+
+.influencer-section .commission_save_btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.influencer-section .modal_notes {
+  max-width: 450px;
+  width: 95vw;
+}
+
+.influencer-section .modal_notes_title {
+  margin: 0;
+}
+
+.influencer-section .modal_notes_desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.influencer-section .modal_notes_textarea {
+  min-height: 80px;
+}
+
+.influencer-section .spinner_inline {
+  animation: influencer-spin 0.8s linear infinite;
+}
+
+.influencer-section .loader_cell_spinner {
+  margin: 20px auto;
+}
+
+@keyframes influencer-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------ Influencer Packages Cards ------ */
+.influencer-portal .pkg-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg,
+    hsl(var(--card)) 0%,
+    hsl(var(--card) / 0.98) 100%
+  );
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.influencer-portal .pkg-card:hover {
+  border-color: var(--influencer-accent-ring);
+  box-shadow: 0 8px 32px rgba(255, 76, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.influencer-portal .pkg-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--influencer-accent) 0%,
+    var(--influencer-accent-hover) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.influencer-portal .pkg-card:hover::before {
+  opacity: 1;
+}
+
+.influencer-portal .pkg-card-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.01em;
+}
+
+.influencer-portal .pkg-card-meta {
+  font-size: 0.8125rem;
+  color: hsl(var(--muted-foreground));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.influencer-portal .pkg-card-meta-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: hsl(var(--muted-foreground) / 0.6);
+}
+
+.influencer-portal .pkg-card-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.5rem;
+  padding: 4px 10px;
+  background: hsl(var(--muted) / 0.6);
+  border-radius: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.influencer-portal .pkg-card-copy-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.influencer-portal .pkg-card-copy-icon {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease;
+}
+
+.influencer-portal .pkg-card-copy-icon:hover {
+  background: var(--influencer-accent-muted);
+  border-color: var(--influencer-accent-ring);
+  color: var(--influencer-accent);
+}
+
+.influencer-portal .pkg-card-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid hsl(var(--border) / 0.5);
+}
