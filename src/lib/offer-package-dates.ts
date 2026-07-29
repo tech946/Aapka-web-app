@@ -26,21 +26,48 @@ function normalizeTravelDateStrings(
   ].sort();
 }
 
-/** Offer package selectable travel dates (excludes today + next 6 days). */
+/** Minimum days before departure for auto-generated flexible-date calendars (not admin-picked travel dates). */
+export const MIN_BOOKING_LEAD_DAYS = 6;
+
+function isFutureOrTodayTravelDate(dateStr: string, today: Date): boolean {
+  const parsed = parseDateStringToLocal(dateStr);
+  if (!parsed) return false;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed >= today;
+}
+
+/** Offer package travel dates configured in admin — show all that are today or later. */
 export function getOfferPackageTravelDates(
   travelDates: TravelDateEntry[] | null | undefined
 ): string[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const sixDaysFromNow = new Date(today);
-  sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
 
-  return normalizeTravelDateStrings(travelDates).filter(dateStr => {
-    const parsed = parseDateStringToLocal(dateStr);
-    if (!parsed) return false;
-    parsed.setHours(0, 0, 0, 0);
-    return parsed > sixDaysFromNow;
-  });
+  return normalizeTravelDateStrings(travelDates).filter(dateStr =>
+    isFutureOrTodayTravelDate(dateStr, today)
+  );
+}
+
+/** Dates within the booking lead window (today + next N days) — used for flexible-date calendars. */
+export function getMinBookableDateFromLeadDays(
+  leadDays: number = MIN_BOOKING_LEAD_DAYS
+): Date {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const minDate = new Date(today);
+  minDate.setDate(minDate.getDate() + leadDays);
+  return minDate;
+}
+
+/** Whether a date is bookable given the standard lead-time rule (more than N days from today). */
+export function isDateBeyondBookingLeadTime(
+  dateStr: string,
+  leadDays: number = MIN_BOOKING_LEAD_DAYS
+): boolean {
+  const parsed = parseDateStringToLocal(dateStr);
+  if (!parsed) return false;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed > getMinBookableDateFromLeadDays(leadDays);
 }
 
 export function getOfferPackageTravelDatesStatus(

@@ -301,13 +301,38 @@
 
 /* Desktop popovers — open downward inside the modal */
 .desktop-booking-modal .booking-persons-dropdown,
-.desktop-booking-modal .booking-dates-dropdown {
+.desktop-booking-modal .booking-dates-dropdown,
+.mobile-booking-modal .mobile-booking-persons-dropdown,
+.mobile-booking-modal .mobile-booking-dates-dropdown {
   top: calc(100% + 6px);
   bottom: auto;
   padding: 10px 12px;
   border-radius: 8px;
-  max-height: min(45vh, 240px);
+  max-height: min(40vh, 220px);
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
+}
+
+/* Let date/person dropdowns extend and scroll outside clipped modal body */
+.desktop-booking-modal.booking-dates-dropdown-active,
+.mobile-booking-modal.booking-dates-dropdown-active {
+  overflow: visible;
+}
+
+.desktop-booking-modal.booking-dates-dropdown-active .desktop-booking-modal-content,
+.mobile-booking-modal.booking-dates-dropdown-active .mobile-booking-modal-content {
+  overflow: visible !important;
+}
+
+.input-selectors.booking-dates-dropdown-open,
+.mobile-input-selectors.mobile-dates-dropdown-open {
+  overflow: visible;
+  position: relative;
+  z-index: 2025;
 }
 
 /* Calendar expands inline (no overlay) so add-ons/price stay below */

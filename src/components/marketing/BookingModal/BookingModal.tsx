@@ -346,7 +346,12 @@ export default function BookingModal({
       ? formatFixedTourDateLabel(fixedTourDates[0])
       : '';
 
-  const modalClass = isMobile ? 'mobile-booking-modal' : 'desktop-booking-modal';
+  const modalClass = [
+    isMobile ? 'mobile-booking-modal' : 'desktop-booking-modal',
+    showDateDropdown ? 'booking-dates-dropdown-active' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const overlayClass = isMobile ? 'mobile-booking-modal-overlay' : 'desktop-booking-modal-overlay';
   const headerClass = isMobile ? 'mobile-booking-modal-header' : 'desktop-booking-modal-header';
   const titleClass = isMobile ? 'mobile-booking-modal-title' : 'desktop-booking-modal-title';
@@ -564,7 +569,7 @@ export default function BookingModal({
 
           {/* Input Selectors */}
           <div
-            className={`${inputSelectorsClass}${showDatePicker ? (isMobile ? ' mobile-date-picker-open' : ' booking-date-picker-open') : ''}`}
+            className={`${inputSelectorsClass}${showDatePicker ? (isMobile ? ' mobile-date-picker-open' : ' booking-date-picker-open') : ''}${showDateDropdown ? (isMobile ? ' mobile-dates-dropdown-open' : ' booking-dates-dropdown-open') : ''}`}
           >
             {/* Persons Selector */}
             <div
@@ -697,6 +702,8 @@ export default function BookingModal({
                         ? 'mobile-booking-dates-dropdown'
                         : 'booking-dates-dropdown'
                     }
+                    onWheel={e => e.stopPropagation()}
+                    onTouchMove={e => e.stopPropagation()}
                   >
                     {fixedTourDates.map(dateStr => (
                       <div
@@ -749,7 +756,11 @@ export default function BookingModal({
                 />
                 <ChevronDown className={isMobile ? 'mobile-booking-dropdown-chevron' : 'booking-dropdown-chevron'} />
                 {showDateDropdown && getAvailableDates().length > 0 && (
-                  <div className={isMobile ? 'mobile-booking-dates-dropdown' : 'booking-dates-dropdown'}>
+                  <div
+                    className={isMobile ? 'mobile-booking-dates-dropdown' : 'booking-dates-dropdown'}
+                    onWheel={e => e.stopPropagation()}
+                    onTouchMove={e => e.stopPropagation()}
+                  >
                     {getAvailableDates().map((dateStr, idx) => {
                       const dateSurcharge = getSurchargeAmountForDate(dateStr, surcharges);
                       return (

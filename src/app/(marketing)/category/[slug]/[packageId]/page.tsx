@@ -53,6 +53,10 @@ import {
   parseDateStringToLocal,
   getEarliestAvailableDateMonth,
 } from '@/lib/utils';
+import {
+  getOfferPackageTravelDates,
+  isDateBeyondBookingLeadTime,
+} from '@/lib/offer-package-dates';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
 import {
   shouldShowOptionalVisaInBookingModal,
@@ -602,8 +606,6 @@ export default function PackageDetailsPage() {
     ) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const sixDaysFromNow = new Date(today);
-      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
 
       const allDates: string[] = [];
 
@@ -618,8 +620,9 @@ export default function PackageDetailsPage() {
         // Generate all dates in this range (including sold out ranges)
         const currentDate = new Date(fromDate);
         while (currentDate <= toDate) {
-          if (currentDate > sixDaysFromNow) {
-            allDates.push(format(currentDate, 'yyyy-MM-dd'));
+          const dateStr = format(currentDate, 'yyyy-MM-dd');
+          if (isDateBeyondBookingLeadTime(dateStr)) {
+            allDates.push(dateStr);
           }
           currentDate.setDate(currentDate.getDate() + 1);
         }
@@ -628,24 +631,7 @@ export default function PackageDetailsPage() {
       return [...new Set(allDates)].sort(); // Remove duplicates and sort
     }
 
-    if (!pkg?.travel_dates) return [];
-    if (Array.isArray(pkg.travel_dates)) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const sixDaysFromNow = new Date(today);
-      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
-
-      return pkg.travel_dates
-        .map((d: any) => (typeof d === 'string' ? d : d.value))
-        .filter((dateStr: string) => {
-          const date = parseDateStringToLocal(dateStr);
-          if (!date) return false;
-          date.setHours(0, 0, 0, 0);
-          // Only include dates that are more than 6 days from today (for all packages including offer packages)
-          return date > sixDaysFromNow;
-        });
-    }
-    return [];
+    return getOfferPackageTravelDates(pkg?.travel_dates ?? null);
   }, [pkg?.travel_dates, slug, pkg?.date_ranges]);
 
   const isPackageType = (): boolean => {
