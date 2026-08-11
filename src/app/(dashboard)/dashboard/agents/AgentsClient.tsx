@@ -26,8 +26,16 @@ type AgentRow = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  subscriptions: Subscription[] | null;
+  // Supabase returns a single object for FK joins, not an array
+  subscriptions: Subscription | Subscription[] | null;
 };
+
+function normalizeSubscriptions(
+  subscriptions: Subscription | Subscription[] | null | undefined
+): Subscription[] {
+  if (!subscriptions) return [];
+  return Array.isArray(subscriptions) ? subscriptions.filter(Boolean) : [subscriptions];
+}
 
 export default function AgentsClient() {
   const [rows, setRows] = useState<AgentRow[]>([]);
@@ -151,11 +159,14 @@ export default function AgentsClient() {
     );
   };
 
-  const getSubscriptionStatus = (subscriptions: Subscription[] | null) => {
-    if (!subscriptions || subscriptions.length === 0) {
+  const getSubscriptionStatus = (
+    subscriptions: Subscription | Subscription[] | null | undefined
+  ) => {
+    const subs = normalizeSubscriptions(subscriptions);
+    if (subs.length === 0) {
       return <span className="text-gray-500 text-sm">No subscription</span>;
     }
-    const subscription = subscriptions[0];
+    const subscription = subs[0];
     const isActive = subscription.is_active && subscription.payment_status === 'completed';
     const endDate = new Date(subscription.end_date);
     const now = new Date();
@@ -394,11 +405,11 @@ export default function AgentsClient() {
                 </div>
               </div>
 
-              {selectedAgent.subscriptions && selectedAgent.subscriptions.length > 0 && (
+              {normalizeSubscriptions(selectedAgent.subscriptions).length > 0 && (
                 <div className='detail_section'>
                   <h4 className='detail_section_title'>Subscription Details</h4>
                   <div className='detail_grid'>
-                    {selectedAgent.subscriptions.map((sub, idx) => {
+                    {normalizeSubscriptions(selectedAgent.subscriptions).map((sub, idx) => {
                       const endDate = new Date(sub.end_date);
                       const startDate = new Date(sub.start_date);
                       const now = new Date();
