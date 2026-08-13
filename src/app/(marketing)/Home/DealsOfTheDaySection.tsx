@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Building2, Plane, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { gsap } from 'gsap';
-import { useDealsOfTheDay } from '@/hooks/use-marketing-queries';
+import { useDealsOfTheDay, useAgentStatus } from '@/hooks/use-marketing-queries';
+import { getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import './home.css';
 
 interface DealPackage {
@@ -19,6 +21,7 @@ interface DealPackage {
   child_price: number | null;
   infant_price: number | null;
   solo_traveller_price: number | null;
+  agent_discount?: number | null;
   itinerary: Array<{ heading: string; desc: string }> | null;
   thumbnail_image: string | null;
   gallery: string[] | null;
@@ -45,7 +48,10 @@ export default function DealsOfTheDaySection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
-  const { data: deals = [], isLoading: loading } = useDealsOfTheDay();
+  const { data: dealsData = [], isLoading: loading } = useDealsOfTheDay();
+  const deals = dealsData as unknown as Deal[];
+  const { data: agentData } = useAgentStatus();
+  const isSubscribedAgent = !!agentData?.hasActiveSubscription;
 
   // GSAP animation for slider
   useEffect(() => {
@@ -135,8 +141,7 @@ export default function DealsOfTheDaySection() {
   };
 
   // Format price
-  const formatPrice = (price: number | null): string => {
-    if (!price) return 'N/A';
+  const formatPrice = (price: number): string => {
     return `USD ${price.toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -208,6 +213,10 @@ export default function DealsOfTheDaySection() {
                     : '/images/package-1.png');
                 const categorySlug = getCategorySlug(deal.package.category_name);
                 const packageUrl = `/category/${categorySlug}/${deal.package.package_id}`;
+                const agentDiscount = getAgentDiscountPercentage(
+                  deal.package,
+                  isSubscribedAgent
+                );
 
                 return (
                   <div key={deal.id} className='deal-card'>
@@ -231,7 +240,12 @@ export default function DealsOfTheDaySection() {
                           <div className='deal-price-info'>
                             <Building2 className='deal-price-icon' size={18} />
                             <span className='deal-price-text'>
-                              Joining price from {formatPrice(dealPrice)}
+                              Joining price from{' '}
+                              <AgentDiscountPrice
+                                price={dealPrice}
+                                percentage={agentDiscount}
+                                format={formatPrice}
+                              />
                             </span>
                           </div>
 

@@ -36,6 +36,7 @@ export async function GET(
           infant_price,
           solo_traveller_price,
           solo_traveller_enabled,
+          agent_discount,
           with_visa,
           adult_visa_price,
           child_visa_price,

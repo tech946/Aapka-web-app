@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { Eye, EyeOff, Shield, Users, Star, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import './auth.css';
 
 function AgentLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -78,6 +80,12 @@ function AgentLoginContent() {
       }
 
       toast.success('Logged in successfully!');
+      // Login happens server-side via /api/login, so the browser Supabase client
+      // never emits SIGNED_IN. Drop the cached agent status by hand or partner
+      // pricing stays hidden until the 5-minute cache expires.
+      await queryClient.invalidateQueries({
+        queryKey: ['marketing', 'agent-status'],
+      });
       router.refresh();
       router.push('/agent/dashboard');
     } catch (err) {

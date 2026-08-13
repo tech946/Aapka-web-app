@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePackageCategories, usePackagesByCategory, useAgentStatus } from '@/hooks/use-marketing-queries';
+import { getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import {
   MapPin,
   Grid3x3,
@@ -513,6 +515,10 @@ function PackageCard({
   };
 
   const discountPercentage = getDiscountPercentage();
+  const agentDiscount = getAgentDiscountPercentage(
+    pkg,
+    hasActiveAgentSubscription
+  );
   const packageDescription = getPackageDescription();
   const duration = getDuration();
   const pricePerPerson = getPricePerPerson();
@@ -610,29 +616,45 @@ function PackageCard({
           <p className='suites-card-destinations'>{packageDescription}</p>
         )}
 
-        {discountPercentage && !isRevealingSoon && (
-          <div className='suites-discount-badge'>{discountPercentage}% Off</div>
-        )}
+        {/* Discount + visa badges share one wrapping row */}
+        <div className='suites-card-badges'>
+          {discountPercentage && !isRevealingSoon && (
+            <span className='suites-discount-badge'>
+              {discountPercentage}%{' '}
+              {agentDiscount > 0 ? 'Agent Discount' : 'Off'}
+            </span>
+          )}
 
-        {(() => {
-          const hasVisaIncludedAtZero =
-            pkg.with_visa &&
-            (pkg.adult_visa_price ?? 0) === 0 &&
-            (pkg.child_visa_price ?? 0) === 0 &&
-            (pkg.infant_visa_price ?? 0) === 0;
-          return hasVisaIncludedAtZero ? (
-            <span className='package-visa-badge package-visa-badge-with'>With visa</span>
-          ) : (
-            <span className='package-visa-badge'>Without visa</span>
-          );
-        })()}
+          {(() => {
+            const hasVisaIncludedAtZero =
+              pkg.with_visa &&
+              (pkg.adult_visa_price ?? 0) === 0 &&
+              (pkg.child_visa_price ?? 0) === 0 &&
+              (pkg.infant_visa_price ?? 0) === 0;
+            return hasVisaIncludedAtZero ? (
+              <span className='package-visa-badge package-visa-badge-with'>With visa</span>
+            ) : (
+              <span className='package-visa-badge'>Without visa</span>
+            );
+          })()}
+        </div>
 
         <div className='suites-card-price'>
           {isRevealingSoon ? (
             <PackagePriceRevealingSoonLabel variant='card' />
           ) : (
             <>
-              <span className='suites-price-amount'>{pricePerPerson}</span>
+              <span className='suites-price-amount'>
+                {agentDiscount > 0 ? (
+                  <AgentDiscountPrice
+                    price={pkg.adult_price || pkg.package_price}
+                    percentage={agentDiscount}
+                    format={formatPrice}
+                  />
+                ) : (
+                  pricePerPerson
+                )}
+              </span>
               <span className='suites-price-label'> / per person</span>
             </>
           )}

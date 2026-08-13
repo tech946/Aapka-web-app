@@ -32,7 +32,12 @@ import {
   getOfferPackageTravelDatesStatus,
 } from '@/lib/offer-package-dates';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
-import { useSurchargeMaster } from '@/hooks/use-marketing-queries';
+import {
+  useSurchargeMaster,
+  useAgentStatus,
+} from '@/hooks/use-marketing-queries';
+import { getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
 
@@ -41,13 +46,27 @@ function formatAedAmount(n: number) {
 }
 
 /** Package hero pricing: same layout as package details (main total + Adult / Child / Infant grid). */
-function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
+function LtdPackagePricingDisplay({
+  pkg,
+  agentDiscount,
+}: {
+  pkg: Package;
+  agentDiscount: number;
+}) {
   const adultP = Number(pkg.adult_price) || 0;
   const childP = Number(pkg.child_price) || 0;
   const infantP = Number(pkg.infant_price) || 0;
   const packagePrice = Number(pkg.package_price) || 0;
   const soloP =
     pkg.solo_traveller_price != null ? Number(pkg.solo_traveller_price) : 0;
+
+  const price = (amount: number) => (
+    <AgentDiscountPrice
+      price={amount}
+      percentage={agentDiscount}
+      format={formatAedAmount}
+    />
+  );
 
   const hasBreakdown = adultP > 0 || childP > 0 || infantP > 0;
   const hasSolo = Boolean(pkg.solo_traveller_enabled && soloP > 0);
@@ -59,7 +78,7 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
     return (
       <div className='package-hero-pricing'>
         <span className='package-hero-price-current'>
-          {formatAedAmount(packagePrice)}
+          {price(packagePrice)}
         </span>
       </div>
     );
@@ -81,8 +100,13 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
       {mainAmount > 0 && (
         <div className='package-hero-pricing'>
           <span className='package-hero-price-current'>
-            {formatAedAmount(mainAmount)}
+            {price(mainAmount)}
           </span>
+          {agentDiscount > 0 && (
+            <span className='agent-discount-badge'>
+              Agent Discount {agentDiscount}%
+            </span>
+          )}
         </div>
       )}
       <div className='package-hero-price-breakdown'>
@@ -91,7 +115,7 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
             <span className='package-hero-price-item-label'>Adult</span>
             <span className='package-hero-price-item-age'>12+ Years</span>
             <span className='package-hero-price-item-amount'>
-              {formatAedAmount(adultP)}
+              {price(adultP)}
             </span>
           </div>
         )}
@@ -100,7 +124,7 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
             <span className='package-hero-price-item-label'>Child</span>
             <span className='package-hero-price-item-age'>2-8 Years</span>
             <span className='package-hero-price-item-amount'>
-              {formatAedAmount(childP)}
+              {price(childP)}
             </span>
           </div>
         )}
@@ -109,7 +133,7 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
             <span className='package-hero-price-item-label'>Infant</span>
             <span className='package-hero-price-item-age'>&lt; 2 Years</span>
             <span className='package-hero-price-item-amount'>
-              {formatAedAmount(infantP)}
+              {price(infantP)}
             </span>
           </div>
         )}
@@ -122,7 +146,7 @@ function LtdPackagePricingDisplay({ pkg }: { pkg: Package }) {
               Double/Triple occupancy
             </span>
             <span className='package-hero-price-item-amount'>
-              {formatAedAmount(soloP)}
+              {price(soloP)}
             </span>
           </div>
         )}
@@ -148,6 +172,7 @@ interface Package {
   infant_visa_price?: number | null;
   package_days?: number | null;
   package_nights?: number | null;
+  agent_discount?: number | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   thumbnail_image?: string | null;
   gallery?: string[] | null;
@@ -199,6 +224,11 @@ export default function LimitedTimeDealDetailPage() {
     [pkg?.travel_dates]
   );
   const { data: surchargeMaster = [] } = useSurchargeMaster();
+  const { data: agentData } = useAgentStatus();
+  const agentDiscount = getAgentDiscountPercentage(
+    pkg,
+    !!agentData?.hasActiveSubscription
+  );
   const selectedTravelDateStr = selectedDate
     ? format(selectedDate, 'yyyy-MM-dd')
     : null;
@@ -442,7 +472,7 @@ export default function LimitedTimeDealDetailPage() {
             </span>
           </div>
           <h1 className='package-hero-title'>{pkg.package_name}</h1>
-          <LtdPackagePricingDisplay pkg={pkg} />
+          <LtdPackagePricingDisplay pkg={pkg} agentDiscount={agentDiscount} />
           {pkg.package_description && (
             <p className='package-hero-description'>
               {pkg.package_description}
@@ -681,7 +711,11 @@ export default function LimitedTimeDealDetailPage() {
                       <div className='booking-price-row'>
                         <span className='booking-price-label'>TOTAL</span>
                         <span className='booking-price-amount'>
-                          {formatPrice(calculatedPrice)}
+                          <AgentDiscountPrice
+                            price={calculatedPrice}
+                            percentage={agentDiscount}
+                            format={formatPrice}
+                          />
                         </span>
                       </div>
                     </div>

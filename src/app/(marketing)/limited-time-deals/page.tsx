@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { generateShortSlug } from '@/lib/utils';
 import PackageSliderArrowRight from '@/components/icons/PackageSliderArrowRight';
+import { useAgentStatus } from '@/hooks/use-marketing-queries';
+import { getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import '../category/packages.css';
 
 interface Package {
@@ -23,6 +26,7 @@ interface Package {
   thumbnail_image: string | null;
   overview?: string | null;
   holiday_description_html?: string | null;
+  agent_discount?: number | null;
 }
 
 interface LimitedTimeDeal {
@@ -60,14 +64,15 @@ function getPackageDescription(pkg: Package): string | null {
   return null;
 }
 
-function formatPrice(price: number | null): string {
-  if (!price) return 'N/A';
+function formatPrice(price: number): string {
   return `AED ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function LimitedTimeDealsPage() {
   const [deals, setDeals] = useState<LimitedTimeDeal[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: agentData } = useAgentStatus();
+  const isSubscribedAgent = !!agentData?.hasActiveSubscription;
 
   useEffect(() => {
     const fetchDeals = async () => {
@@ -147,7 +152,10 @@ export default function LimitedTimeDealsPage() {
               const url = `/limited-time-deals/${packageSlug}`;
               const duration = getDurationLabel(pkg);
               const packageDescription = getPackageDescription(pkg);
-              const pricePerPerson = formatPrice(pkg.adult_price || 0);
+              const agentDiscount = getAgentDiscountPercentage(
+                pkg,
+                isSubscribedAgent
+              );
               const hasVisaIncludedAtZero =
                 pkg.with_visa &&
                 (pkg.adult_visa_price ?? 0) === 0 &&
@@ -184,12 +192,26 @@ export default function LimitedTimeDealsPage() {
                           {packageDescription}
                         </p>
                       )}
-                      <span className='package-visa-badge'>
-                        {hasVisaIncludedAtZero ? 'With visa' : 'Without visa'}
-                      </span>
+                      {/* Discount + visa badges share one wrapping row */}
+                      <div className='suites-card-badges'>
+                        {agentDiscount > 0 && (
+                          <span className='suites-discount-badge'>
+                            {agentDiscount}% Agent Discount
+                          </span>
+                        )}
+                        <span
+                          className={`package-visa-badge ${hasVisaIncludedAtZero ? 'package-visa-badge-with' : ''}`}
+                        >
+                          {hasVisaIncludedAtZero ? 'With visa' : 'Without visa'}
+                        </span>
+                      </div>
                       <div className='suites-card-price'>
                         <span className='suites-price-amount'>
-                          {pricePerPerson}
+                          <AgentDiscountPrice
+                            price={pkg.adult_price || 0}
+                            percentage={agentDiscount}
+                            format={formatPrice}
+                          />
                         </span>
                         <span className='suites-price-label'> / per person</span>
                       </div>

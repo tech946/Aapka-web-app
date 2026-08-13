@@ -40,6 +40,14 @@ const resources = [
   { label: 'Refund & Cancellation Policy', href: '/cancellation-policy' },
 ];
 
+/* Moved out of the navbar: Oman services and B2B collaboration. */
+const omanServices = [
+  { label: 'Apply for Oman Tourist Visa', href: '/visas/apply-for-oman-visa' },
+  { label: 'Oman Exit Transportation', href: '/oman-transport' },
+  { label: 'B2B Collaboration', href: '/b2b-collaboration' },
+  { label: 'Submit Your Enquiry', href: '/travel-enquiry' },
+];
+
 interface Package {
   package_id: string;
   package_name: string;
@@ -215,6 +223,17 @@ export default function Footer() {
               <h4>Useful Links</h4>
               <ul>
                 {resources.map(item => (
+                  <li key={item.label}>
+                    <Link href={item.href}>{item.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className='footer_links_column'>
+              <h4>Oman &amp; Partners</h4>
+              <ul>
+                {omanServices.map(item => (
                   <li key={item.label}>
                     <Link href={item.href}>{item.label}</Link>
                   </li>

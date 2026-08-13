@@ -450,6 +450,17 @@
   margin: 0 0 1rem 0;
 }
 
+.payment-type-note {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c2410c;
+  background: #ffedd5;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: -0.5rem 0 1rem 0;
+}
+
 .payment-type-options {
   display: flex;
   flex-direction: column;

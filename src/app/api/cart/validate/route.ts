@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { getAgentSession } from '@/lib/agent-session';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import {
   MARINA_CRUISE_SLUG,
@@ -199,6 +199,8 @@ function validateMarinaCartItem(
     adultDiscountAmount: null,
     childDiscountAmount: null,
     infantDiscountAmount: null,
+    // Marina cruises are never agent-discounted: marina_cruise_dinners has no
+    // agent_discount column (dropped in 20250616000001).
     agentDiscountAmount: null,
     priceBeforeAgentDiscount: null,
     referralDiscountAmount: null,
@@ -314,44 +316,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user has active agent subscription
-    let hasActiveAgentSubscription = false;
-    try {
-      const supabase = await createServerSupabaseClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session && session.user) {
-        const userId = session.user.id;
-        const { data: agent } = await supabaseAdmin
-          .from('agents')
-          .select('id, subscription_id, is_active')
-          .eq('user_id', userId)
-          .eq('is_active', true)
-          .maybeSingle();
-
-        if (agent && agent.subscription_id) {
-          const { data: subscription } = await supabaseAdmin
-            .from('subscriptions')
-            .select('id, payment_status, is_active, end_date')
-            .eq('id', agent.subscription_id)
-            .single();
-
-          if (
-            subscription &&
-            subscription.payment_status === 'completed' &&
-            subscription.is_active === true &&
-            new Date(subscription.end_date) > new Date()
-          ) {
-            hasActiveAgentSubscription = true;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking agent subscription:', error);
-      // Continue without agent discount if check fails
-    }
+    // Check if user has active agent subscription (shared with checkout/booking)
+    const { hasActiveSubscription: hasActiveAgentSubscription } =
+      await getAgentSession();
 
     // Fetch all packages at once (including date_ranges for flexible date pricing)
     const regularItems = items.filter(

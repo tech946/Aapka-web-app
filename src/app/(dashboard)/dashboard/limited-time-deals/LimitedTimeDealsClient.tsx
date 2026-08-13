@@ -11,11 +11,26 @@ interface Package {
   package_name: string;
   package_days?: number | null;
   package_nights?: number | null;
+  package_price?: number | null;
   adult_price: number | null;
   child_price: number | null;
   infant_price: number | null;
   solo_traveller_price: number | null;
   thumbnail_image: string | null;
+}
+
+/** Label for the offer-package dropdown: name plus the price the admin is picking. */
+function packageOptionLabel(p: Package): string {
+  const amount = Number(p.adult_price) || Number(p.package_price) || 0;
+  if (amount <= 0) return `${p.package_name} — price not set`;
+
+  const formatted = amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  // adult_price is per person; package_price is a flat package rate
+  const suffix = Number(p.adult_price) > 0 ? ' / adult' : '';
+  return `${p.package_name} — AED ${formatted}${suffix}`;
 }
 
 interface LimitedTimeDeal {
@@ -158,7 +173,10 @@ export default function LimitedTimeDealsClient() {
         method: 'DELETE',
       });
 
-      if (!res.ok) throw new Error('Failed to delete');
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || 'Failed to delete');
+      }
 
       toast.success('Limited time deal deleted');
       loadDeals();
@@ -340,7 +358,7 @@ export default function LimitedTimeDealsClient() {
                     <option value="">Select offer package</option>
                     {packages.map((p) => (
                       <option key={p.package_id} value={p.package_id}>
-                        {p.package_name}
+                        {packageOptionLabel(p)}
                       </option>
                     ))}
                   </select>

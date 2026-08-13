@@ -266,16 +266,27 @@
   line-clamp: 2;
 }
 
+/* Discount + visa badges sit on one wrapping row */
+.suites-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* Same shape/typography as .package-visa-badge, in the theme orange */
 .suites-discount-badge {
   display: inline-block;
-  background: #5eead4;
-  color: #0f766e;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 5px 14px;
-  margin-bottom: 14px;
-  width: fit-content;
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
+  color: #fff;
   font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  width: max-content;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .suites-card-price {
@@ -325,6 +336,11 @@
 
 .package-visa-badge-with {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+/* The row owns the spacing when badges are grouped */
+.suites-card-badges .package-visa-badge {
+  margin-bottom: 0;
 }
 
 .suites-read-more {

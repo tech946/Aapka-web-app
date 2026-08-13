@@ -1,0 +1,49 @@
+/* Agent (partner) pricing: struck-through public price next to the agent price.
+   Uses the brand orange (#fd6b06) so it reads as part of the theme. */
+.agent-price {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-price-original {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-weight: 400;
+  /* Slightly smaller than the live price so the eye lands on what they pay */
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.agent-price-discounted {
+  font-weight: 700;
+  color: #fd6b06;
+  white-space: nowrap;
+}
+
+/* Solid theme badge naming the agent rate. Deliberately matches
+   .package-visa-badge / .suites-discount-badge so every badge on a card reads
+   as one family. Kept byte-identical to the copies in the two
+   package-details.css files so stylesheet load order can't change the look. */
+.agent-discount-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.agent-discount-badge-amount {
+  font-weight: 700;
+  color: #fff;
+}

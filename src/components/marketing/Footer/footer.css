@@ -155,10 +155,12 @@
   font-size: 18px;
 }
 
+/* auto-fit so the 4th column (Oman & Partners) drops to a new row on narrower
+   desktops instead of overflowing the brand+links two-column shell */
 .footer_links {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
-  gap: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 32px;
 }
 
 .footer_links_column h4 {

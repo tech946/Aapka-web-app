@@ -1161,6 +1161,12 @@ export default function PackageDetailsPage() {
     // Note: These are mutually exclusive - agents can't use referral links
 
     let discountAmount = 0;
+    // NOTE: marina_cruise_dinners has no agent_discount column - it was dropped
+    // in 20250616000001_simplify_marina_cruise_dinners.sql - so this is always 0
+    // and marina cruises are never agent-discounted. /api/cart/validate agrees
+    // (validateMarinaCartItem returns agentDiscountAmount: null). Kept in place
+    // so this branch stays identical to the package detail page; re-adding the
+    // column is all that would be needed to switch marina discounts back on.
     const agentDiscountPercentage = pkg?.agent_discount || 0;
 
     // Check if user is an agent with active subscription

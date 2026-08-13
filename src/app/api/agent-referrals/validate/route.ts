@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for self-referral (if user is logged in)
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

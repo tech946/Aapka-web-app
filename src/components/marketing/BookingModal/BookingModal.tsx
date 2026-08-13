@@ -992,7 +992,7 @@ export default function BookingModal({
                 </span>
                 <div className='agent-discount-badge-container'>
                   <span className='agent-discount-badge'>
-                    Premium Partner Discount
+                    Agent Discount
                     <span className='agent-discount-badge-amount'>
                       -{formatPrice(agentDiscountAmount).replace('AED ', '')}
                     </span>

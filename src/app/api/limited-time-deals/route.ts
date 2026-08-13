@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { syncActivePackageDealsToLimitedTimeDeals } from '@/lib/limited-time-deals-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // GET: List limited time deals (with optional include_expired for dashboard)
+//
+// NOTE: this used to call syncActivePackageDealsToLimitedTimeDeals() to backfill
+// rows from active Deals of the Day. That made a read mutate the table, which
+// broke deletion outright: the dashboard refetches right after a DELETE, the
+// sync saw an active package_deal with no limited_time_deals row, and recreated
+// the row the admin had just removed. It also inserted rows for *every* other
+// active package deal on each fetch, so creating one deal appeared to create
+// several. Deals of the Day are still linked at creation time by
+// ensureLimitedTimeDealForPackageDeal() in the package-deals route.
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const includeExpired = searchParams.get('include_expired') === 'true';
-
-    // Deals of the Day (package_deals) should appear on the Limited Time Deals website page
-    await syncActivePackageDealsToLimitedTimeDeals();
 
     let query = supabaseAdmin
       .from('limited_time_deals')
@@ -38,6 +43,7 @@ export async function GET(req: NextRequest) {
           infant_price,
           solo_traveller_price,
           solo_traveller_enabled,
+          agent_discount,
           thumbnail_image,
           status,
           min_adults,
@@ -106,6 +112,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'offer_package_id, start_date, and end_date are required' },
         { status: 400 }
+      );
+    }
+
+    // One limited time deal per offer package: the linkage helpers
+    // (ensureLimitedTimeDealForPackageDeal / setLimitedTimeDealActiveForPackage)
+    // both key off offer_package_id, so duplicates make those ambiguous.
+    const { data: duplicate } = await supabaseAdmin
+      .from('limited_time_deals')
+      .select('id')
+      .eq('offer_package_id', offerPackageId)
+      .limit(1);
+
+    if (duplicate && duplicate.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'A limited time deal already exists for this offer package. Edit or delete the existing deal instead.',
+        },
+        { status: 409 }
       );
     }
 

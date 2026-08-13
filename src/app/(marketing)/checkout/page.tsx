@@ -22,7 +22,8 @@ import {
   type UserLocation,
 } from '@/lib/location-utils';
 import { parseDateStringToLocal } from '@/lib/utils';
-import { useAddonNames } from '@/hooks/use-marketing-queries';
+import { useAddonNames, useAgentStatus } from '@/hooks/use-marketing-queries';
+import { AgentDiscountBadge } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import './checkout.css';
 
 interface PassengerData {
@@ -71,6 +72,12 @@ function CheckoutPageContent() {
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number>(0);
   const { addonNames } = useAddonNames();
+
+  // Subscribed agents must pay in full. `isAgentStatusResolved` gates the
+  // payment-type UI so the half option never flashes before we know.
+  const { data: agentData, isPending: isAgentStatusPending } = useAgentStatus();
+  const isSubscribedAgent = !!agentData?.hasActiveSubscription;
+  const isAgentStatusResolved = !isAgentStatusPending;
 
   // Check if any cart item is a tour (not a package)
   // Tours typically have "tour" in the category slug/name
@@ -144,6 +151,13 @@ function CheckoutPageContent() {
       setPaymentType('full');
     }
   }, [isTourCheckout, cartItems.length]); // Update when tour status or cart changes
+
+  // Subscribed agents always pay in full, whatever is in the cart
+  useEffect(() => {
+    if (isSubscribedAgent) {
+      setPaymentType('full');
+    }
+  }, [isSubscribedAgent]);
 
   // Load tour pickup locations from package data (read-only at checkout)
   useEffect(() => {
@@ -671,6 +685,13 @@ function CheckoutPageContent() {
       return;
     }
 
+    // Subscribed agents must pay in full
+    if (isSubscribedAgent && paymentType === 'half') {
+      toast.error('Agent bookings require full payment.');
+      setPaymentType('full');
+      return;
+    }
+
     if (!userLocation) {
       toast.error('Please wait while we detect your location...');
       return;
@@ -804,6 +825,19 @@ function CheckoutPageContent() {
       const bookingId = bookingResult.bookingId;
       const firstPassengerData = passengersToProcess[0];
 
+      // The server may coerce an agent's booking to full payment - charge what
+      // it recorded, not what this page computed.
+      const chargeType: 'half' | 'full' =
+        bookingResult.paymentType === 'half' ||
+        bookingResult.paymentType === 'full'
+          ? bookingResult.paymentType
+          : paymentType;
+      const chargeAmount =
+        typeof bookingResult.paymentAmount === 'number' &&
+        bookingResult.paymentAmount > 0
+          ? bookingResult.paymentAmount
+          : paymentAmount;
+
       // Initialize payment based on location
       // TEMPORARY: Using CCAvenue for ALL users (HDFC temporarily disabled)
       // Indian users: HDFC (INR), International users: CCAvenue (AED)
@@ -833,11 +867,11 @@ function CheckoutPageContent() {
       // Use CCAvenue for ALL users temporarily
       await initializeCCAvenuePayment({
         bookingId,
-        amount: paymentAmount,
+        amount: chargeAmount,
         customerName: `${firstPassengerData.firstName} ${firstPassengerData.lastName}`,
         customerEmail: firstPassengerData.email,
         customerPhone: firstPassengerData.phone,
-        paymentType,
+        paymentType: chargeType,
         billingCountry: userLocation.countryCode || 'AE',
       });
     } catch (error: any) {
@@ -1748,39 +1782,11 @@ function CheckoutPageContent() {
                         )}
                       {item.agentDiscountAmount &&
                         item.agentDiscountAmount > 0 && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              marginBottom: '4px',
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                fontWeight: 600,
-                                color: '#059669',
-                                background: '#d1fae5',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                              }}
-                            >
-                              Premium Partner Discount
-                              <span
-                                style={{ color: '#047857', fontWeight: 700 }}
-                              >
-                                -
-                                {formatPrice(item.agentDiscountAmount).replace(
-                                  'AED ',
-                                  ''
-                                )}
-                              </span>
-                            </span>
-                          </div>
+                          <AgentDiscountBadge
+                            amount={`-${formatPrice(
+                              item.agentDiscountAmount
+                            ).replace('AED ', '')}`}
+                          />
                         )}
                       <span
                         className={
@@ -1880,9 +1886,14 @@ function CheckoutPageContent() {
               </div>
 
               {/* Payment Type Selection */}
-              {userLocation && (
+              {userLocation && isAgentStatusResolved && (
                 <div className='payment-type-selection'>
                   <h3>Payment Type</h3>
+                  {isSubscribedAgent && (
+                    <p className='payment-type-note'>
+                      Agent bookings are payable in full.
+                    </p>
+                  )}
                   <div className='payment-type-options'>
                     <label className='payment-type-option'>
                       <input
@@ -1906,8 +1917,9 @@ function CheckoutPageContent() {
                         </span>
                       </div>
                     </label>
-                    {/* Only show half payment option for packages and offer packages, not for tours */}
-                    {!isTourCheckout && (
+                    {/* Half payment is for packages and offer packages only -
+                        not for tours, and never for subscribed partners */}
+                    {!isTourCheckout && !isSubscribedAgent && (
                       <label className='payment-type-option'>
                         <input
                           type='radio'

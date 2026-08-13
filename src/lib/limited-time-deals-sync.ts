@@ -15,13 +15,27 @@ function toDateOnly(value: string): string {
 export async function ensureLimitedTimeDealForPackageDeal(
   deal: PackageDealRow
 ): Promise<void> {
-  const { data: existing } = await supabaseAdmin
+  // Deliberately limit(1) rather than maybeSingle(): maybeSingle() ERRORS when
+  // more than one row matches, and the old code treated that error as "nothing
+  // exists" and inserted another copy. Once two duplicates existed for a
+  // package, every call added one more - unbounded growth.
+  const { data: existing, error } = await supabaseAdmin
     .from('limited_time_deals')
     .select('id')
     .eq('offer_package_id', deal.package_id)
-    .maybeSingle();
+    .limit(1);
 
-  if (existing) return;
+  // On a lookup failure, do nothing rather than risk inserting a duplicate.
+  if (error) {
+    console.error(
+      '[LTD SYNC] Lookup failed for package',
+      deal.package_id,
+      error.message
+    );
+    return;
+  }
+
+  if (existing && existing.length > 0) return;
 
   await supabaseAdmin.from('limited_time_deals').insert({
     offer_package_id: deal.package_id,
@@ -33,7 +47,13 @@ export async function ensureLimitedTimeDealForPackageDeal(
   });
 }
 
-/** Backfill LTD rows for all active Deals of the Day entries missing from limited_time_deals. */
+/**
+ * Backfill LTD rows for all active Deals of the Day entries missing from
+ * limited_time_deals.
+ *
+ * Do NOT call this from a GET handler - it writes, so it resurrects rows an
+ * admin has just deleted. Intended for an explicit, admin-triggered backfill.
+ */
 export async function syncActivePackageDealsToLimitedTimeDeals(): Promise<void> {
   const { data: packageDeals, error } = await supabaseAdmin
     .from('package_deals')

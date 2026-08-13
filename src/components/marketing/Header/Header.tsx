@@ -24,6 +24,7 @@ import {
   useCategoriesWithPackages,
   useAgentStatus,
 } from '@/hooks/use-marketing-queries';
+import PartnerIcon from '@/components/icons/PartnerIcon';
 import './header.css';
 
 interface Category {
@@ -36,7 +37,6 @@ interface Category {
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showOmanDropdown, setShowOmanDropdown] = useState(false);
   const [showPackagesDropdown, setShowPackagesDropdown] = useState(false);
   const [mobilePackagesExpanded, setMobilePackagesExpanded] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -54,7 +54,6 @@ export default function Header() {
   const navRef = useRef<HTMLUListElement>(null);
   const underlineRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
-  const omanDropdownRef = useRef<HTMLDivElement>(null);
   const packagesDropdownRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
@@ -122,7 +121,6 @@ export default function Header() {
   // Close all dropdowns on route change (prevents overlay from blocking clicks after navigation)
   useEffect(() => {
     setShowPackagesDropdown(false);
-    setShowOmanDropdown(false);
   }, [pathname]);
 
   // Sync session state (auth is fast; agent-status API is cached via useAgentStatus)
@@ -154,7 +152,21 @@ export default function Header() {
     syncSession();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(syncSession);
+    } = supabase.auth.onAuthStateChange(event => {
+      // Agent status drives partner pricing everywhere, so it must not survive
+      // a sign-in/sign-out on the 5-minute cache - otherwise an agent who just
+      // logged in keeps seeing public prices.
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT' ||
+        event === 'USER_UPDATED'
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ['marketing', 'agent-status'],
+        });
+      }
+      syncSession();
+    });
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
@@ -169,12 +181,6 @@ export default function Header() {
         setShowUserDropdown(false);
       }
       if (
-        omanDropdownRef.current &&
-        !omanDropdownRef.current.contains(target)
-      ) {
-        setShowOmanDropdown(false);
-      }
-      if (
         packagesDropdownRef.current &&
         !packagesDropdownRef.current.contains(target)
       ) {
@@ -182,14 +188,14 @@ export default function Header() {
       }
     };
 
-    if (showUserDropdown || showOmanDropdown || showPackagesDropdown) {
+    if (showUserDropdown || showPackagesDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showUserDropdown, showOmanDropdown, showPackagesDropdown]);
+  }, [showUserDropdown, showPackagesDropdown]);
 
   const handleLogout = async () => {
     try {
@@ -364,95 +370,32 @@ export default function Header() {
                 </li>
               )}
 
-              <li
-                ref={el => {
-                  linkRefs.current['/travel-enquiry'] = el;
-                }}
-                className={pathname === '/travel-enquiry' ? 'active' : ''}
-              >
-                <Link
-                  href='/travel-enquiry'
-                  className={`header-nav-link ${
-                    pathname === '/travel-enquiry' ? 'active' : ''
-                  }`}
+              {/* "Submit your enquiry" now lives in the floating right-edge tab
+                  (EnquiryButton); B2B collaboration and the Oman links moved to
+                  the footer. */}
+
+              {/* Agents already signed in don't need the sign-up link */}
+              {!isAgent && (
+                <li
+                  ref={el => {
+                    linkRefs.current['/become-partner'] = el;
+                  }}
+                  className={
+                    pathname.startsWith('/become-partner') ? 'active' : ''
+                  }
                 >
-                  Submit your enquiry
-                </Link>
-              </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/b2b-collaboration'] = el;
-                }}
-                className={pathname === '/b2b-collaboration' ? 'active' : ''}
-              >
-                <Link
-                  href='/b2b-collaboration'
-                  className={`header-nav-link ${
-                    pathname === '/b2b-collaboration' ? 'active' : ''
-                  }`}
-                >
-                  B2B collaboration
-                </Link>
-              </li>
-              <li
-                ref={el => {
-                  linkRefs.current['/visas/apply-for-oman-visa'] = el;
-                  linkRefs.current['/oman-transport'] = el;
-                }}
-                className={`${
-                  pathname === '/visas/apply-for-oman-visa' ||
-                  pathname === '/oman-transport'
-                    ? 'active'
-                    : ''
-                } header-dropdown-container`}
-                style={{ position: 'relative' }}
-              >
-                <div ref={omanDropdownRef} style={{ position: 'relative' }}>
-                  <button
-                    type='button'
-                    className='header-dropdown-button header-nav-link'
-                    onClick={() => setShowOmanDropdown(!showOmanDropdown)}
-                    style={{
-                      color:
-                        pathname === '/visas/apply-for-oman-visa' ||
-                        pathname === '/oman-transport'
-                          ? '#fd6b06'
-                          : undefined,
-                    }}
+                  <Link
+                    href='/become-partner'
+                    className={`header-nav-link header-nav-link-partner ${
+                      pathname.startsWith('/become-partner') ? 'active' : ''
+                    }`}
                   >
-                    Oman
-                    <ChevronDown
-                      size={16}
-                      className={`header-chevron ${showOmanDropdown ? 'open' : ''}`}
-                    />
-                  </button>
-                  {showOmanDropdown && (
-                    <>
-                      <div
-                        className='header-dropdown-overlay'
-                        onClick={() => setShowOmanDropdown(false)}
-                        aria-hidden='true'
-                      />
-                      <div className='header-dropdown-menu'>
-                        <Link
-                          href='/visas/apply-for-oman-visa'
-                          className='header-dropdown-item'
-                          onClick={() => setShowOmanDropdown(false)}
-                        >
-                          Apply for Oman Tourist Visa
-                        </Link>
-                        <Link
-                          href='/oman-transport'
-                          className='header-dropdown-item'
-                          onClick={() => setShowOmanDropdown(false)}
-                        >
-                          Oman Exit Transportation
-                        </Link>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </li>
+                    <PartnerIcon size={22} className='header-partner-icon' />
+                    <span>Become a Partner</span>
+                  </Link>
+                </li>
+              )}
+
               {/* <li
                 ref={el => {
                   linkRefs.current['/contact'] = el;
@@ -761,44 +704,22 @@ export default function Header() {
               </div>
             )}
 
-            <Link
-              href='/travel-enquiry'
-              className={`mobile-sidebar-link ${
-                pathname === '/travel-enquiry' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Submit your enquiry
-            </Link>
+            {/* "Submit your enquiry" now lives in the floating right-edge tab
+                (EnquiryButton); B2B collaboration and the Oman links moved to
+                the footer. */}
 
-            <Link
-              href='/b2b-collaboration'
-              className={`mobile-sidebar-link ${
-                pathname === '/b2b-collaboration' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              B2B collaboration
-            </Link>
-
-            <Link
-              href='/visas/apply-for-oman-visa'
-              className={`mobile-sidebar-link ${
-                pathname === '/visas/apply-for-oman-visa' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Apply for Oman Tourist Visa
-            </Link>
-            <Link
-              href='/oman-transport'
-              className={`mobile-sidebar-link ${
-                pathname === '/oman-transport' ? 'active' : ''
-              }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Oman Exit Transportation
-            </Link>
+            {!isAgent && (
+              <Link
+                href='/become-partner'
+                className={`mobile-sidebar-link mobile-sidebar-link-partner ${
+                  pathname.startsWith('/become-partner') ? 'active' : ''
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <PartnerIcon size={20} />
+                <span>Become a Partner</span>
+              </Link>
+            )}
 
             {/* <Link
               href='/contact'

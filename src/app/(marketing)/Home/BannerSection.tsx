@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import {
   useCategoriesWithPackages,
   usePackagesByCategory,
+  useAgentStatus,
 } from '@/hooks/use-marketing-queries';
+import { getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import {
   MapPin,
   Calendar,
@@ -63,6 +66,12 @@ interface Package {
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   date_ranges?: DateRange[] | null;
   end_date?: string | null;
+  agent_discount?: number | null;
+}
+
+/** Matches the plain `toLocaleString()` output used in the package dropdown. */
+function formatDropdownPrice(price: number): string {
+  return `AED ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 }
 
 interface PersonsCount {
@@ -109,6 +118,8 @@ export default function BannerSection() {
       limit: 100,
       status: 'active',
     });
+  const { data: agentData } = useAgentStatus();
+  const isSubscribedAgent = !!agentData?.hasActiveSubscription;
 
   // Sync categories and set active category on first load
   useEffect(() => {
@@ -501,6 +512,10 @@ export default function BannerSection() {
                       ) : packages.length > 0 ? (
                         packages.map(pkg => {
                           const revealing = isPackagePriceRevealingSoon(pkg);
+                          const agentDiscount = getAgentDiscountPercentage(
+                            pkg,
+                            isSubscribedAgent
+                          );
                           return (
                             <div
                               key={pkg.package_id}
@@ -517,7 +532,11 @@ export default function BannerSection() {
                                 {revealing ? (
                                   <PackagePriceRevealingSoonLabel variant='dropdown' />
                                 ) : (
-                                  `AED ${pkg.package_price?.toLocaleString() || 'N/A'}`
+                                  <AgentDiscountPrice
+                                    price={pkg.package_price}
+                                    percentage={agentDiscount}
+                                    format={formatDropdownPrice}
+                                  />
                                 )}
                               </div>
                             </div>

@@ -173,19 +173,21 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 10px 12px;
 }
 
 .package-hero-price-current {
   font-family: var(--font-inter);
-  font-size: 18px;
-  font-weight: 600;
+  /* Dominant: this is the number they actually pay */
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
   color: #111;
 }
 
 .package-hero-price-original {
   font-family: var(--font-inter);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 400;
   color: #9ca3af;
   text-decoration: line-through;
@@ -194,16 +196,17 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .package-hero-discount-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  padding: 4px 11px;
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   color: white;
   font-family: var(--font-inter);
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(253, 107, 6, 0.28);
 }
 
 .package-hero-description {
@@ -325,7 +328,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-amount.discounted {
-  color: #16a34a;
+  color: #fd6b06;
 }
 
 .package-hero-price-item-original {
@@ -340,7 +343,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 .package-hero-price-item-discount {
   font-family: var(--font-inter);
   font-size: 13px;
-  color: #16a34a;
+  color: #fd6b06;
   font-weight: 500;
   margin-top: 2px;
 }
@@ -793,7 +796,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   }
 
   .package-hero-price-item-amount.discounted {
-    color: #16a34a;
+    color: #fd6b06;
   }
 
   /* Responsive Gallery */
@@ -1297,10 +1300,10 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .booking-price-amount.discounted,
 .mobile-booking-price-amount.discounted {
-  color: #16a34a;
+  color: #fd6b06;
 }
 
-/* Premium Partner Discount Badge */
+/* Agent Discount Badge */
 .agent-discount-badge-container {
   display: flex;
   align-items: center;
@@ -1310,20 +1313,25 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .agent-discount-badge {
-  font-size: 11px;
-  font-weight: 600;
-  color: #059669;
-  background: #d1fae5;
-  padding: 3px 10px;
-  border-radius: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  width: max-content;
+  font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
+  padding: 4px 10px;
+  white-space: nowrap;
 }
 
 .agent-discount-badge-amount {
-  color: #047857;
   font-weight: 700;
+  color: #fff;
 }
 
 /* Responsive discount banner */

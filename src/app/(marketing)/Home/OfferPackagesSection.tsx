@@ -9,7 +9,12 @@ import { generateShortSlug } from '@/lib/utils';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
 import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { useSliderDrag } from '@/lib/use-slider-drag';
-import { usePackagesByCategory } from '@/hooks/use-marketing-queries';
+import {
+  usePackagesByCategory,
+  useAgentStatus,
+} from '@/hooks/use-marketing-queries';
+import { getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import './home.css';
 
 interface Package {
@@ -25,6 +30,12 @@ interface Package {
   package_description?: string | null;
   overview?: string | null;
   holiday_description_html?: string | null;
+  agent_discount?: number | null;
+}
+
+/** Matches the plain `toLocaleString()` output used across the home sliders. */
+function formatSectionPrice(price: number): string {
+  return `AED ${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 }
 
 function getPackageDescription(pkg: Package): string {
@@ -63,6 +74,8 @@ export default function OfferPackagesSection() {
     status: 'active',
   });
   const packages = ((data?.data ?? []) as unknown) as Package[];
+  const { data: agentData } = useAgentStatus();
+  const isSubscribedAgent = !!agentData?.hasActiveSubscription;
   const cardsRef = useRef<HTMLDivElement>(null);
   const [cardsPerView, setCardsPerView] = useState(3);
 
@@ -176,6 +189,10 @@ export default function OfferPackagesSection() {
                   pkg.child_price != null && pkg.child_price > 0;
                 const hasInfant =
                   pkg.infant_price != null && pkg.infant_price > 0;
+                const agentDiscount = getAgentDiscountPercentage(
+                  pkg,
+                  isSubscribedAgent
+                );
                 return (
                   <div
                     key={pkg.package_id}
@@ -220,28 +237,48 @@ export default function OfferPackagesSection() {
                             <PackagePriceRevealingSoonLabel variant='pill' />
                           ) : (
                             <>
+                              {agentDiscount > 0 && (
+                                <span className='agent-discount-badge'>
+                                  Agent Discount {agentDiscount}%
+                                </span>
+                              )}
                               {hasAdult && (
                                 <span className='section-tour-card-price-pill'>
-                                  Adult: AED{' '}
-                                  {pkg.adult_price!.toLocaleString()}
+                                  Adult:{' '}
+                                  <AgentDiscountPrice
+                                    price={pkg.adult_price}
+                                    percentage={agentDiscount}
+                                    format={formatSectionPrice}
+                                  />
                                 </span>
                               )}
                               {hasChild && (
                                 <span className='section-tour-card-price-pill'>
-                                  Child: AED{' '}
-                                  {pkg.child_price!.toLocaleString()}
+                                  Child:{' '}
+                                  <AgentDiscountPrice
+                                    price={pkg.child_price}
+                                    percentage={agentDiscount}
+                                    format={formatSectionPrice}
+                                  />
                                 </span>
                               )}
                               {hasInfant && (
                                 <span className='section-tour-card-price-pill'>
-                                  Infant: AED{' '}
-                                  {pkg.infant_price!.toLocaleString()}
+                                  Infant:{' '}
+                                  <AgentDiscountPrice
+                                    price={pkg.infant_price}
+                                    percentage={agentDiscount}
+                                    format={formatSectionPrice}
+                                  />
                                 </span>
                               )}
                               {!hasAdult && !hasChild && !hasInfant && (
                                 <span className='section-tour-card-price-pill'>
-                                  AED{' '}
-                                  {pkg.package_price?.toLocaleString() ?? 'N/A'}
+                                  <AgentDiscountPrice
+                                    price={pkg.package_price}
+                                    percentage={agentDiscount}
+                                    format={formatSectionPrice}
+                                  />
                                 </span>
                               )}
                             </>

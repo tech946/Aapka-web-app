@@ -276,6 +276,35 @@
   vertical-align: middle;
 }
 
+/* Become a Partner - icon + label, same row metrics as the LTD link */
+.header-nav-link-partner {
+  display: inline-flex !important;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 4px 8px;
+  line-height: 24px;
+  font-size: 14px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.header-partner-icon {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.header-nav-link-partner:hover .header-partner-icon {
+  transform: scale(1.12);
+}
+
+.mobile-sidebar-link-partner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Fixed box for SVG so baseline / descender gap doesn’t drop the row */
 .header-ltd-zap-wrap {
   display: flex;

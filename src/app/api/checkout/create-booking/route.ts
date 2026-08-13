@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { REFERRAL_COOKIE_NAME } from '@/lib/influencer-referral';
+import { getAgentSession } from '@/lib/agent-session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -106,10 +107,23 @@ export async function POST(req: NextRequest) {
       infantDocuments = [],
       paymentMethod,
       totalAmount,
-      paymentType,
-      paymentAmount,
       currency,
     } = body;
+
+    let { paymentType, paymentAmount } = body;
+
+    // Subscribed agents always pay in full - never half.
+    // Enforced here (not just in the UI) because paymentType/paymentAmount
+    // arrive from the client. The half amount is exactly half of the full one
+    // (platform fee is a flat percentage of the base), so doubling restores the
+    // full charge without needing to re-read the fee.
+    const { hasActiveSubscription: isSubscribedAgent } = await getAgentSession();
+    if (isSubscribedAgent && paymentType === 'half') {
+      paymentType = 'full';
+      if (typeof paymentAmount === 'number' && paymentAmount > 0) {
+        paymentAmount = paymentAmount * 2;
+      }
+    }
 
     if (!cartItems || cartItems.length === 0) {
       return NextResponse.json(
@@ -430,6 +444,10 @@ export async function POST(req: NextRequest) {
       success: true,
       bookingId: booking.id,
       booking,
+      // Echo the enforced values back - the client must send these to the
+      // payment gateway so a coerced agent booking is actually charged in full.
+      paymentType,
+      paymentAmount,
     });
   } catch (error: any) {
     return NextResponse.json(
