@@ -10,7 +10,6 @@ import {
   User,
   LogOut,
   LayoutDashboard,
-  Plus,
   Settings,
   ChevronRight,
   ChevronDown,
@@ -449,22 +448,14 @@ export default function Header() {
                   {showUserDropdown && (
                     <div className='header-user-dropdown-menu'>
                       {!isLoggedIn ? (
-                        <>
-                          <Link
-                            href='/agent/login'
-                            className='header-user-dropdown-item'
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <span>Login</span>
-                          </Link>
-                          <Link
-                            href='/become-partner'
-                            className='header-user-dropdown-item'
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <span>Become a Aapka Partner</span>
-                          </Link>
-                        </>
+                        /* "Become a Partner" lives in the main nav now */
+                        <Link
+                          href='/agent/login'
+                          className='header-user-dropdown-item'
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          <span>Login</span>
+                        </Link>
                       ) : (
                         <>
                           {/* User Info Header - Highlighted */}
@@ -494,17 +485,7 @@ export default function Header() {
                               <span>Dashboard</span>
                             </Link>
                           )}
-                          <Link
-                            href='/become-partner'
-                            className='header-user-dropdown-item'
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <Plus
-                              size={16}
-                              className='header-user-dropdown-item-icon'
-                            />
-                            <span>Become a Aapka Partner</span>
-                          </Link>
+                          {/* "Become a Partner" lives in the main nav now */}
                           <Link
                             href='#'
                             className='header-user-dropdown-item'
