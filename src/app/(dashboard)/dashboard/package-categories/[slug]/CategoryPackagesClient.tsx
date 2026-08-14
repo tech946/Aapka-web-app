@@ -7,6 +7,10 @@ import { AlertCircle, X, Trash2, Link2 } from 'lucide-react';
 import { type CRMPackageOption } from '@/components/crm/CRMPackageSelector';
 import { AttachCrmModal } from './AttachCrmModal';
 import { supportsListingPageToggle } from '@/lib/package-config';
+import {
+  normalizeAcceptPayment,
+  type AcceptPayment,
+} from '@/lib/package-payment';
 
 type Pkg = {
   package_id: string;
@@ -21,6 +25,7 @@ type Pkg = {
   infant_price?: number | null;
   status?: string | null;
   show_listing_page?: boolean | null;
+  accept_payment?: string | null;
   crm_package_id?: string | null;
   created_at: string | null;
 };
@@ -50,6 +55,7 @@ export default function CategoryPackagesClient({
   const [reloadKey, setReloadKey] = useState(0);
   const [updatingStatus, setUpdatingStatus] = useState<Set<string>>(new Set());
   const [updatingListingPage, setUpdatingListingPage] = useState<Set<string>>(new Set());
+  const [updatingAcceptPayment, setUpdatingAcceptPayment] = useState<Set<string>>(new Set());
   const showListingToggle = supportsListingPageToggle(categorySlug);
   const tableColSpan = showListingToggle ? 13 : 12;
   const [confirmModal, setConfirmModal] = useState<{
@@ -197,6 +203,55 @@ export default function CategoryPackagesClient({
 
   const handleCancelStatusChange = () => {
     setConfirmModal(null);
+  };
+
+  const handleAcceptPaymentToggle = async (
+    packageId: string,
+    currentValue: AcceptPayment
+  ) => {
+    const newValue: AcceptPayment = currentValue === 'full' ? 'half' : 'full';
+    setUpdatingAcceptPayment(prev => new Set(prev).add(packageId));
+
+    try {
+      const response = await fetch('/api/packages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: packageId,
+          accept_payment: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result?.error ?? 'Failed to update payment option');
+      }
+
+      setRows(prev =>
+        prev.map(pkg =>
+          pkg.package_id === packageId
+            ? { ...pkg, accept_payment: newValue }
+            : pkg
+        )
+      );
+
+      toast.success(
+        newValue === 'full'
+          ? 'Checkout will offer full payment only'
+          : 'Checkout will offer half or full payment'
+      );
+    } catch (error) {
+      console.error('Error updating payment option:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update payment option'
+      );
+    } finally {
+      setUpdatingAcceptPayment(prev => {
+        const next = new Set(prev);
+        next.delete(packageId);
+        return next;
+      });
+    }
   };
 
   const handleListingPageToggle = async (
@@ -402,6 +457,7 @@ export default function CategoryPackagesClient({
               <th>Infant</th>
               <th>Status</th>
               {showListingToggle && <th>Listing Page</th>}
+              <th>Payment</th>
               <th>CRM</th>
               <th>Description</th>
               <th>Created</th>
@@ -488,6 +544,33 @@ export default function CategoryPackagesClient({
                       </div>
                     </td>
                   )}
+                  <td>
+                    <div
+                      className='status_toggle_wrapper'
+                      onClick={() =>
+                        !updatingAcceptPayment.has(p.package_id) &&
+                        handleAcceptPaymentToggle(
+                          p.package_id,
+                          normalizeAcceptPayment(p.accept_payment)
+                        )
+                      }
+                    >
+                      <input
+                        type='checkbox'
+                        checked={
+                          normalizeAcceptPayment(p.accept_payment) === 'full'
+                        }
+                        readOnly
+                        disabled={updatingAcceptPayment.has(p.package_id)}
+                        className='status_toggle'
+                      />
+                      <span className='status_toggle_label'>
+                        {normalizeAcceptPayment(p.accept_payment) === 'full'
+                          ? 'Full only'
+                          : 'Half / Full'}
+                      </span>
+                    </div>
+                  </td>
                   <td>
                     {p.crm_package_id ? (
                       <span

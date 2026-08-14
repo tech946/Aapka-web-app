@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import type { AcceptPayment } from '@/lib/package-payment';
 
 // Minimal cart item stored in localStorage (no prices)
 export interface CartItemStorage {
@@ -64,6 +65,8 @@ export interface CartItem extends CartItemStorage {
   // Referral discount info (for customers via referral link)
   referralDiscountAmount?: number | null;
   priceBeforeReferralDiscount?: number | null;
+  /** Per-package checkout rule: 'full' hides the half-payment option */
+  acceptPayment?: AcceptPayment;
   /** Date-range surcharge from surcharge_master (included in price) */
   dateSurcharge?: number | null;
   /** Resolved add-on names after server validation (marina cruise) */
@@ -188,6 +191,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   // Referral discount info (for customers via referral link)
                   referralDiscountAmount: validated.referralDiscountAmount,
                   priceBeforeReferralDiscount: validated.priceBeforeReferralDiscount,
+                  // Server-supplied payment rule for this package
+                  acceptPayment: validated.acceptPayment,
                   dateSurcharge: validated.dateSurcharge ?? null,
                   marinaAddonLabels: validated.marinaAddonLabels,
                 };

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { REFERRAL_COOKIE_NAME } from '@/lib/influencer-referral';
 import { getAgentSession } from '@/lib/agent-session';
+import { packageRequiresFullPayment } from '@/lib/package-payment';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -112,19 +113,6 @@ export async function POST(req: NextRequest) {
 
     let { paymentType, paymentAmount } = body;
 
-    // Subscribed agents always pay in full - never half.
-    // Enforced here (not just in the UI) because paymentType/paymentAmount
-    // arrive from the client. The half amount is exactly half of the full one
-    // (platform fee is a flat percentage of the base), so doubling restores the
-    // full charge without needing to re-read the fee.
-    const { hasActiveSubscription: isSubscribedAgent } = await getAgentSession();
-    if (isSubscribedAgent && paymentType === 'half') {
-      paymentType = 'full';
-      if (typeof paymentAmount === 'number' && paymentAmount > 0) {
-        paymentAmount = paymentAmount * 2;
-      }
-    }
-
     if (!cartItems || cartItems.length === 0) {
       return NextResponse.json(
         { error: 'Cart items are required' },
@@ -137,6 +125,42 @@ export async function POST(req: NextRequest) {
         { error: 'Passenger information is required' },
         { status: 400 }
       );
+    }
+
+    // Full payment is enforced here, not just in the UI, because paymentType
+    // and paymentAmount arrive from the client. Two independent reasons:
+    //   1. the buyer is a subscribed agent
+    //   2. any package in the cart has accept_payment = 'full'
+    const { hasActiveSubscription: isSubscribedAgent } = await getAgentSession();
+
+    let cartRequiresFullPayment = false;
+    if (paymentType === 'half' && !isSubscribedAgent) {
+      const cartPackageIds = [
+        ...new Set(cartItems.map(item => item.packageId).filter(Boolean)),
+      ];
+      if (cartPackageIds.length > 0) {
+        const { data: paymentRules } = await supabaseAdmin
+          .from('packages')
+          .select('package_id, accept_payment')
+          .in('package_id', cartPackageIds);
+
+        cartRequiresFullPayment = (paymentRules || []).some(
+          packageRequiresFullPayment
+        );
+      }
+    }
+
+    // The half amount is exactly half of the full one (the platform fee is a
+    // flat percentage of the base), so doubling restores the full charge
+    // without needing to re-read the fee.
+    if (
+      (isSubscribedAgent || cartRequiresFullPayment) &&
+      paymentType === 'half'
+    ) {
+      paymentType = 'full';
+      if (typeof paymentAmount === 'number' && paymentAmount > 0) {
+        paymentAmount = paymentAmount * 2;
+      }
     }
 
     // Upload all documents to Supabase Storage

@@ -90,6 +90,18 @@ function CheckoutPageContent() {
     isFullPaymentOnlySlug(item.categorySlug || '')
   );
 
+  // Per-package rule from packages.accept_payment (server-validated).
+  // One 'full' package in the cart makes the whole cart full-payment.
+  const hasFullPaymentOnlyPackage = cartItems.some(
+    item => item.acceptPayment === 'full'
+  );
+
+  // Single source of truth for "no half-payment option here".
+  // Any one of: tour/marina category, a package marked accept_payment='full',
+  // or a subscribed agent.
+  const requiresFullPayment =
+    isTourCheckout || hasFullPaymentOnlyPackage || isSubscribedAgent;
+
   // Pickup location only for real UAE tours, not marina cruise
   const showTourPickup = cartItems.some(item =>
     (item.categorySlug || '').toLowerCase().includes('tour')
@@ -143,21 +155,13 @@ function CheckoutPageContent() {
   >([]);
   const [loadingTourPickups, setLoadingTourPickups] = useState(false);
 
-  // For tours: only full payment. For packages/offer packages: allow half or full
-  // Update payment type if cart changes and becomes a tour
+  // Force full payment whenever any rule demands it (tour/marina category,
+  // a package with accept_payment='full', or a subscribed agent).
   useEffect(() => {
-    if (isTourCheckout) {
-      // Force full payment when tours are in cart
+    if (requiresFullPayment) {
       setPaymentType('full');
     }
-  }, [isTourCheckout, cartItems.length]); // Update when tour status or cart changes
-
-  // Subscribed agents always pay in full, whatever is in the cart
-  useEffect(() => {
-    if (isSubscribedAgent) {
-      setPaymentType('full');
-    }
-  }, [isSubscribedAgent]);
+  }, [requiresFullPayment]);
 
   // Load tour pickup locations from package data (read-only at checkout)
   useEffect(() => {
@@ -676,18 +680,13 @@ function CheckoutPageContent() {
       }
     }
 
-    // If cart contains tours, payment type must be 'full'
-    if (isTourCheckout && paymentType === 'half') {
+    // Half payment is not allowed for this cart
+    if (requiresFullPayment && paymentType === 'half') {
       toast.error(
-        'Tours require full payment. Please select full payment option.'
+        isSubscribedAgent
+          ? 'Agent bookings require full payment.'
+          : 'This booking requires full payment.'
       );
-      setPaymentType('full');
-      return;
-    }
-
-    // Subscribed agents must pay in full
-    if (isSubscribedAgent && paymentType === 'half') {
-      toast.error('Agent bookings require full payment.');
       setPaymentType('full');
       return;
     }
@@ -1889,9 +1888,11 @@ function CheckoutPageContent() {
               {userLocation && isAgentStatusResolved && (
                 <div className='payment-type-selection'>
                   <h3>Payment Type</h3>
-                  {isSubscribedAgent && (
+                  {requiresFullPayment && (
                     <p className='payment-type-note'>
-                      Agent bookings are payable in full.
+                      {isSubscribedAgent
+                        ? 'Agent bookings are payable in full.'
+                        : 'This booking is payable in full.'}
                     </p>
                   )}
                   <div className='payment-type-options'>
@@ -1917,9 +1918,8 @@ function CheckoutPageContent() {
                         </span>
                       </div>
                     </label>
-                    {/* Half payment is for packages and offer packages only -
-                        not for tours, and never for subscribed partners */}
-                    {!isTourCheckout && !isSubscribedAgent && (
+                    {/* Half payment only when nothing in the cart forbids it */}
+                    {!requiresFullPayment && (
                       <label className='payment-type-option'>
                         <input
                           type='radio'

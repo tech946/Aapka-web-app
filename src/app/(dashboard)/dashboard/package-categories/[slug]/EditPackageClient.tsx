@@ -12,6 +12,11 @@ import {
   deletePdfFromSupabase,
 } from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
+import {
+  DEFAULT_ACCEPT_PAYMENT,
+  normalizeAcceptPayment,
+  type AcceptPayment,
+} from '@/lib/package-payment';
 import BookingSlotsCalendar from './BookingSlotsCalendar';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
@@ -60,6 +65,7 @@ type Pkg = {
   discount_start_date?: string | null;
   discount_end_date?: string | null;
   agent_discount?: number | null;
+  accept_payment?: string | null;
   min_adults?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
@@ -140,6 +146,10 @@ export default function EditPackageClient({
   const [discountStartDate, setDiscountStartDate] = useState<string>('');
   const [discountEndDate, setDiscountEndDate] = useState<string>('');
   const [agentDiscount, setAgentDiscount] = useState<string>('');
+  // Checkout payment rule; falls back to 'half' for rows saved before this existed
+  const [acceptPayment, setAcceptPayment] = useState<AcceptPayment>(
+    DEFAULT_ACCEPT_PAYMENT
+  );
   const [minAdults, setMinAdults] = useState<string>('1');
   const [termsHtml, setTermsHtml] = useState<string>('');
   const [inclusionHtml, setInclusionHtml] = useState<string>('');
@@ -243,6 +253,7 @@ export default function EditPackageClient({
     setDiscountStartDate(form.discountStartDate);
     setDiscountEndDate(form.discountEndDate);
     setAgentDiscount(form.agentDiscount);
+    setAcceptPayment(normalizeAcceptPayment(source.accept_payment));
     setMinAdults(form.minAdults);
     setTermsHtml(form.termsHtml);
     setInclusionHtml(form.inclusionHtml);
@@ -1194,6 +1205,30 @@ export default function EditPackageClient({
             </div>
           </div>
 
+          {/* Checkout Payment Rule */}
+          <div className='form_section'>
+            <h5 className='section_title'>Checkout Payment</h5>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '16px' }}>
+              Choose what customers may pay at checkout for this package. Tours,
+              Marina Cruise and agent bookings are always full payment
+              regardless of this setting.
+            </p>
+            <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Accepted Payment</label>
+                <select
+                  value={acceptPayment}
+                  onChange={e =>
+                    setAcceptPayment(e.target.value === 'full' ? 'full' : 'half')
+                  }
+                >
+                  <option value='half'>Half (50%) or Full — default</option>
+                  <option value='full'>Full payment only</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Visa Pricing Section */}
           <div className='form_section'>
             <h5 className='section_title'>Visa Pricing</h5>
@@ -1565,6 +1600,7 @@ export default function EditPackageClient({
                       discount_start_date: discountStartDate && discountStartDate.trim() !== '' ? discountStartDate : null,
                       discount_end_date: discountEndDate && discountEndDate.trim() !== '' ? discountEndDate : null,
                       agent_discount: agentDiscount && agentDiscount.trim() !== '' && !Number.isNaN(Number(agentDiscount)) ? Number(agentDiscount) : null,
+                      accept_payment: acceptPayment,
                       min_adults: minAdults ? Math.max(1, Number(minAdults)) : 1,
                       terms_html: termsHtml || undefined,
                       inclusion_html: inclusionHtml || undefined,

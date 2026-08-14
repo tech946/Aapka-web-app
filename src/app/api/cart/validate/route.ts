@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAgentSession } from '@/lib/agent-session';
+import { normalizeAcceptPayment } from '@/lib/package-payment';
 import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import {
   MARINA_CRUISE_SLUG,
@@ -207,6 +208,8 @@ function validateMarinaCartItem(
     priceBeforeReferralDiscount: null,
     verifiedReferralId: null,
     verifiedReferralLinkType: null,
+    // Marina cruise is already full-payment-only by category rule
+    acceptPayment: 'full' as const,
     visaPrice: 0,
     dateSurcharge: null,
     adultVisaPrice: null,
@@ -338,7 +341,7 @@ export async function POST(req: NextRequest) {
       const result = await supabaseAdmin
         .from('packages')
         .select(
-          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount'
+          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment'
         )
         .in('package_id', packageIds);
       packages = result.data;
@@ -805,6 +808,8 @@ export async function POST(req: NextRequest) {
         // Verified referral tracking info (for booking creation)
         verifiedReferralId: verifiedReferral?.id || null,
         verifiedReferralLinkType: verifiedReferral?.linkType || null,
+        // Checkout payment rule for this package ('full' = no half option)
+        acceptPayment: normalizeAcceptPayment(pkg.accept_payment),
         // Visa info
         visaPrice: visaPrice,
         dateSurcharge: dateSurcharge > 0 ? dateSurcharge : null,
