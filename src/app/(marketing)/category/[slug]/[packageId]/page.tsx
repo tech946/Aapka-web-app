@@ -62,8 +62,6 @@ import {
   shouldShowOptionalVisaInBookingModal,
   hasVisaIncludedAtZeroPrice,
 } from '@/lib/package-visa';
-import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
-import { useSurchargeMaster } from '@/hooks/use-marketing-queries';
 import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
 import { gsap } from 'gsap';
 import 'react-day-picker/dist/style.css';
@@ -197,16 +195,7 @@ export default function PackageDetailsPage() {
   >(null);
   const [priceBeforeReferralDiscount, setPriceBeforeReferralDiscount] =
     useState<number | null>(null);
-  const { data: surchargeMaster = [] } = useSurchargeMaster();
-  const selectedTravelDateStr = useMemo(() => {
-    if (selectedDateString) return selectedDateString.split('T')[0];
-    if (selectedDate) return format(selectedDate, 'yyyy-MM-dd');
-    return null;
-  }, [selectedDateString, selectedDate]);
-  const selectedDateSurcharge = useMemo(() => {
-    if (slug !== 'offer-packages') return 0;
-    return getSurchargeAmountForDate(selectedTravelDateStr, surchargeMaster);
-  }, [slug, selectedTravelDateStr, surchargeMaster]);
+  /* Date surcharges were removed from offer-package pricing. */
   /* Add-ons (offer packages) */
   const [addonDeals, setAddonDeals] = useState<string[]>([]);
   const [addonHotelServices, setAddonHotelServices] = useState<string[]>([]);
@@ -932,7 +921,7 @@ export default function PackageDetailsPage() {
       const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice ?? 0;
       const visaPrice = getVisaPrice();
       const addonPrice = slug === 'offer-packages' ? addonPriceTotal : 0;
-      let finalSoloPrice = soloPrice + visaPrice + addonPrice + selectedDateSurcharge;
+      let finalSoloPrice = soloPrice + visaPrice + addonPrice;
       if (hasActiveAgentSubscription && (pkg?.agent_discount ?? 0) > 0) {
         finalSoloPrice = Math.max(0, finalSoloPrice - (finalSoloPrice * (pkg.agent_discount ?? 0)) / 100);
       } else if (referralData?.linkType === 'discount' && (referralData?.discountPercentage ?? 0) > 0) {
@@ -993,7 +982,7 @@ export default function PackageDetailsPage() {
     // Add visa price (fetched from database: pkg.adult_visa_price, pkg.child_visa_price, pkg.infant_visa_price)
     const visaPrice = getVisaPrice();
     const addonPrice = slug === 'offer-packages' ? addonPriceTotal : 0;
-    let finalPrice = totalPrice + visaPrice + addonPrice + selectedDateSurcharge;
+    let finalPrice = totalPrice + visaPrice + addonPrice;
 
     // Apply discount logic:
     // Priority 1: Agent with active subscription gets agent discount
@@ -1057,7 +1046,6 @@ export default function PackageDetailsPage() {
     hasActiveAgentSubscription,
     referralData,
     addonPriceTotal,
-    selectedDateSurcharge,
   ]);
 
   // Helper function to format price - always shows AED
@@ -2042,8 +2030,6 @@ export default function PackageDetailsPage() {
         dateRangesReady={dateRangesReady}
         handleAddToCart={handleAddToCart}
         showAddons={false}
-        surcharges={slug === 'offer-packages' ? surchargeMaster : []}
-        selectedDateSurcharge={selectedDateSurcharge}
       />
 
       {/* Scroll to Top Button */}

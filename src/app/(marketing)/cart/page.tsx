@@ -195,11 +195,6 @@ export default function CartPage() {
                     <span className='cart-item-date'>
                       Date: {formatDate(item.selectedDate)}
                     </span>
-                    {item.dateSurcharge != null && item.dateSurcharge > 0 && (
-                      <span className='date-surcharge-badge'>
-                        Surcharge +{formatPrice(item.dateSurcharge)}
-                      </span>
-                    )}
                     {item.nights && (
                       <span className='cart-item-nights'>
                         {item.nights} {item.nights === 1 ? 'night' : 'nights'}

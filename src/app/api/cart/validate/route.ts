@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAgentSession } from '@/lib/agent-session';
 import { normalizeAcceptPayment } from '@/lib/package-payment';
-import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import {
   MARINA_CRUISE_SLUG,
   calcMarinaAddonsPrice,
@@ -374,16 +373,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: fetchError.message }, { status: 400 });
     }
 
-    const { data: surchargeRows } = await supabaseAdmin
-      .from('surcharge_master')
-      .select('id, price, from_date, to_date');
-
-    const surchargeMaster = (surchargeRows || []).map((r: { id: string; price: number; from_date: string; to_date: string }) => ({
-      id: r.id,
-      price: Number(r.price) || 0,
-      from_date: r.from_date,
-      to_date: r.to_date,
-    }));
+    /* Date surcharges are no longer applied to cart pricing. The
+       surcharge_master table and its admin screen are untouched - only the
+       customer-facing charge was removed. */
 
     // Fetch active deals for all packages
     const fetchedPackageIds = packages?.map(p => p.package_id) || [];
@@ -698,14 +690,7 @@ export async function POST(req: NextRequest) {
       calculatedPrice += addonPrice;
       originalPrice += addonPrice;
 
-      const dateSurcharge = item.selectedDate
-        ? getSurchargeAmountForDate(
-            item.selectedDate.split('T')[0],
-            surchargeMaster
-          )
-        : 0;
-      calculatedPrice += dateSurcharge;
-      originalPrice += dateSurcharge;
+      // Date surcharge removed - no longer added to the price
 
       // SECURITY: Apply discount based on verified data, not client-provided values
       // Priority 1: Agent with active subscription gets agent discount
@@ -774,7 +759,6 @@ export async function POST(req: NextRequest) {
         }
         originalPriceForDisplay += visaPrice;
         originalPriceForDisplay += addonPrice;
-        originalPriceForDisplay += dateSurcharge;
       }
 
       return {
@@ -812,7 +796,8 @@ export async function POST(req: NextRequest) {
         acceptPayment: normalizeAcceptPayment(pkg.accept_payment),
         // Visa info
         visaPrice: visaPrice,
-        dateSurcharge: dateSurcharge > 0 ? dateSurcharge : null,
+        // Date surcharge removed from customer pricing
+        dateSurcharge: null,
         adultVisaPrice: pkg.adult_visa_price,
         childVisaPrice: pkg.child_visa_price,
         infantVisaPrice: pkg.infant_visa_price,

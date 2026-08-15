@@ -31,11 +31,7 @@ import {
   getOfferPackageTravelDates,
   getOfferPackageTravelDatesStatus,
 } from '@/lib/offer-package-dates';
-import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
-import {
-  useSurchargeMaster,
-  useAgentStatus,
-} from '@/hooks/use-marketing-queries';
+import { useAgentStatus } from '@/hooks/use-marketing-queries';
 import { getAgentDiscountPercentage } from '@/lib/agent-discount';
 import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import '../../category/packages.css';
@@ -223,19 +219,13 @@ export default function LimitedTimeDealDetailPage() {
     () => getOfferPackageTravelDatesStatus(pkg?.travel_dates),
     [pkg?.travel_dates]
   );
-  const { data: surchargeMaster = [] } = useSurchargeMaster();
   const { data: agentData } = useAgentStatus();
   const agentDiscount = getAgentDiscountPercentage(
     pkg,
     !!agentData?.hasActiveSubscription
   );
-  const selectedTravelDateStr = selectedDate
-    ? format(selectedDate, 'yyyy-MM-dd')
-    : null;
-  const selectedDateSurcharge = useMemo(
-    () => getSurchargeAmountForDate(selectedTravelDateStr, surchargeMaster),
-    [selectedTravelDateStr, surchargeMaster]
-  );
+  /* Date surcharges were removed from offer-package pricing (LTDs are offer
+     packages), so nothing is added to the total here. */
 
   const calculatedPrice = useMemo(() => {
     if (!pkg) return 0;
@@ -245,7 +235,7 @@ export default function LimitedTimeDealDetailPage() {
         Number(pkg.adult_price) ||
         Number(pkg.package_price) ||
         0;
-      return solo + selectedDateSurcharge;
+      return solo;
     }
     const adultP = Number(pkg.adult_price) || 0;
     const childP = Number(pkg.child_price) || 0;
@@ -263,8 +253,8 @@ export default function LimitedTimeDealDetailPage() {
     ) {
       total = Number(pkg.package_price) || 0;
     }
-    return total + selectedDateSurcharge;
-  }, [pkg, persons, isSoloTraveller, selectedDateSurcharge]);
+    return total;
+  }, [pkg, persons, isSoloTraveller]);
 
   const formatPrice = (price: number) => formatAedAmount(price);
 
@@ -548,11 +538,6 @@ export default function LimitedTimeDealDetailPage() {
                             className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`}
                           />
                         </button>
-                        {selectedDateSurcharge > 0 && (
-                          <span className='date-surcharge-badge date-surcharge-badge-inline'>
-                            Surcharge +AED {selectedDateSurcharge.toFixed(2)}
-                          </span>
-                        )}
                       </div>
                     </div>
                     <div className='booking-flexible-date-link-wrap'>

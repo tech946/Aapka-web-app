@@ -14,7 +14,6 @@ import {
   getTourWeekendRangeCalendarBounds,
   hasTourFixedBookingDates,
 } from '@/lib/package-config';
-import { getSurchargeAmountForDate } from '@/lib/surcharge-master';
 import { MarinaAddonsSection } from '@/components/marketing/MarinaAddonsSection/MarinaAddonsSection';
 import type { MarinaAddon } from '@/lib/marina-cruise-config';
 import { getMarinaCruiseCalendarBounds } from '@/lib/marina-cruise-config';
@@ -181,9 +180,6 @@ interface BookingModalProps {
   onToggleAddonHotelService?: (id: string) => void;
   onToggleAddonPrivateTransfer?: (id: string) => void;
   addonNights?: number;
-  /** Date-range surcharges (offer packages) */
-  surcharges?: Array<{ id: string; price: number; from_date: string; to_date: string }>;
-  selectedDateSurcharge?: number;
   /** Override primary CTA label (e.g. Register for marina registration-only) */
   primaryActionLabel?: string;
   /** Show per-person unit prices above total (marina registration) */
@@ -261,8 +257,6 @@ export default function BookingModal({
   onToggleAddonHotelService,
   onToggleAddonPrivateTransfer,
   addonNights = 0,
-  surcharges = [],
-  selectedDateSurcharge = 0,
   primaryActionLabel = 'Add to Cart',
   showUnitPriceBreakdown = false,
   unitPriceLabelPrefix,
@@ -761,9 +755,7 @@ export default function BookingModal({
                     onWheel={e => e.stopPropagation()}
                     onTouchMove={e => e.stopPropagation()}
                   >
-                    {getAvailableDates().map((dateStr, idx) => {
-                      const dateSurcharge = getSurchargeAmountForDate(dateStr, surcharges);
-                      return (
+                    {getAvailableDates().map((dateStr, idx) => (
                       <div
                         key={idx}
                         className={isMobile ? 'mobile-booking-date-item' : 'booking-date-item'}
@@ -779,21 +771,10 @@ export default function BookingModal({
                               return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
                             })()}
                           </span>
-                          {dateSurcharge > 0 && (
-                            <span className='date-surcharge-badge'>
-                              +AED {dateSurcharge.toFixed(0)} surcharge
-                            </span>
-                          )}
                         </div>
                       </div>
-                    );
-                    })}
+                    ))}
                   </div>
-                )}
-                {selectedDateSurcharge > 0 && (
-                  <span className='date-surcharge-badge date-surcharge-badge-inline'>
-                    Surcharge +AED {selectedDateSurcharge.toFixed(2)}
-                  </span>
                 )}
               </div>
             ) : (
