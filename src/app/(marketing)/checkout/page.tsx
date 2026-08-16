@@ -654,8 +654,15 @@ function CheckoutPageContent() {
 
     // Validate minimum adults and total passengers for all packages
     for (const item of cartItems) {
+      // A solo traveller booking is exactly one adult and no children/infants,
+      // whatever the raw counts say. Mirrors how /api/cart/validate prices it.
+      const effectiveAdults = item.isSoloTraveller ? 1 : item.adults;
+      const effectiveChildren = item.isSoloTraveller ? 0 : item.children;
+      const effectiveInfants = item.isSoloTraveller ? 0 : item.infants || 0;
+
       // Check total passengers (can't be 0)
-      const totalPassengers = item.adults + item.children + (item.infants || 0);
+      const totalPassengers =
+        effectiveAdults + effectiveChildren + effectiveInfants;
       if (totalPassengers === 0) {
         toast.error(
           `Please select at least one passenger for "${item.packageName}". Please update your cart.`
@@ -664,15 +671,21 @@ function CheckoutPageContent() {
       }
 
       // All packages require at least 1 adult
-      if (item.adults === 0) {
+      if (effectiveAdults === 0) {
         toast.error(
           `At least 1 adult is required for "${item.packageName}". Please update your cart.`
         );
         return;
       }
 
-      // Offer packages require minimum 2 adults
-      if (item.categorySlug === 'offer-packages' && item.adults < 2) {
+      // Offer packages require minimum 2 adults - but a solo traveller booking
+      // is a deliberate 1-person booking, and the package page already checked
+      // it against that package's own min_adults before allowing it.
+      if (
+        !item.isSoloTraveller &&
+        item.categorySlug === 'offer-packages' &&
+        effectiveAdults < 2
+      ) {
         toast.error(
           `Offer packages require a minimum of 2 adults. Please update "${item.packageName}" in your cart.`
         );
