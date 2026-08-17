@@ -272,21 +272,42 @@ export default function PaymentsPage() {
 
       if (packageIds.length > 0) {
         try {
-          // Fetch all packages once and filter by IDs
-          const res = await fetch(`/api/packages?status=all&limit=10000`);
-          if (res.ok) {
-            const json = await res.json();
-            const detailsMap: Record<string, any> = {};
-            packageIds.forEach((packageId: string) => {
-              const packageData = json.data?.find(
-                (pkg: any) => pkg.package_id === packageId
-              );
-              if (packageData) {
-                detailsMap[packageId] = packageData;
-              }
-            });
-            setPackageDetails(detailsMap);
-          }
+          // Marina cruise dinners live in their own table (marina_cruise_dinners),
+          // not in packages. Fetching only /api/packages left those cart items
+          // unresolved, which dropped the modal into the "details not found"
+          // branch and mislabelled the cruise name as a Package ID. Look in both.
+          const [pkgRes, marinaRes] = await Promise.all([
+            fetch(`/api/packages?status=all&limit=10000`),
+            fetch(`/api/marina-cruise-dinners?status=all&limit=100`),
+          ]);
+
+          const packageRows: any[] = pkgRes.ok
+            ? ((await pkgRes.json()).data ?? [])
+            : [];
+          const marinaRows: any[] = marinaRes.ok
+            ? ((await marinaRes.json()).data ?? [])
+            : [];
+
+          const detailsMap: Record<string, any> = {};
+          packageIds.forEach((packageId: string) => {
+            const packageData = packageRows.find(
+              (pkg: any) => pkg.package_id === packageId
+            );
+            if (packageData) {
+              detailsMap[packageId] = packageData;
+              return;
+            }
+            const marinaData = marinaRows.find(
+              (pkg: any) => pkg.package_id === packageId
+            );
+            if (marinaData) {
+              // marina_cruise_dinners has no package_days/package_nights - it is
+              // a fixed-evening cruise - so flag it and skip the Duration row
+              // rather than rendering "0 Days/0 Nights".
+              detailsMap[packageId] = { ...marinaData, is_marina_cruise: true };
+            }
+          });
+          setPackageDetails(detailsMap);
         } catch (error) {
           console.error('Failed to fetch package details:', error);
         }
@@ -1554,7 +1575,7 @@ export default function PaymentsPage() {
                                           'N/A'}
                                       </span>
                                     </div>
-                                    {!isTour && (
+                                    {!isTour && !packageData.is_marina_cruise && (
                                       <div className='detail_item'>
                                         <strong>Duration:</strong>
                                         <span>
@@ -1692,9 +1713,18 @@ export default function PaymentsPage() {
                                   </>
                                 ) : (
                                   <>
+                                    {/* Live package row is gone, so fall back to
+                                        the name captured in the cart at booking
+                                        time. Label it for what is actually being
+                                        printed - this said "Package ID:" while
+                                        rendering packageName. */}
                                     <div className='detail_item'>
                                       <strong>
-                                        {isTour ? 'Tour Name:' : 'Package ID:'}
+                                        {isTour
+                                          ? 'Tour Name:'
+                                          : cartItem.packageName
+                                            ? 'Package Name:'
+                                            : 'Package ID:'}
                                       </strong>
                                       <span>
                                         {cartItem.packageName ||

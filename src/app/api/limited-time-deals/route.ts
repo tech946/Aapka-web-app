@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getDubaiTodayDateString } from '@/lib/limited-time-deal-window';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,11 +57,19 @@ export async function GET(req: NextRequest) {
       )
       .order('created_at', { ascending: false });
 
-    /* Listing shows all deals - dates (Oct 15 - Mar 15 etc.) do not affect visibility.
-       When include_expired=false (marketing page): only is_active deals.
-       When include_expired=true (dashboard): all deals. */
+    /* include_expired=true (dashboard): every deal, so an admin can see and edit
+       Expired / Upcoming / Inactive rows.
+
+       include_expired=false (public marketing pages): only deals that are still
+       live. is_active alone is NOT enough - it is the admin's manual on/off
+       switch and says nothing about the date window, which is why a deal whose
+       end_date had already passed kept rendering on /limited-time-deals with a
+       "Limited Time" badge while the dashboard showed it as Expired. end_date is
+       inclusive, so a deal ending today is still live. */
     if (!includeExpired) {
-      query = query.eq('is_active', true);
+      query = query
+        .eq('is_active', true)
+        .gte('end_date', getDubaiTodayDateString());
     }
 
     const { data, error } = await query;

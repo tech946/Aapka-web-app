@@ -4,6 +4,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { REFERRAL_COOKIE_NAME } from '@/lib/influencer-referral';
 import { getLtdOccupiedSeatsByDate } from '@/lib/ltd-occupied-seats';
 import { getOfferPackageTravelDates } from '@/lib/offer-package-dates';
+import {
+  getDubaiTodayDateString,
+  isLimitedTimeDealExpired,
+} from '@/lib/limited-time-deal-window';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -139,7 +143,9 @@ export async function POST(req: NextRequest) {
     // Fetch deal and validate
     const { data: deal, error: dealError } = await supabaseAdmin
       .from('limited_time_deals')
-      .select('id, offer_package_id, start_date, end_date, max_bookings_per_day')
+      .select(
+        'id, offer_package_id, start_date, end_date, max_bookings_per_day, is_active'
+      )
       .eq('id', limitedTimeDealId)
       .single();
 
@@ -147,6 +153,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Limited time deal not found' },
         { status: 404 }
+      );
+    }
+
+    // The listing already hides deactivated and expired deals, but a tab left
+    // open past the end date (or a bookmarked link) would otherwise still push a
+    // booking through and take a payment on a dead deal. Re-check server-side.
+    if (!deal.is_active) {
+      return NextResponse.json(
+        { error: 'This limited time deal is no longer available' },
+        { status: 400 }
+      );
+    }
+
+    if (isLimitedTimeDealExpired(deal.end_date)) {
+      return NextResponse.json(
+        { error: 'This limited time deal has expired' },
+        { status: 400 }
       );
     }
 
@@ -185,10 +208,17 @@ export async function POST(req: NextRequest) {
         );
       }
     } else {
-      const selectedDate = new Date(selectedDateStr);
-      const startDate = new Date(deal.start_date);
-      const endDate = new Date(deal.end_date);
-      if (selectedDate < startDate || selectedDate > endDate) {
+      // No admin-picked travel dates: the deal's own window is the calendar.
+      // Clamp the lower bound to today so the past portion of a still-running
+      // window is not bookable - this mirrors the availability endpoint, which
+      // only offers today onwards.
+      const startStr = String(deal.start_date).slice(0, 10);
+      const endStr = String(deal.end_date).slice(0, 10);
+      const earliest =
+        startStr > getDubaiTodayDateString()
+          ? startStr
+          : getDubaiTodayDateString();
+      if (selectedDateStr < earliest || selectedDateStr > endStr) {
         return NextResponse.json(
           { error: 'Selected date is outside the deal date range' },
           { status: 400 }

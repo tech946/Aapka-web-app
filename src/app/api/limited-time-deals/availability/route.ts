@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { format, parseISO } from 'date-fns';
 import { getLtdOccupiedSeatsByDate } from '@/lib/ltd-occupied-seats';
 import { getOfferPackageTravelDates } from '@/lib/offer-package-dates';
+import { getDubaiTodayDateString } from '@/lib/limited-time-deal-window';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -48,11 +49,15 @@ export async function GET(req: NextRequest) {
       pkg?.travel_dates as Array<{ id?: string; value: string } | string> | null
     );
 
-    // Fallback to deal date range if package has no travel dates configured
+    // Fallback to deal date range if package has no travel dates configured.
+    // getOfferPackageTravelDates() already drops past dates, so do the same here:
+    // start from today when the window opened earlier, otherwise the calendar
+    // offers dates that have already been and gone as bookable.
     if (dateStrings.length === 0) {
       const startStr = String(deal.start_date).split('T')[0];
       const endStr = String(deal.end_date).split('T')[0];
-      const startDate = parseISO(startStr);
+      const todayStr = getDubaiTodayDateString();
+      const startDate = parseISO(startStr > todayStr ? startStr : todayStr);
       const endDate = parseISO(endStr);
       const current = new Date(startDate);
       while (current <= endDate) {
