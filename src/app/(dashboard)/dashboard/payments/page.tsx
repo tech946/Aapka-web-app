@@ -276,17 +276,22 @@ export default function PaymentsPage() {
           // not in packages. Fetching only /api/packages left those cart items
           // unresolved, which dropped the modal into the "details not found"
           // branch and mislabelled the cruise name as a Package ID. Look in both.
-          const [pkgRes, marinaRes] = await Promise.all([
-            fetch(`/api/packages?status=all&limit=10000`),
-            fetch(`/api/marina-cruise-dinners?status=all&limit=100`),
-          ]);
+          // Resolved independently: one source failing must not blank out the
+          // other, or a marina outage would hide every regular package too.
+          const fetchRows = async (url: string): Promise<any[]> => {
+            try {
+              const res = await fetch(url);
+              if (!res.ok) return [];
+              return (await res.json()).data ?? [];
+            } catch {
+              return [];
+            }
+          };
 
-          const packageRows: any[] = pkgRes.ok
-            ? ((await pkgRes.json()).data ?? [])
-            : [];
-          const marinaRows: any[] = marinaRes.ok
-            ? ((await marinaRes.json()).data ?? [])
-            : [];
+          const [packageRows, marinaRows] = await Promise.all([
+            fetchRows(`/api/packages?status=all&limit=10000`),
+            fetchRows(`/api/marina-cruise-dinners?status=all&limit=100`),
+          ]);
 
           const detailsMap: Record<string, any> = {};
           packageIds.forEach((packageId: string) => {
@@ -1564,16 +1569,38 @@ export default function PaymentsPage() {
                               <div className='detail_grid'>
                                 {packageData ? (
                                   <>
-                                    {/* First Row: Package Name and Duration */}
+                                    {/* First Row: Package Name and Duration.
+                                        A booking is a historical record, so show
+                                        the name captured in the cart at purchase
+                                        time - admins rename and re-price the same
+                                        package row, and showing the live name here
+                                        silently rewrites what the customer bought.
+                                        Surface the current name when it differs so
+                                        the rename is visible rather than hidden. */}
                                     <div className='detail_item'>
                                       <strong>
                                         {isTour ? 'Tour Name:' : 'Package Name:'}
                                       </strong>
                                       <span>
-                                        {packageData.package_name ||
-                                          cartItem.packageName ||
+                                        {cartItem.packageName ||
+                                          packageData.package_name ||
                                           'N/A'}
                                       </span>
+                                      {cartItem.packageName &&
+                                        packageData.package_name &&
+                                        cartItem.packageName.trim() !==
+                                          packageData.package_name.trim() && (
+                                          <div
+                                            style={{
+                                              marginTop: '6px',
+                                              fontSize: '12px',
+                                              color: 'var(--text-muted)',
+                                            }}
+                                          >
+                                            Booked under this name. Now named:{' '}
+                                            {packageData.package_name}
+                                          </div>
+                                        )}
                                     </div>
                                     {!isTour && !packageData.is_marina_cruise && (
                                       <div className='detail_item'>

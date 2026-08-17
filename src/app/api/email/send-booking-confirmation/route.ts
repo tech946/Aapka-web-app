@@ -45,6 +45,21 @@ export async function POST(req: NextRequest) {
 
     console.log(`✅ [EMAIL API] Booking found: ${booking.id}`);
 
+    // Only notify on a successful payment. The CCAvenue callback already checks
+    // order_status and writes payment_status='completed' before triggering this,
+    // so this is a hard guarantee rather than a trust-the-caller assumption -
+    // nothing goes out for a pending, failed or cancelled payment.
+    if (booking.payment_status !== 'completed') {
+      console.log(
+        `⏭️  [EMAIL API] Skipping emails - payment_status is "${booking.payment_status}", not "completed"`
+      );
+      return NextResponse.json({
+        success: false,
+        skipped: true,
+        reason: `Payment not completed (status: ${booking.payment_status})`,
+      });
+    }
+
     // Get passenger data
     const passengers = Array.isArray(booking.passengers) ? booking.passengers : [];
     const leadPassenger = passengers[0] || {};
@@ -163,6 +178,9 @@ export async function POST(req: NextRequest) {
         permanentAddress: p.permanentAddress || '',
         passportExpiry: p.passportExpiry || '',
         nationality: p.nationality || undefined,
+        // Which documents were uploaded - rendered as chips in the internal email
+        documents:
+          p.documents && typeof p.documents === 'object' ? p.documents : null,
       })),
     };
 
