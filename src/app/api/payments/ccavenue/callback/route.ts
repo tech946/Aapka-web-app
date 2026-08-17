@@ -63,7 +63,10 @@ async function handleCallback(req: NextRequest) {
 
     if (!workingKey) {
       return NextResponse.redirect(
-        new URL('/checkout?error=payment_processing_failed', req.nextUrl.origin),
+        new URL(
+          '/checkout?error=payment_processing_failed',
+          req.nextUrl.origin
+        ),
         { status: 302 }
       );
     }
@@ -87,7 +90,13 @@ async function handleCallback(req: NextRequest) {
     const paymentType = get(['merchant_param2', 'Merchant_Param2']) || 'full';
     const trackingId = get(['tracking_id', 'Tracking_Id']);
 
-    console.log('[CCAVENUE] Parsed response:', { orderStatus, orderId: orderId || '(empty)', bookingId: bookingId || '(empty)', paymentType, isOmanStyle: (orderId || bookingId).toUpperCase().startsWith('OV') });
+    console.log('[CCAVENUE] Parsed response:', {
+      orderStatus,
+      orderId: orderId || '(empty)',
+      bookingId: bookingId || '(empty)',
+      paymentType,
+      isOmanStyle: (orderId || bookingId).toUpperCase().startsWith('OV'),
+    });
 
     const isSuccess = orderStatus.toLowerCase() === 'success';
     if (!isSuccess) {
@@ -102,13 +111,94 @@ async function handleCallback(req: NextRequest) {
         (bookingId && bookingId.toUpperCase().startsWith('OV'));
       if (isOmanVisa) {
         return NextResponse.redirect(
-          new URL('/visas/apply-for-oman-visa?error=payment_failed', req.nextUrl.origin),
+          new URL(
+            '/visas/apply-for-oman-visa?error=payment_failed',
+            req.nextUrl.origin
+          ),
           { status: 302 }
         );
       }
+
+      const failureCode = orderStatus || 'Unknown';
+      const isAborted = failureCode.toLowerCase() === 'aborted';
+
+      if (bookingId) {
+        try {
+          const failureReason =
+            get(['failure_message', 'Failure_Message']) ||
+            get(['status_message', 'Status_Message']) ||
+            (isAborted
+              ? 'Cancelled by customer at the payment gateway'
+              : 'Payment was not completed');
+
+          const AUDIT_FIELDS = [
+            'order_status',
+            'status_code',
+            'status_message',
+            'failure_message',
+            'order_id',
+            'tracking_id',
+            'bank_ref_no',
+            'payment_mode',
+            'currency',
+            'amount',
+            'trans_date',
+            'response_code',
+          ];
+          const gatewayResponse: Record<string, string> = {};
+          for (const key of AUDIT_FIELDS) {
+            const value = get([
+              key,
+              key.replace(/(^|_)([a-z])/g, (_m, p, c) => p + c.toUpperCase()),
+            ]);
+            if (value) gatewayResponse[key] = value;
+          }
+
+          // .eq('payment_status', 'pending') makes this a no-op on a booking
+          // that already completed, so a late or duplicated failure callback
+          // can never downgrade a paid booking.
+          const { data: updatedRows, error: failureUpdateError } =
+            await supabaseAdmin
+              .from('bookings')
+              .update({
+                payment_status: isAborted ? 'cancelled' : 'failed',
+                payment_failure_reason: failureReason,
+                payment_failure_code: failureCode,
+                payment_failed_at: new Date().toISOString(),
+                payment_gateway_response: gatewayResponse,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', bookingId)
+              .eq('payment_status', 'pending')
+              .select('id');
+
+          if (failureUpdateError) {
+            console.error(
+              '[CCAVENUE] Could not record payment failure:',
+              failureUpdateError.message
+            );
+          } else if (updatedRows && updatedRows.length > 0) {
+            console.log(
+              `[CCAVENUE] Recorded ${isAborted ? 'cancellation' : 'failure'} for booking ${bookingId}: ${failureReason}`
+            );
+          } else {
+            // Guard did its job: the booking was no longer pending, so this is
+            // a late or duplicate callback for a payment already resolved.
+            console.log(
+              `[CCAVENUE] No update for booking ${bookingId} - it is no longer pending (late or duplicate callback)`
+            );
+          }
+        } catch (recordError) {
+          console.error(
+            '[CCAVENUE] Could not record payment failure:',
+            recordError
+          );
+        }
+      }
+
       return NextResponse.redirect(
         new URL(
-          `/checkout?error=payment_failed&bookingId=${bookingId}`,
+          `/checkout?error=${isAborted ? 'payment_cancelled' : 'payment_failed'}&bookingId=${bookingId}`,
           req.nextUrl.origin
         ),
         { status: 302 }
@@ -129,9 +219,15 @@ async function handleCallback(req: NextRequest) {
       const orderIdForCrm = orderId || bookingId || '';
 
       if (!orderIdForCrm) {
-        console.error('[OMAN VISA] Missing order_id and merchant_param1 in CCAvenue response. Raw keys:', Object.keys(data));
+        console.error(
+          '[OMAN VISA] Missing order_id and merchant_param1 in CCAvenue response. Raw keys:',
+          Object.keys(data)
+        );
         return NextResponse.redirect(
-          new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
+          new URL(
+            '/visas/apply-for-oman-visa?error=payment_save_failed',
+            req.nextUrl.origin
+          ),
           { status: 302 }
         );
       }
@@ -139,7 +235,10 @@ async function handleCallback(req: NextRequest) {
       if (!apiKey) {
         console.error('[OMAN VISA] WEBSITE_API_KEY not configured');
         return NextResponse.redirect(
-          new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
+          new URL(
+            '/visas/apply-for-oman-visa?error=payment_save_failed',
+            req.nextUrl.origin
+          ),
           { status: 302 }
         );
       }
@@ -151,7 +250,10 @@ async function handleCallback(req: NextRequest) {
           payment_amount: paymentAmount,
           payment_currency: currency,
         };
-        console.log('[OMAN VISA] Calling complete-payment:', { order_id: orderIdForCrm, url: completeUrl });
+        console.log('[OMAN VISA] Calling complete-payment:', {
+          order_id: orderIdForCrm,
+          url: completeUrl,
+        });
 
         const completeRes = await fetch(completeUrl, {
           method: 'POST',
@@ -163,11 +265,20 @@ async function handleCallback(req: NextRequest) {
         });
 
         const responseText = await completeRes.text();
-        let completeData: { success?: boolean; name?: string; email?: string; contact?: string; error?: string } = {};
+        let completeData: {
+          success?: boolean;
+          name?: string;
+          email?: string;
+          contact?: string;
+          error?: string;
+        } = {};
         try {
           completeData = responseText ? JSON.parse(responseText) : {};
         } catch {
-          console.error('[OMAN VISA] complete-payment returned non-JSON:', responseText?.substring(0, 300));
+          console.error(
+            '[OMAN VISA] complete-payment returned non-JSON:',
+            responseText?.substring(0, 300)
+          );
         }
 
         if (!completeRes.ok || !completeData.success) {
@@ -177,7 +288,10 @@ async function handleCallback(req: NextRequest) {
             orderIdForCrm,
           });
           return NextResponse.redirect(
-            new URL('/visas/apply-for-oman-visa?error=payment_save_failed', req.nextUrl.origin),
+            new URL(
+              '/visas/apply-for-oman-visa?error=payment_save_failed',
+              req.nextUrl.origin
+            ),
             { status: 302 }
           );
         }
@@ -196,7 +310,11 @@ async function handleCallback(req: NextRequest) {
           });
           if (!emailRes.ok) {
             const errText = await emailRes.text();
-            console.error('Oman visa email API error:', emailRes.status, errText);
+            console.error(
+              'Oman visa email API error:',
+              emailRes.status,
+              errText
+            );
           }
         } catch (emailErr) {
           console.error('Oman visa email error:', emailErr);
@@ -210,7 +328,10 @@ async function handleCallback(req: NextRequest) {
       } catch (omanErr: unknown) {
         console.error('Oman visa callback error:', omanErr);
         return NextResponse.redirect(
-          new URL('/visas/apply-for-oman-visa?error=payment_processing_failed', req.nextUrl.origin),
+          new URL(
+            '/visas/apply-for-oman-visa?error=payment_processing_failed',
+            req.nextUrl.origin
+          ),
           { status: 302 }
         );
       }
@@ -247,13 +368,18 @@ async function handleCallback(req: NextRequest) {
     try {
       const { data: bookingForInfluencer } = await supabaseAdmin
         .from('bookings')
-        .select('influencer_referral_code, payment_amount, payment_amount_currency')
+        .select(
+          'influencer_referral_code, payment_amount, payment_amount_currency'
+        )
         .eq('id', bookingId)
         .single();
 
       if (bookingForInfluencer?.influencer_referral_code) {
         const refCode = bookingForInfluencer.influencer_referral_code;
-        const paymentAmt = parseFloat(bookingForInfluencer.payment_amount || String(paymentAmount)) || paymentAmount;
+        const paymentAmt =
+          parseFloat(
+            bookingForInfluencer.payment_amount || String(paymentAmount)
+          ) || paymentAmount;
 
         const { data: link } = await supabaseAdmin
           .from('influencer_referral_links')
@@ -270,7 +396,8 @@ async function handleCallback(req: NextRequest) {
             .eq('is_active', true)
             .single();
 
-          const commissionPercent = parseFloat(commission?.commission_percent || '0') || 0;
+          const commissionPercent =
+            parseFloat(commission?.commission_percent || '0') || 0;
           const commissionAmount = (paymentAmt * commissionPercent) / 100;
 
           await supabaseAdmin.from('referral_conversions').insert({
@@ -344,7 +471,10 @@ async function handleCallback(req: NextRequest) {
       }
     } catch (commissionError) {
       // Log error but don't fail payment callback
-      console.error('[COMMISSION] Error approving commission:', commissionError);
+      console.error(
+        '[COMMISSION] Error approving commission:',
+        commissionError
+      );
     }
 
     // Fetch booking details and send confirmation emails

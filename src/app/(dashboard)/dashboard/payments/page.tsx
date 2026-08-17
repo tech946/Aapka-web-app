@@ -69,6 +69,10 @@ type PaymentRow = {
   payment_type?: string | null;
   payment_gateway?: string | null;
   payment_done?: string | null;
+  // Populated only when a payment did not succeed (see the CCAvenue callback)
+  payment_failure_reason?: string | null;
+  payment_failure_code?: string | null;
+  payment_failed_at?: string | null;
   booking_status: string;
   passengers: any; // JSONB
   cart_items: any; // JSONB
@@ -210,6 +214,9 @@ export default function PaymentsPage() {
       pending: { bg: '#fef3c7', text: '#92400e' },
       completed: { bg: '#d1fae5', text: '#065f46' },
       failed: { bg: '#fee2e2', text: '#991b1b' },
+      // Customer walked away or cancelled at the gateway - not a payment
+      // problem, so it reads as neutral rather than as an error.
+      cancelled: { bg: '#e5e7eb', text: '#374151' },
       refunded: { bg: '#e0e7ff', text: '#3730a3' },
     };
     const colors = statusColors[status] || statusColors.pending;
@@ -598,6 +605,8 @@ export default function PaymentsPage() {
             <option value='pending'>Pending</option>
             <option value='completed'>Completed</option>
             <option value='failed'>Failed</option>
+            <option value='cancelled'>Cancelled</option>
+            <option value='failed'>Failed</option>
             <option value='refunded'>Refunded</option>
           </select>
         </div>
@@ -783,6 +792,19 @@ export default function PaymentsPage() {
                     <strong>Payment Status:</strong>
                     {getPaymentStatusBadge(selectedPayment.payment_status)}
                   </div>
+                  {/* Why it did not go through - only present on failed or
+                      cancelled payments, captured from the gateway response. */}
+                  {selectedPayment.payment_failure_reason && (
+                    <div className='detail_item'>
+                      <strong>Reason:</strong>
+                      <span>
+                        {selectedPayment.payment_failure_reason}
+                        {selectedPayment.payment_failure_code
+                          ? ` (${selectedPayment.payment_failure_code})`
+                          : ''}
+                      </span>
+                    </div>
+                  )}
                   <div className='detail_item'>
                     <strong>Payment Gateway:</strong>
                     <span>
