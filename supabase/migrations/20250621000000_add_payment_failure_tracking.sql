@@ -1,15 +1,3 @@
--- Migration: record WHY a payment did not succeed
---
--- Until now payment_status only ever held two values: 'pending', written when
--- the booking row is created (before the customer ever reaches the gateway),
--- and 'completed', written by the CCAvenue success callback. Nothing in the
--- codebase ever wrote a failure state, so a declined card, a gateway timeout,
--- an explicit cancellation and a customer who simply walked away all sat at
--- 'pending' forever, indistinguishable from each other.
---
--- CCAvenue's failure_message / status_message were logged to the server console
--- only and never persisted. These columns keep that diagnosis in the database.
-
 ALTER TABLE bookings
   ADD COLUMN IF NOT EXISTS payment_failure_reason TEXT,
   ADD COLUMN IF NOT EXISTS payment_failure_code TEXT,
@@ -25,10 +13,7 @@ COMMENT ON COLUMN bookings.payment_failed_at IS
 COMMENT ON COLUMN bookings.payment_gateway_response IS
   'Whitelisted, non-sensitive gateway fields kept for auditing. Never contains card data.';
 
--- payment_status now also carries 'failed' and 'cancelled'. Drop any existing
--- CHECK constraint that would reject the new values (there may be none), then
--- add one that permits the full set. Existing rows only hold 'pending' and
--- 'completed', so this cannot fail on current data.
+
 DO $$
 DECLARE
   c record;

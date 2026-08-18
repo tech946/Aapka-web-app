@@ -17,6 +17,9 @@ interface Package {
   adult_price: number | null;
   child_price: number | null;
   infant_price: number | null;
+  solo_traveller_price?: number | null;
+  solo_traveller_enabled?: boolean | null;
+  solo_traveller_only?: boolean | null;
   with_visa?: boolean | null;
   adult_visa_price?: number | null;
   child_visa_price?: number | null;
@@ -62,6 +65,12 @@ function getPackageDescription(pkg: Package): string | null {
   if (pkg.holiday_description_html?.trim())
     return stripHtml(pkg.holiday_description_html);
   return null;
+}
+
+/** Solo-only packages are sold to a single traveller, so the card advertises
+    the solo rate instead of the per-person adult rate. */
+function isSoloOnlyPackage(pkg: Package): boolean {
+  return Boolean(pkg.solo_traveller_only && pkg.solo_traveller_enabled);
 }
 
 function formatPrice(price: number): string {
@@ -156,6 +165,10 @@ export default function LimitedTimeDealsPage() {
                 pkg,
                 isSubscribedAgent
               );
+              const soloOnly = isSoloOnlyPackage(pkg);
+              const cardPrice = soloOnly
+                ? (pkg.solo_traveller_price ?? pkg.adult_price ?? 0)
+                : (pkg.adult_price ?? 0);
               const hasVisaIncludedAtZero =
                 pkg.with_visa &&
                 (pkg.adult_visa_price ?? 0) === 0 &&
@@ -208,12 +221,14 @@ export default function LimitedTimeDealsPage() {
                       <div className='suites-card-price'>
                         <span className='suites-price-amount'>
                           <AgentDiscountPrice
-                            price={pkg.adult_price || 0}
+                            price={cardPrice || 0}
                             percentage={agentDiscount}
                             format={formatPrice}
                           />
                         </span>
-                        <span className='suites-price-label'> / per person</span>
+                        <span className='suites-price-label'>
+                          {soloOnly ? ' / solo traveller' : ' / per person'}
+                        </span>
                       </div>
                       <Link href={url} className='suites-read-more'>
                         <span>View Details</span>

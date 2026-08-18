@@ -55,6 +55,7 @@ type Pkg = {
   infant_price?: number | null;
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
+  solo_traveller_only?: boolean | null;
   with_visa?: boolean | null;
   adult_visa_price?: number | null;
   child_visa_price?: number | null;
@@ -136,6 +137,7 @@ export default function EditPackageClient({
   const [soloTravellerEnabled, setSoloTravellerEnabled] =
     useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
+  const [soloTravellerOnly, setSoloTravellerOnly] = useState<boolean>(false);
   const [withVisa, setWithVisa] = useState<boolean>(false);
   const [adultVisaPrice, setAdultVisaPrice] = useState<string>('');
   const [childVisaPrice, setChildVisaPrice] = useState<string>('');
@@ -242,6 +244,7 @@ export default function EditPackageClient({
     setInfantPrice(form.infantPrice);
     setSoloTravellerEnabled(form.soloTravellerEnabled);
     setSoloTravellerPrice(form.soloTravellerPrice);
+    setSoloTravellerOnly(form.soloTravellerOnly);
     setWithVisa(form.withVisa);
     setShowListingPage(form.showListingPage);
     setAdultVisaPrice(form.adultVisaPrice);
@@ -1039,12 +1042,36 @@ export default function EditPackageClient({
                       <input
                         type='checkbox'
                         checked={soloTravellerEnabled}
-                        onChange={e => setSoloTravellerEnabled(e.target.checked)}
+                        onChange={e => {
+                          const v = e.target.checked;
+                          setSoloTravellerEnabled(v);
+                          if (!v) setSoloTravellerOnly(false);
+                        }}
                         style={{ marginRight: '8px' }}
                       />
                       Enable Solo Traveller Option
                     </label>
                   </div>
+
+                  {soloTravellerEnabled && (
+                    <div className='form_row full_width'>
+                      <label>
+                        <input
+                          type='checkbox'
+                          checked={soloTravellerOnly}
+                          onChange={e => setSoloTravellerOnly(e.target.checked)}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Solo Traveller Only
+                      </label>
+                      <small style={{ color: '#666' }}>
+                        Sells this package to solo travellers only: the listing
+                        and details pages show just the solo price, and the
+                        booking modal drops the adult / child / infant
+                        selection.
+                      </small>
+                    </div>
+                  )}
 
                   {soloTravellerEnabled && (
                     <div className='form_row'>
@@ -1590,6 +1617,8 @@ export default function EditPackageClient({
                         soloTravellerEnabled && soloTravellerPrice
                           ? Number(soloTravellerPrice)
                           : undefined,
+                      solo_traveller_only:
+                        soloTravellerEnabled && soloTravellerOnly,
                       with_visa: withVisa,
                       adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
                       child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,

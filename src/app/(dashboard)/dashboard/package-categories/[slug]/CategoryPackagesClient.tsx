@@ -25,6 +25,8 @@ type Pkg = {
   infant_price?: number | null;
   status?: string | null;
   show_listing_page?: boolean | null;
+  solo_traveller_enabled?: boolean | null;
+  solo_traveller_only?: boolean | null;
   accept_payment?: string | null;
   crm_package_id?: string | null;
   created_at: string | null;
@@ -56,8 +58,13 @@ export default function CategoryPackagesClient({
   const [updatingStatus, setUpdatingStatus] = useState<Set<string>>(new Set());
   const [updatingListingPage, setUpdatingListingPage] = useState<Set<string>>(new Set());
   const [updatingAcceptPayment, setUpdatingAcceptPayment] = useState<Set<string>>(new Set());
+  const [updatingSoloOnly, setUpdatingSoloOnly] = useState<Set<string>>(new Set());
   const showListingToggle = supportsListingPageToggle(categorySlug);
-  const tableColSpan = showListingToggle ? 13 : 12;
+  /* Solo-only is an offer-package concept: it is the only category whose
+     listing/detail pages implement the single-traveller booking flow. */
+  const showSoloOnlyToggle = categorySlug === 'offer-packages';
+  const tableColSpan =
+    (showListingToggle ? 13 : 12) + (showSoloOnlyToggle ? 1 : 0);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     packageId: string;
@@ -247,6 +254,66 @@ export default function CategoryPackagesClient({
       );
     } finally {
       setUpdatingAcceptPayment(prev => {
+        const next = new Set(prev);
+        next.delete(packageId);
+        return next;
+      });
+    }
+  };
+
+  const handleSoloOnlyToggle = async (
+    packageId: string,
+    currentValue: boolean
+  ) => {
+    const newValue = !currentValue;
+    setUpdatingSoloOnly(prev => new Set(prev).add(packageId));
+
+    try {
+      const response = await fetch('/api/packages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: packageId,
+          solo_traveller_only: newValue,
+          /* solo_traveller_only is meaningless without the solo option, so
+             turning it on from here switches the solo option on too. */
+          ...(newValue ? { solo_traveller_enabled: true } : {}),
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result?.error ?? 'Failed to update solo traveller mode');
+      }
+
+      setRows(prev =>
+        prev.map(pkg =>
+          pkg.package_id === packageId
+            ? {
+                ...pkg,
+                solo_traveller_only: newValue,
+                solo_traveller_enabled: newValue
+                  ? true
+                  : pkg.solo_traveller_enabled,
+              }
+            : pkg
+        )
+      );
+
+      toast.success(
+        newValue
+          ? 'Package is now solo traveller only'
+          : 'Package is open to all travellers again'
+      );
+    } catch (error) {
+      console.error('Error updating solo traveller mode:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update solo traveller mode'
+      );
+    } finally {
+      setUpdatingSoloOnly(prev => {
         const next = new Set(prev);
         next.delete(packageId);
         return next;
@@ -448,7 +515,7 @@ export default function CategoryPackagesClient({
         <table className='table'>
           <thead>
             <tr>
-              <th>Name</th>
+              <th className='package_name_cell'>Name</th>
               <th>Price</th>
               <th>Days/Nights</th>
               <th>Travel</th>
@@ -457,6 +524,7 @@ export default function CategoryPackagesClient({
               <th>Infant</th>
               <th>Status</th>
               {showListingToggle && <th>Listing Page</th>}
+              {showSoloOnlyToggle && <th>Solo Only</th>}
               <th>Payment</th>
               <th>CRM</th>
               <th>Description</th>
@@ -482,7 +550,7 @@ export default function CategoryPackagesClient({
             {!loading &&
               rows.map(p => (
                 <tr key={p.package_id}>
-                  <td>{p.package_name}</td>
+                  <td className='package_name_cell'>{p.package_name}</td>
                   <td>{p.package_price ?? '-'}</td>
                   <td>
                     {p.package_days ?? '-'} / {p.package_nights ?? '-'}
@@ -540,6 +608,37 @@ export default function CategoryPackagesClient({
                         />
                         <span className='status_toggle_label'>
                           {p.show_listing_page !== false ? 'Visible' : 'Hidden'}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+                  {showSoloOnlyToggle && (
+                    <td>
+                      <div
+                        className='status_toggle_wrapper'
+                        onClick={() =>
+                          !updatingSoloOnly.has(p.package_id) &&
+                          handleSoloOnlyToggle(
+                            p.package_id,
+                            Boolean(
+                              p.solo_traveller_only && p.solo_traveller_enabled
+                            )
+                          )
+                        }
+                      >
+                        <input
+                          type='checkbox'
+                          checked={Boolean(
+                            p.solo_traveller_only && p.solo_traveller_enabled
+                          )}
+                          readOnly
+                          disabled={updatingSoloOnly.has(p.package_id)}
+                          className='status_toggle'
+                        />
+                        <span className='status_toggle_label'>
+                          {p.solo_traveller_only && p.solo_traveller_enabled
+                            ? 'Solo only'
+                            : 'All travellers'}
                         </span>
                       </div>
                     </td>

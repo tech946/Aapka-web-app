@@ -74,6 +74,7 @@ export default function AddPackageClient({
   const [endDate, setEndDate] = useState<string>('');
   const [soloTravellerEnabled, setSoloTravellerEnabled] = useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
+  const [soloTravellerOnly, setSoloTravellerOnly] = useState<boolean>(false);
   const [withVisa, setWithVisa] = useState<boolean>(false);
   const [adultVisaPrice, setAdultVisaPrice] = useState<string>('');
   const [childVisaPrice, setChildVisaPrice] = useState<string>('');
@@ -879,12 +880,36 @@ export default function AddPackageClient({
                       <input
                         type='checkbox'
                         checked={soloTravellerEnabled}
-                        onChange={e => setSoloTravellerEnabled(e.target.checked)}
+                        onChange={e => {
+                          const v = e.target.checked;
+                          setSoloTravellerEnabled(v);
+                          if (!v) setSoloTravellerOnly(false);
+                        }}
                         style={{ marginRight: '8px' }}
                       />
                       Enable Solo Traveller Option
                     </label>
                   </div>
+
+                  {soloTravellerEnabled && (
+                    <div className='form_row full_width'>
+                      <label>
+                        <input
+                          type='checkbox'
+                          checked={soloTravellerOnly}
+                          onChange={e => setSoloTravellerOnly(e.target.checked)}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Solo Traveller Only
+                      </label>
+                      <small style={{ color: '#666' }}>
+                        Sells this package to solo travellers only: the listing
+                        and details pages show just the solo price, and the
+                        booking modal drops the adult / child / infant
+                        selection.
+                      </small>
+                    </div>
+                  )}
 
                   {soloTravellerEnabled && (
                     <div className='form_row'>
@@ -1409,6 +1434,8 @@ export default function AddPackageClient({
                       soloTravellerEnabled && soloTravellerPrice
                         ? Number(soloTravellerPrice)
                         : undefined,
+                    solo_traveller_only:
+                      soloTravellerEnabled && soloTravellerOnly,
                     with_visa: withVisa,
                     adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
                     child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,
@@ -1494,6 +1521,7 @@ export default function AddPackageClient({
                   setInfantPrice('');
                   setSoloTravellerEnabled(false);
                   setSoloTravellerPrice('');
+                  setSoloTravellerOnly(false);
                   setWithVisa(false);
                   setAdultVisaPrice('');
                   setChildVisaPrice('');

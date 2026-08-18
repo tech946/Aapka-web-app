@@ -37,6 +37,14 @@ import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/Ag
 import '../../category/packages.css';
 import '../../category/[slug]/[packageId]/package-details.css';
 
+/** Solo-only packages take a single traveller: no adult/child/infant choice,
+    no min_adults floor, and only the solo price is ever shown. */
+function isSoloOnlyPackage(
+  pkg: Pick<Package, 'solo_traveller_enabled' | 'solo_traveller_only'> | null | undefined
+) {
+  return Boolean(pkg?.solo_traveller_only && pkg?.solo_traveller_enabled);
+}
+
 function formatAedAmount(n: number) {
   return `AED ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -68,6 +76,25 @@ function LtdPackagePricingDisplay({
   const hasSolo = Boolean(pkg.solo_traveller_enabled && soloP > 0);
 
   if (!hasBreakdown && !packagePrice && !hasSolo) return null;
+
+  /* Solo-only SKU: the package is sold to a single traveller, so the Adult /
+     Child / Infant grid is meaningless - show the solo rate on its own. */
+  if (isSoloOnlyPackage(pkg)) {
+    const soloOnlyAmount = soloP > 0 ? soloP : adultP > 0 ? adultP : packagePrice;
+    if (!soloOnlyAmount) return null;
+    return (
+      <div className='package-hero-pricing'>
+        <span className='package-hero-price-current'>
+          {price(soloOnlyAmount)}
+        </span>
+        {agentDiscount > 0 && (
+          <span className='agent-discount-badge'>
+            Agent Discount {agentDiscount}%
+          </span>
+        )}
+      </div>
+    );
+  }
 
   /* Package-only SKU: single headline price, no duplicate row in the grid */
   if (!hasBreakdown && !hasSolo && packagePrice > 0) {
@@ -161,6 +188,7 @@ interface Package {
   infant_price: number | null;
   solo_traveller_price?: number | null;
   solo_traveller_enabled?: boolean | null;
+  solo_traveller_only?: boolean | null;
   min_adults?: number | null;
   with_visa?: boolean | null;
   adult_visa_price?: number | null;
@@ -211,6 +239,7 @@ export default function LimitedTimeDealDetailPage() {
     useState<CSSProperties>({});
 
   const pkg = deal?.package;
+  const soloOnly = isSoloOnlyPackage(pkg);
   const availableTravelDates = useMemo(
     () => getOfferPackageTravelDates(pkg?.travel_dates),
     [pkg?.travel_dates]
@@ -229,7 +258,7 @@ export default function LimitedTimeDealDetailPage() {
 
   const calculatedPrice = useMemo(() => {
     if (!pkg) return 0;
-    if (isSoloTraveller && pkg.solo_traveller_enabled) {
+    if ((isSoloTraveller || soloOnly) && pkg.solo_traveller_enabled) {
       const solo =
         Number(pkg.solo_traveller_price) ||
         Number(pkg.adult_price) ||
@@ -254,7 +283,7 @@ export default function LimitedTimeDealDetailPage() {
       total = Number(pkg.package_price) || 0;
     }
     return total;
-  }, [pkg, persons, isSoloTraveller]);
+  }, [pkg, persons, isSoloTraveller, soloOnly]);
 
   const formatPrice = (price: number) => formatAedAmount(price);
 
@@ -304,6 +333,14 @@ export default function LimitedTimeDealDetailPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showCalendar]);
+
+  /* Solo-only packages have no traveller choice: the booking is always one
+     solo traveller, so lock the state as soon as the package resolves. */
+  useEffect(() => {
+    if (!soloOnly) return;
+    setIsSoloTraveller(true);
+    setPersons({ adult: 1, child: 0, infant: 0 });
+  }, [soloOnly]);
 
   useEffect(() => {
     if (showModal) {
@@ -359,13 +396,14 @@ export default function LimitedTimeDealDetailPage() {
     }
     setShowDateRequiredError(false);
     const minAdults = pkg.min_adults ?? 2;
-    if (!isSoloTraveller && persons.adult < minAdults) {
+    if (!soloOnly && !isSoloTraveller && persons.adult < minAdults) {
       toast.error(`Minimum ${minAdults} adults required`);
       return;
     }
-    const totalPassengers = isSoloTraveller
-      ? 1
-      : persons.adult + persons.child + persons.infant;
+    const totalPassengers =
+      soloOnly || isSoloTraveller
+        ? 1
+        : persons.adult + persons.child + persons.infant;
     if (totalPassengers === 0) {
       toast.error('Select at least one passenger');
       return;
@@ -375,11 +413,11 @@ export default function LimitedTimeDealDetailPage() {
       packageId: pkg.package_id,
       packageSlug,
       categorySlug: 'offer-packages',
-      adults: isSoloTraveller ? 1 : persons.adult,
-      children: isSoloTraveller ? 0 : persons.child,
-      infants: isSoloTraveller ? 0 : persons.infant,
+      adults: soloOnly || isSoloTraveller ? 1 : persons.adult,
+      children: soloOnly || isSoloTraveller ? 0 : persons.child,
+      infants: soloOnly || isSoloTraveller ? 0 : persons.infant,
       selectedDate: format(selectedDate, 'yyyy-MM-dd'),
-      isSoloTraveller,
+      isSoloTraveller: soloOnly || isSoloTraveller,
       withVisa: false,
     };
 
@@ -581,7 +619,18 @@ export default function LimitedTimeDealDetailPage() {
                       </p>
                     )}
 
-                    {pkg.solo_traveller_enabled && (
+                    {soloOnly && (
+                      <div className='solo-traveller-block'>
+                        <span className='solo-checkbox'>
+                          Solo Traveller (1 Traveller)
+                          {pkg.solo_traveller_price != null
+                            ? ` - AED ${pkg.solo_traveller_price.toLocaleString()}`
+                            : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    {pkg.solo_traveller_enabled && !soloOnly && (
                       <div className='solo-traveller-block'>
                         <label className='solo-checkbox'>
                           <input
@@ -608,6 +657,7 @@ export default function LimitedTimeDealDetailPage() {
                       </div>
                     )}
 
+                    {!soloOnly && (
                     <div className='ltd-person-counters'>
                       <div className='person-counter-row'>
                         <span className='person-label'>
@@ -691,6 +741,7 @@ export default function LimitedTimeDealDetailPage() {
                         </div>
                       </div>
                     </div>
+                    )}
 
                     <div className='booking-price-section'>
                       <div className='booking-price-row'>

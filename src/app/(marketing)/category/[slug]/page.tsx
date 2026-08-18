@@ -35,6 +35,9 @@ interface Package {
   package_category_id?: string;
   adult_price?: number | null;
   child_price?: number | null;
+  solo_traveller_price?: number | null;
+  solo_traveller_enabled?: boolean | null;
+  solo_traveller_only?: boolean | null;
   with_visa?: boolean | null;
   adult_visa_price?: number | null;
   child_visa_price?: number | null;
@@ -500,9 +503,16 @@ function PackageCard({
     return 'Duration not specified';
   };
 
+  /* Solo-only packages are sold to a single traveller, so both the card price
+     and its label follow the solo rate rather than the adult rate. */
+  const soloOnly = Boolean(pkg.solo_traveller_only && pkg.solo_traveller_enabled);
+  const basePrice = soloOnly
+    ? (pkg.solo_traveller_price ?? pkg.adult_price ?? pkg.package_price)
+    : (pkg.adult_price || pkg.package_price);
+
   // Get price per person
   const getPricePerPerson = (): string => {
-    const price = pkg.adult_price || pkg.package_price;
+    const price = basePrice;
     if (!price) return 'N/A';
     
     const discount = getDiscountPercentage();
@@ -647,7 +657,7 @@ function PackageCard({
               <span className='suites-price-amount'>
                 {agentDiscount > 0 ? (
                   <AgentDiscountPrice
-                    price={pkg.adult_price || pkg.package_price}
+                    price={basePrice}
                     percentage={agentDiscount}
                     format={formatPrice}
                   />
@@ -655,7 +665,9 @@ function PackageCard({
                   pricePerPerson
                 )}
               </span>
-              <span className='suites-price-label'> / per person</span>
+              <span className='suites-price-label'>
+                {soloOnly ? ' / solo traveller' : ' / per person'}
+              </span>
             </>
           )}
         </div>

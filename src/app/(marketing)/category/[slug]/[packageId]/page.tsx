@@ -95,6 +95,7 @@ interface Package {
   infant_price?: number | null;
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
+  solo_traveller_only?: boolean | null;
   with_visa?: boolean | null;
   adult_visa_price?: number | null;
   child_visa_price?: number | null;
@@ -225,17 +226,30 @@ export default function PackageDetailsPage() {
     [transfersRaw]
   );
 
+  /* Solo-only packages are sold to a single traveller: there is no traveller
+     choice to make, so the booking is locked to one solo adult and min_adults
+     never applies. */
+  const soloOnly = Boolean(
+    pkg?.solo_traveller_only && pkg?.solo_traveller_enabled
+  );
+
+  useEffect(() => {
+    if (!soloOnly) return;
+    setIsSoloTraveller(true);
+    setPersons({ adult: 1, child: 0, infant: 0 });
+  }, [soloOnly]);
+
   // Initialize minimum adults based on package's min_adults setting
   // Skip this if solo traveller is selected (solo traveller should have 1 adult)
   useEffect(() => {
-    if (isSoloTraveller) return; // Don't override solo traveller's 1 adult
+    if (isSoloTraveller || soloOnly) return; // Don't override solo traveller's 1 adult
     if (!pkg) return; // Wait for package to load
 
     const minAdults = pkg.min_adults || 1;
     if (persons.adult < minAdults) {
       setPersons(prev => ({ ...prev, adult: minAdults }));
     }
-  }, [pkg?.min_adults, persons.adult, isSoloTraveller]);
+  }, [pkg?.min_adults, persons.adult, isSoloTraveller, soloOnly]);
 
   // Sync visaForAdults to 1 when solo traveller is selected
   useEffect(() => {
@@ -1412,8 +1426,10 @@ export default function PackageDetailsPage() {
         toast.error('Please confirm sharing preference');
         return;
       }
-      // Solo traveller counts as 1 adult - check if package allows it
-      if (minAdults > 1) {
+      /* Solo traveller counts as 1 adult - check if package allows it.
+         Solo-only packages are sold as a single traveller by definition, so
+         min_adults is not applicable to them. */
+      if (!soloOnly && minAdults > 1) {
         toast.error(`This package requires a minimum of ${minAdults} adults`);
         return;
       }
@@ -1760,6 +1776,32 @@ export default function PackageDetailsPage() {
 
             if (!hasPricing && !pkg.package_price) return null;
 
+            /* Solo-only SKU: only the solo rate is meaningful here. */
+            if (soloOnly) {
+              const soloRate =
+                prices.soloTravellerPrice ??
+                pkg.solo_traveller_price ??
+                prices.adultPrice ??
+                pkg.package_price ??
+                0;
+              if (!soloRate) return null;
+              return (
+                <div className='package-hero-price-breakdown'>
+                  <div className='package-hero-price-item'>
+                    <span className='package-hero-price-item-label'>
+                      Solo Traveller
+                    </span>
+                    <span className='package-hero-price-item-age'>
+                      1 Traveller
+                    </span>
+                    <span className='package-hero-price-item-amount'>
+                      {formatPrice(soloRate)}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
             // Calculate discounted prices if referral discount is active
             const referralDiscountPercent =
               referralData?.linkType === 'discount' &&
@@ -1981,6 +2023,7 @@ export default function PackageDetailsPage() {
         pkg={pkg}
         slug={slug}
         soloTravellerEnabled={pkg.solo_traveller_enabled || false}
+        soloTravellerOnly={soloOnly}
         isSoloTraveller={isSoloTraveller}
         setIsSoloTraveller={setIsSoloTraveller}
         soloTravellerGender={soloTravellerGender}

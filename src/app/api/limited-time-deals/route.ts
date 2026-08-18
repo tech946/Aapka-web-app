@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
           infant_price,
           solo_traveller_price,
           solo_traveller_enabled,
+          solo_traveller_only,
           agent_discount,
           thumbnail_image,
           status,

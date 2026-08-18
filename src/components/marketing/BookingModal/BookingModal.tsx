@@ -111,6 +111,9 @@ interface BookingModalProps {
   slug: string;
   // Solo traveller
   soloTravellerEnabled: boolean;
+  /* Package is sold to solo travellers only: the solo option is not a choice,
+     so the checkbox and the persons selector are both dropped. */
+  soloTravellerOnly?: boolean;
   isSoloTraveller: boolean;
   setIsSoloTraveller: (value: boolean) => void;
   soloTravellerGender: 'male' | 'female' | null;
@@ -198,6 +201,7 @@ export default function BookingModal({
   pkg,
   slug,
   soloTravellerEnabled,
+  soloTravellerOnly = false,
   isSoloTraveller,
   setIsSoloTraveller,
   soloTravellerGender,
@@ -424,11 +428,13 @@ export default function BookingModal({
           {soloTravellerEnabled && (
             <div className='solo-traveller-block'>
               <label className='solo-checkbox'>
+                {!soloTravellerOnly && (
                 <input
                   type='checkbox'
                   checked={isSoloTraveller}
                   onChange={e => handleSoloTravellerChange(e.target.checked)}
                 />
+                )}
                 Solo Traveller (AED{' '}
                 {(() => {
                   if (slug === 'flexible-date-packages') {
@@ -565,7 +571,8 @@ export default function BookingModal({
           <div
             className={`${inputSelectorsClass}${showDatePicker ? (isMobile ? ' mobile-date-picker-open' : ' booking-date-picker-open') : ''}${showDateDropdown ? (isMobile ? ' mobile-dates-dropdown-open' : ' booking-dates-dropdown-open') : ''}`}
           >
-            {/* Persons Selector */}
+            {/* Persons Selector - hidden for solo-only packages (always 1 traveller) */}
+            {!soloTravellerOnly && (
             <div
               className={isMobile ? 'mobile-booking-input-wrapper booking-modal-field' : 'booking-input-wrapper booking-modal-field'}
               ref={personsDropdownRef}
@@ -658,6 +665,7 @@ export default function BookingModal({
                 </div>
               )}
             </div>
+            )}
 
             {/* Date Picker / Calendar */}
             {usesFixedTourDates && fixedTourDates ? (

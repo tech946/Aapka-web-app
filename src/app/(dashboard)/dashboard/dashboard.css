@@ -632,6 +632,12 @@
 .table tbody tr:hover {
   background: var(--hover);
 }
+/* Package names are long; without a floor the column collapses to a few
+   characters per line once the toggle columns are in play. */
+.table th.package_name_cell,
+.table td.package_name_cell {
+  min-width: 260px;
+}
 .table_loading,
 .table_empty {
   text-align: center;

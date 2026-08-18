@@ -340,7 +340,7 @@ export async function POST(req: NextRequest) {
       const result = await supabaseAdmin
         .from('packages')
         .select(
-          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment'
+          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, solo_traveller_only, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment'
         )
         .in('package_id', packageIds);
       packages = result.data;
@@ -600,8 +600,11 @@ export async function POST(req: NextRequest) {
       // Calculate price with discount applied
       let calculatedPrice = 0;
       let originalPrice = 0;
+      /* A solo-only package is always priced as a single solo traveller,
+         whatever the client sent for the traveller counts. */
       const isSolo =
-        item.isSoloTraveller && pkg.solo_traveller_enabled;
+        (item.isSoloTraveller || pkg.solo_traveller_only) &&
+        pkg.solo_traveller_enabled;
 
       if (isSolo) {
         // Solo traveller pricing overrides per-person logic (no discount on solo)

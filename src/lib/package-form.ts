@@ -13,6 +13,7 @@ type PackageFormSource = {
   infant_price?: number | null;
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
+  solo_traveller_only?: boolean | null;
   with_visa?: boolean | null;
   show_listing_page?: boolean | null;
   adult_visa_price?: number | null;
@@ -132,6 +133,7 @@ export function mapPackageToEditForm(
     soloTravellerEnabled: Boolean(pkg.solo_traveller_enabled),
     soloTravellerPrice:
       pkg.solo_traveller_price != null ? String(pkg.solo_traveller_price) : '',
+    soloTravellerOnly: Boolean(pkg.solo_traveller_only),
     withVisa: Boolean(pkg.with_visa),
     showListingPage:
       pkg.show_listing_page != null ? Boolean(pkg.show_listing_page) : true,

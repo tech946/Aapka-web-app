@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, booking_days, date_ranges, pickup_location, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, booking_days, date_ranges, pickup_location, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, solo_traveller_only, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment, min_adults, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -242,6 +242,12 @@ export async function POST(req: NextRequest) {
           ? null
           : Number(body.solo_traveller_price)
         : null;
+    /* Solo-only packages are sold to a single traveller. The flag only makes
+       sense alongside the solo traveller option, so the two are kept consistent. */
+    const soloTravellerOnly =
+      body?.solo_traveller_only !== undefined
+        ? Boolean(body.solo_traveller_only) && soloTravellerEnabled
+        : false;
     const withVisa =
       body?.with_visa !== undefined
         ? Boolean(body.with_visa)
@@ -369,6 +375,7 @@ export async function POST(req: NextRequest) {
       infant_price: infantPrice,
       solo_traveller_enabled: soloTravellerEnabled,
       solo_traveller_price: soloTravellerPrice,
+      solo_traveller_only: soloTravellerOnly,
       with_visa: withVisa,
       adult_visa_price: adultVisaPrice,
       child_visa_price: childVisaPrice,
@@ -537,6 +544,12 @@ export async function PUT(req: NextRequest) {
           ? null
           : Number(body.solo_traveller_price)
         : undefined;
+    /* solo_traveller_only can never outlive solo_traveller_enabled: if this same
+       request is turning the solo option off, force the flag off with it. */
+    const soloTravellerOnly =
+      body?.solo_traveller_only !== undefined
+        ? Boolean(body.solo_traveller_only) && soloTravellerEnabled !== false
+        : undefined;
     const withVisa =
       body?.with_visa !== undefined
         ? Boolean(body.with_visa)
@@ -655,6 +668,8 @@ export async function PUT(req: NextRequest) {
       updates.solo_traveller_enabled = soloTravellerEnabled;
     if (soloTravellerPrice !== undefined)
       updates.solo_traveller_price = soloTravellerPrice;
+    if (soloTravellerOnly !== undefined)
+      updates.solo_traveller_only = soloTravellerOnly;
     if (withVisa !== undefined) updates.with_visa = withVisa;
     if (adultVisaPrice !== undefined) updates.adult_visa_price = adultVisaPrice;
     if (childVisaPrice !== undefined) updates.child_visa_price = childVisaPrice;

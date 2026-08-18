@@ -24,6 +24,9 @@ interface Package {
   adult_price?: number | null;
   child_price?: number | null;
   infant_price?: number | null;
+  solo_traveller_price?: number | null;
+  solo_traveller_enabled?: boolean | null;
+  solo_traveller_only?: boolean | null;
   package_days?: number | null;
   package_nights?: number | null;
   thumbnail_image?: string | null;
@@ -183,12 +186,22 @@ export default function OfferPackagesSection() {
                 );
                 const url = `/category/offer-packages/${packageSlug}`;
                 const revealing = isPackagePriceRevealingSoon(pkg);
+                /* Solo-only packages are sold to a single traveller, so the
+                   card shows the solo rate instead of the adult/child/infant
+                   pills. */
+                const soloOnly = Boolean(
+                  pkg.solo_traveller_only && pkg.solo_traveller_enabled
+                );
+                const soloRate =
+                  pkg.solo_traveller_price ??
+                  pkg.adult_price ??
+                  pkg.package_price;
                 const hasAdult =
-                  pkg.adult_price != null && pkg.adult_price > 0;
+                  !soloOnly && pkg.adult_price != null && pkg.adult_price > 0;
                 const hasChild =
-                  pkg.child_price != null && pkg.child_price > 0;
+                  !soloOnly && pkg.child_price != null && pkg.child_price > 0;
                 const hasInfant =
-                  pkg.infant_price != null && pkg.infant_price > 0;
+                  !soloOnly && pkg.infant_price != null && pkg.infant_price > 0;
                 const agentDiscount = getAgentDiscountPercentage(
                   pkg,
                   isSubscribedAgent
@@ -272,7 +285,17 @@ export default function OfferPackagesSection() {
                                   />
                                 </span>
                               )}
-                              {!hasAdult && !hasChild && !hasInfant && (
+                              {soloOnly && (
+                                <span className='section-tour-card-price-pill'>
+                                  Solo Traveller:{' '}
+                                  <AgentDiscountPrice
+                                    price={soloRate}
+                                    percentage={agentDiscount}
+                                    format={formatSectionPrice}
+                                  />
+                                </span>
+                              )}
+                              {!soloOnly && !hasAdult && !hasChild && !hasInfant && (
                                 <span className='section-tour-card-price-pill'>
                                   <AgentDiscountPrice
                                     price={pkg.package_price}
