@@ -321,8 +321,6 @@ export default function Header() {
                         <div className='header-dropdown-menu header-dropdown-menu-packages'>
                           {categoriesWithPackages.map((category: Category) => {
                             const href = getCategoryHref(category);
-                            const isFlexibleDatePackages =
-                              category.name === 'Flexible Date Packages';
                             const key =
                               category.id ??
                               category.category_id ??
@@ -332,14 +330,9 @@ export default function Header() {
                               <Fragment key={String(key)}>
                                 <Link
                                   href={href}
-                                  className={`header-dropdown-item ${isFlexibleDatePackages ? 'header-dropdown-item-with-badge' : ''}`}
+                                  className='header-dropdown-item'
                                   onClick={() => setShowPackagesDropdown(false)}
                                 >
-                                  {isFlexibleDatePackages && (
-                                    <span className='header-dropdown-badge'>
-                                      NEW
-                                    </span>
-                                  )}
                                   {category.name}
                                 </Link>
                                 {category.name === 'UAE Tours' && (
@@ -632,8 +625,6 @@ export default function Header() {
                   <div className='mobile-sidebar-dropdown-menu'>
                     {categoriesWithPackages.map((category: Category) => {
                       const href = getCategoryHref(category);
-                      const isFlexibleDatePackages =
-                        category.name === 'Flexible Date Packages';
                       const key =
                         category.id ??
                         category.category_id ??
@@ -643,15 +634,12 @@ export default function Header() {
                         <Fragment key={String(key)}>
                           <Link
                             href={href}
-                            className={`mobile-sidebar-dropdown-item ${isFlexibleDatePackages ? 'mobile-sidebar-link-with-badge' : ''}`}
+                            className='mobile-sidebar-dropdown-item'
                             onClick={() => {
                               setIsMobileMenuOpen(false);
                               setMobilePackagesExpanded(false);
                             }}
                           >
-                            {isFlexibleDatePackages && (
-                              <span className='mobile-sidebar-badge'>NEW</span>
-                            )}
                             {category.name}
                           </Link>
                           {category.name === 'UAE Tours' && (
