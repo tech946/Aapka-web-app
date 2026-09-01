@@ -1426,13 +1426,11 @@ export default function PackageDetailsPage() {
         toast.error('Please confirm sharing preference');
         return;
       }
-      /* Solo traveller counts as 1 adult - check if package allows it.
-         Solo-only packages are sold as a single traveller by definition, so
-         min_adults is not applicable to them. */
-      if (!soloOnly && minAdults > 1) {
-        toast.error(`This package requires a minimum of ${minAdults} adults`);
-        return;
-      }
+      /* A solo traveller booking is a deliberate 1-person booking priced at
+         the package's own solo rate, so min_adults - which is the minimum for
+         a normal shared booking - does not apply to it. The solo option is
+         only offered when the package has solo_traveller_enabled, and the
+         limited-time-deal page and checkout apply the same exemption. */
     } else {
       // Validate minimum adults based on package requirement
       if (persons.adult < minAdults) {
