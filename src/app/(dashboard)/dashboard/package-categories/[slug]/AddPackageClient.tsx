@@ -75,6 +75,9 @@ export default function AddPackageClient({
   const [soloTravellerEnabled, setSoloTravellerEnabled] = useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
   const [soloTravellerOnly, setSoloTravellerOnly] = useState<boolean>(false);
+  const [soloRoomType, setSoloRoomType] = useState<'private' | 'shared'>(
+    'shared'
+  );
   const [withVisa, setWithVisa] = useState<boolean>(false);
   const [adultVisaPrice, setAdultVisaPrice] = useState<string>('');
   const [childVisaPrice, setChildVisaPrice] = useState<string>('');
@@ -875,6 +878,42 @@ export default function AddPackageClient({
               {/* Solo Traveller Option - Only for Offer Packages */}
               {categorySlug === 'offer-packages' && (
                 <>
+                  {/* Room offered to a solo traveller. Shared asks the
+                      traveller to confirm room sharing at booking; private
+                      does not ask at all. */}
+                  <div className='form_row full_width'>
+                    <label>Solo Traveller Room</label>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <label>
+                        <input
+                          type='radio'
+                          name='solo_room_type'
+                          value='private'
+                          checked={soloRoomType === 'private'}
+                          onChange={() => setSoloRoomType('private')}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Private
+                      </label>
+                      <label>
+                        <input
+                          type='radio'
+                          name='solo_room_type'
+                          value='shared'
+                          checked={soloRoomType === 'shared'}
+                          onChange={() => setSoloRoomType('shared')}
+                          style={{ marginRight: '8px' }}
+                        />
+                        Shared
+                      </label>
+                    </div>
+                    <small style={{ color: '#666' }}>
+                      Shared shows the &quot;comfortable to share the
+                      room&quot; confirmation in the booking modal and requires
+                      it. Private hides it.
+                    </small>
+                  </div>
+
                   <div className='form_row full_width'>
                     <label>
                       <input
@@ -1436,6 +1475,7 @@ export default function AddPackageClient({
                         : undefined,
                     solo_traveller_only:
                       soloTravellerEnabled && soloTravellerOnly,
+                    solo_room_type: soloRoomType,
                     with_visa: withVisa,
                     adult_visa_price: withVisa && adultVisaPrice ? Number(adultVisaPrice) : undefined,
                     child_visa_price: withVisa && childVisaPrice ? Number(childVisaPrice) : undefined,

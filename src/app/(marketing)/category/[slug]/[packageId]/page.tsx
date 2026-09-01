@@ -96,6 +96,7 @@ interface Package {
   solo_traveller_enabled?: boolean | null;
   solo_traveller_price?: number | null;
   solo_traveller_only?: boolean | null;
+  solo_room_type?: string | null;
   with_visa?: boolean | null;
   adult_visa_price?: number | null;
   child_visa_price?: number | null;
@@ -232,6 +233,12 @@ export default function PackageDetailsPage() {
   const soloOnly = Boolean(
     pkg?.solo_traveller_only && pkg?.solo_traveller_enabled
   );
+
+  /* Room the solo traveller is sold, set per package from the dashboard. A
+     shared room asks for - and requires - the sharing confirmation; a private
+     room never asks for it. */
+  const soloRoomType: 'private' | 'shared' =
+    pkg?.solo_room_type === 'private' ? 'private' : 'shared';
 
   useEffect(() => {
     if (!soloOnly) return;
@@ -1422,7 +1429,9 @@ export default function PackageDetailsPage() {
         toast.error('Please select gender for solo traveller');
         return;
       }
-      if (!soloTravellerShareConsent) {
+      /* Only a shared room needs the sharing confirmation - a private room
+         never shows it, so it cannot be required. */
+      if (soloRoomType !== 'private' && !soloTravellerShareConsent) {
         toast.error('Please confirm sharing preference');
         return;
       }
@@ -2028,6 +2037,7 @@ export default function PackageDetailsPage() {
         setSoloTravellerGender={setSoloTravellerGender}
         soloTravellerShareConsent={soloTravellerShareConsent}
         setSoloTravellerShareConsent={setSoloTravellerShareConsent}
+        soloRoomType={soloRoomType}
         withVisa={withVisa}
         setWithVisa={setWithVisa}
         visaForAdults={visaForAdults}

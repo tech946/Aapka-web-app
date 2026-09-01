@@ -120,6 +120,9 @@ interface BookingModalProps {
   setSoloTravellerGender: (value: 'male' | 'female' | null) => void;
   soloTravellerShareConsent: boolean;
   setSoloTravellerShareConsent: (value: boolean) => void;
+  /* Room the solo traveller gets: a shared room needs the sharing
+     confirmation below, a private room does not ask for it at all. */
+  soloRoomType?: 'private' | 'shared';
   // Visa
   withVisa: boolean;
   setWithVisa: (value: boolean) => void;
@@ -208,6 +211,7 @@ export default function BookingModal({
   setSoloTravellerGender,
   soloTravellerShareConsent,
   setSoloTravellerShareConsent,
+  soloRoomType = 'shared',
   withVisa,
   setWithVisa,
   visaForAdults,
@@ -463,16 +467,20 @@ export default function BookingModal({
                       Female
                     </button>
                   </div>
-                  <label className='solo-consent'>
-                    <input
-                      type='checkbox'
-                      checked={soloTravellerShareConsent}
-                      onChange={e => setSoloTravellerShareConsent(e.target.checked)}
-                    />
-                    {`I am comfortable to share the room with ${
-                      soloTravellerGender === 'female' ? 'female' : 'male'
-                    } passengers`}
-                  </label>
+                  {/* A private room is not shared with anyone, so there is
+                      nothing for the traveller to consent to. */}
+                  {soloRoomType !== 'private' && (
+                    <label className='solo-consent'>
+                      <input
+                        type='checkbox'
+                        checked={soloTravellerShareConsent}
+                        onChange={e => setSoloTravellerShareConsent(e.target.checked)}
+                      />
+                      {`I am comfortable to share the room with ${
+                        soloTravellerGender === 'female' ? 'female' : 'male'
+                      } passengers`}
+                    </label>
+                  )}
                 </div>
               )}
             </div>
