@@ -752,7 +752,7 @@ export default function BookingModal({
                     selectedDateString
                       ? (() => {
                           const d = parseDateStringToLocal(selectedDateString);
-                          return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : '';
+                          return d ? format(d, 'MMM dd, yyyy') : '';
                         })()
                       : ''
                   }
@@ -784,7 +784,7 @@ export default function BookingModal({
                           <span>
                             {(() => {
                               const d = parseDateStringToLocal(dateStr);
-                              return d ? format(d, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : dateStr;
+                              return d ? format(d, 'MMM dd, yyyy') : dateStr;
                             })()}
                           </span>
                         </div>
@@ -808,7 +808,7 @@ export default function BookingModal({
                     type='text'
                     placeholder='Add dates'
                     className={isMobile ? 'mobile-booking-input' : 'booking-input'}
-                    value={selectedDate ? format(selectedDate, slug === 'flexible-date-packages' ? 'MMM dd, yyyy hh:mm a' : 'MMM dd, yyyy') : ''}
+                    value={selectedDate ? format(selectedDate, 'MMM dd, yyyy') : ''}
                     readOnly
                     onClick={() => setShowDatePicker(!showDatePicker)}
                   />
@@ -819,12 +819,14 @@ export default function BookingModal({
                     onClick={e => e.stopPropagation()}
                     onTouchStart={e => e.stopPropagation()}
                   >
-                    {slug === 'flexible-date-packages' && !loading && dateRangesReady && pkg && pkg.package_id && pkg.date_ranges && Array.isArray(pkg.date_ranges) && pkg.date_ranges.length > 0 ? (
+                    {slug === 'flexible-date-packages' && !loading && dateRangesReady && pkg && pkg.package_id ? (
                       <FlexibleDateCalendar
-                        key={`${isMobile ? 'mobile' : 'desktop'}-calendar-${pkg.package_id}-${pkg.date_ranges.length}-${dateRangesReady}`}
+                        key={`${isMobile ? 'mobile' : 'desktop'}-calendar-${pkg.package_id}`}
                         packageId={pkg.package_id}
                         endDate={pkg.end_date || undefined}
                         dateRanges={pkg.date_ranges}
+                        adultPrice={getPricesForDate().adultPrice}
+                        surchargeBlockDaysBefore={pkg.surcharge_block_days_before}
                         selectedDate={selectedDate}
                         onDateSelect={handleDateSelect}
                         month={month}

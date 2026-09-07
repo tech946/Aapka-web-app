@@ -1,4 +1,5 @@
 import { normalizeTourBookingDays } from '@/lib/tour-booking-days';
+import { normalizeSurchargeBlockDaysBefore } from '@/lib/anydate-availability';
 import { normalizePackageGallery, normalizePdfUrl } from '@/lib/package-gallery';
 
 type PackageFormSource = {
@@ -27,6 +28,7 @@ type PackageFormSource = {
   discount_end_date?: string | null;
   agent_discount?: number | null;
   min_adults?: number | null;
+  surcharge_block_days_before?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -163,6 +165,9 @@ export function mapPackageToEditForm(
     discountEndDate: toDateTimeLocal(pkg.discount_end_date),
     agentDiscount: pkg.agent_discount != null ? String(pkg.agent_discount) : '',
     minAdults: pkg.min_adults != null ? String(pkg.min_adults) : '1',
+    surchargeBlockDaysBefore: String(
+      normalizeSurchargeBlockDaysBefore(pkg.surcharge_block_days_before)
+    ),
     termsHtml: pkg.terms_html || '',
     inclusionHtml: pkg.inclusion_html || '',
     exclusionHtml: pkg.exclusion_html || '',

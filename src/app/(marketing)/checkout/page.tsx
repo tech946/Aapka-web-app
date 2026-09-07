@@ -1681,15 +1681,7 @@ function CheckoutPageContent() {
                                 item.selectedDate
                               );
                               if (date) {
-                                const isFlexibleDate =
-                                  item.categorySlug ===
-                                  'flexible-date-packages';
-                                return format(
-                                  date,
-                                  isFlexibleDate
-                                    ? 'MMM dd, yyyy hh:mm a'
-                                    : 'MMM dd, yyyy'
-                                );
+                                return format(date, 'MMM dd, yyyy');
                               }
                               return 'Not selected';
                             })()

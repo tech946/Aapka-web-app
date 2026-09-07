@@ -21,11 +21,8 @@ import {
 } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
-import {
-  generateShortSlug,
-  parseDateStringToLocal,
-  getEarliestAvailableDateMonth,
-} from '@/lib/utils';
+import { generateShortSlug, parseDateStringToLocal } from '@/lib/utils';
+import { MIN_BOOKING_LEAD_DAYS } from '@/lib/offer-package-dates';
 import {
   usesFlexibleDatePackagesByName,
   usesBookingSlotsByName,
@@ -67,6 +64,8 @@ interface Package {
   date_ranges?: DateRange[] | null;
   end_date?: string | null;
   agent_discount?: number | null;
+  adult_price?: number | null;
+  surcharge_block_days_before?: number | null;
 }
 
 /** Matches the plain `toLocaleString()` output used in the package dropdown. */
@@ -189,10 +188,14 @@ export default function BannerSection() {
     // Reset date selection when package changes
     setSelectedDate(undefined);
     setSelectedDateString('');
-    // If this is a flexible date package, set month to earliest available date
-    if (isFlexibleDatePackage() && pkg.date_ranges) {
-      const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
-      setMonth(earliestMonth);
+    /* Any-date packages open on the month holding the first bookable date */
+    if (isFlexibleDatePackage()) {
+      const firstBookable = new Date();
+      firstBookable.setHours(0, 0, 0, 0);
+      firstBookable.setDate(firstBookable.getDate() + MIN_BOOKING_LEAD_DAYS + 1);
+      setMonth(
+        new Date(firstBookable.getFullYear(), firstBookable.getMonth(), 1)
+      );
     }
   };
 
@@ -647,6 +650,13 @@ export default function BannerSection() {
                             packageId={selectedPackage.package_id || ''}
                             endDate={selectedPackage.end_date}
                             dateRanges={selectedPackage.date_ranges}
+                            adultPrice={
+                              selectedPackage.adult_price ??
+                              selectedPackage.package_price
+                            }
+                            surchargeBlockDaysBefore={
+                              selectedPackage.surcharge_block_days_before
+                            }
                             selectedDate={selectedDate}
                             onDateSelect={handleDateSelect}
                             month={month}

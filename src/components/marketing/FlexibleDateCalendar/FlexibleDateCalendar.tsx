@@ -3,26 +3,29 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DayPicker } from 'react-day-picker';
-import { format, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
-import { parseDateStringToLocal, getEarliestAvailableDateMonth } from '@/lib/utils';
+import { format, startOfDay, startOfMonth, endOfMonth, addMonths } from 'date-fns';
+import { parseDateStringToLocal } from '@/lib/utils';
+import { MIN_BOOKING_LEAD_DAYS } from '@/lib/offer-package-dates';
+import {
+  getAnyDateBlockReason,
+  type AnyDateSoldOutRange,
+} from '@/lib/anydate-availability';
+import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
 import 'react-day-picker/dist/style.css';
 import './flexible-date-calendar.css';
 
-interface DateRange {
-  id: string;
-  fromDate: string;
-  toDate: string;
-  adultPrice: number;
-  childPrice: number;
-  infantPrice: number;
-  soloTravellerPrice?: number | null;
-  isSoldOut: boolean;
-}
+/** Months of forward browsing offered when the package has no end date. */
+const DEFAULT_MONTHS_AHEAD = 18;
 
 interface FlexibleDateCalendarProps {
   packageId: string;
   endDate?: string | null;
-  dateRanges?: DateRange[] | null;
+  /** Only entries flagged `isSoldOut` are used — any-date packages have no pricing ranges. */
+  dateRanges?: AnyDateSoldOutRange[] | null;
+  /** Per-adult price shown on each bookable day. */
+  adultPrice?: number | null;
+  /** Days before a hotel surcharge that are also blocked (defaults to 3). */
+  surchargeBlockDaysBefore?: number | null;
   selectedDate?: Date;
   onDateSelect: (date: Date | undefined) => void;
   month: Date;
@@ -33,6 +36,8 @@ export default function FlexibleDateCalendar({
   packageId,
   endDate,
   dateRanges,
+  adultPrice,
+  surchargeBlockDaysBefore,
   selectedDate,
   onDateSelect,
   month,
@@ -40,15 +45,15 @@ export default function FlexibleDateCalendar({
 }: FlexibleDateCalendarProps) {
   const [seatAvailability, setSeatAvailability] = useState<Record<string, number>>({});
   const [defaultSeats, setDefaultSeats] = useState<number>(45);
+  const [surcharges, setSurcharges] = useState<SurchargeMasterEntry[]>([]);
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
-  
-  // Normalize dateRanges to ensure it's always an array
-  const normalizedDateRanges = useMemo(() => {
-    if (!dateRanges) return [];
-    if (Array.isArray(dateRanges)) return dateRanges;
-    return [];
-  }, [dateRanges]);
+
+  // Sold out ranges are the only date_ranges entries that still matter
+  const soldOutRanges = useMemo(
+    () => (Array.isArray(dateRanges) ? dateRanges : []),
+    [dateRanges]
+  );
 
   // Fetch seat availability
   useEffect(() => {
@@ -72,43 +77,27 @@ export default function FlexibleDateCalendar({
     fetchSeatAvailability();
   }, [packageId]);
 
-  // Find the date range that contains a specific date
-  // Priority: Sold out ranges take precedence (if a date is in both a sold out range and a regular range, it's sold out)
-  const findDateRangeForDate = useCallback(
-    (dateStr: string): DateRange | null => {
-      if (!normalizedDateRanges || normalizedDateRanges.length === 0) return null;
-      const targetDate = new Date(dateStr);
-      targetDate.setHours(0, 0, 0, 0);
-      
-      // First check for sold out ranges (they take priority)
-      for (const range of normalizedDateRanges) {
-        if (!range || !range.isSoldOut) continue;
-        const fromDate = new Date(range.fromDate);
-        const toDate = new Date(range.toDate);
-        fromDate.setHours(0, 0, 0, 0);
-        toDate.setHours(0, 0, 0, 0);
-        
-        if (targetDate >= fromDate && targetDate <= toDate) {
-          return range; // Return sold out range immediately
+  // Fetch hotel surcharge date ranges - these (and the days before them) are unbookable
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchSurcharges = async () => {
+      try {
+        const response = await fetch('/api/surcharge-master?limit=100&page=1');
+        const result = await response.json();
+        if (!cancelled && Array.isArray(result?.data)) {
+          setSurcharges(result.data);
         }
+      } catch (error) {
+        console.error('Failed to fetch surcharges:', error);
       }
-      
-      // Then check for regular (non-sold-out) ranges
-      for (const range of normalizedDateRanges) {
-        if (!range || range.isSoldOut) continue; // Skip sold out ranges (already checked)
-        const fromDate = new Date(range.fromDate);
-        const toDate = new Date(range.toDate);
-        fromDate.setHours(0, 0, 0, 0);
-        toDate.setHours(0, 0, 0, 0);
-        
-        if (targetDate >= fromDate && targetDate <= toDate) {
-          return range;
-        }
-      }
-      return null;
-    },
-    [normalizedDateRanges]
-  );
+    };
+
+    fetchSurcharges();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Get available seats for a date
   const getAvailableSeats = useCallback(
@@ -122,52 +111,38 @@ export default function FlexibleDateCalendar({
     [seatAvailability, defaultSeats]
   );
 
-  // Calculate the last available date from date ranges
-  const lastAvailableDate = useMemo(() => {
-    if (!normalizedDateRanges || normalizedDateRanges.length === 0) return null;
-    
-    let maxDate: Date | null = null;
-    for (const range of normalizedDateRanges) {
-      if (!range) continue;
-      const toDate = new Date(range.toDate);
-      toDate.setHours(0, 0, 0, 0);
-      if (!maxDate || toDate > maxDate) {
-        maxDate = toDate;
-      }
-    }
-    return maxDate;
-  }, [normalizedDateRanges]);
+  // Why a date cannot be booked (null when it is bookable)
+  const getBlockReason = useCallback(
+    (date: Date) =>
+      getAnyDateBlockReason(date, {
+        soldOutRanges,
+        surcharges,
+        surchargeBlockDaysBefore,
+        endDate,
+      }),
+    [soldOutRanges, surcharges, surchargeBlockDaysBefore, endDate]
+  );
 
-  // Calculate min month for navigation (earliest available date month)
+  const getDisabledDates = useCallback(
+    (date: Date): boolean => getBlockReason(date) !== null,
+    [getBlockReason]
+  );
+
+  // First month that can hold a bookable date
   const minNavigationMonth = useMemo(() => {
-    if (!normalizedDateRanges || normalizedDateRanges.length === 0) {
-      // If no date ranges, use current month
-      return startOfMonth(new Date());
-    }
-    return getEarliestAvailableDateMonth(normalizedDateRanges);
-  }, [normalizedDateRanges]);
+    const firstBookable = startOfDay(new Date());
+    firstBookable.setDate(firstBookable.getDate() + MIN_BOOKING_LEAD_DAYS + 1);
+    return startOfMonth(firstBookable);
+  }, []);
 
-  // Calculate max month for navigation (use end_date or last date from ranges)
+  // Any date is bookable, so browsing runs to the end date or a rolling horizon
   const maxNavigationMonth = useMemo(() => {
-    let maxDate: Date | null = null;
-    
-    // Use end_date if provided
     if (endDate) {
       const parsed = parseDateStringToLocal(endDate);
-      if (parsed) {
-        maxDate = parsed;
-      }
+      if (parsed) return endOfMonth(parsed);
     }
-    
-    // Also consider lastAvailableDate
-    if (lastAvailableDate) {
-      if (!maxDate || lastAvailableDate > maxDate) {
-        maxDate = lastAvailableDate;
-      }
-    }
-    
-    return maxDate ? endOfMonth(maxDate) : null;
-  }, [endDate, lastAvailableDate]);
+    return endOfMonth(addMonths(new Date(), DEFAULT_MONTHS_AHEAD));
+  }, [endDate]);
 
   // Check if can navigate to next month
   const canNavigateNext = useMemo(() => {
@@ -176,49 +151,11 @@ export default function FlexibleDateCalendar({
     return nextMonthStart <= maxNavigationMonth;
   }, [month, maxNavigationMonth]);
 
-  // Check if can navigate to previous month (not before earliest available date month)
+  // Check if can navigate to previous month (not before the first bookable month)
   const canNavigatePrev = useMemo(() => {
     const prevMonthStart = startOfMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1));
     return prevMonthStart >= minNavigationMonth;
   }, [month, minNavigationMonth]);
-
-  // Check if a date should be disabled
-  const getDisabledDates = useCallback(
-    (date: Date): boolean => {
-      const today = startOfDay(new Date());
-      const checkDate = startOfDay(date);
-
-      // Disable past dates
-      if (checkDate < today) return true;
-
-      // Disable dates within 6 days from today
-      const sixDaysFromNow = new Date(today);
-      sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
-      if (checkDate <= sixDaysFromNow) return true;
-
-      // Disable dates after package end_date
-      if (endDate) {
-        const parsedEndDate = parseDateStringToLocal(endDate);
-        if (parsedEndDate) {
-          const endDateStart = startOfDay(parsedEndDate);
-          if (checkDate > endDateStart) return true;
-        }
-      }
-
-      // Check if date is within any date range
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const dateRange = findDateRangeForDate(dateStr);
-
-      // Disable if not in any date range
-      if (!dateRange) return true;
-
-      // Disable if range is sold out
-      if (dateRange.isSoldOut) return true;
-
-      return false;
-    },
-    [endDate, findDateRangeForDate]
-  );
 
   // Check if device is touch-enabled (for disabling tooltips on mobile)
   const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -227,15 +164,16 @@ export default function FlexibleDateCalendar({
   const CustomDayButton = ({ day, modifiers, ...buttonProps }: any) => {
     const date = day.date;
     const dateStr = format(date, 'yyyy-MM-dd');
-    const dateRange = findDateRangeForDate(dateStr);
-    const isDisabled = modifiers.disabled;
+    const blockReason = getBlockReason(date);
+    const isDisabled = modifiers.disabled || blockReason !== null;
     const isSelected = modifiers.selected;
-    const isSoldOut = dateRange?.isSoldOut;
+    // Surcharge dates are presented to travellers the same way as sold out dates
+    const isSoldOut = blockReason === 'sold-out' || blockReason === 'surcharge';
 
     // Desktop only: Show tooltip on hover
     const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (isTouchDevice) return; // No tooltip on touch devices
-      if (!isDisabled && !isSoldOut && dateRange) {
+      if (!isDisabled) {
         setHoveredDate(dateStr);
         const rect = e.currentTarget.getBoundingClientRect();
         const scrollX = window.scrollX || window.pageXOffset;
@@ -254,108 +192,36 @@ export default function FlexibleDateCalendar({
     };
 
     // Determine what to show below the date
-    // Priority: Sold Out > Available (price) > N/A
+    // Priority: Sold Out (incl. surcharge dates) > Available (price) > N/A
     let statusDisplay: React.ReactNode = null;
-    
-    // First check if date is in a range (regardless of disabled status)
-    if (dateRange) {
-      if (isSoldOut) {
-        // Show "Sold Out" if date is in a sold-out range
-        statusDisplay = <span className="flexible-day-soldout">Sold Out</span>;
-      } else if (!isDisabled) {
-        // Show price if date is available and not disabled (not past, not within 6 days, etc.)
-        statusDisplay = (
-          <span className="flexible-day-price">
-            {dateRange.adultPrice > 0 ? `${dateRange.adultPrice}` : 'Free'}
-          </span>
-        );
-      } else {
-        // Date is in range but disabled (past, within 6 days, etc.) - show N/A
-        statusDisplay = <span className="flexible-day-na">N/A</span>;
-      }
-    } else if (isDisabled) {
-      // Date is not in any range and is disabled - show N/A
+
+    if (isSoldOut) {
+      statusDisplay = <span className="flexible-day-soldout">Sold Out</span>;
+    } else if (!isDisabled) {
+      const price = Number(adultPrice) || 0;
+      statusDisplay = (
+        <span className="flexible-day-price">
+          {price > 0 ? `${price}` : 'Free'}
+        </span>
+      );
+    } else {
+      // Past dates, the booking lead window, or dates after the package end date
       statusDisplay = <span className="flexible-day-na">N/A</span>;
     }
 
     return (
       <button
         {...buttonProps}
-        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled || isSoldOut ? 'disabled' : ''} ${isSoldOut ? 'sold-out' : ''}`}
+        className={`flexible-day-button ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''} ${isSoldOut ? 'sold-out' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        disabled={isDisabled || isSoldOut}
+        disabled={isDisabled}
       >
         <span className="flexible-day-number">{date.getDate()}</span>
         {statusDisplay}
       </button>
     );
   };
-
-  // Show message if no date ranges are configured
-  if (!normalizedDateRanges || normalizedDateRanges.length === 0) {
-    return (
-      <div className='flexible-date-calendar-wrapper'>
-        <div className='flexible-calendar-header-nav'>
-          <button
-            className='flexible-calendar-nav-button'
-            disabled={true}
-            onClick={e => {
-              e.stopPropagation();
-            }}
-            style={{ opacity: 0.3, cursor: 'not-allowed' }}
-          >
-            ‹
-          </button>
-          <button
-            className='flexible-calendar-nav-button'
-            disabled={!canNavigateNext}
-            onClick={e => {
-              e.stopPropagation();
-              if (canNavigateNext) {
-                const newMonth = new Date(month);
-                newMonth.setMonth(newMonth.getMonth() + 1);
-                onMonthChange(newMonth);
-              }
-            }}
-            style={{ opacity: canNavigateNext ? 1 : 0.3, cursor: canNavigateNext ? 'pointer' : 'not-allowed' }}
-          >
-            ›
-          </button>
-        </div>
-        <DayPicker
-          mode='single'
-          selected={selectedDate}
-          onSelect={onDateSelect}
-          disabled={() => true}
-          numberOfMonths={1}
-          showOutsideDays={true}
-          month={month}
-          onMonthChange={onMonthChange}
-          fromMonth={minNavigationMonth}
-          toMonth={maxNavigationMonth || undefined}
-          className='flexible-date-calendar'
-          modifiersClassNames={{
-            disabled: 'rdp-day_unavailable',
-          }}
-        />
-        <div className='flexible-calendar-no-dates'>
-          No dates available. Please contact support.
-        </div>
-        <div className='flexible-calendar-footer'>
-          <button
-            className='flexible-clear-dates-button'
-            onClick={e => {
-              e.stopPropagation();
-              onDateSelect(undefined);
-            }}
-          >
-            Clear dates
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className='flexible-date-calendar-wrapper'>

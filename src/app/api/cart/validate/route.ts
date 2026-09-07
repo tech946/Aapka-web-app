@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAgentSession } from '@/lib/agent-session';
 import { normalizeAcceptPayment } from '@/lib/package-payment';
+import { usesFlexibleDatePackages } from '@/lib/package-config';
+import { getAnyDateBlockReason } from '@/lib/anydate-availability';
+import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
+import { parseDateStringToLocal } from '@/lib/utils';
 import {
   MARINA_CRUISE_SLUG,
   calcMarinaAddonsPrice,
@@ -340,11 +344,20 @@ export async function POST(req: NextRequest) {
       const result = await supabaseAdmin
         .from('packages')
         .select(
-          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, solo_traveller_only, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment'
+          'package_id, package_name, package_price, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, solo_traveller_only, with_visa, adult_visa_price, child_visa_price, infant_visa_price, package_nights, package_days, thumbnail_image, date_ranges, end_date, surcharge_block_days_before, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment'
         )
         .in('package_id', packageIds);
       packages = result.data;
       fetchError = result.error;
+    }
+
+    /* Hotel surcharge windows, needed only when the cart holds an any-date package */
+    let surcharges: SurchargeMasterEntry[] = [];
+    if (regularItems.some(i => usesFlexibleDatePackages(i.categorySlug || ''))) {
+      const { data: surchargeRows } = await supabaseAdmin
+        .from('surcharge_master')
+        .select('id, price, from_date, to_date');
+      surcharges = (surchargeRows as SurchargeMasterEntry[] | null) ?? [];
     }
 
     const marinaPackagesMap = new Map<string, Record<string, unknown>>();
@@ -487,6 +500,43 @@ export async function POST(req: NextRequest) {
       // Check if discount is active (only for non-flexible date packages)
       const discountActive = isDiscountActive(pkg);
 
+      /* Any-date packages: any date is bookable except the lead window, dates past
+         the package end date, sold out ranges, and hotel surcharge dates (plus the
+         configured days before each surcharge). Mirrors the booking calendar. */
+      const isAnyDatePackage = usesFlexibleDatePackages(item.categorySlug || '');
+      if (isAnyDatePackage) {
+        if (!item.selectedDate) {
+          return {
+            packageId: item.packageId,
+            valid: false,
+            error: 'Date is required',
+          };
+        }
+
+        const travelDate = parseDateStringToLocal(
+          item.selectedDate.split('T')[0]
+        );
+        const blockReason = travelDate
+          ? getAnyDateBlockReason(travelDate, {
+              soldOutRanges: pkg.date_ranges,
+              surcharges,
+              surchargeBlockDaysBefore: pkg.surcharge_block_days_before,
+              endDate: pkg.end_date,
+            })
+          : 'past';
+
+        if (blockReason) {
+          return {
+            packageId: item.packageId,
+            valid: false,
+            error:
+              blockReason === 'sold-out' || blockReason === 'surcharge'
+                ? 'Date not available'
+                : 'Invalid date',
+          };
+        }
+      }
+
       // Get date-specific pricing from date_ranges if a date is selected (for flexible date packages)
       // For tours/offer packages, even if selectedDate exists (from travel_dates), use columns
       let adultPrice = 0;
@@ -495,8 +545,26 @@ export async function POST(req: NextRequest) {
       let soloTravellerPrice: number | null = null;
       let usePackagePriceAsFlatRate = false; // Flag to use package_price directly
       let isFlexibleDatePackage = false; // Flag to identify flexible date packages
-      
-      if (item.selectedDate) {
+
+      if (isAnyDatePackage) {
+        /* Any-date packages price from their own columns - date_ranges now only
+           carry sold out windows, and those dates were rejected above. */
+        isFlexibleDatePackage = true;
+        const hasPerPersonPricing =
+          pkg.adult_price != null ||
+          pkg.child_price != null ||
+          pkg.infant_price != null;
+
+        if (hasPerPersonPricing) {
+          adultPrice = pkg.adult_price ?? 0;
+          childPrice = pkg.child_price ?? 0;
+          infantPrice = pkg.infant_price ?? 0;
+        } else {
+          usePackagePriceAsFlatRate = true;
+        }
+        // Matches the details page, which falls back to the adult price
+        soloTravellerPrice = pkg.solo_traveller_price ?? pkg.adult_price ?? null;
+      } else if (item.selectedDate) {
         // Check if this is a flexible date package by looking for the date in date_ranges
         const dateStr = item.selectedDate.split('T')[0];
         const dateRange = findDateRangeForDate(pkg.date_ranges, dateStr);

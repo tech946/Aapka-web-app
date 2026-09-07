@@ -27,7 +27,6 @@ import { DayPicker } from 'react-day-picker';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import {
   usesBookingSlots,
-  usesFlexibleDatePackages,
   getTourFixedBookingDates,
   getTourDefaultFixedBookingDate,
   getTourDefaultWeekendRangeDate,
@@ -49,14 +48,13 @@ import {
   initializeExchangeRate,
   type UserLocation,
 } from '@/lib/location-utils';
-import {
-  parseDateStringToLocal,
-  getEarliestAvailableDateMonth,
-} from '@/lib/utils';
+import { parseDateStringToLocal } from '@/lib/utils';
 import {
   getOfferPackageTravelDates,
-  isDateBeyondBookingLeadTime,
+  MIN_BOOKING_LEAD_DAYS,
 } from '@/lib/offer-package-dates';
+import { getAnyDateBlockReason } from '@/lib/anydate-availability';
+import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
 import {
   shouldShowOptionalVisaInBookingModal,
@@ -133,8 +131,10 @@ interface Package {
     toDate: string;
   }> | null;
   booking_days?: number[] | null;
-  // Date ranges for flexible date packages (stored as JSONB in packages table)
+  /* Any-date packages: only the entries flagged `isSoldOut` are still used —
+     pricing comes from the package's own adult/child/infant prices. */
   date_ranges?: DateRange[] | null;
+  surcharge_block_days_before?: number | null;
   end_date?: string | null;
   thumbnail_image?: string | null;
   gallery?: string[] | null;
@@ -153,6 +153,7 @@ export default function PackageDetailsPage() {
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRangesReady, setDateRangesReady] = useState(false);
+  const [surcharges, setSurcharges] = useState<SurchargeMasterEntry[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [category, setCategory] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -420,17 +421,10 @@ export default function PackageDetailsPage() {
     }
   }, [pkg?.package_category_id]);
 
-  // Set month to earliest available date when flexible date package loads
+  // Any-date packages open on the month holding the first bookable date
   // But only if no date is selected from URL params
   useEffect(() => {
-    if (
-      slug === 'flexible-date-packages' &&
-      pkg &&
-      pkg.package_id &&
-      pkg.date_ranges &&
-      Array.isArray(pkg.date_ranges) &&
-      pkg.date_ranges.length > 0
-    ) {
+    if (slug === 'flexible-date-packages' && pkg && pkg.package_id) {
       // Check if there's a date in URL params - if so, don't override the month
       const dateParam = searchParams.get('date');
       if (dateParam) {
@@ -438,52 +432,36 @@ export default function PackageDetailsPage() {
         return;
       }
 
-      const earliestMonth = getEarliestAvailableDateMonth(pkg.date_ranges);
-      if (earliestMonth) {
-        setMonth(earliestMonth);
-      }
+      const firstBookable = startOfDay(new Date());
+      firstBookable.setDate(firstBookable.getDate() + MIN_BOOKING_LEAD_DAYS + 1);
+      setMonth(
+        new Date(firstBookable.getFullYear(), firstBookable.getMonth(), 1)
+      );
     }
-  }, [slug, pkg?.package_id, pkg?.date_ranges, searchParams]);
+  }, [slug, pkg?.package_id, searchParams]);
 
-  // Helper function to find the date range that contains a given date
-  const findDateRangeForDate = useCallback(
-    (dateStr: string): DateRange | null => {
-      if (!pkg?.date_ranges || !Array.isArray(pkg.date_ranges)) return null;
-      const targetDate = new Date(dateStr);
-      targetDate.setHours(0, 0, 0, 0); // Normalize to midnight for accurate comparison
+  // Hotel surcharge ranges - these and the days before them are unbookable on any-date packages
+  useEffect(() => {
+    if (slug !== 'flexible-date-packages') return;
+    let cancelled = false;
 
-      // First check for sold out ranges (they take priority)
-      for (const range of pkg.date_ranges) {
-        if (!range.isSoldOut) continue;
-        const fromDate = new Date(range.fromDate);
-        const toDate = new Date(range.toDate);
-        fromDate.setHours(0, 0, 0, 0);
-        toDate.setHours(0, 0, 0, 0);
-
-        if (targetDate >= fromDate && targetDate <= toDate) {
-          return range; // Return sold out range immediately
+    const fetchSurcharges = async () => {
+      try {
+        const response = await fetch('/api/surcharge-master?limit=100&page=1');
+        const result = await response.json();
+        if (!cancelled && Array.isArray(result?.data)) {
+          setSurcharges(result.data);
         }
+      } catch (error) {
+        console.error('Failed to fetch surcharges:', error);
       }
+    };
 
-      // Then check for regular (non-sold-out) ranges
-      for (const range of pkg.date_ranges) {
-        if (range.isSoldOut) continue; // Skip sold out ranges (already checked)
-        const fromDate = new Date(range.fromDate);
-        const toDate = new Date(range.toDate);
-        fromDate.setHours(0, 0, 0, 0);
-        toDate.setHours(0, 0, 0, 0);
-
-        if (targetDate >= fromDate && targetDate <= toDate) {
-          return range;
-        }
-      }
-      return null;
-    },
-    [pkg?.date_ranges]
-  );
-
-  // Note: Flexible date data now comes from pkg.date_ranges (JSONB column in packages table)
-  // No separate API fetch needed
+    fetchSurcharges();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   // Check if discount is active and calculate time left
   useEffect(() => {
@@ -579,70 +557,16 @@ export default function PackageDetailsPage() {
     initialize();
   }, []);
 
-  // Get flexible date info from date_ranges - finds the range that contains the given date
-  // Always show actual prices from date ranges
-  const getFlexibleDateInfo = useCallback(
-    (
-      dateStr: string
-    ): {
-      adult_price: number;
-      child_price: number;
-      infant_price: number;
-      solo_traveller_price?: number | null;
-      is_sold_out: boolean;
-    } | null => {
-      const range = findDateRangeForDate(dateStr);
-      if (!range) return null;
-      // Always return actual prices from date ranges - no modification based on referral
-      return {
-        adult_price: range.adultPrice,
-        child_price: range.childPrice,
-        infant_price: range.infantPrice,
-        solo_traveller_price: range.soloTravellerPrice,
-        is_sold_out: range.isSoldOut,
-      };
-    },
-    [findDateRangeForDate]
-  );
-
-  // Get available dates - always show all dates from date ranges
+  // Get available dates - the fixed date list used by dropdown-style categories
   const getAvailableDates = useCallback((): string[] => {
-    // For flexible date packages, generate all dates within the configured date ranges
-    // Include ALL dates (both available and sold out) - the calendar will handle showing sold out status
-    if (
-      slug === 'flexible-date-packages' &&
-      pkg?.date_ranges &&
-      pkg.date_ranges.length > 0
-    ) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const allDates: string[] = [];
-
-      // Include ALL date ranges (both available and sold out)
-      // The calendar component will handle showing sold out status
-      for (const range of pkg.date_ranges) {
-        const fromDate = new Date(range.fromDate);
-        const toDate = new Date(range.toDate);
-        fromDate.setHours(0, 0, 0, 0);
-        toDate.setHours(0, 0, 0, 0);
-
-        // Generate all dates in this range (including sold out ranges)
-        const currentDate = new Date(fromDate);
-        while (currentDate <= toDate) {
-          const dateStr = format(currentDate, 'yyyy-MM-dd');
-          if (isDateBeyondBookingLeadTime(dateStr)) {
-            allDates.push(dateStr);
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      }
-
-      return [...new Set(allDates)].sort(); // Remove duplicates and sort
+    /* Any-date packages have no fixed list of dates: the calendar decides what is
+       bookable, so there is nothing to enumerate here. */
+    if (slug === 'flexible-date-packages') {
+      return [];
     }
 
     return getOfferPackageTravelDates(pkg?.travel_dates ?? null);
-  }, [pkg?.travel_dates, slug, pkg?.date_ranges]);
+  }, [pkg?.travel_dates, slug]);
 
   const isPackageType = (): boolean => {
     return category?.packagetypeid === 1;
@@ -651,15 +575,6 @@ export default function PackageDetailsPage() {
   // Read query parameters and initialize state
   useEffect(() => {
     if (!pkg) return; // Wait for package to load
-    // For flexible date packages, also wait for date_ranges to be loaded
-    if (
-      slug === 'flexible-date-packages' &&
-      (!pkg.date_ranges ||
-        !Array.isArray(pkg.date_ranges) ||
-        pkg.date_ranges.length === 0)
-    ) {
-      return; // Wait for date ranges to be available
-    }
 
     const dateParam = searchParams.get('date');
     const adultsParam = searchParams.get('adults');
@@ -738,38 +653,6 @@ export default function PackageDetailsPage() {
     return visaTotal;
   }, [pkg, withVisa, visaForAdults, visaForChildren, visaForInfants]);
 
-  // Get the minimum prices from all available date ranges (for showing "starting from" price)
-  const getMinPricesFromRanges = useCallback((): {
-    adultPrice: number;
-    childPrice: number;
-    infantPrice: number;
-    soloTravellerPrice?: number | null;
-  } | null => {
-    if (
-      !pkg?.date_ranges ||
-      !Array.isArray(pkg.date_ranges) ||
-      pkg.date_ranges.length === 0
-    ) {
-      return null;
-    }
-    // Find the minimum adult price from non-sold-out ranges
-    const availableRanges = pkg.date_ranges.filter(r => !r.isSoldOut);
-    if (availableRanges.length === 0) return null;
-
-    // Get the range with minimum adult price
-    const minRange = availableRanges.reduce(
-      (min, range) => (range.adultPrice < min.adultPrice ? range : min),
-      availableRanges[0]
-    );
-
-    return {
-      adultPrice: minRange.adultPrice || 0,
-      childPrice: minRange.childPrice || 0,
-      infantPrice: minRange.infantPrice || 0,
-      soloTravellerPrice: minRange.soloTravellerPrice,
-    };
-  }, [pkg?.date_ranges]);
-
   // Get prices for selected date (for flexible date packages) or package base prices
   // The discount is applied AFTER getting these base prices, not here
   const getPricesForDate = useCallback((): {
@@ -785,74 +668,14 @@ export default function PackageDetailsPage() {
       soloTravellerPrice?: number | null;
     };
 
-    // For flexible date packages, use date-specific pricing from date_ranges
-    // Always return actual prices from date ranges
-    if (slug === 'flexible-date-packages') {
-      // Check if date is selected (either as string or Date object)
-      const dateToCheck =
-        selectedDateString ||
-        (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null);
-
-      if (dateToCheck) {
-        const dateInfo = getFlexibleDateInfo(dateToCheck);
-        if (dateInfo) {
-          // Use prices from the date range that contains this date
-          // These are the actual prices - discount will be applied later if applicable
-          basePrices = {
-            adultPrice: dateInfo.adult_price || 0,
-            childPrice: dateInfo.child_price || 0,
-            infantPrice: dateInfo.infant_price || 0,
-            soloTravellerPrice: dateInfo.solo_traveller_price,
-          };
-        } else {
-          // If no date selected, show minimum price from available ranges as "starting from" price
-          const minPrices = getMinPricesFromRanges();
-          if (minPrices) {
-            basePrices = {
-              adultPrice: minPrices.adultPrice,
-              childPrice: minPrices.childPrice,
-              infantPrice: minPrices.infantPrice,
-              soloTravellerPrice: minPrices.soloTravellerPrice,
-            };
-          } else {
-            // Fallback to 0 if no ranges available
-            basePrices = {
-              adultPrice: 0,
-              childPrice: 0,
-              infantPrice: 0,
-              soloTravellerPrice: null,
-            };
-          }
-        }
-      } else {
-        // If no date selected, show minimum price from available ranges as "starting from" price
-        const minPrices = getMinPricesFromRanges();
-        if (minPrices) {
-          basePrices = {
-            adultPrice: minPrices.adultPrice,
-            childPrice: minPrices.childPrice,
-            infantPrice: minPrices.infantPrice,
-            soloTravellerPrice: minPrices.soloTravellerPrice,
-          };
-        } else {
-          // Fallback to 0 if no ranges available
-          basePrices = {
-            adultPrice: 0,
-            childPrice: 0,
-            infantPrice: 0,
-            soloTravellerPrice: null,
-          };
-        }
-      }
-    } else {
-      // For non-flexible date packages, use package base prices
-      basePrices = {
-        adultPrice: pkg?.adult_price || 0,
-        childPrice: pkg?.child_price || 0,
-        infantPrice: pkg?.infant_price || 0,
-        soloTravellerPrice: pkg?.solo_traveller_price || null,
-      };
-    }
+    /* Every category - any-date packages included - prices from the package's own
+       per-person columns. Any-date packages no longer carry per-range pricing. */
+    basePrices = {
+      adultPrice: pkg?.adult_price || 0,
+      childPrice: pkg?.child_price || 0,
+      infantPrice: pkg?.infant_price || 0,
+      soloTravellerPrice: pkg?.solo_traveller_price || null,
+    };
 
     // Apply deal prices if active deal exists
     if (pkg?.active_deal) {
@@ -885,16 +708,7 @@ export default function PackageDetailsPage() {
     }
 
     return basePrices;
-  }, [
-    slug,
-    selectedDateString,
-    selectedDate,
-    pkg,
-    pkg?.date_ranges,
-    pkg?.active_deal,
-    getFlexibleDateInfo,
-    getMinPricesFromRanges,
-  ]);
+  }, [pkg, pkg?.active_deal]);
 
   // Calculate original price (without discount)
   const getOriginalPrice = useCallback((): number | null => {
@@ -992,7 +806,6 @@ export default function PackageDetailsPage() {
     // This should only happen for non-flexible date packages
     if (
       totalPrice === 0 &&
-      slug !== 'flexible-date-packages' &&
       !pkg.adult_price &&
       !pkg.child_price &&
       !pkg.infant_price
@@ -1154,24 +967,16 @@ export default function PackageDetailsPage() {
     }
   };
 
-  // Watch for date_ranges to become available (for flexible date packages)
+  // Any-date packages no longer depend on configured ranges, so the calendar is
+  // ready as soon as the package itself is loaded
   useEffect(() => {
     if (slug === 'flexible-date-packages') {
-      if (
-        pkg &&
-        pkg.date_ranges &&
-        Array.isArray(pkg.date_ranges) &&
-        pkg.date_ranges.length > 0
-      ) {
-        setDateRangesReady(true);
-      } else {
-        setDateRangesReady(false);
-      }
+      setDateRangesReady(Boolean(pkg?.package_id));
     } else {
       // For non-flexible packages, mark as ready immediately
       setDateRangesReady(true);
     }
-  }, [slug, pkg?.date_ranges, pkg?.package_id]);
+  }, [slug, pkg?.package_id]);
 
   // Pre-select default date for tours with special booking rules
   useEffect(() => {
@@ -1345,22 +1150,18 @@ export default function PackageDetailsPage() {
       }
     }
 
-    // For flexible date packages, check if date falls within a valid date range
-    // Always use actual sold out status from date ranges - no modification based on referral
+    /* Any-date packages: every date is bookable except the lead window, dates past
+       the package end date, dates marked sold out, and hotel surcharge dates
+       (plus the configured days before each surcharge starts). */
     if (slug === 'flexible-date-packages') {
-      // Disable dates after package end_date
-      if (pkg?.end_date) {
-        const endDate = startOfDay(
-          parseDateStringToLocal(pkg.end_date) || new Date(pkg.end_date)
-        );
-        if (checkDate > endDate) return true;
-      }
-
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const dateInfo = getFlexibleDateInfo(dateStr);
-      if (!dateInfo) return true; // Disable if date is not within any date range
-      if (dateInfo.is_sold_out) return true; // Disable if the range is sold out - same for all users
-      return false;
+      return (
+        getAnyDateBlockReason(date, {
+          soldOutRanges: pkg?.date_ranges,
+          surcharges,
+          surchargeBlockDaysBefore: pkg?.surcharge_block_days_before,
+          endDate: pkg?.end_date,
+        }) !== null
+      );
     }
 
     // Only check booking slots and booking days for UAE tours - use slug from URL params
@@ -1419,6 +1220,29 @@ export default function PackageDetailsPage() {
     if (!dateToUse) {
       toast.error('Please select a date');
       return;
+    }
+
+    /* Any-date packages: re-check the date, since a `?date=` query parameter can
+       put a blocked date into state without going through the calendar. */
+    if (slug === 'flexible-date-packages') {
+      const parsedDate = parseDateStringToLocal(dateToUse);
+      const blockReason = parsedDate
+        ? getAnyDateBlockReason(parsedDate, {
+            soldOutRanges: pkg.date_ranges,
+            surcharges,
+            surchargeBlockDaysBefore: pkg.surcharge_block_days_before,
+            endDate: pkg.end_date,
+          })
+        : 'past';
+
+      if (blockReason) {
+        toast.error(
+          blockReason === 'sold-out' || blockReason === 'surcharge'
+            ? 'This date is not available. Please pick another date.'
+            : 'Please select a valid travel date'
+        );
+        return;
+      }
     }
 
     // Get minimum adults requirement from package (default to 1)

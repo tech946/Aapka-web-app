@@ -13,6 +13,10 @@ import {
 } from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
 import {
+  DEFAULT_SURCHARGE_BLOCK_DAYS_BEFORE,
+  normalizeSurchargeBlockDaysBefore,
+} from '@/lib/anydate-availability';
+import {
   DEFAULT_ACCEPT_PAYMENT,
   type AcceptPayment,
 } from '@/lib/package-payment';
@@ -72,6 +76,9 @@ export default function AddPackageClient({
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  // Any-date packages: days before a hotel surcharge that are also unbookable
+  const [surchargeBlockDaysBefore, setSurchargeBlockDaysBefore] =
+    useState<string>(String(DEFAULT_SURCHARGE_BLOCK_DAYS_BEFORE));
   const [soloTravellerEnabled, setSoloTravellerEnabled] = useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
   const [soloTravellerOnly, setSoloTravellerOnly] = useState<boolean>(false);
@@ -734,13 +741,9 @@ export default function AddPackageClient({
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
                   dateRanges={dateRanges}
-                  onDateRangesChange={(newRanges) => {
-                    console.log('AddPackageClient received dateRanges update:', JSON.stringify(newRanges, null, 2));
-                    setDateRanges(newRanges);
-                  }}
-                  defaultAdultPrice={adultPrice || price}
-                  defaultChildPrice={childPrice || price}
-                  defaultInfantPrice={infantPrice || price}
+                  onDateRangesChange={setDateRanges}
+                  surchargeBlockDaysBefore={surchargeBlockDaysBefore}
+                  onSurchargeBlockDaysBeforeChange={setSurchargeBlockDaysBefore}
                 />
               ) : (
                 <div className='form_row full_width'>
@@ -806,13 +809,12 @@ export default function AddPackageClient({
             </div>
           </div>
 
-          {/* Pricing Section - Hidden for flexible date packages */}
-          {!usesFlexibleDate && (
+          {/* Pricing Section - any-date packages price from these columns too */}
           <div className='form_section'>
             <h5 className='section_title'>Pricing</h5>
             <div className='form_grid pricing_grid'>
               <div className='form_row'>
-                <label>Base Price *</label>
+                <label>{usesFlexibleDate ? 'Base Price' : 'Base Price *'}</label>
                 <input
                   type='text'
                   inputMode='numeric'
@@ -828,7 +830,7 @@ export default function AddPackageClient({
               </div>
 
               <div className='form_row'>
-                <label>Adult Price</label>
+                <label>{usesFlexibleDate ? 'Adult Price *' : 'Adult Price'}</label>
                 <input
                   type='text'
                   inputMode='numeric'
@@ -971,7 +973,6 @@ export default function AddPackageClient({
               )}
             </div>
           </div>
-          )}
 
           {/* Solo Traveller Option for Flexible Date Packages */}
           {usesFlexibleDate && (
@@ -989,6 +990,23 @@ export default function AddPackageClient({
                   Enable Solo Traveller Option
                 </label>
               </div>
+              {soloTravellerEnabled && (
+                <div className='form_row'>
+                  <label>Solo Traveller Price</label>
+                  <input
+                    type='text'
+                    inputMode='numeric'
+                    value={soloTravellerPrice}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setSoloTravellerPrice(val);
+                      }
+                    }}
+                    placeholder='Solo traveller price'
+                  />
+                </div>
+              )}
             </div>
           </div>
           )}
@@ -1418,18 +1436,19 @@ export default function AddPackageClient({
                 }
               }
               
-              // Validate flexible date packages have at least one date range
+              /* Any-date packages are bookable on any date, so there are no ranges
+                 to validate - but they do need a price to sell at. */
               if (usesFlexibleDate) {
-                if (!dateRanges || dateRanges.length === 0) {
-                  toast.error('At least one date range is required for flexible date packages');
-                  return;
-                }
-                // Also validate that each date range has valid adult price
-                const invalidRange = dateRanges.find(
-                  range => !range.adultPrice || Number.isNaN(Number(range.adultPrice)) || Number(range.adultPrice) <= 0
-                );
-                if (invalidRange) {
-                  toast.error('All date ranges must have a valid adult price');
+                const hasAdultPrice =
+                  adultPrice.trim() !== '' &&
+                  !Number.isNaN(Number(adultPrice)) &&
+                  Number(adultPrice) > 0;
+                const hasBasePrice =
+                  price.trim() !== '' &&
+                  !Number.isNaN(Number(price)) &&
+                  Number(price) > 0;
+                if (!hasAdultPrice && !hasBasePrice) {
+                  toast.error('Adult price is required for any-date packages');
                   return;
                 }
               }
@@ -1438,19 +1457,21 @@ export default function AddPackageClient({
               
               try {
                   
-                  // Prepare date ranges payload for flexible date packages
-                  const dateRangesPayload = usesFlexibleDate ? dateRanges.map((d: any) => ({
-                    id: d.id,
-                    fromDate: d.fromDate,
-                    toDate: d.toDate,
-                    adultPrice: d.adultPrice,
-                    childPrice: d.childPrice,
-                    infantPrice: d.infantPrice,
-                    soloTravellerPrice: d.soloTravellerPrice ?? null,
-                    isSoldOut: d.isSoldOut,
-                  })) : [];
-                  console.log('AddPackage: dateRanges state:', dateRanges);
-                  console.log('AddPackage: dateRangesPayload:', dateRangesPayload);
+                  /* Any-date packages store only the sold out ranges here */
+                  const dateRangesPayload = usesFlexibleDate
+                    ? dateRanges
+                        .filter(d => d.isSoldOut)
+                        .map(d => ({
+                          id: d.id,
+                          fromDate: d.fromDate,
+                          toDate: d.toDate,
+                          adultPrice: 0,
+                          childPrice: 0,
+                          infantPrice: 0,
+                          soloTravellerPrice: null,
+                          isSoldOut: true,
+                        }))
+                    : [];
 
                   const payload: any = {
                     name: name.trim(),
@@ -1506,9 +1527,11 @@ export default function AddPackageClient({
                     payload.booking_days = bookingDays;
                     payload.pickup_location = pickupLocation.trim() || null;
                   } else if (usesFlexibleDate) {
-                    // Always include date_ranges for flexible date packages (even if empty, validation will catch it)
+                    // Sold out ranges only - any other date is bookable
                     payload.date_ranges = dateRangesPayload;
                     payload.end_date = endDate || undefined;
+                    payload.surcharge_block_days_before =
+                      normalizeSurchargeBlockDaysBefore(surchargeBlockDaysBefore);
                   } else {
                     payload.travel_dates = travelDates.length > 0 ? travelDates : [];
                   }

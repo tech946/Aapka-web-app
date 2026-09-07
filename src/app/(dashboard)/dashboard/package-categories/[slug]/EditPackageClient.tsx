@@ -13,6 +13,10 @@ import {
 } from '@/lib/supabase-storage';
 import { usesBookingSlots, usesFlexibleDatePackages, supportsListingPageToggle } from '@/lib/package-config';
 import {
+  DEFAULT_SURCHARGE_BLOCK_DAYS_BEFORE,
+  normalizeSurchargeBlockDaysBefore,
+} from '@/lib/anydate-availability';
+import {
   DEFAULT_ACCEPT_PAYMENT,
   normalizeAcceptPayment,
   type AcceptPayment,
@@ -69,6 +73,7 @@ type Pkg = {
   agent_discount?: number | null;
   accept_payment?: string | null;
   min_adults?: number | null;
+  surcharge_block_days_before?: number | null;
   terms_html?: string | null;
   inclusion_html?: string | null;
   exclusion_html?: string | null;
@@ -135,6 +140,9 @@ export default function EditPackageClient({
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  // Any-date packages: days before a hotel surcharge that are also unbookable
+  const [surchargeBlockDaysBefore, setSurchargeBlockDaysBefore] =
+    useState<string>(String(DEFAULT_SURCHARGE_BLOCK_DAYS_BEFORE));
   const [soloTravellerEnabled, setSoloTravellerEnabled] =
     useState<boolean>(false);
   const [soloTravellerPrice, setSoloTravellerPrice] = useState<string>('');
@@ -273,6 +281,7 @@ export default function EditPackageClient({
     setBookingDays(form.bookingDays);
     setPickupLocation(form.pickupLocation);
     setDateRanges(form.dateRanges);
+    setSurchargeBlockDaysBefore(form.surchargeBlockDaysBefore);
     setTravelDates(form.travelDates);
     setThumbnailImageUrl(form.thumbnailImageUrl);
     setOriginalThumbnailImageUrl(form.thumbnailImageUrl);
@@ -898,13 +907,9 @@ export default function EditPackageClient({
               ) : usesFlexibleDate ? (
                 <FlexibleDatePackageDates
                   dateRanges={dateRanges}
-                  onDateRangesChange={(newRanges) => {
-                    console.log('EditPackageClient received dateRanges update:', JSON.stringify(newRanges, null, 2));
-                    setDateRanges(newRanges);
-                  }}
-                  defaultAdultPrice={adultPrice || price}
-                  defaultChildPrice={childPrice || price}
-                  defaultInfantPrice={infantPrice || price}
+                  onDateRangesChange={setDateRanges}
+                  surchargeBlockDaysBefore={surchargeBlockDaysBefore}
+                  onSurchargeBlockDaysBeforeChange={setSurchargeBlockDaysBefore}
                 />
               ) : (
                 <div className='form_row full_width'>
@@ -970,13 +975,12 @@ export default function EditPackageClient({
             </div>
           </div>
 
-          {/* Pricing Section - Hidden for flexible date packages */}
-          {!usesFlexibleDate && (
+          {/* Pricing Section - any-date packages price from these columns too */}
           <div className='form_section'>
             <h5 className='section_title'>Pricing</h5>
             <div className='form_grid pricing_grid'>
               <div className='form_row'>
-                <label>Base Price *</label>
+                <label>{usesFlexibleDate ? 'Base Price' : 'Base Price *'}</label>
                 <input
                   type='text'
                   inputMode='numeric'
@@ -992,7 +996,7 @@ export default function EditPackageClient({
               </div>
 
               <div className='form_row'>
-                <label>Adult Price</label>
+                <label>{usesFlexibleDate ? 'Adult Price *' : 'Adult Price'}</label>
                 <input
                   type='text'
                   inputMode='numeric'
@@ -1135,7 +1139,6 @@ export default function EditPackageClient({
               )}
             </div>
           </div>
-          )}
 
           {/* Solo Traveller Option for Flexible Date Packages */}
           {usesFlexibleDate && (
@@ -1153,6 +1156,23 @@ export default function EditPackageClient({
                   Enable Solo Traveller Option
                 </label>
               </div>
+              {soloTravellerEnabled && (
+                <div className='form_row'>
+                  <label>Solo Traveller Price</label>
+                  <input
+                    type='text'
+                    inputMode='numeric'
+                    value={soloTravellerPrice}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setSoloTravellerPrice(val);
+                      }
+                    }}
+                    placeholder='Solo traveller price'
+                  />
+                </div>
+              )}
             </div>
           </div>
           )}
@@ -1630,21 +1650,26 @@ export default function EditPackageClient({
                           }
                         : usesFlexibleDate
                           ? (() => {
-                              const mappedRanges = dateRanges.map((d: any) => ({
-                                id: d.id,
-                                fromDate: d.fromDate,
-                                toDate: d.toDate,
-                                adultPrice: d.adultPrice,
-                                childPrice: d.childPrice,
-                                infantPrice: d.infantPrice,
-                                soloTravellerPrice: d.soloTravellerPrice ?? null,
-                                isSoldOut: d.isSoldOut,
-                              }));
-                              console.log('EditPackage: dateRanges state:', dateRanges);
-                              console.log('EditPackage: mapped date_ranges:', mappedRanges);
-                              return { 
-                                date_ranges: mappedRanges, 
-                                end_date: endDate || undefined 
+                              /* Any-date packages store only the sold out ranges */
+                              const mappedRanges = dateRanges
+                                .filter(d => d.isSoldOut)
+                                .map(d => ({
+                                  id: d.id,
+                                  fromDate: d.fromDate,
+                                  toDate: d.toDate,
+                                  adultPrice: 0,
+                                  childPrice: 0,
+                                  infantPrice: 0,
+                                  soloTravellerPrice: null,
+                                  isSoldOut: true,
+                                }));
+                              return {
+                                date_ranges: mappedRanges,
+                                end_date: endDate || undefined,
+                                surcharge_block_days_before:
+                                  normalizeSurchargeBlockDaysBefore(
+                                    surchargeBlockDaysBefore
+                                  ),
                               };
                             })()
                           : { travel_dates: travelDates }),
