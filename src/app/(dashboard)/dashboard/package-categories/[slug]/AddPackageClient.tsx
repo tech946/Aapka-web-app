@@ -75,6 +75,8 @@ export default function AddPackageClient({
   const [adultPrice, setAdultPrice] = useState<string>('');
   const [childPrice, setChildPrice] = useState<string>('');
   const [infantPrice, setInfantPrice] = useState<string>('');
+  // Any-date packages: earliest bookable travel date (blank = no lower bound)
+  const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   // Any-date packages: days before a hotel surcharge that are also unbookable
   const [surchargeBlockDaysBefore, setSurchargeBlockDaysBefore] =
@@ -1011,17 +1013,31 @@ export default function AddPackageClient({
           </div>
           )}
 
-          {/* End Date for Flexible Date Packages */}
+          {/* Bookable window for Flexible Date Packages */}
           {usesFlexibleDate && (
           <div className='form_section'>
-            <h5 className='section_title'>Package End Date</h5>
+            <h5 className='section_title'>Package Booking Window</h5>
             <div className='form_grid pricing_grid'>
+              <div className='form_row'>
+                <label>Start Date</label>
+                <input
+                  type='date'
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  max={endDate || undefined}
+                />
+                <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  Dates before this are closed in the booking calendar. Leave
+                  empty to allow any date from the booking lead time onwards.
+                </span>
+              </div>
               <div className='form_row'>
                 <label>End Date *</label>
                 <input
                   type='date'
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
+                  min={startDate || undefined}
                   required
                 />
               </div>
@@ -1529,6 +1545,7 @@ export default function AddPackageClient({
                   } else if (usesFlexibleDate) {
                     // Sold out ranges only - any other date is bookable
                     payload.date_ranges = dateRangesPayload;
+                    payload.start_date = startDate || null;
                     payload.end_date = endDate || undefined;
                     payload.surcharge_block_days_before =
                       normalizeSurchargeBlockDaysBefore(surchargeBlockDaysBefore);

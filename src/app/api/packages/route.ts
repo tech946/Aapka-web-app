@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('packages')
       .select(
-        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, end_date, travel_dates, booking_slots, booking_days, date_ranges, pickup_location, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, solo_traveller_only, solo_room_type, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment, min_adults, surcharge_block_days_before, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
+        'package_id, package_name, package_description, package_price, package_category_id, package_days, package_nights, start_date, end_date, travel_dates, booking_slots, booking_days, date_ranges, pickup_location, adult_price, child_price, infant_price, solo_traveller_enabled, solo_traveller_price, solo_traveller_only, solo_room_type, with_visa, adult_visa_price, child_visa_price, infant_visa_price, adult_discount_amount, child_discount_amount, infant_discount_amount, discount_start_date, discount_end_date, agent_discount, accept_payment, min_adults, surcharge_block_days_before, status, show_listing_page, terms_html, inclusion_html, exclusion_html, overview, holiday_description_html, itinerary, thumbnail_image, gallery, pdf_url, crm_package_id, created_at, package_categories!inner(name)',
         { count: 'exact' }
       )
       .range(from, to);
@@ -214,6 +214,7 @@ export async function POST(req: NextRequest) {
       dateRanges = body.date_ranges;
       console.log('POST: Received date_ranges:', JSON.stringify(dateRanges, null, 2));
     }
+    const startDate = body?.start_date !== undefined ? String(body.start_date).trim() || null : null;
     const endDate = body?.end_date !== undefined ? String(body.end_date).trim() || null : null;
     const adultPrice =
       body?.adult_price !== undefined
@@ -379,6 +380,7 @@ export async function POST(req: NextRequest) {
       package_category_id: categoryId,
       package_days: days,
       package_nights: nights,
+      start_date: startDate,
       end_date: endDate,
       adult_price: adultPrice,
       child_price: childPrice,
@@ -526,6 +528,8 @@ export async function PUT(req: NextRequest) {
         : undefined;
       console.log('PUT: Received date_ranges:', JSON.stringify(dateRangesUpdate, null, 2));
     }
+    const startDate =
+      body?.start_date !== undefined ? String(body.start_date).trim() || null : undefined;
     const endDate =
       body?.end_date !== undefined ? String(body.end_date).trim() || null : undefined;
     const adultPrice =
@@ -651,6 +655,7 @@ export async function PUT(req: NextRequest) {
     if (categoryId !== undefined) updates.package_category_id = categoryId;
     if (days !== undefined) updates.package_days = days;
     if (nights !== undefined) updates.package_nights = nights;
+    if (startDate !== undefined) updates.start_date = startDate;
     if (endDate !== undefined) updates.end_date = endDate;
     if (bookingDaysUpdate !== undefined) {
       updates.booking_days =

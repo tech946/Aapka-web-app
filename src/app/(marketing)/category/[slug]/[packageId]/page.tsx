@@ -53,7 +53,10 @@ import {
   getOfferPackageTravelDates,
   MIN_BOOKING_LEAD_DAYS,
 } from '@/lib/offer-package-dates';
-import { getAnyDateBlockReason } from '@/lib/anydate-availability';
+import {
+  getAnyDateBlockReason,
+  getAnyDateEarliestBookable,
+} from '@/lib/anydate-availability';
 import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
 import { isPackagePriceRevealingSoon } from '@/lib/package-pricing';
 import {
@@ -135,6 +138,7 @@ interface Package {
      pricing comes from the package's own adult/child/infant prices. */
   date_ranges?: DateRange[] | null;
   surcharge_block_days_before?: number | null;
+  start_date?: string | null;
   end_date?: string | null;
   thumbnail_image?: string | null;
   gallery?: string[] | null;
@@ -432,13 +436,12 @@ export default function PackageDetailsPage() {
         return;
       }
 
-      const firstBookable = startOfDay(new Date());
-      firstBookable.setDate(firstBookable.getDate() + MIN_BOOKING_LEAD_DAYS + 1);
+      const firstBookable = getAnyDateEarliestBookable(pkg.start_date);
       setMonth(
         new Date(firstBookable.getFullYear(), firstBookable.getMonth(), 1)
       );
     }
-  }, [slug, pkg?.package_id, searchParams]);
+  }, [slug, pkg?.package_id, pkg?.start_date, searchParams]);
 
   // Hotel surcharge ranges - these and the days before them are unbookable on any-date packages
   useEffect(() => {
@@ -1150,15 +1153,16 @@ export default function PackageDetailsPage() {
       }
     }
 
-    /* Any-date packages: every date is bookable except the lead window, dates past
-       the package end date, dates marked sold out, and hotel surcharge dates
-       (plus the configured days before each surcharge starts). */
+    /* Any-date packages: every date is bookable except the lead window, dates
+       outside the package start/end dates, dates marked sold out, and hotel
+       surcharge dates (plus the configured days before each surcharge starts). */
     if (slug === 'flexible-date-packages') {
       return (
         getAnyDateBlockReason(date, {
           soldOutRanges: pkg?.date_ranges,
           surcharges,
           surchargeBlockDaysBefore: pkg?.surcharge_block_days_before,
+          startDate: pkg?.start_date,
           endDate: pkg?.end_date,
         }) !== null
       );
@@ -1231,6 +1235,7 @@ export default function PackageDetailsPage() {
             soldOutRanges: pkg.date_ranges,
             surcharges,
             surchargeBlockDaysBefore: pkg.surcharge_block_days_before,
+            startDate: pkg.start_date,
             endDate: pkg.end_date,
           })
         : 'past';
@@ -1487,14 +1492,13 @@ export default function PackageDetailsPage() {
       }
     };
 
-    // Use mousedown for desktop and touchstart for mobile
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside, {
-      passive: true,
-    });
+    /* Closes on click, not mousedown: collapsing a dropdown on mousedown re-flows
+       the centred booking modal, moving the control out from under the cursor so
+       the release never reaches it and the toggle is lost. Waiting for the click
+       lets the control fire first. `click` covers touch too. */
+    document.addEventListener('click', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 

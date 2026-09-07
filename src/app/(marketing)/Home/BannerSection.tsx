@@ -22,7 +22,7 @@ import {
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { generateShortSlug, parseDateStringToLocal } from '@/lib/utils';
-import { MIN_BOOKING_LEAD_DAYS } from '@/lib/offer-package-dates';
+import { getAnyDateEarliestBookable } from '@/lib/anydate-availability';
 import {
   usesFlexibleDatePackagesByName,
   usesBookingSlotsByName,
@@ -62,6 +62,7 @@ interface Package {
   package_nights?: number | null;
   travel_dates?: Array<{ id: string; value: string }> | string[] | null;
   date_ranges?: DateRange[] | null;
+  start_date?: string | null;
   end_date?: string | null;
   agent_discount?: number | null;
   adult_price?: number | null;
@@ -190,9 +191,7 @@ export default function BannerSection() {
     setSelectedDateString('');
     /* Any-date packages open on the month holding the first bookable date */
     if (isFlexibleDatePackage()) {
-      const firstBookable = new Date();
-      firstBookable.setHours(0, 0, 0, 0);
-      firstBookable.setDate(firstBookable.getDate() + MIN_BOOKING_LEAD_DAYS + 1);
+      const firstBookable = getAnyDateEarliestBookable(pkg.start_date);
       setMonth(
         new Date(firstBookable.getFullYear(), firstBookable.getMonth(), 1)
       );
@@ -648,6 +647,7 @@ export default function BannerSection() {
                         {isFlexibleDatePackage() && selectedPackage ? (
                           <FlexibleDateCalendar
                             packageId={selectedPackage.package_id || ''}
+                            startDate={selectedPackage.start_date}
                             endDate={selectedPackage.end_date}
                             dateRanges={selectedPackage.date_ranges}
                             adultPrice={

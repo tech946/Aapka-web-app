@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { X, Users, Calendar, ChevronDown, Plus, Minus } from 'lucide-react';
 import { AddonsSection } from '@/components/marketing/AddonsModal/AddonsSection';
@@ -310,6 +310,13 @@ export default function BookingModal({
     return () => window.clearTimeout(timer);
   }, [isOpen, isMobile, showDatePicker]);
 
+  /* Close on a backdrop click only when the press STARTED on the backdrop.
+     Toggling a control can collapse the calendar and re-centre the modal, which
+     slides the control out from under the cursor - the release then lands on the
+     overlay and the browser dispatches the click there. Without this, that reads
+     as a backdrop click and the modal closes instead of the control toggling. */
+  const pressStartedOnOverlay = useRef(false);
+
   if (!isOpen) return null;
 
   const showVisaOption = shouldShowOptionalVisaInBookingModal(slug, pkg);
@@ -363,6 +370,25 @@ export default function BookingModal({
   const inputSelectorsClass = isMobile ? 'mobile-input-selectors' : 'input-selectors';
   const actionsClass = isMobile ? 'mobile-booking-actions' : 'booking-actions';
   const addToCartButtonClass = isMobile ? 'mobile-booking-add-to-cart-button' : 'booking-add-to-cart-button';
+
+  const handleOverlayPress = (
+    e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
+    pressStartedOnOverlay.current = e.target === e.currentTarget;
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (pressStartedOnOverlay.current && e.target === e.currentTarget) {
+      onClose();
+    }
+    pressStartedOnOverlay.current = false;
+  };
+
+  /* Per-adult price shown on each any-date calendar day. With visa selected it
+     includes the adult visa fee, so the calendar matches the quoted total. */
+  const calendarAdultPrice =
+    getPricesForDate().adultPrice +
+    (withVisa ? Number(pkg?.adult_visa_price) || 0 : 0);
 
   const handleSoloTravellerChange = (checked: boolean) => {
     const wasVisaSelected = withVisa;
@@ -419,7 +445,12 @@ export default function BookingModal({
   };
 
   return (
-    <div className={overlayClass} onClick={onClose}>
+    <div
+      className={overlayClass}
+      onMouseDown={handleOverlayPress}
+      onTouchStart={handleOverlayPress}
+      onClick={handleOverlayClick}
+    >
       <div className={modalClass} onClick={(e) => e.stopPropagation()}>
         <div className={headerClass}>
           <h3 className={titleClass}>Booking Details</h3>
@@ -823,9 +854,10 @@ export default function BookingModal({
                       <FlexibleDateCalendar
                         key={`${isMobile ? 'mobile' : 'desktop'}-calendar-${pkg.package_id}`}
                         packageId={pkg.package_id}
+                        startDate={pkg.start_date || undefined}
                         endDate={pkg.end_date || undefined}
                         dateRanges={pkg.date_ranges}
-                        adultPrice={getPricesForDate().adultPrice}
+                        adultPrice={calendarAdultPrice}
                         surchargeBlockDaysBefore={pkg.surcharge_block_days_before}
                         selectedDate={selectedDate}
                         onDateSelect={handleDateSelect}

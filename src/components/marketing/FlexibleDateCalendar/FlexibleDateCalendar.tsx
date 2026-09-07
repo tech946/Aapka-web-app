@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DayPicker } from 'react-day-picker';
-import { format, startOfDay, startOfMonth, endOfMonth, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { parseDateStringToLocal } from '@/lib/utils';
-import { MIN_BOOKING_LEAD_DAYS } from '@/lib/offer-package-dates';
 import {
   getAnyDateBlockReason,
+  getAnyDateEarliestBookable,
   type AnyDateSoldOutRange,
 } from '@/lib/anydate-availability';
 import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
@@ -19,6 +19,8 @@ const DEFAULT_MONTHS_AHEAD = 18;
 
 interface FlexibleDateCalendarProps {
   packageId: string;
+  /** Earliest bookable travel date; dates before it are blocked. */
+  startDate?: string | null;
   endDate?: string | null;
   /** Only entries flagged `isSoldOut` are used — any-date packages have no pricing ranges. */
   dateRanges?: AnyDateSoldOutRange[] | null;
@@ -34,6 +36,7 @@ interface FlexibleDateCalendarProps {
 
 export default function FlexibleDateCalendar({
   packageId,
+  startDate,
   endDate,
   dateRanges,
   adultPrice,
@@ -118,9 +121,10 @@ export default function FlexibleDateCalendar({
         soldOutRanges,
         surcharges,
         surchargeBlockDaysBefore,
+        startDate,
         endDate,
       }),
-    [soldOutRanges, surcharges, surchargeBlockDaysBefore, endDate]
+    [soldOutRanges, surcharges, surchargeBlockDaysBefore, startDate, endDate]
   );
 
   const getDisabledDates = useCallback(
@@ -128,12 +132,11 @@ export default function FlexibleDateCalendar({
     [getBlockReason]
   );
 
-  // First month that can hold a bookable date
-  const minNavigationMonth = useMemo(() => {
-    const firstBookable = startOfDay(new Date());
-    firstBookable.setDate(firstBookable.getDate() + MIN_BOOKING_LEAD_DAYS + 1);
-    return startOfMonth(firstBookable);
-  }, []);
+  // First month that can hold a bookable date (respects the package start date)
+  const minNavigationMonth = useMemo(
+    () => startOfMonth(getAnyDateEarliestBookable(startDate)),
+    [startDate]
+  );
 
   // Any date is bookable, so browsing runs to the end date or a rolling horizon
   const maxNavigationMonth = useMemo(() => {

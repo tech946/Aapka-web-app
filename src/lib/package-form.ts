@@ -8,6 +8,7 @@ type PackageFormSource = {
   package_price?: number | null;
   package_days?: number | null;
   package_nights?: number | null;
+  start_date?: string | null;
   end_date?: string | null;
   adult_price?: number | null;
   child_price?: number | null;
@@ -129,7 +130,9 @@ export function mapPackageToEditForm(
     price: pkg.package_price != null ? String(pkg.package_price) : '',
     days: pkg.package_days != null ? String(pkg.package_days) : '',
     nights: pkg.package_nights != null ? String(pkg.package_nights) : '',
-    endDate: pkg.end_date || '',
+    // <input type="date"> needs a bare yyyy-MM-dd, so drop any time part
+    startDate: (pkg.start_date || '').split('T')[0],
+    endDate: (pkg.end_date || '').split('T')[0],
     adultPrice: pkg.adult_price != null ? String(pkg.adult_price) : '',
     childPrice: pkg.child_price != null ? String(pkg.child_price) : '',
     infantPrice: pkg.infant_price != null ? String(pkg.infant_price) : '',

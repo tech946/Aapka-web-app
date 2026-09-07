@@ -7,7 +7,7 @@ import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
  *
  * Any date is bookable except:
  *  - past dates and dates inside the booking lead window
- *  - dates after the package end date
+ *  - dates before the package start date, or after its end date
  *  - dates the dashboard marked as sold out
  *  - hotel surcharge dates, plus the configured number of days before each
  *    surcharge starts (default 3 — a 6 Nov–10 Nov surcharge blocks 3 Nov–10 Nov)
@@ -31,6 +31,7 @@ export type AnyDateSoldOutRange = {
 export type AnyDateBlockReason =
   | 'past'
   | 'lead-time'
+  | 'start-date'
   | 'end-date'
   | 'sold-out'
   | 'surcharge'
@@ -121,9 +122,26 @@ export type AnyDateAvailabilityOptions = {
   soldOutRanges?: AnyDateSoldOutRange[] | null;
   surcharges?: SurchargeMasterEntry[] | null;
   surchargeBlockDaysBefore?: number | string | null;
+  /** Earliest bookable travel date; dates before it are blocked. */
+  startDate?: string | null;
   endDate?: string | null;
   leadDays?: number;
 };
+
+/**
+ * First date a traveller can book: the booking lead window, pushed forward by
+ * the package start date when that is later.
+ */
+export function getAnyDateEarliestBookable(
+  startDate?: string | null,
+  leadDays: number = MIN_BOOKING_LEAD_DAYS
+): Date {
+  const earliest = startOfLocalDay(new Date());
+  earliest.setDate(earliest.getDate() + leadDays + 1);
+
+  const start = toLocalDay(startDate);
+  return start && start > earliest ? start : earliest;
+}
 
 /** Why a date cannot be booked, or null when it is bookable. */
 export function getAnyDateBlockReason(
@@ -132,6 +150,7 @@ export function getAnyDateBlockReason(
     soldOutRanges,
     surcharges,
     surchargeBlockDaysBefore,
+    startDate,
     endDate,
     leadDays = MIN_BOOKING_LEAD_DAYS,
   }: AnyDateAvailabilityOptions
@@ -144,6 +163,11 @@ export function getAnyDateBlockReason(
   const earliest = new Date(today);
   earliest.setDate(earliest.getDate() + leadDays);
   if (check <= earliest) return 'lead-time';
+
+  if (startDate) {
+    const start = toLocalDay(startDate);
+    if (start && check < start) return 'start-date';
+  }
 
   if (endDate) {
     const end = toLocalDay(endDate);
