@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Mail, Phone, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 type ContactQueryRow = {
   id: string;
@@ -15,7 +16,13 @@ type ContactQueryRow = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Set once "Push lead to CRM" has run (database/add-crm-push-to-contact-queries.sql). */
+  crm_lead_reference?: string | null;
+  crm_assignee_name?: string | null;
+  pushed_to_crm_at?: string | null;
 };
+
+type CrmUser = { id: string; full_name: string; email_address: string | null };
 
 export default function ContactQueriesClient() {
   const [rows, setRows] = useState<ContactQueryRow[]>([]);
@@ -147,6 +154,100 @@ export default function ContactQueriesClient() {
     setModalOpen(true);
   };
 
+  // "Push lead to CRM" opens a dialog: the admin must pick the CRM agent who
+  // gets the lead, then the query goes through the same pipe as the
+  // travel-enquiry form (create, or merge by WhatsApp number).
+  const [pushTarget, setPushTarget] = useState<ContactQueryRow | null>(null);
+  const [crmUsers, setCrmUsers] = useState<CrmUser[] | null>(null);
+  const [crmUsersError, setCrmUsersError] = useState<string | null>(null);
+  const [assigneeId, setAssigneeId] = useState('');
+  const [pushing, setPushing] = useState(false);
+
+  const openPushDialog = (row: ContactQueryRow) => {
+    setPushTarget(row);
+    setAssigneeId('');
+  };
+
+  // Agents are loaded once per page visit, on first open.
+  useEffect(() => {
+    if (!pushTarget || crmUsers !== null) return;
+    let cancelled = false;
+    setCrmUsersError(null);
+    fetch('/api/contact/crm-users')
+      .then(async res => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'Could not load CRM users');
+        if (!cancelled) setCrmUsers(json.users ?? []);
+      })
+      .catch(e => {
+        if (!cancelled) setCrmUsersError(e?.message ?? 'Could not load CRM users');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pushTarget, crmUsers]);
+
+  const pushToCrm = async () => {
+    if (!pushTarget || !assigneeId || pushing) return;
+    const row = pushTarget;
+    setPushing(true);
+    try {
+      const res = await fetch(`/api/contact/${row.id}/push-to-crm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assigneeId }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          json.hint ? `${json.error} — ${json.hint}` : json.error || 'Failed to push lead to CRM'
+        );
+      }
+      const saved: ContactQueryRow = json.data ?? {
+        ...row,
+        crm_lead_reference: json.reference,
+        crm_assignee_name: json.assignment?.assignee_name ?? null,
+        pushed_to_crm_at: new Date().toISOString(),
+      };
+      setRows(prev => prev.map(r => (r.id === row.id ? { ...r, ...saved } : r)));
+      setSelectedQuery(prev => (prev && prev.id === row.id ? { ...prev, ...saved } : prev));
+      toast.success(json.message || `Lead ${json.reference} created in CRM`);
+      setPushTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to push lead to CRM');
+    } finally {
+      setPushing(false);
+    }
+  };
+
+  const renderPushControl = (row: ContactQueryRow, compact = false) =>
+    row.crm_lead_reference ? (
+      <span
+        className='crm_pushed_badge'
+        title={[
+          row.crm_assignee_name ? `Assigned to ${row.crm_assignee_name}` : null,
+          row.pushed_to_crm_at
+            ? `Pushed ${format(new Date(row.pushed_to_crm_at), 'MMM dd, yyyy HH:mm')}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined}
+      >
+        <CheckCircle2 size={14} aria-hidden />
+        In CRM · {row.crm_lead_reference}
+      </span>
+    ) : (
+      <button
+        type='button'
+        className={compact ? 'btn_secondary btn_push_crm' : 'btn_primary btn_push_crm'}
+        onClick={() => openPushDialog(row)}
+        title='Create this query as a lead in the CRM and assign it to an agent'
+      >
+        <Send size={14} aria-hidden />
+        Push lead to CRM
+      </button>
+    );
+
   return (
     <div className='dashboard_page'>
       <div className='heading_block'>
@@ -237,12 +338,15 @@ export default function ContactQueriesClient() {
                       : '-'}
                   </td>
                   <td>
-                    <button
-                      onClick={() => handleViewDetails(r)}
-                      className='btn_secondary'
-                    >
-                      View Details
-                    </button>
+                    <div className='row_actions'>
+                      <button
+                        onClick={() => handleViewDetails(r)}
+                        className='btn_secondary'
+                      >
+                        View Details
+                      </button>
+                      {renderPushControl(r, true)}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -382,6 +486,20 @@ export default function ContactQueriesClient() {
                       )}
                     </span>
                   </div>
+                  {selectedQuery.crm_lead_reference && (
+                    <div className='detail_item'>
+                      <strong>CRM Lead:</strong>
+                      <span>
+                        {selectedQuery.crm_lead_reference}
+                        {selectedQuery.crm_assignee_name
+                          ? ` · assigned to ${selectedQuery.crm_assignee_name}`
+                          : ''}
+                        {selectedQuery.pushed_to_crm_at
+                          ? ` · pushed ${format(new Date(selectedQuery.pushed_to_crm_at), 'MMM dd, yyyy HH:mm')}`
+                          : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -393,11 +511,115 @@ export default function ContactQueriesClient() {
               )}
             </div>
             <div className='modal_footer'>
+              {renderPushControl(selectedQuery)}
               <button
                 onClick={() => setModalOpen(false)}
                 className='btn_secondary'
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Push to CRM dialog: pick the agent, then push */}
+      {pushTarget && (
+        <div className='modal_overlay' onClick={() => !pushing && setPushTarget(null)}>
+          <div
+            className='modal_content modal_content--sm'
+            onClick={e => e.stopPropagation()}
+            role='dialog'
+            aria-labelledby='push-crm-title'
+          >
+            <div className='modal_header'>
+              <h3 id='push-crm-title'>Push lead to CRM</h3>
+              <button
+                type='button'
+                onClick={() => setPushTarget(null)}
+                className='modal_close'
+                disabled={pushing}
+              >
+                ×
+              </button>
+            </div>
+            <div className='modal_body'>
+              <div className='push_crm_summary'>
+                <strong>
+                  {pushTarget.first_name} {pushTarget.last_name}
+                </strong>
+                <span>
+                  {pushTarget.phone}
+                  {pushTarget.email ? ` · ${pushTarget.email}` : ''}
+                </span>
+              </div>
+              <p className='push_crm_note'>
+                This creates the query as a lead in the CRM exactly like a website enquiry
+                (source <code>website-contact</code>). If a lead with this WhatsApp number
+                already exists, the message is added to it instead.
+              </p>
+
+              <label className='push_crm_field'>
+                <span>
+                  Assign to agent <em>*</em>
+                </span>
+                {crmUsersError ? (
+                  <span className='push_crm_error'>
+                    {crmUsersError}{' '}
+                    <button
+                      type='button'
+                      className='link_button'
+                      onClick={() => {
+                        setCrmUsers(null);
+                        setCrmUsersError(null);
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </span>
+                ) : (
+                  <select
+                    className='select_filter'
+                    value={assigneeId}
+                    onChange={e => setAssigneeId(e.target.value)}
+                    disabled={crmUsers === null || pushing}
+                    required
+                  >
+                    <option value=''>
+                      {crmUsers === null
+                        ? 'Loading CRM users…'
+                        : crmUsers.length === 0
+                          ? 'No active CRM agents found'
+                          : 'Select a CRM agent'}
+                    </option>
+                    {(crmUsers ?? []).map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name}
+                        {u.email_address ? ` — ${u.email_address}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </label>
+            </div>
+            <div className='modal_footer'>
+              <button
+                type='button'
+                onClick={() => setPushTarget(null)}
+                className='btn_secondary'
+                disabled={pushing}
+              >
+                Cancel
+              </button>
+              <button
+                type='button'
+                className='btn_primary btn_push_crm'
+                onClick={pushToCrm}
+                disabled={!assigneeId || pushing}
+                title={!assigneeId ? 'Choose an agent first' : undefined}
+              >
+                <Send size={14} aria-hidden />
+                {pushing ? 'Pushing…' : 'Push & assign'}
               </button>
             </div>
           </div>

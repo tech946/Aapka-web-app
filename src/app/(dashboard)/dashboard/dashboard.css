@@ -2239,3 +2239,123 @@
     justify-content: center;
   }
 }
+
+/* Contact Queries → "Push lead to CRM" */
+.row_actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn_push_crm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn_push_crm:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.modal_footer .btn_push_crm {
+  margin-right: auto;
+}
+
+.modal_content--sm .modal_footer .btn_push_crm {
+  margin-right: 0;
+}
+
+.crm_pushed_badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ecfdf3;
+  color: #027a48;
+  border: 1px solid #abefc6;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.modal_footer .crm_pushed_badge {
+  margin-right: auto;
+}
+
+/* Push to CRM dialog */
+.modal_content--sm {
+  width: 480px;
+}
+
+.push_crm_summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  margin-bottom: 12px;
+}
+
+.push_crm_summary strong {
+  font-size: 15px;
+}
+
+.push_crm_summary span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.push_crm_note {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.push_crm_note code {
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+
+.push_crm_field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.push_crm_field em {
+  color: #d92d20;
+  font-style: normal;
+}
+
+.push_crm_field .select_filter {
+  width: 100%;
+  font-weight: 400;
+}
+
+.push_crm_error {
+  font-weight: 400;
+  color: #b42318;
+}
+
+.link_button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
