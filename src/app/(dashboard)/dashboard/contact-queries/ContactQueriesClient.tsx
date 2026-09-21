@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Mail, Phone, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MessageSquare, Send, CheckCircle2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { SearchSelect } from '@/components/dashboard/SearchSelect';
 
 type ContactQueryRow = {
   id: string;
@@ -578,27 +579,27 @@ export default function ContactQueriesClient() {
                     </button>
                   </span>
                 ) : (
-                  <select
-                    className='select_filter'
+                  <SearchSelect
+                    ariaLabel='Assign to agent'
+                    icon={<UserRound size={15} aria-hidden />}
                     value={assigneeId}
-                    onChange={e => setAssigneeId(e.target.value)}
-                    disabled={crmUsers === null || pushing}
-                    required
-                  >
-                    <option value=''>
-                      {crmUsers === null
-                        ? 'Loading CRM users…'
-                        : crmUsers.length === 0
-                          ? 'No active CRM agents found'
-                          : 'Select a CRM agent'}
-                    </option>
-                    {(crmUsers ?? []).map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name}
-                        {u.email_address ? ` — ${u.email_address}` : ''}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setAssigneeId}
+                    loading={crmUsers === null}
+                    loadingText='Loading CRM users…'
+                    disabled={pushing}
+                    placeholder={
+                      crmUsers && crmUsers.length === 0
+                        ? 'No active CRM agents found'
+                        : 'Select a CRM agent'
+                    }
+                    searchPlaceholder='Search by name or email…'
+                    emptyText='No agent matches that search'
+                    options={(crmUsers ?? []).map(u => ({
+                      value: u.id,
+                      label: u.full_name,
+                      hint: u.email_address,
+                    }))}
+                  />
                 )}
               </label>
             </div>
