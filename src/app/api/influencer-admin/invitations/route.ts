@@ -122,7 +122,8 @@ export async function POST(req: NextRequest) {
         to: email,
         subject: "You're invited to join Aapka Tourism Influencer Program",
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+          <div style="font-family: 'DM Sans', Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>You're invited!</h2>
             <p>You have been invited to join the Aapka Tourism Influencer Program. Earn commissions by referring customers to our travel packages.</p>
             <p><strong>Click the link below to register (valid for 7 days):</strong></p>

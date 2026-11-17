@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import './dashboard.css';
 
 interface Subscription {
@@ -45,7 +45,7 @@ export default function AgentDashboardPage() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const supabase = createClientComponentClient();
+        const supabase = createBrowserSupabaseClient();
         const {
           data: { session },
         } = await supabase.auth.getSession();

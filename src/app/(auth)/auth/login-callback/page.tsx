@@ -2,8 +2,8 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import toast from 'react-hot-toast';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import { toast } from 'sonner';
 import { useUserStore } from '@/store/user-store';
 
 function AuthCallbackContent() {
@@ -12,7 +12,7 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      const supabase = createClientComponentClient();
+      const supabase = createBrowserSupabaseClient();
 
       const {
         data: { session },

@@ -1,0 +1,245 @@
+/* ==========================================================================
+   Homepage, laid out like tripadvisor.in (measured at 1280px): 1184px
+   container with 24px gutters (1136px content), 80px between sections,
+   20px/800 row titles, 4-up 272px square cards with 16px gaps.
+   Colours, font and radii come from design-system/tokens.css (the page
+   root carries .desert-ember); brand orange stands in for their green.
+   ========================================================================== */
+
+:where(.ta-home) :where(h1, h2, p) { margin: 0; font-family: inherit; }
+:where(.ta-home) a { color: inherit; text-decoration: none; }
+:where(.ta-home) ul { margin: 0; padding: 0; list-style: none; }
+
+.ta-sec {
+  max-width: 1184px;
+  margin: 80px auto 0;
+  padding: 0 24px;
+}
+
+/* ── buttons (pills) ────────────────────────────────────────────────── */
+.ta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease;
+}
+.ta-btn--lg { height: 52px; padding: 0 24px; }
+.ta-home .ta-btn--dark { background: var(--black); border-color: var(--black); color: var(--card); }
+.ta-home .ta-btn--dark:hover { background: var(--graphite); border-color: var(--graphite); }
+.ta-home .ta-btn--glow { height: 50px; padding: 0 24px; background: var(--brand); border-color: var(--brand-edge); color: var(--on-brand); font-size: 14px; line-height: 18px; }
+.ta-home .ta-btn--glow:hover { background: var(--brand-hover); }
+
+/* ── hero: full-screen video, question + search in the middle ──────── */
+/* z-index 1 keeps the search's suggestion list above the rows below; the
+   header (z 60, Header .is-clear) floats over the top of it */
+.ta-hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* the screen's height, up to 720px (Header turns solid at that height too) */
+  height: min(100vh, 720px);
+  height: min(100svh, 720px);
+  padding: 96px 24px;
+  background: var(--black);
+  text-align: center;
+}
+.ta-hero__poster,
+.ta-hero__video {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* scrim so the white title reads on any frame */
+.ta-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--black) 30%, transparent), color-mix(in srgb, var(--black) 45%, transparent));
+  pointer-events: none;
+}
+.ta-hero__title {
+  font-size: 54px;
+  font-weight: 900;
+  line-height: 65px;
+  letter-spacing: 0.02em;
+  color: var(--card);
+  text-shadow: 0 2px 16px color-mix(in srgb, var(--black) 35%, transparent);
+}
+.ta-hero__search { width: 100%; max-width: 800px; margin: 32px auto 0; }
+@media (prefers-reduced-motion: reduce) {
+  .ta-hero__video { display: none; }
+}
+
+/* ── row title ──────────────────────────────────────────────────────── */
+.ta-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.ta-head h2 { font-size: 20px; font-weight: 800; line-height: 24px; color: var(--ink); }
+.ta-head p { font-size: 16px; line-height: 24px; color: var(--muted); }
+
+/* photo tile */
+.ta-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--border);
+}
+.ta-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.ta-tile:hover img { transform: scale(1.04); }
+.ta-tile::after {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--black) 72%, transparent));
+}
+.ta-tile__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 32px 16px 16px;
+  color: var(--card);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 28px;
+}
+
+/* ── grey split promo ───────────────────────────────────────────────── */
+.ta-split {
+  display: grid;
+  grid-template-columns: minmax(0, 536fr) minmax(0, 600fr);
+  align-items: center;
+  padding: 24px 0;
+  background: var(--surface);
+}
+.ta-split__media { height: 405px; margin-left: 24px; overflow: hidden; background: var(--border); }
+.ta-split__media img,
+.ta-split__media video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ta-split__text { display: flex; flex-direction: column; align-items: center; gap: 0; max-width: 368px; margin: 0 auto; text-align: center; }
+.ta-split__kicker { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; color: var(--ink); font-size: 14px; line-height: 18px; }
+.ta-split__kicker svg { width: 20px; height: 20px; }
+.ta-split__kicker a { text-decoration: underline; }
+.ta-split h2 { font-size: 32px; font-weight: 700; line-height: 38px; color: var(--ink); }
+.ta-split__body { margin: 8px 0 24px; color: var(--muted); font-size: 16px; line-height: 24px; }
+
+/* ── full-width grey band (blogs) ───────────────────────────────────── */
+.ta-band { margin-top: 80px; padding: 32px 0 48px; background: var(--surface); }
+.ta-band > .ta-sec { margin-top: 0; }
+.ta-story { display: flex; flex-direction: column; color: var(--ink); }
+.ta-story__media { display: block; aspect-ratio: 368 / 234; overflow: hidden; border-radius: var(--radius-sm); background: var(--border); }
+.ta-story__media img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.ta-story:hover .ta-story__media img { transform: scale(1.04); }
+.ta-story__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 24px 24px 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+.ta-story:hover .ta-story__title { text-decoration: underline; }
+
+/* ── dark awards band ───────────────────────────────────────────────── */
+.ta-awards { margin: 80px 0 64px; background: var(--charcoal); color: var(--card); }
+.ta-awards__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 547px);
+  align-items: center;
+  max-width: 1184px;
+  min-height: 600px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.ta-awards__text { display: flex; flex-direction: column; align-items: flex-start; padding: 48px 48px 48px 26px; }
+.ta-awards__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 86px;
+  margin-bottom: 16px;
+  background: var(--brand-glow);
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-lg) var(--radius-lg);
+  color: var(--black);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 14px;
+}
+.ta-awards__badge b { font-size: 26px; font-weight: 900; line-height: 30px; }
+.ta-awards h2 { max-width: 560px; font-size: 54px; font-weight: 900; line-height: 65px; letter-spacing: 0.02em; color: var(--card); }
+.ta-awards__text p { max-width: 522px; margin: 18px 0 18px; font-size: 20px; font-weight: 800; line-height: 24px; }
+.ta-awards__media { position: relative; align-self: stretch; overflow: hidden; background: var(--graphite); }
+.ta-awards__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ta-home .ta-awards__tag {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  max-width: calc(100% - 48px);
+  padding: 6px 14px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  background: var(--brand-glow);
+  border: 1px solid var(--black);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  color: var(--black);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── tablet ─────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .ta-awards h2 { font-size: 40px; line-height: 48px; }
+  .ta-awards__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 42%); min-height: 480px; }
+}
+
+/* ── phones ─────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .ta-sec { margin-top: 48px; padding: 0 16px; }
+  .ta-hero { padding: 80px 16px; }
+  .ta-hero__title { font-size: 32px; line-height: 38px; }
+  .ta-hero__search { margin-top: 20px; }
+  .ta-hero .ta-search { height: 52px; }
+  .ta-hero .ta-search__ask { display: none; }
+  .ta-hero .ta-search__go { height: 42px; padding: 0 16px; }
+
+
+  .ta-tile__label { font-size: 24px; line-height: 26px; }
+
+  .ta-split { grid-template-columns: minmax(0, 1fr); row-gap: 24px; padding: 16px 16px 32px; }
+  .ta-split__media { height: 240px; margin: 0; }
+  .ta-split h2 { font-size: 26px; line-height: 32px; }
+
+  .ta-band { margin-top: 48px; padding: 24px 0 32px; }
+
+  .ta-awards { margin: 48px 0 24px; }
+  .ta-awards__inner { grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 0; }
+  .ta-awards__text { padding: 40px 16px 32px; }
+  .ta-awards h2 { font-size: 36px; line-height: 42px; }
+  .ta-awards__text p { font-size: 17px; line-height: 22px; }
+  .ta-awards__media { height: 320px; }
+}

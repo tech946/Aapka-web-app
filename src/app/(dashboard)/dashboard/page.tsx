@@ -1,28 +1,15 @@
-import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
-import { hasRoleId } from '@/lib/roles';
-import { RoleId } from '@/types/roles';
+import { getAccessUser } from '@/lib/access/server';
+import { DASHBOARD_HOME, landingPathFor } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const user = await getAccessUser();
+  if (!user) redirect('/auth/login');
 
-  if (!session) {
-    redirect('/auth/login');
-  }
-
-  // Content Editor: redirect to blog management (their only access)
-  const isContentEditor = await hasRoleId(
-    session.user.id,
-    RoleId.CONTENT_EDITOR
-  );
-  if (isContentEditor) {
-    redirect('/dashboard/blog-management');
-  }
+  const landing = landingPathFor(user.permissions);
+  if (landing !== DASHBOARD_HOME) redirect(landing);
 
   return (
     <div className='dashboard_page'>

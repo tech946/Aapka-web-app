@@ -2,40 +2,37 @@ import type React from 'react';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Inter, Work_Sans } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
+// Desert Ember tokens (opt-in via .desert-ember).
+import '../../design-system/tokens.css';
 import './globals.css';
-import { Toaster } from 'sonner';
+import SiteToaster from '@/components/site/toast/SiteToaster';
+import { PageJsonLd, applyPageSeo } from '@/features/seo/server';
 import 'antd/dist/reset.css';
 import ConditionalHeader from '@/components/marketing/Header/ConditionalHeader';
 import ConditionalFooter from '@/components/marketing/Footer/ConditionalFooter';
 import { QueryProvider } from '@/providers/QueryProvider';
-import WhatsAppButton from '@/components/marketing/WhatsAppButton/WhatsAppButton';
-import EnquiryButton from '@/components/marketing/EnquiryButton/EnquiryButton';
-import ConditionalChatbot from '@/components/chatbot/ConditionalChatbot';
+import ScrollReset from '@/components/site/ScrollReset';
 import GTMPageViewTracker from '@/components/GTMPageViewTracker';
-import { CartProvider } from '@/context/CartContext';
+import { BookingProvider } from '@/context/BookingContext';
+import SignupPopup from '@/components/site/signup/SignupPopup';
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-inter',
+  variable: '--font-sans',
+  display: 'swap',
 });
 
-const workSans = Work_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-work-sans',
-});
-
-export const metadata: Metadata = {
+const BASE_METADATA: Metadata = {
   title: 'Aapka Tourism',
   description:
     "With 10 years of experience in the travel industry and deep knowledge of Dubai's culture, attractions, and hidden gems, our expert guides ensure you get the most authentic and memorable experience possible. We don't just show you Dubai - we help you live it.",
   generator: 'aapka-tourism.com',
-  other: {
-    'google-fonts': 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap',
-  },
 };
+
+export function generateMetadata(): Promise<Metadata> {
+  return applyPageSeo(BASE_METADATA);
+}
 
 export default function RootLayout({
   children,
@@ -43,16 +40,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en' suppressHydrationWarning className={`${inter.variable} ${workSans.variable}`}>
+    <html lang='en' suppressHydrationWarning className={dmSans.variable}>
       <head>
-        <link rel='preconnect' href='https://fonts.googleapis.com' />
-        <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='' />
-        <link
-          href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap'
-          rel='stylesheet'
-        />
+        <PageJsonLd placement='head' />
       </head>
-      <body className={inter.className}>
+      <body className={dmSans.className}>
+        <PageJsonLd placement='body-start' />
         {/* Google Tag Manager */}
         <Script
           id='google-tag-manager'
@@ -75,19 +68,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <QueryProvider>
-          <CartProvider>
+          <BookingProvider>
           <Suspense fallback={null}>
             <GTMPageViewTracker />
           </Suspense>
+          <ScrollReset />
           <ConditionalHeader />
-          <Toaster position='top-right' /> {/* Required */}
+          <SiteToaster />
           {children}
           <ConditionalFooter />
-          <ConditionalChatbot />
-          <WhatsAppButton />
-          <EnquiryButton />
-        </CartProvider>
+          <SignupPopup />
+        </BookingProvider>
         </QueryProvider>
+        <PageJsonLd placement='body-end' />
       </body>
     </html>
   );

@@ -673,7 +673,7 @@ export function CRMPackageItineraryPreview({
               <div className="quotation-cart-item-name" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.35' }}>
                 {qty > 1 ? `${qty} × ` : ''}{s.name}
               </div>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: '10px', whiteSpace: 'nowrap', display: 'inline-block' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', background: 'rgba(249, 115, 22,0.1)', padding: '2px 8px', borderRadius: '10px', whiteSpace: 'nowrap', display: 'inline-block' }}>
                 +{qty} Night{qty !== 1 ? 's' : ''}
               </span>
             </div>

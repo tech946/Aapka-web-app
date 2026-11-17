@@ -1,0 +1,980 @@
+/* ==========================================================================
+   Package details (PDP) — the pieces inside the page: booking card and its
+   fields / calendars / modal, callback form, booking-notes accordions, CMS
+   rich text, offer strip, lightbox, share dialog, phone price bar and the
+   loading / not-found states. The page layout itself (pickyourtrail's
+   itinerary page) lives in pdp-trail.css.
+   ========================================================================== */
+
+:where(.at-site) .pdp {
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  padding-bottom: 48px;
+}
+
+:where(.at-site) .pdp .container { max-width: 1240px; }
+
+/* Booking card — the hero surface of the page (ink outline + offset).
+   Head (price) and foot (total + CTA) stay put; the choices between them
+   scroll inside the card, so "Book now" is always on screen. */
+:where(.at-site) .bk {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--header-h) - 52px - 32px);
+  overflow: hidden;
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-modal);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-lg);
+  scroll-margin-top: calc(var(--header-h) + 64px);
+}
+:where(.at-site) .bk__head {
+  flex-shrink: 0;
+  padding: 14px 18px 12px;
+  border-bottom: 1px dashed var(--lx-border-strong);
+}
+:where(.at-site) .bk__eyebrow {
+  margin-bottom: 6px;
+  color: var(--lx-brand-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+:where(.at-site) .bk__strike {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lx-faint);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+:where(.at-site) .bk__off {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--lx-green-soft);
+  color: var(--lx-success-text);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+:where(.at-site) .bk__now { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; margin-top: 2px; }
+:where(.at-site) .bk__now b { font-size: 28px; font-weight: 800; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+:where(.at-site) .bk__now span { font-size: 11.5px; font-weight: 500; color: var(--lx-muted); }
+
+:where(.at-site) .bk__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lx-border-strong) transparent;
+}
+:where(.at-site) .bk-step__label {
+  margin-bottom: 8px;
+  color: var(--lx-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+/* hotel category tiles: active = ink outline + offset (CRM choice tile) */
+:where(.at-site) .bk-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+:where(.at-site) .bk-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 7px 9px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  text-align: left;
+  transition: border-color var(--lx-ease), background var(--lx-ease), box-shadow var(--lx-ease);
+}
+:where(.at-site) .bk-tier:hover { border-color: var(--lx-border-hover); background: var(--lx-sunken); }
+:where(.at-site) .bk-tier b { font-size: 12.5px; font-weight: 700; }
+:where(.at-site) .bk-tier small { overflow: hidden; max-width: 100%; color: var(--lx-muted); font-size: 10.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+:where(.at-site) .bk-tier.is-on {
+  border-color: var(--lx-ink);
+  background: var(--lx-surface);
+  box-shadow: inset 0 0 0 .5px var(--lx-ink), var(--lx-offset-sm);
+}
+
+/* The old booking modal's fields, in its order:
+   solo traveller → persons → date → "flexible date?" link */
+:where(.at-site) .bk-fields { display: flex; flex-direction: column; gap: 8px; }
+
+/* solo traveller: a checkbox row with its price, like the live modal */
+:where(.at-site) .bk-solo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-surface);
+  cursor: pointer;
+  transition: border-color var(--lx-ease), background var(--lx-ease);
+}
+:where(.at-site) .bk-solo:hover { border-color: var(--lx-border-hover); background: var(--lx-sunken); }
+:where(.at-site) .bk-solo.is-on { border-color: var(--lx-brand); background: var(--lx-brand-soft); }
+:where(.at-site) .bk-solo__text { flex: 1; font-size: 13px; font-weight: 600; color: var(--lx-text); }
+:where(.at-site) .bk-solo__price { font-size: 13px; font-weight: 800; color: var(--lx-text); font-variant-numeric: tabular-nums; }
+:where(.at-site) .bk-solo.is-on .bk-solo__price { color: var(--lx-brand-text); }
+
+/* field trigger (persons, any-date) — the .ui-input look with a leading icon */
+:where(.at-site) .bk-field { display: flex; flex-direction: column; gap: 6px; }
+:where(.at-site) .bk-field__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 4px 10px 4px 12px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  text-align: left;
+  box-shadow: var(--lx-shadow-sm);
+  cursor: pointer;
+  transition: border-color var(--lx-ease), background var(--lx-ease);
+}
+:where(.at-site) .bk-field__btn > svg:first-child { flex-shrink: 0; color: var(--lx-brand-text); }
+:where(.at-site) .bk-field__btn:hover:not(:disabled) { border-color: var(--lx-border-hover); }
+:where(.at-site) .bk-field.is-open .bk-field__btn { border-color: var(--lx-brand); box-shadow: none; }
+:where(.at-site) .bk-field.is-disabled .bk-field__btn { background: var(--lx-sunken); cursor: not-allowed; }
+:where(.at-site) .bk-field.is-disabled .bk-field__btn > svg:first-child { color: var(--lx-faint); }
+:where(.at-site) .bk-field__value {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+:where(.at-site) .bk-field__value small { color: var(--lx-muted); font-size: 11px; font-weight: 500; }
+:where(.at-site) .bk-field__value.is-ph { color: var(--lx-faint); font-weight: 500; }
+:where(.at-site) .bk-field__chev { flex-shrink: 0; color: var(--lx-muted); transition: transform .15s; }
+:where(.at-site) .bk-field.is-open .bk-field__chev { transform: rotate(180deg); }
+
+/* date select for fixed departures: Select with a leading calendar icon */
+:where(.at-site) .bk-date-select { position: relative; }
+:where(.at-site) .bk-date-select__ico {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  z-index: 1;
+  color: var(--lx-brand-text);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+:where(.at-site) .bk-date-select .dd-btn {
+  min-height: 40px;
+  height: 40px;
+  padding-left: 38px;
+  border-radius: var(--lx-r-tile);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+:where(.at-site) .bk-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-top: 2px;
+  color: var(--lx-brand-text);
+  font-size: 12px;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+:where(.at-site) .bk-flex:hover { text-decoration: underline; }
+:where(.at-site) .bk-flex svg { transition: transform var(--lx-ease); }
+:where(.at-site) .bk-flex:hover svg { transform: translateX(2px); }
+
+:where(.at-site) .bk-trust { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px dashed var(--lx-border-strong); }
+
+/* any-date calendar (CRM date picker look) */
+:where(.at-site) .mcal {
+  padding: 10px 10px 8px;
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-menu);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-sm);
+}
+:where(.at-site) .mcal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+:where(.at-site) .mcal__title { font-size: 13px; font-weight: 700; letter-spacing: -0.005em; }
+:where(.at-site) .mcal__nav {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-surface);
+  color: var(--lx-text);
+}
+:where(.at-site) .mcal__nav:hover:not(:disabled) { background: var(--lx-hover); }
+:where(.at-site) .mcal__nav:disabled { opacity: .35; cursor: default; }
+:where(.at-site) .mcal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+:where(.at-site) .mcal__wd {
+  padding: 2px 0 4px;
+  color: var(--lx-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+:where(.at-site) .mcal__day {
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--lx-r-control);
+  background: none;
+  color: var(--lx-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+:where(.at-site) .mcal__day:hover:not(:disabled):not(.is-on) { background: var(--lx-hover); }
+:where(.at-site) .mcal__day.is-today { color: var(--lx-brand-text); font-weight: 800; }
+:where(.at-site) .mcal__day.is-on { border-color: var(--lx-ink); background: var(--lx-ink); color: #fff; }
+:where(.at-site) .mcal__day:disabled { color: var(--lx-border-hover); font-weight: 500; text-decoration: line-through; cursor: not-allowed; }
+
+/* persons panel: opens under its field, CRM menu look (ink outline + offset) */
+:where(.at-site) .bk-pax {
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-menu);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-sm);
+  overflow: hidden;
+}
+:where(.at-site) .bk-pax__done {
+  display: block;
+  width: 100%;
+  height: 34px;
+  border: 0;
+  border-top: 1px solid var(--lx-border);
+  background: var(--lx-sunken);
+  color: var(--lx-text);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+:where(.at-site) .bk-pax__done:hover { background: var(--lx-hover); }
+:where(.at-site) .bk-pax__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+}
+:where(.at-site) .bk-pax__row + .bk-pax__row { border-top: 1px solid var(--lx-border); }
+:where(.at-site) .bk-pax__text { display: flex; flex-direction: column; }
+:where(.at-site) .bk-pax__text b { font-size: 13px; font-weight: 700; }
+:where(.at-site) .bk-pax__text small { font-size: 11px; font-weight: 500; color: var(--lx-muted); }
+:where(.at-site) .bk-pax__stepper {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  overflow: hidden;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-control);
+  background: var(--lx-surface);
+}
+:where(.at-site) .bk-pax__stepper button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: var(--lx-sunken);
+  color: var(--lx-text);
+  transition: background var(--lx-ease);
+}
+:where(.at-site) .bk-pax__stepper button:hover:not(:disabled) { background: var(--lx-hover); }
+:where(.at-site) .bk-pax__stepper button:disabled { color: var(--lx-faint); cursor: not-allowed; }
+:where(.at-site) .bk-pax__stepper output {
+  min-width: 32px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-inline: 1px solid var(--lx-border);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+:where(.at-site) .bk-step > .ui-hint { margin-top: 6px; }
+
+/* foot: total, breakdown, CTA */
+:where(.at-site) .bk__foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px 14px;
+  border-top: 1px solid var(--lx-border);
+  background: var(--lx-sunken);
+}
+:where(.at-site) .bk-total {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lx-text);
+  text-align: left;
+  cursor: pointer;
+}
+:where(.at-site) .bk-total__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 4px;
+  color: var(--lx-text-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+:where(.at-site) .bk-total__label svg { color: var(--lx-muted); transition: transform .15s; }
+:where(.at-site) .bk-total__label svg.is-open { transform: rotate(180deg); }
+:where(.at-site) .bk-total b { font-size: 24px; font-weight: 800; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+:where(.at-site) .bk-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--lx-border);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-surface);
+  list-style: none;
+}
+:where(.at-site) .bk-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--lx-text-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+:where(.at-site) .bk-lines li span:last-child { color: var(--lx-text); font-weight: 600; }
+:where(.at-site) .bk-lines .bk-lines__note { margin-top: 3px; padding-top: 5px; border-top: 1px dashed var(--lx-border-strong); color: var(--lx-faint); font-size: 11px; }
+:where(.at-site) .bk-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--lx-text-soft);
+  font-size: 11.5px;
+}
+:where(.at-site) .bk-meta b { color: var(--lx-text); font-variant-numeric: tabular-nums; }
+:where(.at-site) .bk-save { color: var(--lx-success-text); font-weight: 700; white-space: nowrap; }
+:where(.at-site) .bk-issue {
+  margin: 0;
+  color: var(--lx-amber-text);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+:where(.at-site) .bk-ctas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+:where(.at-site) .bk-ctas .ui-btn { padding: 0 12px; }
+:where(.at-site) .bk-wa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--lx-text-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+:where(.at-site) .bk-wa:hover { color: var(--lx-text); text-decoration: underline; text-underline-offset: 2px; }
+:where(.at-site) .bk-wa svg { color: #16a34a; }
+:where(.at-site) .bk-assure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+:where(.at-site) .bk-assure li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--lx-text-soft);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+:where(.at-site) .bk-assure svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--lx-green-soft);
+  color: var(--lx-success-text);
+}
+:where(.at-site) .bk-secure {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--lx-muted);
+  font-size: 11px;
+}
+
+/* Booking request modal */
+:where(.at-site) .bk-modal { width: min(560px, 100%); }
+:where(.at-site) .bk-form { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+:where(.at-site) .bk-form__note { margin-right: auto; color: var(--lx-muted); font-size: 11.5px; font-weight: 600; }
+:where(.at-site) .bk-sum {
+  margin: 0;
+  padding: 4px 0;
+  border: 1px solid var(--lx-border);
+  border-radius: var(--lx-r-menu);
+  background: var(--lx-sunken);
+  list-style: none;
+}
+:where(.at-site) .bk-sum li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  color: var(--lx-text);
+  font-size: 12.5px;
+}
+:where(.at-site) .bk-sum li svg { flex-shrink: 0; color: var(--lx-muted); }
+:where(.at-site) .bk-sum .bk-sum__total {
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--lx-border-strong);
+  color: var(--lx-text-soft);
+  font-weight: 600;
+}
+:where(.at-site) .bk-sum__total b { color: var(--lx-text); font-size: 19px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+:where(.at-site) .bk-done { align-items: center; padding: 28px 24px 26px; text-align: center; }
+:where(.at-site) .bk-done__tick {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--lx-green);
+  color: #fff;
+}
+:where(.at-site) .bk-done__ref { color: var(--lx-text-soft); font-size: 12.5px; }
+:where(.at-site) .bk-done__ref b {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--lx-active);
+  color: var(--lx-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .04em;
+}
+:where(.at-site) .bk-done__text { max-width: 380px; color: var(--lx-text-soft); font-size: 13px; line-height: 1.55; }
+:where(.at-site) .bk-done__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+
+:where(.at-site) .pdp-call {
+  background: var(--lx-surface);
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+:where(.at-site) .pdp-call h3 { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 2px; }
+:where(.at-site) .pdp-call .btn_primary { width: 100%; margin-top: 2px; border-color: var(--lx-ink); background: var(--lx-ink); }
+:where(.at-site) .pdp-call .btn_primary:hover { border-color: var(--lx-ink-hover); background: var(--lx-ink-hover); }
+
+:where(.at-site) .pdp-terms {
+  display: grid;
+  gap: 8px;
+}
+:where(.at-site) .pdp-acc {
+  background: var(--lx-surface);
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-card);
+  transition: border-color var(--lx-ease), box-shadow var(--lx-ease);
+}
+:where(.at-site) .pdp-acc.is-open { border: var(--lx-outline); box-shadow: var(--lx-offset-sm); }
+:where(.at-site) .pdp-acc > button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 0;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--lx-text);
+  text-align: left;
+}
+:where(.at-site) .pdp-acc > button::after {
+  content: "";
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-right: 2px solid var(--lx-muted);
+  border-bottom: 2px solid var(--lx-muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .15s;
+}
+:where(.at-site) .pdp-acc.is-open > button::after { transform: rotate(-135deg); border-color: var(--lx-ink); }
+:where(.at-site) .pdp-acc > div { display: none; margin: 0 16px; padding: 4px 0 12px; border-top: 1px dashed var(--lx-border-strong); }
+:where(.at-site) .pdp-acc.is-open > div { display: block; }
+:where(.at-site) .pdp-acc table { width: 100%; font-size: 12.5px; border-collapse: collapse; }
+:where(.at-site) .pdp-acc td {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--lx-border);
+  color: var(--lx-text-soft);
+}
+:where(.at-site) .pdp-acc tr:last-child td { border-bottom: 0; }
+:where(.at-site) .pdp-acc td:last-child { font-weight: 700; color: var(--lx-text); text-align: right; font-variant-numeric: tabular-nums; }
+:where(.at-site) .pdp-acc p { padding-top: 10px; font-size: 12.5px; line-height: 1.6; color: var(--lx-text-soft); }
+
+/* Lightbox */
+:where(.at-site) .pdp-lb {
+  position: fixed;
+  inset: 0;
+  z-index: 520;
+  background: rgba(20, 19, 18, .88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+}
+:where(.at-site) .pdp-lb img {
+  max-width: min(1100px, 92vw);
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: var(--lx-r-card);
+}
+:where(.at-site) .pdp-lb-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+:where(.at-site) .pdp-lb-bar button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  font-size: 17px;
+  transition: background var(--lx-ease);
+}
+:where(.at-site) .pdp-lb-bar button:hover { background: rgba(255,255,255,.2); }
+
+/* Mobile sticky: live total + Book now */
+:where(.at-site) .pdp-sticky {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  :where(.at-site) .pdp { padding-bottom: 78px; }
+  :where(.at-site) .pdp-sticky {
+    display: flex;
+    align-items: stretch;
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 90;
+    height: 60px;
+    background: var(--lx-surface);
+    border-top: var(--lx-outline);
+  }
+  :where(.at-site) .pdp-sticky__price {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 14px;
+  }
+  :where(.at-site) .pdp-sticky__price b { font-size: 17px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  :where(.at-site) .pdp-sticky__price span { overflow: hidden; color: var(--lx-muted); font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  :where(.at-site) .pdp-sticky__wa {
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border-left: 1px solid var(--lx-border);
+    color: var(--lx-text);
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+  :where(.at-site) .pdp-sticky__go {
+    padding: 0 22px;
+    border: 0;
+    background: var(--lx-brand);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+  }
+  :where(.at-site) .bk-tiers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :where(.at-site) .bk-date-select .dd-btn { font-size: 15px; }
+}
+
+/* ==========================================================================
+   Production additions — what the live packages need beyond the design
+   page: fewer photos (and poster artwork), CMS rich text, the limited-time
+   offer strip, solo / visa sub-panels, and the tour / any-date calendars.
+   Same tokens and primitives as above.
+   ========================================================================== */
+
+:where(.at-site) .pdp-lb-bar button { display: inline-grid; place-items: center; }
+
+/* limited-time offer strip under the intro */
+:where(.at-site) .pdp-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--lx-amber-border);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-amber-soft);
+  color: var(--lx-amber-text);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+:where(.at-site) .pdp-offer__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--lx-ink);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+:where(.at-site) .pdp-offer__amts { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+:where(.at-site) .pdp-offer b { color: var(--lx-text); font-weight: 800; }
+:where(.at-site) .pdp-offer__timer { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* CMS rich text (itinerary days, inclusions, overview, terms) */
+:where(.at-site) .pdp-rich {
+  padding-top: 12px;
+  color: var(--lx-text-soft);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+:where(.at-site) .pdp-rich p { margin: 0 0 8px; padding: 0; font-size: inherit; line-height: inherit; color: inherit; }
+:where(.at-site) .pdp-rich p:last-child { margin-bottom: 0; }
+:where(.at-site) .pdp-rich strong,
+:where(.at-site) .pdp-rich b { color: var(--lx-text); font-weight: 700; }
+:where(.at-site) .pdp-rich ul,
+:where(.at-site) .pdp-rich ol { margin: 0 0 8px; padding-left: 18px; }
+:where(.at-site) .pdp-rich ul { list-style: disc; }
+:where(.at-site) .pdp-rich ol { list-style: decimal; }
+:where(.at-site) .pdp-rich li { margin: 3px 0; }
+:where(.at-site) .pdp-rich a { color: var(--lx-brand-text); text-decoration: underline; text-underline-offset: 2px; }
+:where(.at-site) .pdp-rich h1,
+:where(.at-site) .pdp-rich h2,
+:where(.at-site) .pdp-rich h3,
+:where(.at-site) .pdp-rich h4 { margin: 12px 0 6px; color: var(--lx-text); font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+:where(.at-site) .pdp-rich img { max-width: 100%; height: auto; border-radius: var(--lx-r-tile); }
+:where(.at-site) .pdp-rich table { width: 100%; margin: 6px 0; border-collapse: collapse; font-size: 12.5px; }
+:where(.at-site) .pdp-rich td,
+:where(.at-site) .pdp-rich th { padding: 6px 8px; border: 1px solid var(--lx-border); text-align: left; }
+:where(.at-site) .pdp-acc .pdp-rich { padding-top: 10px; font-size: 12.5px; }
+
+/* inclusions: CMS lines as the design's dotted list — one bullet per line;
+   bold-only lines (listHtml marks them .is-head) read as sub-headings */
+:where(.at-site) .pdp-inc-card .pdp-rich { padding-top: 0; font-size: 12.5px; line-height: 1.55; }
+:where(.at-site) .pdp-rich--list ul,
+:where(.at-site) .pdp-rich--list ol { margin: 0 0 4px; padding: 0; list-style: none; }
+:where(.at-site) .pdp-rich--list > p,
+:where(.at-site) .pdp-rich--list li { position: relative; margin: 0 0 6px; padding-left: 16px; }
+:where(.at-site) .pdp-rich--list > p::before,
+:where(.at-site) .pdp-rich--list li::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lx-brand);
+}
+:where(.at-site) .pdp-inc-card.is-out .pdp-rich--list > p::before,
+:where(.at-site) .pdp-inc-card.is-out .pdp-rich--list li::before { background: var(--lx-border-hover); }
+:where(.at-site) .pdp-rich--list li p { margin: 0 0 4px; padding: 0; }
+:where(.at-site) .pdp-rich--list li p:last-child { margin-bottom: 0; }
+:where(.at-site) .pdp-rich--list li ul { margin-top: 4px; }
+:where(.at-site) .pdp-rich--list .is-head { margin: 12px 0 6px; padding-left: 0; color: var(--lx-text); }
+:where(.at-site) .pdp-rich--list > .is-head:first-child { margin-top: 0; }
+:where(.at-site) .pdp-rich--list .is-head::before { display: none; }
+/* a list item holding its own sub-headings (exclusions written as one item) */
+:where(.at-site) .pdp-rich--list li:has(> .is-head) { padding-left: 0; }
+:where(.at-site) .pdp-rich--list li:has(> .is-head)::before { display: none; }
+:where(.at-site) .pdp-rich--list li:has(> .is-head) > p:not(.is-head) { margin-bottom: 8px; color: var(--lx-text-soft); }
+:where(.at-site) .pdp-rich--list li:has(> .is-head) > .is-head { margin: 0 0 2px; }
+:where(.at-site) .pdp-rich--list li:empty,
+:where(.at-site) .pdp-rich--list p:empty { display: none; }
+
+/* loading / not found */
+:where(.at-site) .pdp-skel { padding: 14px 0 40px; }
+:where(.at-site) .pdp-skel > div {
+  border-radius: var(--lx-r-tile);
+  background: linear-gradient(90deg, var(--lx-hover) 0%, var(--lx-sunken) 50%, var(--lx-hover) 100%);
+  background-size: 200% 100%;
+  animation: pdp-shimmer 1.2s ease-in-out infinite;
+}
+:where(.at-site) .pdp-skel__crumb { width: 260px; height: 12px; margin-bottom: 14px; }
+:where(.at-site) .pdp-skel > .pdp-skel__gallery { height: 420px; border-radius: var(--lx-r-card); }
+:where(.at-site) .pdp-skel__line { width: 60%; height: 14px; margin-top: 14px; }
+:where(.at-site) .pdp-skel__line.is-short { width: 140px; margin-top: 22px; }
+:where(.at-site) .pdp-skel__line.is-title { width: 45%; height: 30px; }
+@keyframes pdp-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+:where(.at-site) .pdp-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 64px 0 80px; }
+:where(.at-site) .pdp-empty h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+:where(.at-site) .pdp-empty p { color: var(--lx-text-soft); font-size: 14px; }
+
+/* ---------------------------------------------------- booking card extras */
+:where(.at-site) .bk-fields > .bk-step__label { margin-bottom: 0; }
+:where(.at-site) .bk__now b.bk__soon { font-size: 20px; letter-spacing: -0.02em; }
+
+/* checkbox rows (solo, visa, add-ons) and the panel that opens under them */
+:where(.at-site) .bk-opt { display: flex; flex-direction: column; }
+:where(.at-site) .bk-solo { min-height: 42px; padding: 8px 12px; }
+:where(.at-site) .bk-solo__text { min-width: 0; line-height: 1.35; }
+:where(.at-site) .bk-solo__price { flex-shrink: 0; max-width: 55%; font-size: 12.5px; text-align: right; }
+:where(.at-site) .bk-solo.is-locked { cursor: default; }
+:where(.at-site) .bk-solo__tick {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--lx-brand);
+  color: #fff;
+}
+:where(.at-site) .bk-opt.has-sub .bk-solo { border-bottom-right-radius: 0; border-bottom-left-radius: 0; }
+:where(.at-site) .bk-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--lx-brand);
+  border-top: 0;
+  border-radius: 0 0 var(--lx-r-tile) var(--lx-r-tile);
+  background: var(--lx-surface);
+}
+:where(.at-site) .bk-sub .ui-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+:where(.at-site) .bk-consent { align-items: flex-start; font-size: 12px; line-height: 1.45; }
+:where(.at-site) .bk-pax--flat { border: 1px solid var(--lx-border); border-radius: var(--lx-r-tile); box-shadow: none; }
+
+/* not bookable yet / breakdown discount line */
+:where(.at-site) .bk-closed {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--lx-border-strong);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-surface);
+  color: var(--lx-text-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+:where(.at-site) .bk-lines li.is-minus span:last-child { color: var(--lx-success-text); }
+:where(.at-site) .bk-meta b { font-weight: 800; }
+:where(.at-site) .bk-cal-loading {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--lx-border-strong);
+  border-radius: var(--lx-r-menu);
+  color: var(--lx-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* tour / cruise calendar: react-day-picker in the design's date-picker look */
+:where(.at-site) .bk-cal .rdp-root { --rdp-accent-color: var(--lx-ink); margin: 0; }
+:where(.at-site) .bk-cal .rdp-months,
+:where(.at-site) .bk-cal .rdp-month { max-width: none; width: 100%; }
+:where(.at-site) .bk-cal .mcal__head { margin-bottom: 6px; }
+:where(.at-site) .bk-cal .rdp-month_grid { width: 100%; border-collapse: separate; border-spacing: 2px; table-layout: fixed; }
+:where(.at-site) .bk-cal .rdp-weekday {
+  padding: 2px 0 4px;
+  color: var(--lx-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+  opacity: 1;
+}
+:where(.at-site) .bk-cal .rdp-day { width: auto; height: 32px; padding: 0; text-align: center; }
+:where(.at-site) .bk-cal .rdp-day_button {
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: var(--lx-r-control);
+  background: none;
+  color: var(--lx-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+:where(.at-site) .bk-cal .rdp-day:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button:hover { background: var(--lx-hover); }
+:where(.at-site) .bk-cal .rdp-today:not(.rdp-outside) .rdp-day_button { color: var(--lx-brand-text); font-weight: 800; }
+:where(.at-site) .bk-cal .rdp-selected { font-size: inherit; font-weight: inherit; }
+:where(.at-site) .bk-cal .rdp-selected .rdp-day_button { border-color: var(--lx-ink); background: var(--lx-ink); color: #fff; }
+:where(.at-site) .bk-cal .rdp-disabled { opacity: 1; }
+:where(.at-site) .bk-cal .rdp-disabled .rdp-day_button {
+  color: var(--lx-border-hover);
+  font-weight: 500;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+:where(.at-site) .bk-cal .rdp-outside { opacity: .45; }
+:where(.at-site) .bk-cal .rdp-day_hidden { visibility: hidden; }
+
+/* any-date & limited-deal calendars (own day cells with price / seats), in the popover */
+:where(.at-site) .bk-pop .flexible-date-calendar-wrapper {
+  position: relative;
+  max-width: none;
+  min-height: 0;
+  padding: 10px 10px 8px;
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-menu);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-sm);
+}
+:where(.at-site) .bk-pop .flexible-calendar-header-nav {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 0;
+  pointer-events: none;
+}
+:where(.at-site) .bk-pop .flexible-calendar-nav-button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  font-size: 15px;
+  pointer-events: auto;
+}
+:where(.at-site) .bk-pop .flexible-calendar-nav-button:hover:not(:disabled) { background: var(--lx-hover); }
+:where(.at-site) .bk-pop .flexible-date-calendar .rdp-month_caption { height: 28px; margin-bottom: 6px; justify-content: center; }
+:where(.at-site) .bk-pop .flexible-date-calendar .rdp-caption_label { color: var(--lx-text); font-size: 13px; font-weight: 700; letter-spacing: -0.005em; }
+:where(.at-site) .bk-pop .flexible-date-calendar .rdp-weekday {
+  padding: 2px 0 4px;
+  color: var(--lx-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  opacity: 1;
+}
+:where(.at-site) .bk-pop .flexible-day-button {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: var(--lx-r-control);
+}
+:where(.at-site) .bk-pop .flexible-day-button:hover:not(.disabled) { background: var(--lx-hover); }
+:where(.at-site) .bk-pop .flexible-day-number { color: var(--lx-text); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+:where(.at-site) .bk-pop .flexible-day-price { color: var(--lx-success-text); font-size: 8.5px; font-weight: 700; }
+/* the component marks these !important itself */
+:where(.at-site) .bk-pop .flexible-day-button.selected { border-color: var(--lx-ink); background: var(--lx-ink) !important; }
+:where(.at-site) .bk-pop .flexible-day-button.selected .flexible-day-number,
+:where(.at-site) .bk-pop .flexible-day-button.selected .flexible-day-price { color: #fff; }
+:where(.at-site) .bk-pop .flexible-day-button.disabled { background: none; }
+:where(.at-site) .bk-pop .flexible-day-button.disabled .flexible-day-number { color: var(--lx-border-hover); font-weight: 500; text-decoration: line-through; }
+:where(.at-site) .bk-pop .flexible-day-na { color: var(--lx-faint); }
+:where(.at-site) .bk-pop .flexible-day-button.sold-out { background: var(--lx-danger-soft) !important; }
+:where(.at-site) .bk-pop .flexible-day-button.sold-out .flexible-day-number { color: var(--lx-danger); text-decoration: none; }
+:where(.at-site) .bk-pop .flexible-day-soldout { color: var(--lx-danger); }
+:where(.at-site) .bk-pop .flexible-calendar-footer { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--lx-border-strong); }
+:where(.at-site) .bk-pop .flexible-clear-dates-button { color: var(--lx-muted); font-size: 12px; font-weight: 600; }
+:where(.at-site) .bk-pop .flexible-clear-dates-button:hover { color: var(--lx-text); }
+:where(.at-site) .bk-pop .ltd-calendar-cap-hint { color: var(--lx-muted); }
+
+/* floating date picker (portaled to <body>, positioned under its field) */
+:where(.at-site) .bk-pop { z-index: 300; }
+:where(.at-site) .bk-pop > .mcal,
+:where(.at-site) .bk-pop > .flexible-date-calendar-wrapper { box-shadow: var(--lx-offset); }
+
+/* share dialog */
+:where(.at-site) .pdp-share { width: min(440px, 100%); }
+:where(.at-site) .pdp-share__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+:where(.at-site) .pdp-share__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color var(--lx-ease), background var(--lx-ease), box-shadow var(--lx-ease);
+}
+:where(.at-site) .pdp-share__item:hover { box-shadow: var(--lx-offset-sm); }
+:where(.at-site) .pdp-share__ico {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--lx-sunken);
+  color: var(--lx-text);
+}
+:where(.at-site) .pdp-share__item.is-whatsapp .pdp-share__ico { background: #e8f7ee; color: #16a34a; }
+:where(.at-site) .pdp-share__item.is-facebook .pdp-share__ico { background: #eef3fc; color: #1877f2; }
+:where(.at-site) .pdp-share__item.is-x .pdp-share__ico { background: var(--lx-ink); color: #fff; }
+:where(.at-site) .pdp-share__item.is-linkedin .pdp-share__ico { background: #eef3fc; color: #0a66c2; }
+:where(.at-site) .pdp-share__item.is-telegram .pdp-share__ico { background: #eaf6fc; color: #229ed9; }
+:where(.at-site) .pdp-share__item.is-email .pdp-share__ico { background: var(--lx-brand-soft); color: var(--lx-brand-text); }
+:where(.at-site) .pdp-share__copy { display: flex; gap: 8px; }
+:where(.at-site) .pdp-share__copy .ui-input { flex: 1; min-width: 0; color: var(--lx-text-soft); }
+:where(.at-site) .pdp-share__copy .ui-btn { flex-shrink: 0; }
+:where(.at-site) .pdp-share__more { align-self: center; }
+
+@media (max-width: 991px) {
+  :where(.at-site) .pdp-skel > .pdp-skel__gallery { height: 240px; }
+}
+@media (max-width: 767px) {
+  :where(.at-site) .pdp-offer__timer { margin-left: 0; }
+}

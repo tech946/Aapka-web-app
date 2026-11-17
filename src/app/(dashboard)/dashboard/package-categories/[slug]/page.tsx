@@ -25,9 +25,10 @@ function slugToName(slug: string) {
 export default async function CategoryDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const decoded = decodeURIComponent(params.slug || '').toLowerCase();
+  const { slug } = await params;
+  const decoded = decodeURIComponent(slug || '').toLowerCase();
   const candidateName = slugToName(decoded);
 
   // Find category by name (case-insensitive)
@@ -64,26 +65,19 @@ export default async function CategoryDetailPage({
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>{category.name}</h3>
-        <p>Packages in this category</p>
-      </div>
-
-      <div className='table_toolbar category_toolbar'>
-        <div />
-        <div className='table_actions'>
+      <CategoryPackagesClient
+        categoryId={category.id}
+        categorySlug={decoded}
+        categoryName={category.name}
+        title={category.name}
+        subtitle='Packages in this category'
+        actions={
           <AddPackageClient
             categoryId={category.id}
             categorySlug={decoded}
             categoryName={category.name}
           />
-        </div>
-      </div>
-
-      <CategoryPackagesClient
-        categoryId={category.id}
-        categorySlug={decoded}
-        categoryName={category.name}
+        }
       />
 
       <div className='table_pagination category_back_pagination'>

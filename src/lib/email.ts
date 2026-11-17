@@ -101,8 +101,11 @@ function getCustomerEmailTemplate(data: BookingEmailData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Booking Confirmation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);">
   <table role="presentation" style="width: 100%; border-collapse: collapse; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%); padding: 40px 20px;">
     <tr>
       <td align="center">
@@ -237,7 +240,7 @@ function getCustomerEmailTemplate(data: BookingEmailData): string {
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #9a3412; font-size: 14px;">Transaction ID:</td>
-                    <td style="padding: 8px 0; color: #1f2937; font-size: 13px; font-weight: 500; text-align: right; font-family: monospace;">${data.paymentTransactionId || 'N/A'}</td>
+                    <td style="padding: 8px 0; color: #1f2937; font-size: 13px; font-weight: 500; text-align: right; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${data.paymentTransactionId || 'N/A'}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #9a3412; font-size: 14px;">Payment Gateway:</td>
@@ -471,7 +474,7 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
                   ${row('Travel date:', esc(formatDate(pkg.selectedDate)), '110px')}
                   ${row('Travellers:', esc(paxCount(pkg)), '110px')}
                   ${row('Price:', pkg.price ? `<span style="color: #ea580c; font-weight: 600;">${esc(fmt(pkg.price))}</span>` : '', '110px')}
-                  ${row('Package ID:', pkg.packageId ? `<span style="color: #6b7280; font-size: 11px; font-family: 'Courier New', Courier, monospace;">${esc(pkg.packageId)}</span>` : '', '110px')}
+                  ${row('Package ID:', pkg.packageId ? `<span style="color: #6b7280; font-size: 11px; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${esc(pkg.packageId)}</span>` : '', '110px')}
                 </table>
               </div>`
     )
@@ -537,8 +540,11 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Received</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);">
 
   <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">
     ${esc(fmt(data.paymentAmount))} received${data.packages[0]?.packageName ? ` &middot; ${esc(data.packages[0].packageName)}` : ''}${data.customerName ? ` &middot; ${esc(data.customerName)}` : ''}
@@ -594,8 +600,8 @@ function getInternalEmailTemplate(data: BookingEmailData): string {
                 </tr>
               </table>
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
-                ${row('Transaction ID:', data.paymentTransactionId ? `<span style="font-family: 'Courier New', Courier, monospace; font-weight: 600;">${esc(data.paymentTransactionId)}</span>` : '')}
-                ${row('Booking ID:', data.bookingId ? `<span style="font-family: 'Courier New', Courier, monospace; font-weight: 600;">${esc(data.bookingId)}</span>` : '')}
+                ${row('Transaction ID:', data.paymentTransactionId ? `<span style="font-family: 'DM Sans', Arial, Helvetica, sans-serif; font-weight: 600;">${esc(data.paymentTransactionId)}</span>` : '')}
+                ${row('Booking ID:', data.bookingId ? `<span style="font-family: 'DM Sans', Arial, Helvetica, sans-serif; font-weight: 600;">${esc(data.bookingId)}</span>` : '')}
                 ${row('Payment status:', data.paymentStatus ? `<span style="display: inline-block; background-color: #dcfce7; color: #166534; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; letter-spacing: 0.3px; text-transform: uppercase;">${esc(data.paymentStatus)}</span>` : '')}
               </table>
             </td>
@@ -855,8 +861,11 @@ function getLimitedTimeDealCustomerEmailTemplate(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Limited Time Deal – Booking fee received</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background-color: #fafafa;">
   <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 48px 24px;">
@@ -877,7 +886,7 @@ function getLimitedTimeDealCustomerEmailTemplate(
 
               <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
                 <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Reference</p>
-                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #111827; font-family: ui-monospace, monospace;">${escapeHtml(data.bookingId)}</p>
+                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #111827; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${escapeHtml(data.bookingId)}</p>
                 <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Package</p>
                 <p style="margin: 0 0 16px 0; font-size: 17px; font-weight: 600; color: #111827;">${escapeHtml(data.packageName)}</p>
                 <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Preferred travel date</p>
@@ -887,7 +896,7 @@ function getLimitedTimeDealCustomerEmailTemplate(
                 <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #c2410c; text-transform: uppercase; letter-spacing: 0.06em;">Booking fee paid</p>
                 <p style="margin: 0; font-size: 22px; font-weight: 700; color: #c2410c;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</p>
                 <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280; line-height: 1.5;">Includes applicable platform fee (3%) on the booking fee portion.</p>
-                <p style="margin: 8px 0 0 0; font-size: 13px; color: #6b7280;">Transaction: <span style="font-family: ui-monospace, monospace;">${escapeHtml(data.paymentTransactionId)}</span></p>
+                <p style="margin: 8px 0 0 0; font-size: 13px; color: #6b7280;">Transaction: <span style="font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${escapeHtml(data.paymentTransactionId)}</span></p>
               </div>
 
               <p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 600; color: #c2410c; letter-spacing: 0.06em; text-transform: uppercase;">Your contact details</p>
@@ -947,8 +956,11 @@ function getLimitedTimeDealInternalEmailTemplate(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LTD booking fee – ${escapeHtml(data.bookingId)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background-color: #fafafa;">
   <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 32px 24px;">
@@ -968,7 +980,7 @@ function getLimitedTimeDealInternalEmailTemplate(
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Travel date:</strong> ${escapeHtml(data.travelDateDisplay)}</p>
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Party:</strong> ${escapeHtml(partySummary)}</p>
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151;"><strong>Fee paid:</strong> <span style="color: #c2410c; font-weight: 700;">${formatLtdCurrency(data.bookingFeePaid, data.currency)}</span> <span style="color: #6b7280; font-weight: 400;">(includes 3% platform fee on booking fee)</span></p>
-                <p style="margin: 0; font-size: 12px; color: #6b7280; font-family: ui-monospace, monospace;">Txn: ${escapeHtml(data.paymentTransactionId)}</p>
+                <p style="margin: 0; font-size: 12px; color: #6b7280; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">Txn: ${escapeHtml(data.paymentTransactionId)}</p>
               </div>
               <p style="margin: 0 0 10px 0; font-size: 12px; font-weight: 600; color: #c2410c; text-transform: uppercase;">Customer (form)</p>
               <table role="presentation" style="width: 100%; font-size: 13px; color: #374151;">
@@ -1079,8 +1091,11 @@ function getPdfBrochureEmailTemplate(data: PdfBrochureEmailData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your PDF Brochure - Aapka Tourism</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background-color: #fafafa;">
   <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 48px 24px;">

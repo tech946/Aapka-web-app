@@ -1,0 +1,316 @@
+'use client';
+
+import { useState } from 'react';
+import { Mail, Phone, MapPin, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import FrHeader from '../Home/foreigner/FrHeader';
+import { FrFooter } from '../Home/foreigner/FrSections';
+import { FR_FONTS } from '../Home/foreigner/fonts';
+import '../Home/foreigner/foreigner.css';
+import '@/components/site/pdp/pdp-fr.css';
+import './contact.css';
+import './contact-fr.css';
+
+export default function ContactPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    message: '',
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone
+    ) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to submit query');
+      }
+
+      toast.success('Thank you! We will contact you soon.');
+      // Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        message: '',
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  return (
+    <div className={'fr ' + FR_FONTS}>
+      <FrHeader />
+      <section className='fr-section cu-banner'>
+        <div className='fr-container'>
+          <div className='cu-banner__flex'>
+            <img src={BANNER_LEFT} alt='' className='cu-banner__img cu-banner__img--left' />
+            <div className='cu-banner__text'>
+              <h1 className='cu-banner__title'>Contact Us</h1>
+              <div className='fr-para-width'>
+                <p>
+                  We&apos;d love to hear from you. Send us your query, call, or
+                  drop by our Bur Dubai office.
+                </p>
+              </div>
+            </div>
+            <img src={BANNER_RIGHT} alt='' className='cu-banner__img cu-banner__img--right' />
+          </div>
+        </div>
+      </section>
+      <div className='at-site desert-ember'>
+      <div className='cu'>
+        <div className='container'>
+          <nav className='cu_crumb' aria-label='breadcrumb'>
+            <ol>
+              <li>
+                <Link href='/'>Home</Link>
+              </li>
+              <li aria-current='page'>
+                <span>Contact Us</span>
+              </li>
+            </ol>
+          </nav>
+
+          {/* Contact Options */}
+          <ul className='cu_cards'>
+            <li>
+              <a href='mailto:info@aapkatourism.com'>
+                <span className='cu_ico'>
+                  <Mail strokeWidth={1.8} aria-hidden='true' />
+                </span>
+                <span>
+                  <b>Email</b>
+                  <strong>Contact sales</strong>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a href='tel:+971567809460'>
+                <span className='cu_ico'>
+                  <Phone strokeWidth={1.8} aria-hidden='true' />
+                </span>
+                <span>
+                  <b>Call</b>
+                  <strong>+971567809460</strong>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                href={MAPS_LINK}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                <span className='cu_ico'>
+                  <MapPin strokeWidth={1.8} aria-hidden='true' />
+                </span>
+                <span>
+                  <b>Office</b>
+                  <strong>
+                    Office #10118, CBD Bank Building, Al Mankhool, Bur Dubai
+                  </strong>
+                </span>
+              </a>
+            </li>
+          </ul>
+
+          <div className='cu_grid'>
+            {/* Contact Form */}
+            <section
+              className='cu_form-card ui-card'
+              aria-labelledby='cu-form-title'
+            >
+              <form onSubmit={handleSubmit}>
+                <div className='ui-card__head'>
+                  <div>
+                    <p className='ui-eyebrow'>Enquiry</p>
+                    <h2 id='cu-form-title' className='ui-title'>
+                      Submit Your Query Today!
+                    </h2>
+                    <p className='ui-desc'>
+                      Fill out the form below and our team will get back to you
+                      as soon as possible.
+                    </p>
+                  </div>
+                </div>
+
+                <div className='ui-card__body'>
+                  <div className='ui-grid'>
+                    <div className='ui-field'>
+                      <label className='ui-label' htmlFor='firstName'>
+                        First Name<i className='ui-req'>*</i>
+                      </label>
+                      <input
+                        type='text'
+                        id='firstName'
+                        name='firstName'
+                        className='ui-input'
+                        placeholder='First Name'
+                        autoComplete='given-name'
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className='ui-field'>
+                      <label className='ui-label' htmlFor='lastName'>
+                        Last Name<i className='ui-req'>*</i>
+                      </label>
+                      <input
+                        type='text'
+                        id='lastName'
+                        name='lastName'
+                        className='ui-input'
+                        placeholder='Last Name'
+                        autoComplete='family-name'
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className='ui-field'>
+                      <label className='ui-label' htmlFor='email'>
+                        Email<i className='ui-req'>*</i>
+                      </label>
+                      <input
+                        type='email'
+                        id='email'
+                        name='email'
+                        className='ui-input'
+                        placeholder='e.g. email@hello.com'
+                        autoComplete='email'
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className='ui-field'>
+                      <label className='ui-label' htmlFor='phone'>
+                        Phone Number<i className='ui-req'>*</i>
+                      </label>
+                      <input
+                        type='tel'
+                        id='phone'
+                        name='phone'
+                        className='ui-input'
+                        placeholder='000-000-0000'
+                        autoComplete='tel'
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className='ui-field ui-field--wide'>
+                      <label className='ui-label' htmlFor='message'>
+                        Any additional information:
+                      </label>
+                      <textarea
+                        id='message'
+                        name='message'
+                        className='ui-input'
+                        placeholder='Tell us more about your travel requirements...'
+                        rows={5}
+                        value={formData.message}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className='ui-card__foot'>
+                  <button
+                    type='submit'
+                    className='ui-btn ui-btn--primary ui-btn--lg'
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className='spinning' aria-hidden='true' />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Query >>'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            {/* Google Map - right half, beside the form */}
+            <section className='cu_map' aria-label='Office location'>
+              <iframe
+                src='https://www.google.com/maps?q=Office+%2310118%2C+CBD+Bank+Building%2C+Near+Sharaf+DG+Metro+Exit+1%2C+Al+Mankhool%2C+Bur+Dubai%2C+UAE&output=embed&zoom=15'
+                allowFullScreen
+                loading='lazy'
+                referrerPolicy='no-referrer-when-downgrade'
+                title='Aapka Tourism Office Location - Office #10118, CBD Bank Building, Near Sharaf DG Metro Exit 1, Al Mankhool, Bur Dubai, UAE'
+              ></iframe>
+            </section>
+          </div>
+        </div>
+      </div>
+      </div>
+      <FrFooter />
+    </div>
+  );
+}
+
+const CDN = 'https://cdn.prod.website-files.com/69247547c23b7c23d27ef795';
+const BANNER_LEFT = `${CDN}/6926e7acd0f3c3f32775b953_traveler2.webp`;
+const BANNER_RIGHT = `${CDN}/6925b3451b1428abf6d334c9_traveler.webp`;
+
+const MAPS_LINK =
+  'https://maps.google.com/?q=Office+%2310118%2C+CBD+Bank+Building%2C+Near+Sharaf+DG+Metro+Exit+1%2C+Al+Mankhool%2C+Bur+Dubai%2C+UAE';

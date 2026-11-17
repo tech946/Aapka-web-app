@@ -1,0 +1,436 @@
+/* CRM login — two-step (email, then password) card. */
+
+.crm-login-page {
+  /* CRM face. globals.css paints every element with var(--app-font, Inter),
+     so setting the variable here is what switches the page over. */
+  --app-font: var(--font-sans), 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --app-heading-font: var(--app-font);
+  font-family: var(--app-font);
+  --cl-ink: #1c1917;
+  --cl-ink-soft: #57534e;
+  --cl-muted: #a8a29e;
+  --cl-line: #eceae6;
+  --cl-soft: #f3f2ef;
+  --cl-orange: #f97316;
+  --cl-orange-soft: #ffedd5;
+  --cl-red: #dc2626;
+  --cl-red-soft: #fef2f2;
+  --cl-green: #15803d;
+
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #ffffff;
+  overflow: hidden;
+  color: var(--cl-ink);
+}
+
+.crm-login-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  padding: 26px 28px 22px;
+  background: #ffffff;
+  border-radius: 30px;
+  box-shadow: 0 2px 6px rgba(28, 25, 23, 0.04), 0 18px 48px rgba(28, 25, 23, 0.09);
+  text-align: center;
+}
+
+.crm-login-art {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.crm-login-art img {
+  width: 140px;
+  height: auto;
+  user-select: none;
+}
+
+.crm-login-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--cl-ink);
+}
+
+.crm-login-subtitle {
+  margin: 0 auto;
+  max-width: 280px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--cl-ink-soft);
+}
+
+.crm-login-subtitle strong {
+  color: var(--cl-ink);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* Two-step progress bar */
+.crm-login-steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0 16px;
+}
+
+.crm-login-step {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cl-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.crm-login-step::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--cl-orange);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.crm-login-step.is-filled::after {
+  transform: scaleX(1);
+}
+
+/* Form */
+.crm-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.crm-login-form-enter {
+  animation: crm-login-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes crm-login-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.crm-login-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border: 1px solid var(--cl-line);
+  border-radius: 999px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.crm-login-field:focus-within {
+  border-color: var(--cl-orange);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.14);
+}
+
+.crm-login-field.has-error {
+  border-color: var(--cl-red);
+}
+
+.crm-login-field.has-error:focus-within {
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
+.crm-login-field-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--cl-muted);
+  pointer-events: none;
+}
+
+.crm-login-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 44px 0 42px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--cl-ink);
+  outline: none;
+}
+
+.crm-login-field input::placeholder {
+  color: var(--cl-muted);
+}
+
+.crm-login-field input:disabled {
+  opacity: 0.7;
+}
+
+.crm-login-eye {
+  position: absolute;
+  right: 7px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cl-muted);
+  cursor: pointer;
+}
+
+.crm-login-eye:hover {
+  color: var(--cl-ink-soft);
+  background: var(--cl-soft);
+}
+
+.crm-login-inline-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: -4px 0 0;
+  padding: 0 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--cl-red);
+  animation: crm-login-in 0.2s ease;
+}
+
+.crm-login-inline-error svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.crm-login-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #f0fdf4;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--cl-green);
+  text-align: left;
+}
+
+.crm-login-notice svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+/* Verified email shown on step two */
+.crm-login-email-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 5px 0 14px;
+  border-radius: 999px;
+  background: var(--cl-orange-soft);
+  color: #9a3412;
+  font-size: 13.5px;
+}
+
+.crm-login-email-chip-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.crm-login-email-chip button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #9a3412;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crm-login-email-chip button:hover:not(:disabled) {
+  background: #fff7ed;
+}
+
+/* Buttons */
+.crm-login-primary,
+.crm-login-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+}
+
+.crm-login-primary {
+  margin-top: 2px;
+  background: var(--cl-ink);
+  color: #fff;
+}
+
+.crm-login-primary:hover:not(:disabled) {
+  background: #292524;
+}
+
+.crm-login-social {
+  background: var(--cl-soft);
+  color: var(--cl-ink);
+  text-decoration: none;
+}
+
+.crm-login-social svg {
+  color: var(--cl-orange);
+}
+
+.crm-login-social:hover:not(:disabled) {
+  background: #eae8e4;
+}
+
+.crm-login-primary:active:not(:disabled),
+.crm-login-social:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.crm-login-primary:disabled,
+.crm-login-social:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.crm-login-primary:focus-visible,
+.crm-login-social:focus-visible,
+.crm-login-footer button:focus-visible,
+.crm-login-email-chip button:focus-visible,
+.crm-login-eye:focus-visible {
+  outline: 2px solid var(--cl-orange);
+  outline-offset: 2px;
+}
+
+.crm-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--cl-muted);
+}
+
+.crm-login-divider::before,
+.crm-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--cl-line);
+}
+
+.crm-login-footer {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--cl-ink-soft);
+}
+
+.crm-login-footer button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--cl-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--cl-orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.crm-login-footer button:hover:not(:disabled) {
+  color: #c2410c;
+}
+
+.crm-login-footer button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.crm-login-processing {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--cl-ink-soft);
+}
+
+@media (max-width: 480px) {
+  .crm-login-card {
+    padding: 22px 18px 18px;
+    border-radius: 24px;
+  }
+
+  .crm-login-art img {
+    width: 120px;
+  }
+
+  .crm-login-title {
+    font-size: 20px;
+  }
+}
+
+/* Short screens (small laptops, landscape phones): shrink the art first. */
+@media (max-height: 700px) {
+  .crm-login-page {
+    padding-block: 16px;
+  }
+
+  .crm-login-art img {
+    width: 110px;
+  }
+
+  .crm-login-steps {
+    margin: 12px 0;
+  }
+
+  .crm-login-divider {
+    margin: 10px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-login-step::after,
+  .crm-login-form-enter,
+  .crm-login-inline-error {
+    transition: none;
+    animation: none;
+  }
+}

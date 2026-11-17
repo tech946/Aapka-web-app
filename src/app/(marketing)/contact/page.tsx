@@ -1,250 +1,263 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Building2, Compass, Headset, Loader2, Mail, MapPin, Navigation, Phone, PhoneCall, Share2, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import './contact.css';
+import ExHeader from '../Home/ex/ExHeader';
+import { ExFooter } from '../Home/ex/ExSections';
+import { EX_FONTS } from '../Home/ex/fonts';
+import { CONTACT } from '@/components/site/site-config';
+import '../Home/ex/ex.css';
+import './contact-ex.css';
 
-export default function ContactPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    message: '',
-  });
+type Office = {
+  id: string;
+  tag: string;
+  city: string;
+  area: string;
+  address: string;
+  phone: string;
+  phoneHref: string;
+  query: string;
+};
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+const OFFICES: Office[] = [
+  {
+    id: 'dubai',
+    tag: 'Head Office',
+    city: 'Dubai',
+    area: 'Bur Dubai, UAE',
+    address: 'Office #10118, CBD Bank Building, Near Sharaf DG Metro Exit 1, Al Mankhool, Bur Dubai, UAE',
+    phone: CONTACT.uaePhone,
+    phoneHref: CONTACT.uaePhoneHref,
+    query: 'Office #10118, CBD Bank Building, Near Sharaf DG Metro Exit 1, Al Mankhool, Bur Dubai, UAE',
+  },
+  {
+    id: 'delhi',
+    tag: 'India Office',
+    city: 'New Delhi',
+    area: 'Nehru Place, Delhi',
+    address: '1522 B, Hemkunt Chambers 89, Nehru Place, Delhi 110019',
+    phone: CONTACT.indiaPhone,
+    phoneHref: CONTACT.indiaPhoneHref,
+    query: '1522 B, Hemkunt Chambers 89, Nehru Place, Delhi 110019',
+  },
+];
+
+const DESKS = [
+  { title: 'For guests in the UAE & worldwide', phone: CONTACT.uaePhone, phoneHref: CONTACT.uaePhoneHref },
+  { title: 'For guests in India', phone: CONTACT.indiaPhone, phoneHref: CONTACT.indiaPhoneHref },
+];
+
+const FEATURES = [
+  { icon: Compass, title: 'Planned by locals', text: 'Our team lives and works in Dubai, so every plan is built on the ground.' },
+  { icon: Building2, title: 'Offices in Dubai & Delhi', text: 'Visit us in Bur Dubai or at Nehru Place, New Delhi.' },
+  { icon: Users, title: 'City by city, day by day', text: 'Holidays planned for travellers from India & the world.' },
+  { icon: Headset, title: '24x7 trip support', text: 'A dedicated number for help at any hour of your trip.' },
+];
+
+const mapsLink = (q: string) => `https://maps.google.com/?q=${encodeURIComponent(q)}`;
+const mapsEmbed = (q: string) => `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed&z=15`;
+
+const EMPTY = { firstName: '', lastName: '', email: '', phone: '', message: '' };
+
+function OfficeCard({ office }: { office: Office }) {
+  const share = async () => {
+    const text = `Aapka Tourism ${office.city}: ${office.address}`;
+    const url = mapsLink(office.query);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `Aapka Tourism ${office.city}`, text, url });
+        return;
+      }
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      toast.success('Address copied');
+    } catch {}
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  return (
+    <article className="cx-card" id={office.id}>
+      <div className="cx-card__top">
+        <span className="cx-card__tag">{office.tag}</span>
+        <div className="cx-card__acts">
+          <a href={mapsLink(office.query)} target="_blank" rel="noopener noreferrer" aria-label={`Open ${office.city} office in Google Maps`}>
+            <MapPin aria-hidden="true" />
+          </a>
+          <button type="button" onClick={share} aria-label={`Share ${office.city} office address`}>
+            <Share2 aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <h3 className="cx-card__city">{office.city}</h3>
+      <a className="cx-card__phone" href={office.phoneHref}>
+        {office.phone}
+      </a>
+      <p className="cx-card__addr">{office.address}</p>
+      <div className="cx-card__map">
+        <iframe src={mapsEmbed(office.query)} loading="lazy" referrerPolicy="no-referrer-when-downgrade" title={`Aapka Tourism ${office.city} office on the map`} />
+      </div>
+      <div className="cx-card__btns">
+        <a className="cx-btn cx-btn--brand" href={mapsLink(office.query)} target="_blank" rel="noopener noreferrer">
+          <Navigation aria-hidden="true" />
+          Get Directions
+        </a>
+        <a className="cx-btn cx-btn--line" href={office.phoneHref}>
+          <Phone aria-hidden="true" />
+          Call Office
+        </a>
+      </div>
+    </article>
+  );
+}
 
-    // Basic validation
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.email ||
-      !formData.phone
-    ) {
+export default function ContactPage() {
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState(EMPTY);
+
+  const change = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName || !form.lastName || !form.email || !form.phone) {
       toast.error('Please fill all required fields');
       return;
     }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       toast.error('Please enter a valid email address');
       return;
     }
-
-    setIsSubmitting(true);
-
+    setBusy(true);
     try {
-      const response = await fetch('/api/contact', {
+      const res = await fetch('/api/contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
       });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to submit query');
-      }
-
-      toast.success('Thank you! We will contact you soon.');
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        message: '',
-      });
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to submit. Please try again.');
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error || 'Failed to submit query');
+      toast.success('Thank you! We will call you soon.');
+      setForm(EMPTY);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to submit. Please try again.');
     } finally {
-      setIsSubmitting(false);
+      setBusy(false);
     }
   };
 
   return (
-    <div className='contact-page'>
-      <div className='contact-container'>
-        {/* Left Panel - Contact Information */}
-        <div className='contact-info-panel'>
-          <div className='contact-badge'>CONTACT US</div>
-          <h1 className='contact-heading'>
-            We'd love to hear from <span className='highlight'>you</span>
-          </h1>
-          <p className='contact-description'>
-            Whether you're looking for guidance on planning your perfect Dubai
-            adventure or simply want to connect, we're here to help. Fill out
-            the form and our team will get back to you as soon as possible.
-            Contact our Sales team for information on our tour packages and
-            services.
-          </p>
+    <div className={'desert-ember ex ' + EX_FONTS}>
+      <ExHeader />
+      <main className="cx">
+        <div className="cx-band" aria-hidden="true">
+          <Image className="cx-band__img" src="/images/stock/dest-dubai.jpg" alt="" fill priority sizes="100vw" />
+        </div>
+        <div className="cx-wrap">
+          <div className="cx-grid">
+            <div className="cx-main">
+              <div className="cx-intro">
+                <h1>Find your nearest Aapka Tourism office</h1>
+                <div className="cx-note">
+                  <span className="cx-note__icon" aria-hidden="true">
+                    <MapPin />
+                  </span>
+                  <p>
+                    <b>
+                      We&apos;re in <a href="#dubai">Dubai</a> &amp; <a href="#delhi">New Delhi</a>.
+                    </b>
+                    <span>Visit your nearest office and plan your Dubai holiday with our team.</span>
+                  </p>
+                </div>
+              </div>
 
-          {/* Google Map */}
-          <div className='contact-map-container'>
-            <iframe
-              src='https://www.google.com/maps?q=Office+%2310118%2C+CBD+Bank+Building%2C+Near+Sharaf+DG+Metro+Exit+1%2C+Al+Mankhool%2C+Bur+Dubai%2C+UAE&output=embed&zoom=15'
-              width='100%'
-              height='100%'
-              style={{ border: 0 }}
-              allowFullScreen
-              loading='lazy'
-              referrerPolicy='no-referrer-when-downgrade'
-              title='Aapka Tourism Office Location - Office #10118, CBD Bank Building, Near Sharaf DG Metro Exit 1, Al Mankhool, Bur Dubai, UAE'
-            ></iframe>
-          </div>
+              {OFFICES.map((o) => (
+                <OfficeCard key={o.id} office={o} />
+              ))}
+            </div>
 
-          {/* Contact Options */}
-          <div className='contact-options'>
-            <a href='mailto:info@aapkatourism.com' className='contact-option'>
-              <Mail size={20} />
-              <span>Contact sales</span>
-            </a>
-            <a href='tel:+971567809460' className='contact-option'>
-              <Phone size={20} />
-              <span>+971567809460</span>
-            </a>
-            <a
-              href='https://maps.google.com/?q=Office+%2310118%2C+CBD+Bank+Building%2C+Near+Sharaf+DG+Metro+Exit+1%2C+Al+Mankhool%2C+Bur+Dubai%2C+UAE'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='contact-option'
-            >
-              <MapPin size={20} />
-              <span>
-                Office #10118, CBD Bank Building, Al Mankhool, Bur Dubai
-              </span>
-            </a>
+            <aside className="cx-side">
+              <section className="cx-call" id="call-back" aria-labelledby="cx-call-title">
+                <h2 id="cx-call-title">Want us to call you?</h2>
+                <form className="cx-form" onSubmit={submit} noValidate>
+                  <div className="cx-form__row">
+                    <label className="cx-field">
+                      <span>First Name*</span>
+                      <input name="firstName" autoComplete="given-name" value={form.firstName} onChange={change} required />
+                    </label>
+                    <label className="cx-field">
+                      <span>Last Name*</span>
+                      <input name="lastName" autoComplete="family-name" value={form.lastName} onChange={change} required />
+                    </label>
+                  </div>
+                  <label className="cx-field">
+                    <span>Mobile No.*</span>
+                    <input type="tel" name="phone" autoComplete="tel" placeholder="+971" value={form.phone} onChange={change} required />
+                  </label>
+                  <label className="cx-field">
+                    <span>Email ID*</span>
+                    <input type="email" name="email" autoComplete="email" value={form.email} onChange={change} required />
+                  </label>
+                  <label className="cx-field">
+                    <span>Message</span>
+                    <textarea name="message" rows={3} placeholder="Tell us about your trip" value={form.message} onChange={change} />
+                  </label>
+                  <button type="submit" className="cx-btn cx-btn--brand cx-btn--block" disabled={busy}>
+                    {busy ? <Loader2 className="cx-spin" aria-hidden="true" /> : <PhoneCall aria-hidden="true" />}
+                    {busy ? 'Sending…' : 'Request Call Back'}
+                  </button>
+                </form>
+
+                {DESKS.map((d) => (
+                  <ul className="cx-links" key={d.title}>
+                    <li className="cx-links__head">{d.title}</li>
+                    <li>
+                      <span aria-hidden="true">
+                        <Phone />
+                      </span>
+                      <a href={d.phoneHref}>{d.phone}</a>
+                    </li>
+                    <li>
+                      <span aria-hidden="true">
+                        <Mail />
+                      </span>
+                      <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                    </li>
+                  </ul>
+                ))}
+              </section>
+
+              <section className="cx-why" aria-labelledby="cx-why-title">
+                <h2 id="cx-why-title">Why travel with Aapka Tourism</h2>
+                <ul>
+                  {FEATURES.map((f) => (
+                    <li key={f.title}>
+                      <span className="cx-why__icon" aria-hidden="true">
+                        <f.icon />
+                      </span>
+                      <span>
+                        <b>{f.title}</b>
+                        {f.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </aside>
           </div>
         </div>
 
-        {/* Right Panel - Contact Form */}
-        <div className='contact-form-panel'>
-          <h2 className='form-heading'>Submit Your Query Today!</h2>
-          <p className='form-description'>
-            Fill out the form below and our team will get back to you as soon as
-            possible.
-          </p>
-
-          <form onSubmit={handleSubmit} className='contact-form'>
-            <div className='form-row'>
-              <div className='form-group'>
-                <label htmlFor='firstName'>
-                  First Name <span className='required'>*</span>
-                </label>
-                <input
-                  type='text'
-                  id='firstName'
-                  name='firstName'
-                  placeholder='First Name'
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className='form-group'>
-                <label htmlFor='lastName'>
-                  Last Name <span className='required'>*</span>
-                </label>
-                <input
-                  type='text'
-                  id='lastName'
-                  name='lastName'
-                  placeholder='Last Name'
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className='form-row'>
-              <div className='form-group'>
-                <label htmlFor='email'>
-                  Email <span className='required'>*</span>
-                </label>
-                <input
-                  type='email'
-                  id='email'
-                  name='email'
-                  placeholder='e.g. email@hello.com'
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className='form-group'>
-                <label htmlFor='phone'>
-                  Phone Number <span className='required'>*</span>
-                </label>
-                <input
-                  type='tel'
-                  id='phone'
-                  name='phone'
-                  placeholder='000-000-0000'
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className='form-group full-width'>
-              <label htmlFor='message'>Any additional information:</label>
-              <textarea
-                id='message'
-                name='message'
-                placeholder='Tell us more about your travel requirements...'
-                rows={5}
-                value={formData.message}
-                onChange={handleChange}
-              />
-            </div>
-
-            <button
-              type='submit'
-              className='submit-button'
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={20} className='spinning' />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Query >>'
-              )}
-            </button>
-          </form>
-
-          <div className='form-footer'>
-            <p className='form-footer-text'>
-              <strong>Speak with a travel expert</strong>
-            </p>
-            <p className='form-footer-text'>
-              Don't like forms? Email us:{' '}
-              <a href='mailto:info@aapkatourism.com'>info@aapkatourism.com</a>
-            </p>
-          </div>
+        <div className="cx-dock">
+          <span>
+            <small>Call us</small>
+            <a href={CONTACT.uaePhoneHref}>{CONTACT.uaePhone}</a>
+          </span>
+          <a className="cx-btn cx-btn--brand" href="#call-back">
+            <PhoneCall aria-hidden="true" />
+            Request Call Back
+          </a>
         </div>
-      </div>
+      </main>
+      <ExFooter />
     </div>
   );
 }

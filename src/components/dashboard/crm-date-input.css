@@ -1,0 +1,288 @@
+/* ==========================================================================
+   CrmDateInput — CRM date field + picker (dashboard)
+   Field: the section-05 control (36px, strong hairline, brand on focus).
+   Panel: the website's .mcal date picker — ink outline + offset, ink
+   selected day, brand "today", struck-through days out of range.
+   Tokens (--lx-*) are set on <body> while the dashboard is mounted, so the
+   portaled panel picks them up too.
+   ========================================================================== */
+
+.crm-date {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.crm-date__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 7px 11px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 8px;
+  background: var(--lx-surface);
+  box-shadow: 0 1px 2px rgba(23, 22, 20, 0.04);
+  color: var(--lx-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--lx-ease),
+    background-color var(--lx-ease);
+}
+
+.crm-date__field:hover:not(:disabled):not(.is-open) {
+  border-color: var(--lx-border-hover);
+}
+
+.crm-date__field.is-open,
+.crm-date__field:focus-visible {
+  border-color: var(--lx-brand);
+  outline: none;
+}
+
+.crm-date__field:disabled {
+  background: var(--lx-sunken);
+  color: var(--lx-muted);
+  cursor: not-allowed;
+}
+
+.crm-date__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-date__value.is-ph {
+  color: var(--lx-faint);
+}
+
+.crm-date__ico {
+  flex-shrink: 0;
+  color: var(--lx-muted);
+}
+
+/* invisible native input that carries "required" for form validation */
+.crm-date__native {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* inside the existing "date + Add" rows */
+.date_input_group .crm-date {
+  flex: 1;
+}
+
+/* ------------------------------------------------------------ panel */
+
+.crm-date-pop {
+  z-index: 100010; /* above dashboard modals (100000) */
+  font-family: var(--app-font, inherit);
+}
+
+.crm-cal {
+  padding: 10px 10px 8px;
+  border: 1.5px solid var(--lx-ink);
+  border-radius: 12px;
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-sm);
+  color: var(--lx-text);
+}
+
+.crm-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.crm-cal__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.crm-cal__nav {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  cursor: pointer;
+  transition: background var(--lx-ease);
+}
+
+.crm-cal__nav:hover:not(:disabled) {
+  background: var(--lx-hover);
+}
+
+.crm-cal__nav:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.crm-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.crm-cal__wd {
+  padding: 2px 0 4px;
+  color: var(--lx-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.crm-cal__day {
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--lx-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--lx-ease);
+}
+
+.crm-cal__day:hover:not(:disabled):not(.is-on) {
+  background: var(--lx-hover);
+}
+
+.crm-cal__day.is-today {
+  color: var(--lx-brand-text);
+  font-weight: 800;
+}
+
+.crm-cal__day.is-on {
+  border-color: var(--lx-ink);
+  background: var(--lx-ink);
+  color: #fff;
+}
+
+.crm-cal__day:disabled {
+  color: var(--lx-border-hover);
+  font-weight: 500;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* time row (datetime fields) */
+.crm-cal__time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--lx-border-strong);
+}
+
+.crm-cal__time-label {
+  margin-right: auto;
+  color: var(--lx-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.crm-cal__time .crm-select__btn {
+  min-height: 30px;
+  padding: 4px 8px 4px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.crm-cal__colon {
+  color: var(--lx-muted);
+  font-weight: 700;
+}
+
+/* foot: Clear · Today (· Done) */
+.crm-cal__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--lx-border);
+}
+
+.crm-cal__foot-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-cal__link {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--lx-text-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--lx-ease),
+    color var(--lx-ease);
+}
+
+.crm-cal__link:hover:not(:disabled) {
+  background: var(--lx-hover);
+  color: var(--lx-text);
+}
+
+.crm-cal__link:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.crm-cal__done {
+  height: 28px;
+  padding: 0 14px;
+  border: 1px solid var(--lx-ink);
+  border-radius: 999px;
+  background: var(--lx-ink);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.crm-cal__done:hover {
+  background: var(--lx-ink-hover, #343230);
+}

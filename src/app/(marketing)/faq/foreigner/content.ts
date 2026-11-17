@@ -1,0 +1,62 @@
+import { CONTACT } from '@/components/site/site-config';
+import type { FaqItem } from '../../Home/foreigner/FrSections';
+
+export const FAQ_BANNER = {
+  title: 'Helpful Info',
+  text: 'Find clear answers to common holiday questions, booking details, and helpful information designed to make your trip easier from start to finish.',
+  imageLeft: '/images/stock/traveller-sharjah.jpg',
+  imageRight: '/images/stock/traveller-couple-dunes.jpg',
+};
+
+export const FAQ_ITEMS: FaqItem[] = [
+  {
+    topic: 'Booking & Payments',
+    q: 'How do I book a holiday?',
+    a: 'Pick a package, choose your travellers and date, and pay securely online. Our team confirms every booking personally, sends your vouchers on WhatsApp and email, and is happy to book it all for you by phone if you prefer.',
+  },
+  {
+    topic: 'Dates & Departures',
+    q: 'Can I choose my own travel date?',
+    a: 'Yes — Anydate Packages let you start on the day that suits you. Other packages run on set departure dates, shown on each package before you book, so you always know exactly when your holiday starts and ends.',
+  },
+  {
+    topic: 'Visas & Documents',
+    q: 'Can you help with my visa?',
+    a: 'Many packages can include your UAE visa — look for “Visa included” on the package. We also arrange Oman visas. If you are not sure which visa you need for your passport, just ask us before you book and we will guide you.',
+  },
+  {
+    topic: 'Help on Your Trip',
+    q: 'Who do I contact during my trip?',
+    a: `From the airport pick-up to your last drop-off, our Dubai team is a message away on WhatsApp (${CONTACT.uaePhone}). Pick-ups, timings, a missed transfer or a change of plan — tell us what you need and we will sort it out quickly.`,
+  },
+  {
+    topic: 'Hotels & Stays',
+    q: 'What kind of hotels do you choose?',
+    a: 'We choose comfortable, well-reviewed hotels in convenient locations, with clean rooms and good food, so travel time between sightseeing stays short. If you would like to upgrade or stay somewhere specific, just ask us before you book.',
+  },
+  {
+    topic: 'Families & Groups',
+    q: 'Do you plan trips for families and groups?',
+    a: 'Yes. Many of our guests travel as families, couples or large groups. We plan the pace, transfers and meals around everyone travelling — from grandparents to young children — so the whole group can enjoy the holiday together without rushing from place to place.',
+  },
+  {
+    topic: 'Food & Meals',
+    q: 'Is Indian food available on the tours?',
+    a: 'Yes — Indian vegetarian and non-vegetarian meals are easy to find across the UAE.\nOur tours stop at restaurants our guests already love.',
+  },
+  {
+    topic: 'Changes & Cancellations',
+    q: 'Can I change or cancel my booking?',
+    a: 'It depends on the package and how close you are to your travel date.\nOur cancellation policy explains the rules, and our team will always help you find the best option if your plans change.',
+  },
+  {
+    topic: 'Partners & Agents',
+    q: 'Can travel agents work with you?',
+    a: 'Yes — travel agents can join our partner programme and get partner pricing on our holidays. Sign up on the Become a Partner page.\nOur team will help you set up and make your first booking.',
+  },
+  {
+    topic: 'Prices & Currency',
+    q: 'Which currency are your prices shown in?',
+    a: 'Prices are shown in AED per person unless a package says otherwise, and the full amount for your group is always confirmed before you pay.',
+  },
+];

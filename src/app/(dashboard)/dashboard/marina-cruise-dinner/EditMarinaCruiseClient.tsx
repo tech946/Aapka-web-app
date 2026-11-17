@@ -17,6 +17,7 @@ import MarinaRegistrationPricing from './MarinaRegistrationPricing';
 import TourBookingDaysSelector from './TourBookingDaysSelector';
 import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import '../dashboard.css';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type Pkg = {
   package_id: string;
@@ -266,7 +267,7 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
   };
 
   const modalContent = open ? (
-    <div className='modal_overlay' onClick={() => setOpen(false)}>
+    <div className='modal_overlay'>
       <div className='modal category_modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>Edit Marina Cruise</h4>
@@ -339,13 +340,13 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
                   </div>
                   <div className='form_row'>
                     <label>Status</label>
-                    <select
+                    <CrmSelect
                       value={status}
                       onChange={e => setStatus(e.target.value)}
                     >
                       <option value='active'>Active</option>
                       <option value='inactive'>Inactive</option>
-                    </select>
+                    </CrmSelect>
                   </div>
                 </div>
                 <MarinaRegistrationPricing
@@ -528,7 +529,11 @@ export default function EditMarinaCruiseClient({ pkg }: { pkg: Pkg }) {
         Edit
       </button>
       {typeof window !== 'undefined' && modalContent
-        ? createPortal(modalContent, document.body)
+        ? createPortal(
+          // portaled outside the layout: carry the CRM scope with it
+          <div className='dashboard_root crm-portal'>{modalContent}</div>,
+          document.body
+        )
         : modalContent}
     </>
   );

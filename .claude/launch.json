@@ -6,6 +6,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "web-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "port": 3000
+    },
+    {
+      "name": "design",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["E:/aapkatourism/apkatourism-new-design/node_modules/next/dist/bin/next", "dev", "E:/aapkatourism/apkatourism-new-design", "-p", "3001"],
+      "port": 3001
     }
   ]
 }

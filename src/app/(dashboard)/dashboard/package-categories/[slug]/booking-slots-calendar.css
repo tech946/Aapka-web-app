@@ -284,39 +284,6 @@
 .custom-calendar .rdp-weekdays th {
   font-size: 15px !important;
 }
-.table_actions button {
-  background: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  cursor: pointer !important;
-  border: none !important;
-  font: inherit !important;
-  color: inherit !important;
-  font-size: 13px !important;
-  justify-content: center;
-  align-items: center !important;
-  display: flex !important;
-  width: var(--rdp-day_button-width);
-  height: var(--rdp-day_button-height);
-  border: var(--rdp-day_button-border);
-  border-radius: var(--rdp-day_button-border-radius);
-}
-.table_actions button.btn_primary {
-  background: var(--accent) !important;
-  color: #fff !important;
-  height: 40px !important;
-  border-radius: 4px !important;
-  padding: 0 16px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
-  margin-left: 12px !important;
-  text-transform: uppercase !important;
-}
 .calendar-footer .clear-dates-button {
   background: none;
   border: none !important;

@@ -1,0 +1,146 @@
+.ex .ex-hsearch {
+  background: var(--card);
+}
+
+@media (max-width: 767px) {
+  .desert-ember.ex {
+    --ex-header: 56px;
+  }
+
+  .ex .ex-header__bar {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 14px;
+    padding: 0 16px;
+  }
+
+  .ex .ex-header__burger {
+    width: 40px;
+    height: 40px;
+    margin-left: -8px;
+  }
+
+  .ex .ex-header__burger svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .ex .ex-logo img {
+    height: 30px;
+  }
+
+  .ex .ex-hd--start {
+    display: none;
+  }
+
+  .ex .ex-hd--start + .ex-hd {
+    margin-left: auto;
+    gap: 2px;
+  }
+
+  .ex .ex-hd__item {
+    justify-content: center;
+    gap: 2px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 6px;
+  }
+
+  .ex .ex-hd__ic {
+    width: 21px;
+    height: 21px;
+  }
+
+  .ex .ex-hd__chev {
+    width: 14px;
+    height: 14px;
+  }
+
+  .ex .ex-hd__flag {
+    width: 20px;
+  }
+
+  .ex .ex-hsearch {
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    height: 36px;
+    padding: 0 16px 0 12px;
+    font-size: 13px;
+    line-height: 16px;
+  }
+
+  .ex .ex-hsearch span {
+    display: inline;
+  }
+
+  .ex .ex-hero {
+    width: 100%;
+    margin-top: 0;
+    border-radius: 0;
+  }
+
+  .ex .ex-hero__kicker,
+  .ex .ex-hero__sub {
+    display: none;
+  }
+
+  .ex .ex-hero .ex-search {
+    margin-top: 12px;
+  }
+
+  .ex .ex-hero--full {
+    height: 380px;
+  }
+
+  .ex .ex-hero--full:has(.ex-hero__trust) .ex-hero__content {
+    padding-bottom: 40px;
+  }
+
+  .ex .ex-hero__chips {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+    width: calc(100% + 32px);
+    margin: 14px -16px 0;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ex .ex-hero__chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ex .ex-hero__chip {
+    flex: none;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .ex .ex-hero__trust {
+    height: 40px;
+  }
+
+  .ex .ex-hero__trust-track {
+    animation-duration: 28s;
+  }
+
+  .ex .ex-hero__trust li {
+    gap: 6px;
+    padding: 0 18px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .ex .ex-hero__trust svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .ex .ex-hero__chip svg {
+    width: 13px;
+    height: 13px;
+  }
+}

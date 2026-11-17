@@ -1,0 +1,87 @@
+/*
+ * Desert Ember — design tokens.
+ * Rules for using them: design-system/README.md.
+ *
+ * Opt-in scope: every token lives on `.desert-ember`, not :root. --card,
+ * --border, --muted and --font-sans already exist globally (shadcn HSL
+ * triplets in src/app/globals.css, next/font's DM Sans on <html>), so
+ * defining them on :root would break pages that are not on this system yet.
+ * Put `className='desert-ember'` on the root element of any page/section
+ * built with it.
+ */
+/* Font: DM Sans, loaded once by next/font in src/app/layout.tsx (--font-site). */
+
+.desert-ember {
+  /* Brand */
+  --brand: #FF6A1A;
+  --brand-hover: #E5550A;
+  --brand-glow: #FFA149;
+  --brand-tint: #FFF2E8;
+  --brand-edge: #BD5016; /* border of orange buttons, ~27% darker than --brand */
+  --on-brand: #FFFFFF; /* text on orange buttons */
+  --brand-deep: #7A300C; /* the brand taken very dark: text, borders and the selected pill on list pages (≈9:1 on white) */
+  --navy: #0E1E2C; /* deep navy for the header and footer bars */
+  --indigo: #3C3F84; /* the logo's "TOURISM" indigo: rating stars and small accents */
+
+  /* Darks */
+  --black: #0A0A0B;
+  --charcoal: #16161A;
+  --graphite: #2A2A30;
+  --ash: #A1A1AA;
+
+  /* Lights + text */
+  --surface: #FAFAF7;
+  --card: #FFFFFF;
+  --border: #E7E7EC;
+  --ink: #111114;
+  --muted: #3A3A42; /* secondary text — about as dark as Tripadvisor's (≈10:1 on white), so pages read crisp */
+
+  /* Status (single-purpose — see README) */
+  --deal: #E11D48;
+  --success: #16A34A;
+  --whatsapp: #25D366;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-12: 48px;
+  --space-24: 96px;
+
+  /* Effects (each once per screen) */
+  --shadow-glow: 0 12px 40px rgba(255, 106, 26, 0.35);
+  --gradient-brand: linear-gradient(135deg, var(--brand), var(--brand-glow));
+
+  /* Font */
+  --font-sans: var(--font-site), "DM Sans", system-ui, sans-serif;
+
+  /* Type scale — size / line-height / weight */
+  --text-display: 64px;  --leading-display: 68px;  --weight-display: 900;
+  --text-h1: 48px;       --leading-h1: 54px;       --weight-h1: 900;
+  --text-h2: 36px;       --leading-h2: 42px;       --weight-h2: 700;
+  --text-h3: 24px;       --leading-h3: 30px;       --weight-h3: 700;
+  --text-body-lg: 18px;  --leading-body-lg: 28px;  --weight-body-lg: 500;
+  --text-body: 16px;     --leading-body: 24px;     --weight-body: 500;
+  --text-label: 14px;    --leading-label: 20px;    --weight-label: 700;
+  --text-caption: 12px;  --leading-caption: 16px;  --weight-caption: 500;
+
+  /* Internal bridges for tailwind.config.ts — not for direct use. Tailwind's
+     card/muted/border/sans already point at the shadcn + next/font values;
+     they read these first, so the same classes resolve to Desert Ember
+     inside this wrapper and stay unchanged everywhere else. */
+  --_card: var(--card);
+  --_muted: var(--muted);
+  --_border: var(--border);
+  --_font: var(--font-sans);
+
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink);
+}

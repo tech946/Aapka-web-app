@@ -3,7 +3,7 @@
  *
  * `packages.agent_discount` is a PERCENTAGE off the total, applied only for a
  * logged-in agent whose subscription is paid, active and unexpired. The
- * authoritative calculation lives server-side in /api/cart/validate - these
+ * authoritative calculation lives server-side in /api/booking/validate - these
  * helpers exist so every marketing surface (home sliders, listings, detail
  * pages) previews the exact same number instead of re-deriving it ad hoc.
  */

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type SurchargeRow = {
   id: string;
@@ -109,13 +111,11 @@ export default function SurchargeMasterClient() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Surcharge Master</h3>
-        <p>Manage surcharges by date range</p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search' />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Surcharge Master</h3>
+          <p>Manage surcharges by date range</p>
+        </div>
         <div className='table_actions'>
           <button
             className='btn_primary'
@@ -204,7 +204,7 @@ export default function SurchargeMasterClient() {
           >
             Previous
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -215,7 +215,7 @@ export default function SurchargeMasterClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
@@ -311,7 +311,7 @@ function SurchargeModal({
   };
 
   const modalContent = (
-    <div className='modal_overlay' onClick={onClose}>
+    <div className='modal_overlay'>
       <div className='modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>{row ? 'Edit Surcharge' : 'Add Surcharge'}</h4>
@@ -337,7 +337,7 @@ function SurchargeModal({
           </div>
           <div className='form_row'>
             <label>From Date *</label>
-            <input
+            <CrmDateInput
               type='date'
               value={fromDate}
               onChange={e => setFromDate(e.target.value)}
@@ -345,7 +345,7 @@ function SurchargeModal({
           </div>
           <div className='form_row'>
             <label>To Date *</label>
-            <input
+            <CrmDateInput
               type='date'
               value={toDate}
               min={fromDate || undefined}
@@ -370,7 +370,11 @@ function SurchargeModal({
   );
 
   if (typeof window !== 'undefined') {
-    return createPortal(modalContent, document.body);
+    return createPortal(
+          // portaled outside the layout: carry the CRM scope with it
+          <div className='dashboard_root crm-portal'>{modalContent}</div>,
+          document.body
+        );
   }
 
   return modalContent;

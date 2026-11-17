@@ -86,7 +86,7 @@ export function PlatformFeeModal({ isOpen, onClose }: PlatformFeeModalProps) {
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className='modal_overlay' onClick={onClose}>
+    <div className='modal_overlay'>
       <div
         className='modal price_master_modal'
         onClick={e => e.stopPropagation()}
@@ -171,7 +171,11 @@ export function PlatformFeeModal({ isOpen, onClose }: PlatformFeeModalProps) {
 
   // Render modal in a portal at document body level to avoid z-index issues
   if (typeof window !== 'undefined') {
-    return createPortal(modalContent, document.body);
+    return createPortal(
+          // portaled outside the layout: carry the CRM scope with it
+          <div className='dashboard_root crm-portal'>{modalContent}</div>,
+          document.body
+        );
   }
 
   return modalContent;

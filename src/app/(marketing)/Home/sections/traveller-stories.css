@@ -1,0 +1,113 @@
+/* Stories of our travellers (sections/TravellerStories.tsx). Its own file so
+   the package detail pages can show the same band without home.css. */
+
+/* --------------------------------------------------------------- stories of our travellers
+   pickyourtrail.com's section, measured: black band, 48px display title
+   with a heart, a social-proof row 24px under it, 64px to the cards; cards
+   460px tall with 12px corners, 10px apart, 5 across; name
+   16/600, a pill 10px under it; 34px round arrows half off the edges.
+   Colours swapped to Aapka's (orange-tinted pill, brand-soft arrows). */
+:where(.at-site) .ts { padding: 40px 0 48px; background: #000; color: #fff; }
+:where(.at-site) .ts_head { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-bottom: 64px; }
+:where(.at-site) .ts_title {
+  --app-heading-font: var(--lx-font-display);
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 56px;
+  text-align: center;
+  text-transform: uppercase;
+}
+:where(.at-site) .ts_heart { flex-shrink: 0; width: 48px; height: 44px; }
+:where(.at-site) .ts_proof { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; }
+:where(.at-site) .ts_proof__item { display: flex; align-items: center; gap: 8px; color: #fff; }
+:where(.at-site) .ts_proof__item img { flex-shrink: 0; width: 34px; height: 34px; }
+:where(.at-site) .ts_proof__item b { display: block; color: #fff; font-size: 16px; font-weight: 700; line-height: 24px; }
+:where(.at-site) .ts_proof__item b small { font-size: 11px; font-weight: 600; }
+:where(.at-site) .ts_proof__handle { display: block; color: #fff; font-size: 12px; font-weight: 500; line-height: 16px; }
+:where(.at-site) .ts_proof__item:hover .ts_proof__handle { text-decoration: underline; text-underline-offset: 2px; }
+
+:where(.at-site) .ts_slider { position: relative; }
+:where(.at-site) .ts_card { display: block; color: #fff; }
+:where(.at-site) .ts_card__media {
+  display: block;
+  height: 460px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111;
+}
+:where(.at-site) .ts_card__media img,
+:where(.at-site) .ts_card__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .9;
+  transition: opacity .5s ease-in, transform .7s cubic-bezier(.22,.61,.36,1);
+}
+:where(.at-site) .ts_card:hover .ts_card__media img,
+:where(.at-site) .ts_card:hover .ts_card__media video { opacity: 1; transform: scale(1.03); }
+:where(.at-site) .ts_card__meta { display: flex; flex-direction: column; align-items: center; padding-top: 16px; }
+:where(.at-site) .ts_card__title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+}
+:where(.at-site) .ts_card__tag {
+  margin-top: 10px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: rgba(var(--mk-glow), .2);
+  color: var(--brand-300);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+:where(.at-site) .ts_arrow {
+  position: absolute;
+  top: 230px; /* middle of the 460px media */
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 3px solid var(--lx-brand-border);
+  border-radius: 50%;
+  background: var(--lx-brand-soft);
+  color: var(--lx-brand-text);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+:where(.at-site) .ts_arrow svg { width: 18px; height: 18px; stroke-width: 2.4; }
+:where(.at-site) .ts_arrow--prev { left: -18px; }
+:where(.at-site) .ts_arrow--next { right: -18px; }
+:where(.at-site) .ts_arrow:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 767px) {
+  /* stories on phones: smaller title, shorter arches, swipe instead of arrows */
+  :where(.at-site) .ts_head { gap: 16px; padding-bottom: 32px; }
+  :where(.at-site) .ts_title { gap: 8px; font-size: 20px; line-height: 28px; }
+  :where(.at-site) .ts_heart { width: 24px; height: 22px; }
+  :where(.at-site) .ts_proof__item img { width: 31px; height: 31px; }
+  :where(.at-site) .ts_proof__item b { font-size: 14px; }
+  :where(.at-site) .ts_proof__handle { font-size: 11px; }
+  :where(.at-site) .ts_card__media { height: 340px; }
+  :where(.at-site) .ts_card__meta { padding-top: 10px; }
+  :where(.at-site) .ts_card__title { font-size: 14px; line-height: 20px; }
+  :where(.at-site) .ts_card__tag { font-size: 12px; }
+  :where(.at-site) .ts_arrow { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.at-site) .ts_card__media img,
+  :where(.at-site) .ts_card__media video { transition: none; }
+}

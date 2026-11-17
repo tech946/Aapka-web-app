@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { BadgeCheck, Clock, IdCard, Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import './oman-transport.css';
+import Select from '@/components/site/ui/Select';
+import DateField from '@/components/site/ui/DateField';
+import { FactList, HelpCard, PageShell, SideCard } from '@/components/site/page/PageShell';
 
 const NATIONALITY_OPTIONS = [
   { value: 'india', label: 'India' },
@@ -39,7 +41,14 @@ const FLIGHT_HOTEL_OPTIONS = [
   { value: 'none', label: 'None' },
 ];
 
-const TERMS_CONTENT = `AAPKA Tourism – Oman Exit Transportation Terms & Conditions
+const TRAVEL_FACTS = [
+  { icon: IdCard, title: 'Passport valid 6+ months', text: 'Carry your original passport and UAE visa or Emirates ID.' },
+  { icon: BadgeCheck, title: 'Oman visa if needed', text: 'Check your visa eligibility before you book.' },
+  { icon: Clock, title: 'Border waiting time', text: 'Set by immigration, not by us.' },
+  { icon: ShieldAlert, title: 'Transport only', text: 'Entry into Oman is up to Oman Immigration.' },
+];
+
+const TERMS_CONTENT =`AAPKA Tourism – Oman Exit Transportation Terms & Conditions
 
 1. Transportation Service Only
 AAPKA Tourism provides transportation service only from UAE to Oman border. We do not guarantee entry into Oman.
@@ -228,43 +237,44 @@ export default function OmanTransportPage() {
   };
 
   return (
-    <div className='oman-transport-page'>
-      <div className='oman-transport-container'>
-        <div className='oman-transport-header'>
-          <h1 className='oman-transport-title'>Oman Exit Transportation</h1>
-          <p className='oman-transport-intro'>
-            Book your transportation from UAE to Oman border. Fill in the form
-            below and we will get back to you shortly.
-          </p>
-        </div>
-
-        <form className='oman-transport-form' onSubmit={handleSubmit}>
-          <div className='oman-transport-section'>
-            <h3 className='oman-transport-section-title'>Passenger Details</h3>
-            <div className='oman-transport-form-grid'>
-              <div className='oman-transport-form-group'>
+    <PageShell
+      kicker='Visas & transport'
+      title='Oman Exit Transportation'
+      text='Book your transport from the UAE to the Oman border. Fill in the form and we will get back to you shortly.'
+      image='/images/stock/dest-musandam.jpg'
+      aside={
+        <>
+          <SideCard title='Before you travel'>
+            <FactList items={TRAVEL_FACTS} />
+          </SideCard>
+          <HelpCard text='Not sure about your visa or documents? Ask us before you book.' />
+        </>
+      }
+    >
+        <form className='xp-form' onSubmit={handleSubmit}>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Passenger Details</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>
-                  Travelling Date <span style={{ color: '#dc2626' }}>*</span>
+                  Travelling Date <span className='xp-req'>*</span>
                 </label>
-                <input
-                  type='date'
+                <DateField
                   value={formData.travelling_date}
-                  onChange={e =>
-                    handleInputChange('travelling_date', e.target.value)
-                  }
-                  min={new Date().toISOString().split('T')[0]}
-                  className={errors.travelling_date ? 'error' : ''}
+                  onChange={iso => handleInputChange('travelling_date', iso)}
+                  placeholder='Select travelling date'
+                  invalid={!!errors.travelling_date}
                 />
                 {errors.travelling_date && (
-                  <p className='oman-transport-error'>
+                  <p className='xp-error'>
                     {errors.travelling_date}
                   </p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Lead Passenger Name{' '}
-                  <span style={{ color: '#dc2626' }}>*</span>
+                  <span className='xp-req'>*</span>
                 </label>
                 <input
                   type='text'
@@ -276,14 +286,14 @@ export default function OmanTransportPage() {
                   className={errors.lead_passenger_name ? 'error' : ''}
                 />
                 {errors.lead_passenger_name && (
-                  <p className='oman-transport-error'>
+                  <p className='xp-error'>
                     {errors.lead_passenger_name}
                   </p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>
-                  WhatsApp Number <span style={{ color: '#dc2626' }}>*</span>
+                  WhatsApp Number <span className='xp-req'>*</span>
                 </label>
                 <input
                   type='tel'
@@ -295,12 +305,12 @@ export default function OmanTransportPage() {
                   className={errors.whatsapp_number ? 'error' : ''}
                 />
                 {errors.whatsapp_number && (
-                  <p className='oman-transport-error'>
+                  <p className='xp-error'>
                     {errors.whatsapp_number}
                   </p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>Calling Number</label>
                 <input
                   type='tel'
@@ -311,9 +321,9 @@ export default function OmanTransportPage() {
                   placeholder='+971...'
                 />
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>
-                  Email Address <span style={{ color: '#dc2626' }}>*</span>
+                  Email Address <span className='xp-req'>*</span>
                 </label>
                 <input
                   type='email'
@@ -323,108 +333,85 @@ export default function OmanTransportPage() {
                   className={errors.email ? 'error' : ''}
                 />
                 {errors.email && (
-                  <p className='oman-transport-error'>{errors.email}</p>
+                  <p className='xp-error'>{errors.email}</p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Nationality
-                  <span style={{ color: '#dc2626' }}>*</span>
+                  <span className='xp-req'>*</span>
                 </label>
-                <select
+                <Select
                   value={formData.nationality}
-                  onChange={e =>
-                    handleInputChange('nationality', e.target.value)
-                  }
-                  className={errors.nationality ? 'error' : ''}
-                >
-                  <option value=''>Select nationality</option>
-                  {NATIONALITY_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleInputChange('nationality', v)}
+                  options={NATIONALITY_OPTIONS}
+                  placeholder='Select nationality'
+                  invalid={!!errors.nationality}
+                  aria-label='Nationality'
+                />
                 {errors.nationality && (
-                  <p className='oman-transport-error'>{errors.nationality}</p>
+                  <p className='xp-error'>{errors.nationality}</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className='oman-transport-section'>
-            <h3 className='oman-transport-section-title'>Visa & Status</h3>
-            <div className='oman-transport-form-grid'>
-              <div className='oman-transport-form-group'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Visa & Status</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>
-                  Status in UAE <span style={{ color: '#dc2626' }}>*</span>
+                  Status in UAE <span className='xp-req'>*</span>
                 </label>
-                <select
+                <Select
                   value={formData.status_in_uae}
-                  onChange={e =>
-                    handleInputChange('status_in_uae', e.target.value)
-                  }
-                  className={errors.status_in_uae ? 'error' : ''}
-                >
-                  <option value=''>Select</option>
-                  {STATUS_IN_UAE_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleInputChange('status_in_uae', v)}
+                  options={STATUS_IN_UAE_OPTIONS}
+                  placeholder='Select'
+                  invalid={!!errors.status_in_uae}
+                  aria-label='Status in UAE'
+                />
                 {errors.status_in_uae && (
-                  <p className='oman-transport-error'>{errors.status_in_uae}</p>
+                  <p className='xp-error'>{errors.status_in_uae}</p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>
-                  Oman Visa Status <span style={{ color: '#dc2626' }}>*</span>
+                  Oman Visa Status <span className='xp-req'>*</span>
                 </label>
-                <select
+                <Select
                   value={formData.oman_visa_status}
-                  onChange={e =>
-                    handleInputChange('oman_visa_status', e.target.value)
-                  }
-                  className={errors.oman_visa_status ? 'error' : ''}
-                >
-                  <option value=''>Select</option>
-                  {OMAN_VISA_STATUS_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleInputChange('oman_visa_status', v)}
+                  options={OMAN_VISA_STATUS_OPTIONS}
+                  placeholder='Select'
+                  invalid={!!errors.oman_visa_status}
+                  aria-label='Oman visa status'
+                />
                 {errors.oman_visa_status && (
-                  <p className='oman-transport-error'>
+                  <p className='xp-error'>
                     {errors.oman_visa_status}
                   </p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>Flight / Hotel Booking in Oman</label>
-                <select
+                <Select
                   value={formData.flight_hotel_booking}
-                  onChange={e =>
-                    handleInputChange('flight_hotel_booking', e.target.value)
-                  }
-                >
-                  {FLIGHT_HOTEL_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleInputChange('flight_hotel_booking', v)}
+                  options={FLIGHT_HOTEL_OPTIONS.filter(o => o.value)}
+                  placeholder='Select'
+                  aria-label='Flight / hotel booking in Oman'
+                />
               </div>
             </div>
           </div>
 
-          <div className='oman-transport-section'>
-            <h3 className='oman-transport-section-title'>Passenger Count</h3>
-            <div className='oman-transport-form-grid'>
-              <div className='oman-transport-form-group'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Passenger Count</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>
-                  Number of Adults <span style={{ color: '#dc2626' }}>*</span>
+                  Number of Adults <span className='xp-req'>*</span>
                 </label>
                 <input
                   type='number'
@@ -436,14 +423,14 @@ export default function OmanTransportPage() {
                   className={errors.number_of_adults ? 'error' : ''}
                 />
                 {errors.number_of_adults && (
-                  <p className='oman-transport-error'>
+                  <p className='xp-error'>
                     {errors.number_of_adults}
                   </p>
                 )}
               </div>
-              <div className='oman-transport-form-group'>
+              <div className='xp-form-group'>
                 <label>
-                  Number of Children <span style={{ color: '#dc2626' }}>*</span>
+                  Number of Children <span className='xp-req'>*</span>
                 </label>
                 <input
                   type='number'
@@ -455,7 +442,7 @@ export default function OmanTransportPage() {
                   className={errors.number_of_children ? 'error' : ''}
                 />
                 {errors.number_of_children && (
-                  <p className='oman-transport-error'>
+                  <p className='xp-error'>
                     {errors.number_of_children}
                   </p>
                 )}
@@ -463,15 +450,15 @@ export default function OmanTransportPage() {
             </div>
           </div>
 
-          <div className='oman-transport-section'>
-            <h3 className='oman-transport-section-title'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>
               Declaration & Terms
             </h3>
-            <p className='oman-transport-declaration-note'>
+            <p className='xp-declaration-note'>
               For UAE residents, the Emirates ID must have a minimum validity of
               3 months in order to obtain a visa on arrival.
             </p>
-            <label className='oman-transport-terms-checkbox'>
+            <label className='xp-terms-checkbox'>
               <input
                 type='checkbox'
                 checked={passportValidityAccepted}
@@ -479,14 +466,14 @@ export default function OmanTransportPage() {
               />
               <span>
                 All passengers have passport validity of more than 6 months{' '}
-                <span style={{ color: '#dc2626' }}>*</span>
+                <span className='xp-req'>*</span>
               </span>
             </label>
             {errors.passport_validity && (
-              <p className='oman-transport-error'>{errors.passport_validity}</p>
+              <p className='xp-error'>{errors.passport_validity}</p>
             )}
             <label
-              className='oman-transport-terms-checkbox'
+              className='xp-terms-checkbox'
               onClick={handleTermsCheckboxClick}
             >
               <input
@@ -498,7 +485,7 @@ export default function OmanTransportPage() {
               <span>
                 I have read and accept the{' '}
                 <span
-                  className='oman-transport-terms-link'
+                  className='xp-terms-link'
                   role='button'
                   tabIndex={0}
                   onClick={e => {
@@ -517,19 +504,19 @@ export default function OmanTransportPage() {
               </span>
             </label>
             {errors.terms && (
-              <p className='oman-transport-error'>{errors.terms}</p>
+              <p className='xp-error'>{errors.terms}</p>
             )}
           </div>
 
-          <div className='oman-transport-form-actions'>
+          <div className='xp-form-actions'>
             <button
               type='submit'
-              className='oman-transport-submit-btn'
+              className='xp-submit-btn'
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Loader2 size={20} className='oman-transport-spin' />
+                  <Loader2 size={20} className='xp-spin' />
                   Submitting...
                 </>
               ) : (
@@ -538,54 +525,38 @@ export default function OmanTransportPage() {
             </button>
           </div>
         </form>
-      </div>
 
-      {/* Terms Modal */}
       {termsModalOpen && (
-        <div
-          className='oman-transport-modal-overlay'
-          onClick={() => setTermsModalOpen(false)}
-        >
+        <div className='xp-modal-overlay'>
           <div
-            className='oman-transport-modal-content'
+            className='xp-modal-content'
             onClick={e => e.stopPropagation()}
           >
-            <div className='oman-transport-modal-header'>
-              <h2 className='oman-transport-modal-title'>
+            <div className='xp-modal-header'>
+              <h2 className='xp-modal-title'>
                 Oman Exit Transportation Terms & Conditions
               </h2>
               <button
                 type='button'
-                className='oman-transport-modal-close'
+                className='xp-modal-close'
                 onClick={() => setTermsModalOpen(false)}
                 aria-label='Close'
               >
                 ×
               </button>
             </div>
-            <div className='oman-transport-modal-body'>
-              <div
-                style={{
-                  whiteSpace: 'pre-wrap',
-                  fontSize: '0.9rem',
-                  lineHeight: 1.7,
-                  color: '#4b5563',
-                }}
-              >
-                {TERMS_CONTENT}
-              </div>
-            </div>
-            <div className='oman-transport-modal-footer'>
+            <div className='xp-modal-body'>{TERMS_CONTENT}</div>
+            <div className='xp-modal-footer'>
               <button
                 type='button'
-                className='oman-transport-modal-btn-cancel'
+                className='xp-btn xp-btn--line'
                 onClick={() => setTermsModalOpen(false)}
               >
                 Close
               </button>
               <button
                 type='button'
-                className='oman-transport-modal-btn-accept'
+                className='xp-btn xp-btn--brand'
                 onClick={handleAcceptTerms}
               >
                 I have read and accept the terms
@@ -594,6 +565,6 @@ export default function OmanTransportPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

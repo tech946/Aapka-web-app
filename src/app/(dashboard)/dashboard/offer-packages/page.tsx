@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type PackageRow = {
   id: string;
@@ -103,27 +104,28 @@ export default function OfferPackagesPage() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Offer Packages</h3>
-        <p>Manage and create promotional packages</p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search packages...'
-            value={pendingQuery}
-            onChange={e => {
-              setPage(1);
-              setPendingQuery(e.target.value);
-            }}
-          />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Offer Packages</h3>
+          <p>Manage and create promotional packages</p>
         </div>
-        <div className='table_actions'>
-          <button className='btn_primary' onClick={() => setModalOpen(true)}>
-            Add Package
-          </button>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search packages...'
+              value={pendingQuery}
+              onChange={e => {
+                setPage(1);
+                setPendingQuery(e.target.value);
+              }}
+            />
+          </div>
+          <div className='table_actions'>
+            <button className='btn_primary' onClick={() => setModalOpen(true)}>
+              Add Package
+            </button>
+          </div>
         </div>
       </div>
 
@@ -182,7 +184,7 @@ export default function OfferPackagesPage() {
           >
             Previous
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -193,7 +195,7 @@ export default function OfferPackagesPage() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
@@ -231,7 +233,7 @@ function AddPackageModal({
   const [status, setStatus] = useState('active');
 
   const modalContent = (
-    <div className='modal_overlay' onClick={onClose}>
+    <div className='modal_overlay'>
       <div className='modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>Add Package</h4>
@@ -266,10 +268,10 @@ function AddPackageModal({
           </div>
           <div className='form_row'>
             <label>Status</label>
-            <select value={status} onChange={e => setStatus(e.target.value)}>
+            <CrmSelect value={status} onChange={e => setStatus(e.target.value)}>
               <option value='active'>active</option>
               <option value='inactive'>inactive</option>
-            </select>
+            </CrmSelect>
           </div>
         </div>
         <div className='modal_footer'>
@@ -294,7 +296,11 @@ function AddPackageModal({
   );
 
   if (typeof window !== 'undefined') {
-    return createPortal(modalContent, document.body);
+    return createPortal(
+          // portaled outside the layout: carry the CRM scope with it
+          <div className='dashboard_root crm-portal'>{modalContent}</div>,
+          document.body
+        );
   }
 
   return modalContent;

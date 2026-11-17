@@ -10,7 +10,7 @@
 .agent-price-original {
   text-decoration: line-through;
   color: #9ca3af;
-  font-weight: 400;
+  font-weight: 500;
   /* Slightly smaller than the live price so the eye lands on what they pay */
   font-size: 0.85em;
   white-space: nowrap;
@@ -31,7 +31,7 @@
   align-items: center;
   gap: 5px;
   width: max-content;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.5;

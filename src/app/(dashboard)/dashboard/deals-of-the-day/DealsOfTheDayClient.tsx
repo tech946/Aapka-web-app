@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, X, Calendar, Tag, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import './deals-modal.css';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 interface Package {
   package_id: string;
@@ -216,21 +218,19 @@ export default function DealsOfTheDayClient() {
   const now = new Date();
 
   return (
-    <div className="dashboard_page">
-      <div className="heading_block">
-        <h3>Deals of the Day</h3>
-        <p>Manage special pricing deals for packages. Active deals also appear on the Limited Time Deals website page.</p>
-      </div>
-
-      <div className="deals-toolbar">
-        <div className="deals-toolbar-content">
-          <div className="deals-toolbar-info">
-            <h4 className="deals-toolbar-title">Deals Management</h4>
-            <p className="deals-toolbar-subtitle">{deals.length} {deals.length === 1 ? 'deal' : 'deals'} total</p>
-          </div>
-          <button className="btn_primary deals-add-btn" onClick={() => handleOpenModal()}>
-            <Plus size={18} />
-            <span>Add Deal</span>
+    <div className="dashboard_page crm_card_page deals_page">
+      <div className="heading_block heading_block--actions">
+        <div className="heading_text">
+          <h3>
+            Deals of the Day
+            <span className="heading_count">{deals.length} {deals.length === 1 ? 'deal' : 'deals'}</span>
+          </h3>
+          <p>Manage special pricing deals for packages. Active deals also appear on the Limited Time Deals website page.</p>
+        </div>
+        <div className="table_actions">
+          <button className="btn_primary" onClick={() => handleOpenModal()}>
+            <Plus size={14} />
+            Add Deal
           </button>
         </div>
       </div>
@@ -381,7 +381,7 @@ export default function DealsOfTheDayClient() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal_overlay" onClick={handleCloseModal}>
+        <div className="modal_overlay">
           <div className="modal deals-modal" onClick={(e) => e.stopPropagation()}>
             <div className="deals-modal-header">
               <h4>
@@ -401,7 +401,7 @@ export default function DealsOfTheDayClient() {
                   <label className="deals-form-label">
                     Package <span className="deals-form-label-required">*</span>
                   </label>
-                  <select
+                  <CrmSelect
                     className="deals-form-select"
                     value={formData.package_id}
                     onChange={(e) => setFormData({ ...formData, package_id: e.target.value })}
@@ -414,7 +414,7 @@ export default function DealsOfTheDayClient() {
                         {pkg.package_name}
                       </option>
                     ))}
-                  </select>
+                  </CrmSelect>
                 </div>
 
                 {selectedPackage && (
@@ -506,7 +506,7 @@ export default function DealsOfTheDayClient() {
                     <label className="deals-form-label">
                       Start Date <span className="deals-form-label-required">*</span>
                     </label>
-                    <input
+                    <CrmDateInput
                       type="datetime-local"
                       value={formData.start_date}
                       onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
@@ -519,7 +519,7 @@ export default function DealsOfTheDayClient() {
                     <label className="deals-form-label">
                       End Date <span className="deals-form-label-required">*</span>
                     </label>
-                    <input
+                    <CrmDateInput
                       type="datetime-local"
                       value={formData.end_date}
                       onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}

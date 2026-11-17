@@ -192,7 +192,7 @@ export default function AddMarinaCruiseClient() {
   };
 
   const modalContent = open ? (
-    <div className='modal_overlay' onClick={() => setOpen(false)}>
+    <div className='modal_overlay'>
       <div className='modal category_modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>Add Marina Cruise</h4>
@@ -467,7 +467,11 @@ export default function AddMarinaCruiseClient() {
         Add Marina Cruise
       </button>
       {typeof window !== 'undefined' && modalContent
-        ? createPortal(modalContent, document.body)
+        ? createPortal(
+          // portaled outside the layout: carry the CRM scope with it
+          <div className='dashboard_root crm-portal'>{modalContent}</div>,
+          document.body
+        )
         : modalContent}
     </>
   );

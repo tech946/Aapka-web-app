@@ -1,0 +1,181 @@
+import { LIMITED_DEALS, holidaysHref } from '@/config/holiday-types';
+import { CONTACT } from '@/components/site/site-config';
+
+const CDN = 'https://cdn.prod.website-files.com';
+const A = `${CDN}/69247547c23b7c23d27ef795`;
+const C = `${CDN}/6926c0f2f201e871905f14af`;
+const video = (name: string) => ({
+  video: `${A}%2F${name}_mp4.mp4`,
+  webm: `${A}%2F${name}_webm.webm`,
+  poster: `${A}%2F${name}_poster.0000000.jpg`,
+});
+const logo = (n: string) => `${A}/${n}`;
+
+export const TPL = {
+  plus: `${A}/69328f7174c49f01f75373c1_add_2.svg`,
+  menu: `${CDN}/6658979d4cc4833c73cd89c2/6658979d4cc4833c73cd8a92_menu-btn.svg`,
+  close: `${CDN}/6658979d4cc4833c73cd89c2/6658979d4cc4833c73cd8a93_close-btn.svg`,
+  balloon: `${A}/6926ea29a04e6c01951890d7_balloon.svg`,
+  plane: `${A}/6926ea29f94881e2100f77b6_plane.svg`,
+  clouds: `${A}/6926ea28d1210e32846dae99_clouds.svg`,
+  car: `${A}/6926ebc4da713e00924068a4_car.svg`,
+  earth: `${A}/69271339da713e00924e9d04_3d-rendering-planet-earth%201%20copy.webp`,
+  lottie: `${A}/69317ffe7ec5243ab1ef726d_Untitled%20file%20(3).json`,
+  play: `${A}/693ad7c67f0b3f7f0fe6641d_play-icon.svg`,
+  arrowRight: `${A}/6925ae88081ff8c150578887_arrow_top_right.svg`,
+  arrowRightGreen: `${A}/6925af984c4a6ce1ffa52112_arrow_top_right%20green.svg`,
+  arrowLeft: `${A}/6925ae88804331c515c1c357_arrow_top_left.svg`,
+  arrowLeftGreen: `${A}/6925af989fe4a2b7e68c18e8_arrow_top_left%20green.svg`,
+  reviewPhoto1: `${A}/695b7dd6d1dcfcb45c94de82_irene-strong-gyekewtnt2U-unsplash%201%20(1).webp`,
+  reviewPhoto2: `${A}/695b7dfe1352f5ad5b2f2d6f_leilani-angel-K84vnnzxmTQ-unsplash%201%20(1).webp`,
+};
+
+export const HERO = {
+  title: 'Explore the UAE',
+  video: '/videos/home-hero-1080.mp4',
+  poster: '/images/package-3.jpg',
+  cards: [
+    { title: 'Limited Time Deals', tag: 'Special prices', href: holidaysHref(LIMITED_DEALS.key), image: `${C}/6926c959abd2c8bffce4e777_traveler5.webp`, color: 'yellow' },
+    { title: 'Desert & City Tours', tag: 'UAE Tours', href: holidaysHref('uae-tours'), image: `${C}/6926c963040c98b2832799ea_traveler1.webp`, color: null },
+    { title: 'Anydate Packages', tag: 'Pick any date', href: holidaysHref('flexible-date-packages'), image: `${C}/6926c96dced6357185b1b130_traveler4.webp`, color: 'lime' },
+    { title: 'Marina Cruise Dinner', tag: 'Marina Cruise', href: holidaysHref('marina-cruise'), image: `${C}/6926c9750964eca7864e478a_traveler3.webp`, color: null },
+  ],
+  lead: 'Holidays that help you travel deeper, lighter and braver.',
+  scroll: 'Scroll to explore',
+} as const;
+
+export const ABOUT = {
+  title: 'Planning, Guiding, and Looking After You in Every Place',
+  images: [`${A}/6926e7acd0f3c3f32775b953_traveler2.webp`, `${A}/6926e7acfb0556ef3e65ca32_traveler5.webp`],
+  text: 'We are a Dubai team that chose holidays over routine, and now we plan them for you — city by city, day by day. 10,000+ travellers and 12+ years later, every trip is still built by people who live here.',
+  cta: { label: 'About us', href: '/About' },
+  marquee: 'Escape With Us',
+};
+
+export const DESTINATIONS = {
+  title: 'Destinations That Shape Every Journey',
+  text: 'These destinations are more than places on a map — they are desert sunsets, city lights and coastlines waiting for your own story.',
+  cta: { label: 'Explore Holidays', href: '/holidays' },
+  rows: [
+    [
+      { name: 'Dubai', region: 'United Arab Emirates', image: `${C}/69413c1b1b52dbe78e2e2a02_Copenhagen%2C%20Denmark.webp` },
+      { name: 'Abu Dhabi', region: 'United Arab Emirates', image: `${C}/694138db4a4a990a645b6341_Lima%2C%20Peru.webp` },
+    ],
+    [
+      { name: 'Sharjah', region: 'United Arab Emirates', image: `${C}/69271732bc7f6ffb63c2a393_Cape%20Town.webp` },
+      { name: 'Ras Al Khaimah', region: 'United Arab Emirates', image: `${C}/69271758d0245efd79793485_tbilisi%2C%20georgia.webp` },
+      { name: 'Fujairah', region: 'United Arab Emirates', image: `${C}/692717913a7c079b85b7e893_seoul%20city.webp` },
+    ],
+    [
+      { name: 'Al Ain', region: 'United Arab Emirates', image: `${C}/69271762401186b66467a7ba_marrakech.webp` },
+      { name: 'Musandam', region: 'Oman', image: `${C}/6927176a6ebdd849d4525e27_Reykjav%C3%ADk.webp` },
+    ],
+  ],
+};
+
+export const FAQ = {
+  title: 'What You Want to Know Before You Book',
+  image: `${A}/6926e7ac7c9609695e8eec9d_traveler4.webp`,
+  items: [
+    {
+      topic: 'Booking & Payments',
+      q: 'How do I book a holiday?',
+      a: 'Pick a package, choose your travellers and date, and pay securely online. Our team confirms every booking personally, sends your vouchers on WhatsApp and email, and is happy to book it all for you by phone if you prefer.',
+    },
+    {
+      topic: 'Dates & Departures',
+      q: 'Can I choose my own travel date?',
+      a: 'Yes — Anydate Packages let you start on the day that suits you. Other packages run on set departure dates, shown on each package before you book, so you always know exactly when your holiday starts and ends.',
+    },
+    {
+      topic: 'Visas & Documents',
+      q: 'Can you help with my visa?',
+      a: 'Many packages can include your UAE visa — look for “Visa included” on the package. We also arrange Oman visas. If you are not sure which visa you need for your passport, just ask us before you book and we will guide you.',
+    },
+    {
+      topic: 'Help on Your Trip',
+      q: 'Who do I contact during my trip?',
+      a: `From the airport pick-up to your last drop-off, our Dubai team is a message away on WhatsApp (${CONTACT.uaePhone}). Pick-ups, timings, a missed transfer or a change of plan — tell us what you need and we will sort it out quickly, wherever you are in the UAE.`,
+    },
+  ],
+  cta: { label: 'Ask Us Anything', href: '/contact' },
+};
+
+export type ReviewSlide = { kind: 'photo' | 'lime' | 'green'; name: string; place: string; quote?: string; image?: string; video?: string };
+export const REVIEWS_SLIDER: { title: string; text: string; slides: ReviewSlide[] } = {
+  title: 'What Guests From Around the World Say',
+  text: 'Honest stories and thoughtful feedback from travellers across the world who have booked with us, explored the UAE, and come home with stories of their own.',
+  slides: [
+    { kind: 'photo', name: 'Traveller Story', place: 'Dubai Holiday', image: TPL.reviewPhoto1, video: '/videos/stories/DeEDL7XI3xJ.mp4' },
+    { kind: 'lime', name: 'Ishu Dhiman', place: 'Dubai Tour', quote: 'Aapka Tourism offers the best tourism service available, and the overall experience was truly unbeatable.' },
+    { kind: 'photo', name: 'Traveller Story', place: 'Dubai & Abu Dhabi', image: TPL.reviewPhoto2, video: '/videos/stories/DeV0YNnoGfO.mp4' },
+    { kind: 'green', name: 'Paresh Mistry', place: 'UAE Tour', quote: 'The itinerary was well-planned, and the guide was knowledgeable, friendly, and very professional.' },
+  ],
+};
+
+export const EXPERIENCES = {
+  title: 'Here are the experiences we plan, book and look after on every trip.',
+  text: 'We work with tours, stays and cruises that share our love for honest service, real experiences and the beauty of discovering the UAE.',
+  cta: { label: 'Become a Partner', href: '/become-partner' },
+  groups: [
+    {
+      title: 'Tours & Attractions',
+      sets: [
+        ['6931863a1773ec7ad8be2e2e_Fictional%20company%20logo-9.png', '6931863a1773ec7ad8be2e31_Fictional%20company%20logo-2.png', '6931863a1773ec7ad8be2e2b_Fictional%20company%20logo-6.png'],
+        ['6931863a1773ec7ad8be2e1c_Fictional%20company%20logo-7.png', '6931863a1773ec7ad8be2e19_Fictional%20company%20logo-1.png', '6931863a1773ec7ad8be2e22_Fictional%20company%20logo-8.png'],
+      ].map((s) => s.map(logo)),
+    },
+    {
+      title: 'Stays, Cruises & Transfers',
+      sets: [
+        ['6931863a1773ec7ad8be2e25_Fictional%20company%20logo.png', '6931863a1773ec7ad8be2e28_Fictional%20company%20logo-5.png', '6931863a1773ec7ad8be2e34_Fictional%20company%20logo-4.png'],
+        ['6931863a1773ec7ad8be2e1f_Fictional%20company%20logo-3.png', '6931863a1773ec7ad8be2e25_Fictional%20company%20logo.png', '6931863a1773ec7ad8be2e2b_Fictional%20company%20logo-6.png'],
+      ].map((s) => s.map(logo)),
+    },
+  ],
+};
+
+export const STORIES = [
+  { title: 'Eat Like a Local in Dubai', tag: 'Travel Guides', image: `${C}/6931666f3bfc7ce24b940fcb_Eat%20Like%20a%20Local.webp` },
+  { title: 'Hidden Lives of Abu Dhabi', tag: 'Guides & Tips', image: `${C}/693164df64391343ea24bda7_Hidden%20Lives%20of%20Cities.webp` },
+  { title: 'Notes from the Desert', tag: 'Destinations', image: `${C}/693163756439ad1b15a1830f_Notes%20on%20Freedom.webp` },
+  { title: 'The Art of a Dhow Cruise', tag: 'Travel Stories', image: `${C}/6931674b5b18d61155f6f63e_The%20Art%20of%20Being%20Alone.webp` },
+].map((s) => ({ ...s, href: '/blogs', label: 'Read the blog' }));
+
+export const CONTINUE = {
+  kicker: 'Let the Adventure Continue',
+  title: 'Join us to uncover cities, cultures, and moments worth remembering.',
+  text: 'Dive into new holidays, destinations, and ideas from across the UAE.',
+  cta: { label: 'Continue Exploring', href: '/holidays' },
+  left: [
+    video('69317d0d93e7372a87ed3c4c_523439_No_People_Nobody_1280x720'),
+    video('693181828ecca425dba9de74_4923701_Woman_Train_1280x720'),
+    video('6931810b4df69782c9fc5f3a_457646_St_Peters_Basilica_Square_St_Peters_Basilica_1280x720'),
+  ],
+  right: [
+    video('69317e6eb44fe2be8a7a5d80_521945_Couple_Recreation_1280x720'),
+    video('69317e27cb96ef48710dd7f5_4962705_France_Paris_1280x720'),
+    video('6931837b4adbfe353063cf10_456723_Rome_Italy_1280x720'),
+  ],
+};
+
+export const FOOTER = {
+  title: 'Follow our journeys on social media',
+  text: 'Follow our trips and travellers’ stories across our social channels.',
+  company: [
+    { label: 'About Us', href: '/About' },
+    { label: 'Become a Partner', href: '/become-partner' },
+    { label: 'Blogs', href: '/blogs' },
+  ],
+  contacts: [
+    { label: CONTACT.uaePhone, href: CONTACT.uaePhoneHref },
+    { label: CONTACT.indiaPhone, href: CONTACT.indiaPhoneHref },
+    { label: CONTACT.email, href: `mailto:${CONTACT.email}` },
+  ],
+  plan: 'Plan your next holiday with us and never miss a deal!',
+  legal: [
+    { label: 'Privacy Policy', href: '/privacy-policy' },
+    { label: 'Terms & Conditions', href: '/terms-and-conditions' },
+    { label: 'Cancellation Policy', href: '/cancellation-policy' },
+  ],
+};

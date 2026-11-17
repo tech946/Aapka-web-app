@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
 import { parseDateStringToLocal } from '@/lib/utils';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 function cartItemIsTour(
   cartItem: any,
@@ -575,40 +576,41 @@ export default function PaymentsPage() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Payments</h3>
-        <p>
-          Full package checkout payments. Limited time deal booking fees are listed
-          under <strong>Booking payments</strong>.
-        </p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search by transaction ID, notes...'
-            value={pendingQuery}
-            onChange={e => setPendingQuery(e.target.value)}
-          />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Payments</h3>
+          <p>
+            Full package checkout payments. Limited time deal booking fees are listed
+            under <strong>Booking payments</strong>.
+          </p>
         </div>
-        <div className='table_actions'>
-          <select
-            value={paymentStatusFilter}
-            onChange={e => {
-              setPaymentStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className='select_filter'
-          >
-            <option value=''>All Payment Status</option>
-            <option value='pending'>Pending</option>
-            <option value='completed'>Completed</option>
-            <option value='failed'>Failed</option>
-            <option value='cancelled'>Cancelled</option>
-            <option value='failed'>Failed</option>
-            <option value='refunded'>Refunded</option>
-          </select>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search by transaction ID, notes...'
+              value={pendingQuery}
+              onChange={e => setPendingQuery(e.target.value)}
+            />
+          </div>
+          <div className='table_actions'>
+            <CrmSelect
+              value={paymentStatusFilter}
+              onChange={e => {
+                setPaymentStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className='select_filter'
+            >
+              <option value=''>All Payment Status</option>
+              <option value='pending'>Pending</option>
+              <option value='completed'>Completed</option>
+              <option value='failed'>Failed</option>
+              <option value='cancelled'>Cancelled</option>
+              <option value='failed'>Failed</option>
+              <option value='refunded'>Refunded</option>
+            </CrmSelect>
+          </div>
         </div>
       </div>
 
@@ -746,7 +748,7 @@ export default function PaymentsPage() {
           >
             Next
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -757,13 +759,13 @@ export default function PaymentsPage() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
       {/* Details Modal */}
       {modalOpen && selectedPayment && (
-        <div className='modal_overlay' onClick={() => setModalOpen(false)}>
+        <div className='modal_overlay'>
           <div
             className='modal_content'
             onClick={e => e.stopPropagation()}

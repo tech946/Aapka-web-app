@@ -3,27 +3,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCart, CartItemStorage } from '@/context/CartContext';
+import { useBooking, type BookingRequest } from '@/context/BookingContext';
 import { toast } from 'sonner';
-import {
-  ArrowLeft,
-  Heart,
-  MapPin,
-  Calendar,
-  Users,
-  Star,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Minus,
-  X,
-  ArrowUp,
-  ChevronLeft,
-  ShoppingCart,
-  ShoppingCartIcon,
-} from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { DayPicker } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import {
   usesBookingSlots,
@@ -44,11 +25,9 @@ import {
   type MarinaAddon,
 } from '@/lib/marina-cruise-config';
 import {
-  getPackageDisplayImages,
+  getPackageGalleryImages,
   normalizePackageGallery,
 } from '@/lib/package-gallery';
-import { FlexibleDateCalendar } from '@/components/marketing/FlexibleDateCalendar';
-import BookingModal from '@/components/marketing/BookingModal';
 import {
   detectUserLocation,
   initializeExchangeRate,
@@ -67,18 +46,18 @@ import {
   shouldShowOptionalVisaInBookingModal,
   hasVisaIncludedAtZeroPrice,
 } from '@/lib/package-visa';
-import { PackagePriceRevealingSoonLabel } from '@/components/marketing/PackagePriceRevealingSoonLabel/PackagePriceRevealingSoonLabel';
-import { gsap } from 'gsap';
-import 'react-day-picker/dist/style.css';
-import '../marina-cruise-dinner.css';
-import './package-details.css';
-import PackageGallery from './PackageGallery';
-import PackageDetailsTabs from './PackageDetailsTabs';
 import {
   useAddonDeals,
   useAddonHotelServices,
   useAddonPrivateTransfers,
 } from '@/hooks/use-marketing-queries';
+import { holidaysHref } from '@/config/holiday-types';
+import { inclusionsOf } from '@/components/site/listing/listing-data';
+import PdpShell from '@/components/site/pdp/PdpShell';
+import PdpState from '@/components/site/pdp/PdpState';
+import PackageBookingCard from '@/components/site/pdp/PackageBookingCard';
+import { buildQuote } from '@/components/site/pdp/booking';
+import { money } from '@/components/site/pdp/pdp-data';
 
 interface DateRange {
   id: string;
@@ -155,23 +134,17 @@ export default function PackageDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addToCart } = useCart();
+  const { startBooking } = useBooking();
   const slug: string = 'marina-cruise-dinner';
   const packageSlug = params?.packageId as string;
 
   const [pkg, setPkg] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRangesReady, setDateRangesReady] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [category, setCategory] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedDateString, setSelectedDateString] = useState<string>('');
   const [month, setMonth] = useState<Date>(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showDateDropdown, setShowDateDropdown] = useState(false);
-  const [showPersonsDropdown, setShowPersonsDropdown] = useState(false);
-  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-  const [showDesktopPopover, setShowDesktopPopover] = useState(false);
   const [persons, setPersons] = useState({
     adult: 1, // Start with 1 adult minimum
     child: 0,
@@ -240,8 +213,9 @@ export default function PackageDetailsPage() {
     min_pax?: number | null;
     max_pax?: number | null;
   };
-  const modalOpen = showMobileDrawer || showDesktopPopover;
-  const shouldFetchAddons = slug === 'offer-packages' && !!pkg && modalOpen;
+  /* Offer-package add-ons never apply to a cruise (slug is fixed above), so
+     their price lists are never fetched; cruise add-ons are handled below. */
+  const shouldFetchAddons = false;
   const nights = pkg?.package_nights ?? 0;
   const { data: dealsRaw = [] } = useAddonDeals(nights, !!shouldFetchAddons);
   const { data: servicesRaw = [] } = useAddonHotelServices(!!shouldFetchAddons);
@@ -436,20 +410,12 @@ export default function PackageDetailsPage() {
   const [priceBeforeAgentDiscount, setPriceBeforeAgentDiscount] = useState<
     number | null
   >(null);
-  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   // Note: Date ranges are now stored in pkg.date_ranges directly (no separate state needed)
 
   // Discount state
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [discountTimeLeft, setDiscountTimeLeft] = useState<string>('');
-  const isMobile = useIsMobile();
-
-  const datePickerRef = useRef<HTMLDivElement>(null);
-  const dateDropdownRef = useRef<HTMLDivElement>(null);
-  const personsDropdownRef = useRef<HTMLDivElement>(null);
-  const addToCartButtonRef = useRef<HTMLButtonElement>(null);
-  const addToCartIconRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (packageSlug) {
@@ -1028,38 +994,6 @@ export default function PackageDetailsPage() {
     getMinPricesFromRanges,
   ]);
 
-  // Calculate original price (without discount)
-  const getOriginalPrice = useCallback((): number | null => {
-    if (!pkg) return null;
-    if (isSoloTraveller && pkg.solo_traveller_enabled) {
-      // For flexible date packages, get solo traveller price from date ranges
-      if (slug === 'flexible-date-packages') {
-        const prices = getPricesForDate();
-        const soloPrice = prices.soloTravellerPrice ?? prices.adultPrice;
-        return soloPrice ? soloPrice + getVisaPrice() : null;
-      }
-      // For non-flexible packages, use package-level solo traveller price
-      const soloPrice = pkg.solo_traveller_price ?? pkg.package_price;
-      return soloPrice ? soloPrice + getVisaPrice() : null;
-    }
-    const prices = getPricesForDate();
-    const totalPrice =
-      (persons.adult > 0 ? persons.adult * prices.adultPrice : 0) +
-      (persons.child > 0 ? persons.child * prices.childPrice : 0) +
-      (persons.infant > 0 ? persons.infant * prices.infantPrice : 0);
-    const basePrice = totalPrice === 0 ? pkg.package_price || 0 : totalPrice;
-    return basePrice ? basePrice + getVisaPrice() : null;
-  }, [
-    pkg,
-    persons.adult,
-    persons.child,
-    persons.infant,
-    isSoloTraveller,
-    getVisaPrice,
-    getPricesForDate,
-    slug,
-  ]);
-
   // Calculate price based on persons and selected date
   useEffect(() => {
     if (!pkg) {
@@ -1157,8 +1091,8 @@ export default function PackageDetailsPage() {
     let discountAmount = 0;
     // NOTE: marina_cruise_dinners has no agent_discount column - it was dropped
     // in 20250616000001_simplify_marina_cruise_dinners.sql - so this is always 0
-    // and marina cruises are never agent-discounted. /api/cart/validate agrees
-    // (validateMarinaCartItem returns agentDiscountAmount: null). Kept in place
+    // and marina cruises are never agent-discounted. /api/booking/validate agrees
+    // (validateMarinaBookingItem returns agentDiscountAmount: null). Kept in place
     // so this branch stays identical to the package detail page; re-adding the
     // column is all that would be needed to switch marina discounts back on.
     const agentDiscountPercentage = pkg?.agent_discount || 0;
@@ -1219,15 +1153,6 @@ export default function PackageDetailsPage() {
     addonPriceTotal,
     marinaAddonPriceTotal,
   ]);
-
-  // Helper function to format price - always shows AED
-  const formatPrice = (price: number | null): string => {
-    if (price === null || price === undefined) return 'N/A';
-    return `AED ${price.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
 
   // Check if user is an agent
   const checkAgentStatus = async () => {
@@ -1343,10 +1268,7 @@ export default function PackageDetailsPage() {
       );
       if (defaultDate) {
         const parsed = parseDateStringToLocal(defaultDate);
-        if (parsed) {
-          setSelectedDate(parsed);
-          setShowDatePicker(false);
-        }
+        if (parsed) setSelectedDate(parsed);
       }
       return;
     }
@@ -1354,10 +1276,7 @@ export default function PackageDetailsPage() {
     const defaultDate = getTourDefaultFixedBookingDate(pkg.package_id);
     if (!defaultDate) return;
     const parsed = parseDateStringToLocal(defaultDate);
-    if (parsed) {
-      setSelectedDate(parsed);
-      setShowDatePicker(false);
-    }
+    if (parsed) setSelectedDate(parsed);
   }, [pkg?.package_id]);
 
   const fetchCategory = async () => {
@@ -1372,10 +1291,6 @@ export default function PackageDetailsPage() {
         setCategory(foundCategory);
       }
     } catch (error) {}
-  };
-
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
   };
 
   const updatePersonCount = (
@@ -1418,25 +1333,11 @@ export default function PackageDetailsPage() {
     });
   };
 
-  const getTotalPersons = () => {
-    return persons.adult + persons.child + persons.infant;
-  };
-
-  const getPersonsDisplayText = () => {
-    if (isSoloTraveller) return '1 Traveller';
-    const total = getTotalPersons();
-    if (total === 0) return 'Persons';
-    return `${total} ${total === 1 ? 'Person' : 'Persons'}`;
-  };
-
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     // For flexible date packages, also set selectedDateString in 'yyyy-MM-dd' format
     if (date && slug === 'flexible-date-packages') {
       setSelectedDateString(format(date, 'yyyy-MM-dd'));
-    }
-    if (date) {
-      setShowDatePicker(false);
     }
   };
 
@@ -1490,15 +1391,15 @@ export default function PackageDetailsPage() {
     setSelectedDateString(dateString);
     const parsed = parseDateStringToLocal(dateString);
     setSelectedDate(parsed || undefined);
-    setShowDateDropdown(false);
   };
 
-  const handleAddToCart = () => {
-    if (!pkg) return;
+  /** Checks the booking and hands it to checkout; false (with a toast) when something is missing. */
+  const prepareBooking = (): boolean => {
+    if (!pkg) return false;
     const registrationMode = isMarinaRegistrationMode(pkg);
     if (!registrationMode && isPackagePriceRevealingSoon(pkg)) {
       toast.error('This package is not available for booking yet.');
-      return;
+      return false;
     }
 
     // Get date - REQUIRED for ALL packages
@@ -1511,7 +1412,7 @@ export default function PackageDetailsPage() {
     // Date is now required for ALL packages
     if (!dateToUse) {
       toast.error('Please select a date');
-      return;
+      return false;
     }
 
     // Get minimum adults requirement from package (default to 1)
@@ -1520,18 +1421,18 @@ export default function PackageDetailsPage() {
     if (isSoloTraveller) {
       if (!soloTravellerGender) {
         toast.error('Please select gender for solo traveller');
-        return;
+        return false;
       }
       /* Only a shared room needs the sharing confirmation - a private room
          never shows it, so it cannot be required. */
       if (soloRoomType !== 'private' && !soloTravellerShareConsent) {
         toast.error('Please confirm sharing preference');
-        return;
+        return false;
       }
       // Solo traveller counts as 1 adult - check if package allows it
       if (minAdults > 1) {
         toast.error(`This package requires a minimum of ${minAdults} adults`);
-        return;
+        return false;
       }
     } else {
       // Validate minimum adults based on package requirement
@@ -1539,14 +1440,14 @@ export default function PackageDetailsPage() {
         toast.error(
           `This package requires a minimum of ${minAdults} adult${minAdults > 1 ? 's' : ''}`
         );
-        return;
+        return false;
       }
 
       // Validate total passengers (can't be 0)
       const totalPassengers = persons.adult + persons.child + persons.infant;
       if (totalPassengers === 0) {
         toast.error('Please select at least one passenger');
-        return;
+        return false;
       }
     }
 
@@ -1571,8 +1472,8 @@ export default function PackageDetailsPage() {
         : visaForInfants
       : 0;
 
-    // Create cart item (only identifiers, prices will be validated server-side)
-    const cartItem: CartItemStorage = {
+    // Booking request (only identifiers, prices will be validated server-side)
+    const bookingRequest: BookingRequest = {
       packageId: pkg.package_id,
       packageSlug: packageSlug,
       categorySlug: slug,
@@ -1611,582 +1512,231 @@ export default function PackageDetailsPage() {
         selectedMarinaAddons.length > 0 ? selectedMarinaAddons : undefined,
     };
 
-    addToCart(cartItem);
-    toast.success('Package added to cart!');
-
-    // Close drawer on mobile after adding to cart
-    if (isMobile) {
-      setShowMobileDrawer(false);
-    }
-
-    // Close popover on desktop after adding to cart
-    if (!isMobile) {
-      setShowDesktopPopover(false);
-    }
+    startBooking(bookingRequest);
+    return true;
   };
 
-  const handleMobileAddToCartClick = () => {
-    setShowMobileDrawer(true);
+  /** Book now: this one booking, straight to checkout. */
+  const handleBookNow = () => {
+    if (prepareBooking()) router.push('/checkout');
   };
 
-  // Scroll to top button visibility and scrollbar visibility
-  useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
-
-    const handleScroll = () => {
-      setShowScrollToTop(window.scrollY > 300);
-
-      // Add class to body when scrolling to show scrollbar
-      document.body.classList.add('is-scrolling');
-
-      // Clear existing timeout
-      clearTimeout(scrollTimeout);
-
-      // Remove class after scrolling stops (500ms delay)
-      scrollTimeout = setTimeout(() => {
-        document.body.classList.remove('is-scrolling');
-      }, 500);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimeout);
-    };
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // GSAP hover animations for Add to Cart button
-  useEffect(() => {
-    const button = addToCartButtonRef.current;
-    const icon = addToCartIconRef.current;
-
-    if (!button) return;
-
-    const handleMouseEnter = () => {
-      gsap.to(button, {
-        scale: 1.05,
-        y: -3,
-        boxShadow: '0 12px 32px -4px rgba(253, 107, 6, 0.6)',
-        background: 'linear-gradient(135deg, #ff7a1a 0%, #fd6b06 100%)',
-        duration: 0.4,
-        ease: 'power2.out',
-      });
-
-      if (icon) {
-        gsap.to(icon, {
-          scale: 1.15,
-          rotation: -8,
-          duration: 0.4,
-          ease: 'back.out(1.7)',
-        });
-      }
-    };
-
-    const handleMouseLeave = () => {
-      gsap.to(button, {
-        scale: 1,
-        y: 0,
-        boxShadow: '0 4px 14px -2px rgba(253, 107, 6, 0.4)',
-        background: 'linear-gradient(135deg, #fd6b06 0%, #e64500 100%)',
-        duration: 0.3,
-        ease: 'power2.out',
-      });
-
-      if (icon) {
-        gsap.to(icon, {
-          scale: 1,
-          rotation: 0,
-          duration: 0.3,
-          ease: 'power2.out',
-        });
-      }
-    };
-
-    const handleMouseDown = () => {
-      gsap.to(button, {
-        scale: 0.97,
-        y: 0,
-        duration: 0.1,
-        ease: 'power2.out',
-      });
-    };
-
-    const handleMouseUp = () => {
-      gsap.to(button, {
-        scale: 1.05,
-        y: -3,
-        duration: 0.2,
-        ease: 'back.out(1.7)',
-      });
-    };
-
-    button.addEventListener('mouseenter', handleMouseEnter);
-    button.addEventListener('mouseleave', handleMouseLeave);
-    button.addEventListener('mousedown', handleMouseDown);
-    button.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      button.removeEventListener('mouseenter', handleMouseEnter);
-      button.removeEventListener('mouseleave', handleMouseLeave);
-      button.removeEventListener('mousedown', handleMouseDown);
-      button.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
-
-  // Click outside handlers for dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node;
-      if (datePickerRef.current && !datePickerRef.current.contains(target)) {
-        setShowDatePicker(false);
-      }
-      if (
-        dateDropdownRef.current &&
-        !dateDropdownRef.current.contains(target)
-      ) {
-        setShowDateDropdown(false);
-      }
-      if (
-        personsDropdownRef.current &&
-        !personsDropdownRef.current.contains(target)
-      ) {
-        setShowPersonsDropdown(false);
-      }
-    };
-
-    // Use mousedown for desktop and touchstart for mobile
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside, {
-      passive: true,
-    });
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <div className='package-details-page'>
-        <div className='package-details-loading'>
-          Loading package details...
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PdpState loading />;
 
   if (!pkg) {
     return (
-      <div className='package-details-page'>
-        <div className='package-details-error'>
-          <h2>Package not found</h2>
-          <Link href='/marina-cruise-dinner' className='back-button'>
-            <ArrowLeft /> Back to packages
-          </Link>
-        </div>
-      </div>
+      <PdpState
+        title='Cruise not found'
+        backHref={holidaysHref('marina-cruise')}
+        backLabel='Back to Marina cruises'
+      />
     );
   }
 
-  // Get images array
-  const images = getPackageDisplayImages(pkg.gallery, pkg.thumbnail_image);
-
-  // Calculate pricing for display
+  const images = getPackageGalleryImages(pkg.gallery, pkg.thumbnail_image);
   const prices = getPricesForDate();
-  const hasPricing =
-    prices.adultPrice > 0 || prices.childPrice > 0 || prices.infantPrice > 0;
-  const currentPrice =
-    calculatedPrice !== null
-      ? calculatedPrice
-      : hasPricing
-        ? 0
-        : pkg.package_price || 0;
-  const originalPrice = getOriginalPrice();
-
   const isRegistrationMode = isMarinaRegistrationMode(pkg);
   const isPriceRevealingSoon =
     !isRegistrationMode && isPackagePriceRevealingSoon(pkg);
-  const primaryActionLabel = isRegistrationMode ? 'Register' : 'Add to Cart';
 
-  // Determine which discount applies for display
-  const hasAnyDiscount =
-    (hasActiveAgentSubscription &&
-      agentDiscountAmount &&
-      agentDiscountAmount > 0) ||
-    (referralData?.showDiscount &&
-      referralDiscountAmount &&
-      referralDiscountAmount > 0);
-  const showOriginalPrice =
-    (isDiscountActive &&
-      originalPrice !== null &&
-      originalPrice !== currentPrice) ||
-    hasAnyDiscount;
-  const displayOriginalPrice =
-    priceBeforeAgentDiscount || priceBeforeReferralDiscount || originalPrice;
+  /* Discounts, exactly as the price effect above applies them (marina rows
+     carry no agent_discount, so only a referral link can take a percentage). */
+  const agentPct =
+    hasActiveAgentSubscription && (pkg.agent_discount || 0) > 0
+      ? pkg.agent_discount || 0
+      : 0;
+  const referralPct =
+    !agentPct &&
+    referralData?.linkType === 'discount' &&
+    referralData.discountPercentage > 0
+      ? referralData.discountPercentage
+      : 0;
+  const adultsForAddons = isSoloTraveller ? 1 : persons.adult;
+  const childrenForAddons = isSoloTraveller ? 0 : persons.child;
+  const quote = buildQuote({
+    solo: isSoloTraveller && !!pkg.solo_traveller_enabled,
+    persons,
+    prices,
+    limited: isDiscountActive
+      ? {
+          adult: pkg.adult_discount_amount,
+          child: pkg.child_discount_amount,
+          infant: pkg.infant_discount_amount,
+        }
+      : null,
+    packagePrice:
+      !pkg.adult_price && !pkg.child_price && !pkg.infant_price
+        ? pkg.package_price
+        : null,
+    visa: withVisa
+      ? [
+          { who: 'adult', count: visaForAdults, price: Number(pkg.adult_visa_price) || 0 },
+          { who: 'child', count: visaForChildren, price: Number(pkg.child_visa_price) || 0 },
+          { who: 'infant', count: visaForInfants, price: Number(pkg.infant_visa_price) || 0 },
+        ]
+      : [],
+    extras: marinaAddonsList
+      .filter(a => selectedMarinaAddons.includes(a.id))
+      .map(a => ({
+        label: a.name,
+        amount:
+          (Number(a.adult_price) || 0) * adultsForAddons +
+          (Number(a.child_price) || 0) * childrenForAddons,
+      })),
+    pct: agentPct || referralPct,
+    pctLabel: agentPct
+      ? `Agent discount (${agentPct}%)`
+      : referralPct
+        ? `Special discount (${referralPct}%)`
+        : null,
+    showPct: agentPct > 0 || !!referralData?.showDiscount,
+    total: calculatedPrice,
+    prefix: isRegistrationMode ? 'Registration ' : '',
+  });
 
-  // Get discount info for display
-  const discountLabel =
-    hasActiveAgentSubscription && agentDiscountAmount
-      ? `Agent Discount (${pkg.agent_discount}%)`
-      : referralData?.showDiscount && referralDiscountAmount
-        ? `Special Discount (${referralData.discountPercentage}%)`
-        : null;
+  const deal = pkg.active_deal;
+  const now = new Date();
+  const dealLive =
+    !!deal?.is_active &&
+    now >= new Date(deal.start_date) &&
+    now <= new Date(deal.end_date);
+
+
+  const whatsappText = `Hi, I have a question about ${pkg.package_name} (Marina cruise).`;
 
   return (
-    <div className='package-details-page'>
-      {/* Gallery and Product Details Section */}
-      <div className='package-hero-section'>
-        {/* Gallery on Left */}
-        <PackageGallery images={images} packageName={pkg.package_name} />
-
-        {/* Product Details on Right */}
-        <div className='package-hero-details'>
-          <h1 className='package-hero-title'>{pkg.package_name}</h1>
-          <div className='package-hero-pricing'>
-            {isRegistrationMode ? (
-              <span
-                role='status'
-                className='package-price-revealing-soon package-price-revealing-soon--hero'
-              >
-                Register
-              </span>
-            ) : isPriceRevealingSoon ? (
-              <PackagePriceRevealingSoonLabel variant='hero' />
-            ) : (
-              <span className='package-hero-price-current'>
-                {formatPrice(currentPrice)}
-              </span>
-            )}
-            {!isPriceRevealingSoon &&
-              showOriginalPrice &&
-              displayOriginalPrice && (
-                <span className='package-hero-price-original'>
-                  {formatPrice(displayOriginalPrice)}
+    <PdpShell
+      images={images}
+      name={pkg.package_name}
+      kind='Marina Cruise'
+      badge={
+        isRegistrationMode
+          ? 'Registration open'
+          : dealLive
+            ? 'Deal of the Day'
+            : isDiscountActive
+              ? 'Limited Time Offer'
+              : null
+      }
+      inclusions={inclusionsOf(pkg as never, null)}
+      notice={
+        isDiscountActive && !isPriceRevealingSoon ? (
+          <div className='pdp-offer' role='status'>
+            <span className='pdp-offer__tag'>Limited time offer</span>
+            <span className='pdp-offer__amts'>
+              {(pkg.adult_discount_amount ?? 0) > 0 && (
+                <span>
+                  Adult <b>{money(pkg.adult_discount_amount)} off</b>
                 </span>
               )}
-            {!isPriceRevealingSoon && discountLabel && (
-              <span className='package-hero-discount-badge'>
-                {discountLabel}
+              {(pkg.child_discount_amount ?? 0) > 0 && (
+                <span>
+                  Child <b>{money(pkg.child_discount_amount)} off</b>
+                </span>
+              )}
+              {(pkg.infant_discount_amount ?? 0) > 0 && (
+                <span>
+                  Infant <b>{money(pkg.infant_discount_amount)} off</b>
+                </span>
+              )}
+            </span>
+            {discountTimeLeft ? (
+              <span className='pdp-offer__timer'>
+                Ends in <b>{discountTimeLeft}</b>
               </span>
-            )}
+            ) : null}
           </div>
-          {pkg.package_description && (
-            <p className='package-hero-description'>
-              {pkg.package_description}
+        ) : null
+      }
+      copy={{
+        overview: pkg.overview,
+        description: pkg.package_description,
+        holidayHtml: pkg.holiday_description_html,
+        itinerary: pkg.itinerary,
+        inclusionHtml: pkg.inclusion_html,
+        exclusionHtml: pkg.exclusion_html,
+        termsHtml: pkg.terms_html,
+      }}
+      notes={[
+        {
+          id: 'payment',
+          title: 'Payment',
+          body: (
+            <p>
+              Cruises are paid in full at checkout. Prices are in AED.
             </p>
-          )}
-          {/* Price Breakdown */}
-          {(!isPriceRevealingSoon || isRegistrationMode) &&
-            (() => {
-              const prices = getPricesForDate();
-              const hasPricing =
-                prices.adultPrice > 0 ||
-                prices.childPrice > 0 ||
-                prices.infantPrice > 0;
-
-              if (!hasPricing && !pkg.package_price) return null;
-
-              // Calculate discounted prices if referral discount is active
-              const referralDiscountPercent =
-                referralData?.linkType === 'discount' &&
-                referralData?.discountPercentage > 0 &&
-                !hasActiveAgentSubscription
-                  ? referralData.discountPercentage
-                  : 0;
-              const agentDiscountPercent =
-                hasActiveAgentSubscription && (pkg?.agent_discount || 0) > 0
-                  ? pkg?.agent_discount || 0
-                  : 0;
-              const discountPercent =
-                agentDiscountPercent || referralDiscountPercent;
-
-              const getDiscountedUnitPrice = (price: number) => {
-                if (discountPercent <= 0) return price;
-                return Math.max(0, price - (price * discountPercent) / 100);
-              };
-
-              return (
-                <div className='package-hero-price-breakdown'>
-                  {prices.adultPrice > 0 && (
-                    <div className='package-hero-price-item'>
-                      <span className='package-hero-price-item-label'>
-                        {isRegistrationMode ? 'Registration Adult' : 'Adult'}
-                      </span>
-                      <span className='package-hero-price-item-age'>
-                        12+ Years
-                      </span>
-                      {discountPercent > 0 ? (
-                        <>
-                          <span className='package-hero-price-item-amount discounted'>
-                            {formatPrice(
-                              getDiscountedUnitPrice(prices.adultPrice)
-                            )}
-                          </span>
-                          <span className='package-hero-price-item-original'>
-                            {formatPrice(prices.adultPrice)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className='package-hero-price-item-amount'>
-                          {formatPrice(prices.adultPrice)}
-                        </span>
-                      )}
-                      {isDiscountActive &&
-                        pkg.adult_discount_amount &&
-                        pkg.adult_discount_amount > 0 && (
-                          <span className='package-hero-price-item-discount'>
-                            Save {formatPrice(pkg.adult_discount_amount)}
-                          </span>
-                        )}
-                    </div>
-                  )}
-                  {prices.childPrice > 0 && (
-                    <div className='package-hero-price-item'>
-                      <span className='package-hero-price-item-label'>
-                        {isRegistrationMode ? 'Registration Child' : 'Child'}
-                      </span>
-                      <span className='package-hero-price-item-age'>
-                        2-8 Years
-                      </span>
-                      {discountPercent > 0 ? (
-                        <>
-                          <span className='package-hero-price-item-amount discounted'>
-                            {formatPrice(
-                              getDiscountedUnitPrice(prices.childPrice)
-                            )}
-                          </span>
-                          <span className='package-hero-price-item-original'>
-                            {formatPrice(prices.childPrice)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className='package-hero-price-item-amount'>
-                          {formatPrice(prices.childPrice)}
-                        </span>
-                      )}
-                      {isDiscountActive &&
-                        pkg.child_discount_amount &&
-                        pkg.child_discount_amount > 0 && (
-                          <span className='package-hero-price-item-discount'>
-                            Save {formatPrice(pkg.child_discount_amount)}
-                          </span>
-                        )}
-                    </div>
-                  )}
-                  {prices.infantPrice > 0 && (
-                    <div className='package-hero-price-item'>
-                      <span className='package-hero-price-item-label'>
-                        Infant
-                      </span>
-                      <span className='package-hero-price-item-age'>
-                        &lt;2 Years
-                      </span>
-                      {discountPercent > 0 ? (
-                        <>
-                          <span className='package-hero-price-item-amount discounted'>
-                            {formatPrice(
-                              getDiscountedUnitPrice(prices.infantPrice)
-                            )}
-                          </span>
-                          <span className='package-hero-price-item-original'>
-                            {formatPrice(prices.infantPrice)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className='package-hero-price-item-amount'>
-                          {formatPrice(prices.infantPrice)}
-                        </span>
-                      )}
-                      {isDiscountActive &&
-                        pkg.infant_discount_amount &&
-                        pkg.infant_discount_amount > 0 && (
-                          <span className='package-hero-price-item-discount'>
-                            Save {formatPrice(pkg.infant_discount_amount)}
-                          </span>
-                        )}
-                    </div>
-                  )}
-                  {!hasPricing && pkg.package_price && (
-                    <div className='package-hero-price-item'>
-                      <span className='package-hero-price-item-label'>
-                        Package Price
-                      </span>
-                      {discountPercent > 0 ? (
-                        <>
-                          <span className='package-hero-price-item-amount discounted'>
-                            {formatPrice(
-                              getDiscountedUnitPrice(pkg.package_price)
-                            )}
-                          </span>
-                          <span className='package-hero-price-item-original'>
-                            {formatPrice(pkg.package_price)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className='package-hero-price-item-amount'>
-                          {formatPrice(pkg.package_price)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          {(isRegistrationMode || !isPriceRevealingSoon) ? (
-            <div className='package-hero-buttons'>
-              <button
-                ref={addToCartButtonRef}
-                className='package-hero-add-to-cart-button'
-                onClick={() => {
-                  if (isMobile) {
-                    setShowMobileDrawer(true);
-                  } else {
-                    setShowDesktopPopover(true);
-                  }
-                }}
-              >
-                <ShoppingCartIcon ref={addToCartIconRef} size={24} />
-                {primaryActionLabel}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Discount Banner */}
-      {isDiscountActive && !isPriceRevealingSoon && (
-        <div className='discount-banner'>
-          <div className='discount-banner-content'>
-            <div className='discount-badge'>
-              <img
-                src='/images/disocunt-ignite.svg'
-                alt='Discount'
-                className='discount-icon'
-              />
-              <span className='discount-label'>Limited Time Offer!</span>
-            </div>
-            <div className='discount-details'>
-              <div className='discount-amounts'>
-                {pkg.adult_discount_amount && pkg.adult_discount_amount > 0 && (
-                  <span className='discount-item'>
-                    Adult: <strong>AED {pkg.adult_discount_amount} OFF</strong>
-                  </span>
-                )}
-                {pkg.child_discount_amount && pkg.child_discount_amount > 0 && (
-                  <span className='discount-item'>
-                    Child: <strong>AED {pkg.child_discount_amount} OFF</strong>
-                  </span>
-                )}
-                {pkg.infant_discount_amount &&
-                  pkg.infant_discount_amount > 0 && (
-                    <span className='discount-item'>
-                      Infant:{' '}
-                      <strong>AED {pkg.infant_discount_amount} OFF</strong>
-                    </span>
-                  )}
-              </div>
-              <div className='discount-timer'>
-                <span className='timer-label'>Ends in:</span>
-                <span className='timer-value'>{discountTimeLeft}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content with Tabs */}
-      <PackageDetailsTabs pkg={pkg} />
-
-      {/* Booking Modal */}
-      <BookingModal
-        isOpen={isMobile ? showMobileDrawer : showDesktopPopover}
-        onClose={() => {
-          if (isMobile) {
-            setShowMobileDrawer(false);
-          } else {
-            setShowDesktopPopover(false);
-          }
-        }}
-        isMobile={isMobile}
-        pkg={pkg}
-        slug={slug}
-        soloTravellerEnabled={pkg.solo_traveller_enabled || false}
-        isSoloTraveller={isSoloTraveller}
-        setIsSoloTraveller={setIsSoloTraveller}
-        soloTravellerGender={soloTravellerGender}
-        setSoloTravellerGender={setSoloTravellerGender}
-        soloTravellerShareConsent={soloTravellerShareConsent}
-        setSoloTravellerShareConsent={setSoloTravellerShareConsent}
-        soloRoomType={soloRoomType}
-        withVisa={withVisa}
-        setWithVisa={setWithVisa}
-        visaForAdults={visaForAdults}
-        setVisaForAdults={setVisaForAdults}
-        visaForChildren={visaForChildren}
-        setVisaForChildren={setVisaForChildren}
-        visaForInfants={visaForInfants}
-        setVisaForInfants={setVisaForInfants}
-        persons={persons}
-        setPersons={setPersons}
-        updatePersonCount={updatePersonCount}
-        getPersonsDisplayText={getPersonsDisplayText}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        selectedDateString={selectedDateString}
-        handleDateStringSelect={handleDateStringSelect}
-        handleDateSelect={handleDateSelect}
-        month={month}
-        setMonth={setMonth}
-        showPersonsDropdown={showPersonsDropdown}
-        setShowPersonsDropdown={setShowPersonsDropdown}
-        showDateDropdown={showDateDropdown}
-        setShowDateDropdown={setShowDateDropdown}
-        showDatePicker={showDatePicker}
-        setShowDatePicker={setShowDatePicker}
-        personsDropdownRef={personsDropdownRef}
-        dateDropdownRef={dateDropdownRef}
-        datePickerRef={datePickerRef}
-        isPackageType={isPackageType}
-        getAvailableDates={getAvailableDates}
-        getDisabledDates={getDisabledDates}
-        getPricesForDate={getPricesForDate}
-        formatPrice={formatPrice}
-        getOriginalPrice={getOriginalPrice}
-        calculatedPrice={calculatedPrice}
-        isDiscountActive={isDiscountActive}
-        hasActiveAgentSubscription={hasActiveAgentSubscription}
-        agentDiscountAmount={agentDiscountAmount}
-        priceBeforeAgentDiscount={priceBeforeAgentDiscount}
-        loading={loading}
-        dateRangesReady={dateRangesReady}
-        handleAddToCart={handleAddToCart}
-        showAddons={false}
-        primaryActionLabel={primaryActionLabel}
-        showUnitPriceBreakdown={
-          isRegistrationMode ||
-          marinaAddonsList.length > 0 ||
-          selectedMarinaAddons.length > 0
-        }
-        unitPriceLabelPrefix={isRegistrationMode ? 'Registration' : undefined}
-        marinaAddons={marinaAddonsList}
-        selectedMarinaAddons={selectedMarinaAddons}
-        onToggleMarinaAddon={toggleMarinaAddon}
-      />
-
-      {/* Scroll to Top Button */}
-      {showScrollToTop && (
-        <button
-          className='scroll-to-top-button'
-          onClick={scrollToTop}
-          aria-label='Scroll to top'
-        >
-          <ArrowUp className='scroll-to-top-icon' />
-        </button>
-      )}
-    </div>
+          ),
+        },
+        {
+          id: 'cancellation',
+          title: 'Cancellation policy',
+          body: (
+            <p>
+              Cancellation charges depend on how close to the cruise you cancel.{' '}
+              <Link href='/cancellation-policy'>Read the cancellation policy</Link>.
+            </p>
+          ),
+        },
+      ]}
+      from={{ now: isPriceRevealingSoon ? null : quote.now || null, strike: quote.strike, basis: quote.basis }}
+      sticky={{
+        price: isPriceRevealingSoon ? 'Price revealing soon' : money(quote.total),
+        sub: isPriceRevealingSoon
+          ? pkg.package_name
+          : `${quote.travellers} guest${quote.travellers === 1 ? '' : 's'} · Marina Cruise`,
+      }}
+      whatsappText={whatsappText}
+      booking={
+        <PackageBookingCard
+          pkg={pkg}
+          slug={slug}
+          soloTravellerEnabled={pkg.solo_traveller_enabled || false}
+          isSoloTraveller={isSoloTraveller}
+          setIsSoloTraveller={setIsSoloTraveller}
+          soloTravellerGender={soloTravellerGender}
+          setSoloTravellerGender={setSoloTravellerGender}
+          soloTravellerShareConsent={soloTravellerShareConsent}
+          setSoloTravellerShareConsent={setSoloTravellerShareConsent}
+          soloRoomType={soloRoomType}
+          withVisa={withVisa}
+          setWithVisa={setWithVisa}
+          visaForAdults={visaForAdults}
+          setVisaForAdults={setVisaForAdults}
+          visaForChildren={visaForChildren}
+          setVisaForChildren={setVisaForChildren}
+          visaForInfants={visaForInfants}
+          setVisaForInfants={setVisaForInfants}
+          persons={persons}
+          setPersons={setPersons}
+          updatePersonCount={updatePersonCount}
+          selectedDate={selectedDate}
+          selectedDateString={selectedDateString}
+          handleDateStringSelect={handleDateStringSelect}
+          handleDateSelect={handleDateSelect}
+          month={month}
+          setMonth={setMonth}
+          isPackageType={isPackageType}
+          getAvailableDates={getAvailableDates}
+          getDisabledDates={getDisabledDates}
+          getPricesForDate={getPricesForDate}
+          loading={loading}
+          dateRangesReady={dateRangesReady}
+          quote={quote}
+          revealing={isPriceRevealingSoon}
+          payNote={quote.total > 0 ? 'Full payment at checkout' : null}
+          assurances={[
+            ...(referralPct && referralData?.showDiscount
+              ? [`${referralPct}% discount from ${referralData.agentName || 'your agent'}`]
+              : []),
+            'Booking confirmation by email',
+          ]}
+          onBookNow={handleBookNow}
+          bookLabel={isRegistrationMode ? 'Register now' : 'Book now'}
+          marinaAddons={marinaAddonsList}
+          selectedMarinaAddons={selectedMarinaAddons}
+          onToggleMarinaAddon={toggleMarinaAddon}
+        />
+      }
+    />
   );
 }

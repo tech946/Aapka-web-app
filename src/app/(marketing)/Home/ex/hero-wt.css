@@ -1,0 +1,361 @@
+.ex-wt {
+  --wt-w: clamp(170px, 20.6vw, 288px);
+  --wt-w2: calc(var(--wt-w) * 0.972);
+  --wt-h: calc(var(--wt-w) * 1.236);
+  --wt-gap: calc(var(--wt-w) * 0.052);
+  --wt-lift: calc(var(--wt-w) * 0.09);
+  --wt-radius: calc(var(--radius-sm) * 1.875);
+  --wt-ease: cubic-bezier(0.65, 0, 0.25, 1);
+  position: relative;
+  height: clamp(600px, calc(100svh - var(--ex-header)), 732px);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--charcoal);
+  color: var(--ex-paper);
+}
+
+.ex-wt__bgs {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.ex-wt__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.08);
+  transition:
+    opacity 1.2s ease,
+    transform 7s ease-out;
+}
+
+.ex-wt__bg.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ex-wt__shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(75deg, color-mix(in srgb, var(--black) 34%, transparent) 5%, color-mix(in srgb, var(--black) 30%, transparent) 48%, transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--black) 18%, transparent) 0%, transparent 30%);
+  pointer-events: none;
+}
+
+.ex-wt__inner {
+  position: relative;
+  height: 100%;
+  max-width: 1401px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+.ex-wt__copy {
+  position: absolute;
+  top: 21.4%;
+  left: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(589px, 42%);
+}
+
+.ex .ex-wt__title {
+  --app-heading-font: var(--ex-font-slab);
+  margin: 0;
+  color: var(--ex-paper);
+  font-family: var(--ex-font-slab), Georgia, serif;
+  font-size: clamp(48px, 5.7vw, 80px);
+  line-height: 1.4;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-shadow: 0 2px 24px color-mix(in srgb, var(--black) 30%, transparent);
+}
+
+.ex .ex-wt__text {
+  margin: 18px 0 0;
+  color: color-mix(in srgb, var(--ex-paper) 87%, transparent);
+  font-size: 16px;
+  line-height: 19px;
+  font-weight: 400;
+  text-shadow: 0 1px 10px color-mix(in srgb, var(--black) 35%, transparent);
+}
+
+.ex-wt__btn {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  width: 137px;
+  height: 46px;
+  margin-top: 14px;
+  border-radius: calc(var(--radius-sm) * 0.375);
+  background: color-mix(in srgb, var(--brand-glow) 90%, transparent);
+  font-size: 16px;
+  line-height: 19px;
+  font-weight: 400;
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.ex .ex-wt__btn {
+  color: var(--ink);
+}
+
+.ex-wt__btn:hover {
+  background: var(--brand-glow);
+  transform: translateY(-2px);
+}
+
+.ex-wt__copy > * {
+  animation: ex-wt-in 0.9s var(--wt-ease) backwards;
+}
+
+.ex-wt__copy > :nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.ex-wt__copy > :nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+@keyframes ex-wt-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.ex-wt__nav {
+  position: absolute;
+  top: 30.9%;
+  left: calc(48% + var(--wt-w) * 2.066);
+  z-index: 2;
+  display: flex;
+}
+
+.ex-wt__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border: 1.5px solid color-mix(in srgb, var(--card) 85%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--card) 22%, transparent);
+  opacity: 0.7;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition:
+    opacity 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.ex .ex-wt__arrow {
+  color: var(--ex-paper);
+}
+
+.ex-wt__arrow:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--card) 36%, transparent);
+}
+
+.ex-wt__arrow svg {
+  width: 26px;
+  height: 26px;
+}
+
+.ex .ex-wt__cards {
+  position: absolute;
+  top: 44.7%;
+  left: 48%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ex-wt__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--wt-w2);
+  height: var(--wt-h);
+  transform: translate3d(calc(var(--wt-w) + var(--wt-gap) + (var(--pos) - 1) * (var(--wt-w2) + var(--wt-gap))), calc(-1 * var(--wt-lift)), 0);
+  transition:
+    transform 0.9s var(--wt-ease),
+    width 0.9s var(--wt-ease),
+    opacity 0.7s ease;
+}
+
+.ex-wt__card[data-pos='0'] {
+  width: var(--wt-w);
+  transform: translate3d(0, 0, 0);
+}
+
+.ex-wt__card[data-pos='0']::before {
+  content: '';
+  position: absolute;
+  inset: -7px -6px -7px -4px;
+  z-index: -1;
+  border-radius: var(--wt-radius);
+  background: linear-gradient(180deg, var(--navy), transparent);
+  opacity: 0.5;
+  filter: blur(1px);
+}
+
+.ex-wt__card[data-pos='out'] {
+  width: var(--wt-w);
+  opacity: 0;
+  transform: translate3d(0, 0, 0) scale(1.12);
+  pointer-events: none;
+}
+
+.ex-wt__card.is-jump {
+  transition: opacity 0.7s ease;
+}
+
+.ex-wt__pick {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--wt-radius);
+  box-shadow: 2px 2px 2px color-mix(in srgb, var(--black) 25%, transparent);
+  cursor: pointer;
+}
+
+.ex-wt__card[data-pos='0'] .ex-wt__pick {
+  box-shadow:
+    1px 1px 2px color-mix(in srgb, var(--black) 39%, transparent),
+    0 24px 48px color-mix(in srgb, var(--black) 30%, transparent);
+  cursor: default;
+}
+
+.ex-wt__pick img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.ex-wt__pick:hover img {
+  transform: scale(1.05);
+}
+
+.ex-wt__pick:focus-visible {
+  outline: 3px solid var(--brand-glow);
+  outline-offset: 3px;
+}
+
+.ex-wt__caption {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  color: color-mix(in srgb, var(--ex-paper) 87%, transparent);
+  font-size: 16px;
+  line-height: 19px;
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 2px 2px 2px color-mix(in srgb, var(--black) 39%, transparent);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+
+.ex-wt__card[data-pos='0'] .ex-wt__caption {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.45s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ex-wt__bg,
+  .ex-wt__card,
+  .ex-wt__caption,
+  .ex-wt__pick img {
+    transition: none;
+  }
+
+  .ex-wt__copy > * {
+    animation: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .ex-wt__copy {
+    width: 44%;
+  }
+
+  .ex .ex-wt__cards {
+    left: 50%;
+  }
+
+  .ex-wt__nav {
+    top: 27%;
+    right: 24px;
+    left: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .ex-wt {
+    --wt-w: 150px;
+    height: 600px;
+  }
+
+  .ex-wt__inner {
+    padding: 0 16px;
+  }
+
+  .ex-wt__copy {
+    top: 36px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
+  .ex .ex-wt__title {
+    font-size: 42px;
+    line-height: 1.3;
+  }
+
+  .ex .ex-wt__text {
+    margin-top: 10px;
+    font-size: 15px;
+    line-height: 21px;
+  }
+
+  .ex-wt__btn {
+    align-self: flex-start;
+    margin-top: 18px;
+  }
+
+  .ex-wt__nav {
+    top: 324px;
+    right: 16px;
+  }
+
+  .ex-wt__arrow {
+    width: 42px;
+    height: 42px;
+  }
+
+  .ex .ex-wt__cards {
+    top: 380px;
+    left: 16px;
+  }
+
+  .ex-wt__caption {
+    font-size: 14px;
+  }
+}

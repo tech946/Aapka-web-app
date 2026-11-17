@@ -1,0 +1,147 @@
+.at-toaster {
+  --at-toast-tone: var(--ink);
+  --at-toast-wash: var(--surface);
+  --app-font: var(--font-sans);
+  --app-heading-font: var(--font-sans);
+  font-family: var(--font-sans);
+}
+
+.at-toaster .at-toast {
+  --at-toast-tone: var(--ink);
+  --at-toast-wash: var(--surface);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(380px, calc(100vw - 24px));
+  padding: 14px 44px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius-sm) * 1.75);
+  background: var(--card);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--black) 6%, transparent),
+    0 12px 32px color-mix(in srgb, var(--charcoal) 14%, transparent);
+  color: var(--ink);
+}
+
+.at-toaster .at-toast.is-success {
+  --at-toast-tone: var(--success);
+  --at-toast-wash: color-mix(in srgb, var(--success) 12%, var(--card));
+}
+
+.at-toaster .at-toast.is-error {
+  --at-toast-tone: var(--deal);
+  --at-toast-wash: color-mix(in srgb, var(--deal) 10%, var(--card));
+}
+
+.at-toaster .at-toast.is-warning {
+  --at-toast-tone: var(--brand-edge);
+  --at-toast-wash: var(--brand-tint);
+}
+
+.at-toaster .at-toast.is-info,
+.at-toaster .at-toast.is-loading {
+  --at-toast-tone: var(--navy);
+  --at-toast-wash: color-mix(in srgb, var(--navy) 8%, var(--card));
+}
+
+.at-toaster .at-toast__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  border-radius: var(--radius-full);
+  background: var(--at-toast-wash);
+  color: var(--at-toast-tone);
+}
+
+.at-toaster .at-toast__icon svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.6;
+}
+
+.at-toaster .at-toast__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 5px;
+}
+
+.at-toaster .at-toast__title {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.at-toaster .at-toast__desc {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--ink) 64%, var(--card));
+}
+
+.at-toaster .at-toast__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 50%, var(--card));
+  cursor: pointer;
+  transform: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.at-toaster .at-toast__close:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.at-toaster .at-toast__close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.at-toaster .at-toast__action,
+.at-toaster .at-toast__cancel {
+  align-self: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.at-toaster .at-toast__action {
+  border: 1px solid var(--brand-edge);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.at-toaster .at-toast__cancel {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.at-toast__spin {
+  animation: at-toast-spin 0.8s linear infinite;
+}
+
+@keyframes at-toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

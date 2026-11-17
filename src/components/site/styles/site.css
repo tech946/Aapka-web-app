@@ -1,0 +1,877 @@
+/* ==========================================================================
+   Aapka Tourism — site chrome (layout, header, footer, sliders)
+   Tokens + shared primitives live in theme.css (the CRM design language).
+   Homepage section styles live in app/home/home.css — do not copy them here.
+   ========================================================================== */
+
+:where(.at-site) *, :where(.at-site) *::before, :where(.at-site) *::after { box-sizing: border-box; }
+
+html { overflow-x: clip; }
+
+:where(.at-site) {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--lx-text);
+  background: var(--lx-surface);
+}
+
+:where(.at-site) img { max-width: 100%; height: auto; display: block; border: 0; }
+:where(.at-site) a { color: inherit; text-decoration: none; }
+:where(.at-site) ul { list-style: none; margin: 0; padding: 0; }
+:where(.at-site) button { font-family: inherit; cursor: pointer; }
+:where(.at-site) h1, :where(.at-site) h2, :where(.at-site) h3, :where(.at-site) h4, :where(.at-site) h5, :where(.at-site) h6, :where(.at-site) p { margin: 0; }
+
+/* --------------------------------------------------------------- layout */
+:where(.at-site) .container {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+:where(.at-site) .row { display: flex; justify-content: center; }
+:where(.at-site) .col-inner { width: 100%; max-width: 1240px; }
+:where(.at-site) .col-inner.narrow { max-width: 1240px; }
+
+:where(.at-site) .rn__section__gapTop { padding-top: var(--mk-section); }
+:where(.at-site) .inner__gapTop { margin-top: 28px; }
+
+/* Section heading: a big uppercase site-face title in navy (pickyourtrail
+   .com's section titles), actions on the right. .mk-display gives the same
+   look to a title outside .main_heading. */
+:where(.at-site) .main_heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+}
+:where(.at-site) .main_heading h2,
+:where(.at-site) .main_heading h4,
+:where(.at-site) .mk-display {
+  --app-heading-font: var(--lx-font-display);
+  font-family: var(--lx-font-display);
+  font-size: var(--mk-h2);
+  line-height: 1.25;
+  /* DM Sans needs the extra weight Paytone One had built in */
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--mk-navy);
+}
+
+/* Full-width colour bands that break up the white page (homepage rhythm).
+   A band pads its own bottom so the next section starts on clean white. */
+:where(.at-site) .mk-band { padding-bottom: var(--mk-section); }
+:where(.at-site) .mk-band--sand { background: var(--mk-sand); }
+
+:where(.at-site) .m-auto { margin-inline: auto; }
+:where(.at-site) .mx-auto { margin-inline: auto; }
+:where(.at-site) .d-none { display: none; }
+:where(.at-site) .cta_center { display: flex; justify-content: center; }
+
+:where(.at-site) .tab-pane { display: none; }
+:where(.at-site) .tab-pane.active { display: block; }
+
+/* --------------------------------------------------------------- buttons
+   Legacy .btn markup mapped onto .ui-btn (theme.css). Corners are 8px, like
+   pickyourtrail.com's buttons, on both. */
+:where(.at-site) .ui-btn { border-radius: 8px; }
+:where(.at-site) .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: none;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 8px;
+  padding: 0 20px;
+  height: var(--lx-btn-h);
+  white-space: nowrap;
+  transition: background var(--lx-ease), border-color var(--lx-ease), color var(--lx-ease), opacity var(--lx-ease);
+}
+:where(.at-site) .btn:disabled { cursor: not-allowed; opacity: .45; }
+:where(.at-site) .btn_primary {
+  border-color: var(--lx-brand);
+  background: var(--lx-brand);
+  color: #fff;
+  width: fit-content;
+}
+:where(.at-site) .btn_primary:hover:not(:disabled) { border-color: var(--lx-brand-hover); background: var(--lx-brand-hover); color: #fff; }
+:where(.at-site) .btn_primary img { width: 14px; height: 14px; filter: brightness(0) invert(1); }
+
+:where(.at-site) .btn_secondary {
+  border-color: var(--lx-border-strong);
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  box-shadow: var(--lx-shadow-sm);
+}
+:where(.at-site) .btn_secondary:hover:not(:disabled) { background: var(--lx-hover); }
+:where(.at-site) .btn_lg { height: var(--lx-btn-h-lg); padding: 0 28px; font-size: 15px; }
+
+:where(.at-site) .d-lg-none { display: none; }
+
+/* --------------------------------------------------------------- header
+   Two tiers:
+     announcement  ink bar — offer badge, line, code, link · social icons on
+                   the right. Sits above the sticky bar and simply scrolls
+                   away: no height animation, so nothing shifts or jitters.
+     main bar      flat white. Logo left; everything else on the right as
+                   plain text links (no icons, no pills), a hairline divider,
+                   then plain square icon buttons. The current page is marked
+                   by a 2px brand rule on the bar's bottom edge.
+   The main bar is black (like pickyourtrail.com's) with light links; the
+   dropdown menus stay white cards.                                        */
+:where(.at-site) .tcHolidaysHeadercontainer {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+  transition: box-shadow .2s ease;
+}
+:where(.at-site) .tcHolidaysHeadercontainer.is-scrolled {
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, .6);
+}
+
+/* ── announcement bar ─────────────────────────────────────────────────── */
+:where(.at-site) .header_strip {
+  position: relative;
+  z-index: 61;
+  background: var(--lx-ink);
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  color: #fff;
+}
+:where(.at-site) .strip_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 38px;
+}
+:where(.at-site) .strip_offer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: rgba(255, 255, 255, .86);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+:where(.at-site) .strip_badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  background: var(--lx-brand);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+:where(.at-site) .strip_text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.at-site) .strip_code {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border: 1px dashed rgba(255, 255, 255, .35);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, .7);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+:where(.at-site) .strip_code b {
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+:where(.at-site) .strip_cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, .35);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--lx-ease);
+}
+:where(.at-site) .strip_cta svg { transition: transform var(--lx-ease); }
+:where(.at-site) .strip_offer:hover .strip_cta { text-decoration-color: #fff; }
+:where(.at-site) .strip_offer:hover .strip_cta svg { transform: translateX(2px); }
+
+:where(.at-site) .strip_social {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+/* round white badges with an ink icon on the dark strip */
+:where(.at-site) .strip_social a {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--lx-ink);
+  transition:
+    background var(--lx-ease),
+    color var(--lx-ease);
+}
+:where(.at-site) .strip_social a svg { width: 14px; height: 14px; }
+:where(.at-site) .strip_social a:hover { background: var(--lx-brand); color: #fff; }
+
+/* ── main bar ─────────────────────────────────────────────────────────── */
+:where(.at-site) .site_header .navbar { padding: 0; }
+:where(.at-site) .nav-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  height: 72px;
+}
+:where(.at-site) .nav_left { display: flex; align-items: center; margin-right: auto; }
+/* dark-background logo (white "TOURISM"), trimmed, so constrain by height */
+:where(.at-site) .navbar-brand { display: flex; align-items: center; }
+:where(.at-site) .navbar-brand img { height: 46px; width: auto; max-width: 160px; object-fit: contain; }
+:where(.at-site) .menu_btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 6px 0 -8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lx-text);
+  cursor: pointer;
+}
+:where(.at-site) .menu_btn:hover { color: var(--lx-brand-text); }
+
+:where(.at-site) .nav-links {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+}
+:where(.at-site) .nav-links > li { position: relative; display: flex; }
+:where(.at-site) .nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lx-text-soft);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--lx-ease);
+}
+:where(.at-site) .nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--lx-brand);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .18s ease;
+}
+:where(.at-site) .nav-link:hover,
+:where(.at-site) .has-dropdown:hover > .nav-link,
+:where(.at-site) .has-dropdown:focus-within > .nav-link { color: var(--lx-text); }
+:where(.at-site) .nav-link.active { color: var(--lx-text); }
+:where(.at-site) .nav-link.active::after { transform: scaleX(1); }
+:where(.at-site) .nav-link:focus-visible { outline: 2px solid var(--lx-brand); outline-offset: 4px; }
+
+:where(.at-site) .nav-link-ltd,
+:where(.at-site) .nav-link-ltd:hover { color: var(--lx-brand-text); }
+:where(.at-site) .nav-link-quiet { font-weight: 500; }
+
+:where(.at-site) .dropdown-toggle .chev { color: var(--lx-muted); transition: transform .15s; }
+:where(.at-site) .has-dropdown:hover .dropdown-toggle .chev,
+:where(.at-site) .has-dropdown:focus-within .dropdown-toggle .chev { transform: rotate(180deg); color: var(--lx-text); }
+
+:where(.at-site) .nav-sep {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  background: var(--lx-border-strong);
+}
+
+/* plain square icon buttons — no circle, no fill */
+:where(.at-site) .nav-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  margin-left: 2px;
+  padding-left: 22px;
+  border-left: 1px solid var(--lx-border);
+}
+:where(.at-site) .nav-actions > .has-dropdown { display: flex; align-items: center; }
+/* Contact Us: a pill button at the end of the bar */
+:where(.at-site) .nav-cta { display: flex; align-items: center; }
+:where(.at-site) .nav-cta .ui-btn { padding: 0 18px; }
+:where(.at-site) .nav-icon {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lx-text);
+  cursor: pointer;
+  transition: color var(--lx-ease);
+}
+:where(.at-site) .nav-icon:hover,
+:where(.at-site) .has-dropdown:hover > .nav-icon,
+:where(.at-site) .has-dropdown:focus-within > .nav-icon { color: var(--lx-brand-text); }
+
+/* ── black bar: white links on #000 (scoped to the bar, because .nav-link
+   is also used by tab controls on white pages). The current page is bold
+   with a brand underline right under the word; hover previews it. ────── */
+:where(.at-site) .site_header .menu_btn,
+:where(.at-site) .site_header .nav-icon { color: #fff; }
+:where(.at-site) .site_header .menu_btn:hover,
+:where(.at-site) .site_header .nav-icon:hover,
+:where(.at-site) .site_header .has-dropdown:hover > .nav-icon,
+:where(.at-site) .site_header .has-dropdown:focus-within > .nav-icon { color: var(--brand-300); }
+:where(.at-site) .site_header .nav-link,
+:where(.at-site) .site_header .nav-link:hover,
+:where(.at-site) .site_header .has-dropdown:hover > .nav-link,
+:where(.at-site) .site_header .has-dropdown:focus-within > .nav-link { color: #fff; font-size: 14px; font-weight: 500; }
+:where(.at-site) .site_header .nav-link.active { font-weight: 800; }
+:where(.at-site) .site_header .nav-link::after {
+  bottom: 18px;
+  height: 2px;
+  border-radius: 2px;
+}
+:where(.at-site) .site_header .nav-link:hover::after,
+:where(.at-site) .site_header .has-dropdown:hover > .nav-link::after { transform: scaleX(1); opacity: .55; }
+:where(.at-site) .site_header .nav-link.active::after { transform: scaleX(1); opacity: 1; }
+:where(.at-site) .site_header .dropdown-toggle .chev { color: rgba(255, 255, 255, .7); }
+:where(.at-site) .site_header .has-dropdown:hover .dropdown-toggle .chev,
+:where(.at-site) .site_header .has-dropdown:focus-within .dropdown-toggle .chev { color: #fff; }
+:where(.at-site) .site_header .nav-sep { background: rgba(255, 255, 255, .18); }
+:where(.at-site) .site_header .nav-actions { padding-left: 8px; border-left: 0; }
+:where(.at-site) .site_header .nav-link:focus-visible { outline-color: var(--brand-400); }
+
+/* Contact Us: white outline button (pickyourtrail.com's "Login") */
+:where(.at-site) .nav-outline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  min-width: 80px;
+  padding: 0 14px;
+  border: 1px solid #fff;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--lx-ease), color var(--lx-ease);
+}
+:where(.at-site) .nav-outline-btn:hover,
+:where(.at-site) .nav-outline-btn[aria-current='page'] { background: #fff; color: #000; }
+/* ≡ opens the menu drawer, on desktop too */
+:where(.at-site) .site_header .nav-burger { display: grid; margin-left: 10px; }
+
+/* Homepage: the bar floats transparent over the hero video (a soft dark
+   fade for the links), then becomes the dark bar with the search once the
+   hero's own search has scrolled away. Package detail pages float it over
+   their photo strip the same way (without the search). */
+:where(.at-site) .tcHolidaysHeadercontainer.is-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  border-bottom: 0;
+  background: #232121;
+  transition: background .3s ease, box-shadow .3s ease;
+}
+:where(.at-site) .tcHolidaysHeadercontainer.is-overlay.is-clear {
+  background: linear-gradient(180deg, rgba(0, 0, 0, .5), rgba(0, 0, 0, 0));
+  box-shadow: none;
+}
+:where(.at-site) .nav-search { display: flex; align-items: center; gap: 20px; margin-left: 32px; }
+:where(.at-site) .nav-search__pitch { color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; }
+:where(.at-site) .nav-search__pitch em {
+  --app-heading-font: var(--lx-font-display);
+  font-family: var(--lx-font-display);
+  color: var(--mk-lime);
+  font-style: normal;
+  font-size: 20px;
+}
+:where(.at-site) .nav-search__field { width: 440px; }
+/* with the search in the bar, the links make room (they're in the ≡ menu) */
+:where(.at-site) .site_header:has(.nav-search) .nav-links { display: none; }
+
+/* ── menus (CRM row menu) ─────────────────────────────────────────────── */
+:where(.at-site) .has-dropdown { position: relative; }
+:where(.at-site) .sub-menu, :where(.at-site) .profile_dropdown {
+  position: absolute;
+  top: 100%;
+  left: -14px;
+  margin-top: 0;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px;
+  background: var(--lx-surface);
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-menu);
+  box-shadow: var(--lx-offset);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition: opacity .12s ease-out, transform .12s ease-out, visibility .12s;
+  z-index: 20;
+}
+:where(.at-site) .profile_dropdown { left: auto; right: -8px; top: calc(50% + 26px); min-width: 200px; }
+:where(.at-site) .has-dropdown:hover > .sub-menu,
+:where(.at-site) .has-dropdown:hover > .profile_dropdown,
+:where(.at-site) .has-dropdown:focus-within > .sub-menu,
+:where(.at-site) .has-dropdown:focus-within > .profile_dropdown { opacity: 1; visibility: visible; transform: none; }
+/* hover bridge between the icon and its menu */
+:where(.at-site) .nav-actions > .has-dropdown::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 50%;
+  height: 34px;
+}
+
+:where(.at-site) .mega-menu__heading {
+  padding: 6px 9px 4px;
+  color: var(--lx-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+/* Holidays: title + one-line hint, expert link in a sunken foot */
+:where(.at-site) .mega-menu { width: 280px; padding: 6px; }
+:where(.at-site) .mega-menu__list { display: flex; flex-direction: column; gap: 1px; }
+:where(.at-site) .mega-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 11px;
+  border-radius: var(--lx-r-tile);
+  color: var(--lx-text);
+  transition: background .12s ease;
+}
+:where(.at-site) .mega-menu__item:hover,
+:where(.at-site) .mega-menu__item:focus-visible { background: var(--lx-hover); outline: none; }
+:where(.at-site) .mega-menu__text { display: flex; flex-direction: column; min-width: 0; }
+:where(.at-site) .mega-menu__text b { font-size: 13px; font-weight: 700; letter-spacing: -0.005em; line-height: 1.3; }
+:where(.at-site) .mega-menu__text small { font-size: 11.5px; font-weight: 500; color: var(--lx-muted); line-height: 1.35; }
+:where(.at-site) .mega-menu__item.is-active .mega-menu__text b { color: var(--lx-brand-text); }
+:where(.at-site) .mega-menu__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 5px -6px -6px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--lx-border);
+  border-radius: 0 0 10px 10px;
+  background: var(--lx-sunken);
+  font-size: 12px;
+  color: var(--lx-text-soft);
+  transition: background .12s ease;
+}
+:where(.at-site) .mega-menu__foot b { color: var(--lx-text); font-weight: 700; }
+:where(.at-site) .mega-menu__foot svg { flex-shrink: 0; color: var(--lx-brand-text); transition: transform .14s ease; }
+:where(.at-site) .mega-menu__foot:hover { background: var(--lx-hover); }
+:where(.at-site) .mega-menu__foot:hover svg { transform: translateX(2px); }
+
+:where(.at-site) .profile_dropdown a, :where(.at-site) .profile_dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  background: none;
+  border-radius: var(--lx-r-control);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--lx-text);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s ease;
+}
+:where(.at-site) .profile_dropdown a:hover, :where(.at-site) .profile_dropdown button:hover { background: var(--lx-hover); color: var(--lx-text); }
+:where(.at-site) .profile_dropdown svg { flex-shrink: 0; color: var(--lx-muted); }
+
+
+/* --------------------------------------------------------------- mobile menu */
+:where(.at-site) .mobile_menu {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 300px;
+  max-width: 85vw;
+  background: var(--lx-surface);
+  border-right: var(--lx-outline);
+  z-index: 200;
+  transform: translateX(-110%);
+  transition: transform .26s ease;
+  display: flex;
+  flex-direction: column;
+}
+:where(.at-site) .mobile_menu.open { transform: none; box-shadow: var(--lx-offset-lg); }
+:where(.at-site) .mobile_menu .menu_container { display: flex; flex-direction: column; height: 100%; }
+:where(.at-site) .menu_overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--lx-overlay);
+  backdrop-filter: blur(2px);
+  z-index: 190;
+  opacity: 0;
+  visibility: hidden;
+  transition: .2s;
+}
+:where(.at-site) .menu_overlay.open { opacity: 1; visibility: visible; }
+:where(.at-site) .mobile_menu .top_block { flex: 1; overflow-y: auto; }
+:where(.at-site) .user_block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px;
+  padding: 14px;
+  border-radius: var(--lx-r-card);
+  background: var(--lx-ink);
+  color: #fff;
+}
+:where(.at-site) .user_block .user_icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+}
+:where(.at-site) .user_block .user_icon svg { width: 20px; height: 20px; }
+:where(.at-site) .user_block .user_icon img { width: 38px; height: 38px; }
+:where(.at-site) .user_info p a, :where(.at-site) .user_info p button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #fff;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+:where(.at-site) .user_info span { font-size: 11.5px; color: rgba(255,255,255,.7); }
+:where(.at-site) .menu_list { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 2px; }
+/* first thing in the drawer (the profile card is hidden): room at the top */
+:where(.at-site) .mobile_menu .top_block > .menu_list:first-child { padding-top: 20px; }
+:where(.at-site) .menu_list li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--lx-r-tile);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lx-text);
+}
+:where(.at-site) .menu_list li a:hover { background: var(--lx-hover); }
+:where(.at-site) .menu_list .icon img { width: 20px; height: 20px; }
+:where(.at-site) .mobile_menu .bottom_block { padding: 14px 16px; border-top: 1px solid var(--lx-border); background: var(--lx-sunken); }
+/* drawer foot (desktop drawer + phone More sheet): phone number on the
+   left, plain line social icons on the right — pickyourtrail.com's */
+:where(.at-site) .drawer_foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+:where(.at-site) .mobile_menu .drawer_foot { padding: 16px 20px; background: var(--lx-surface); }
+:where(.at-site) .drawer_foot__phone { color: var(--lx-text); font-size: 14px; font-weight: 500; white-space: nowrap; }
+:where(.at-site) .drawer_foot__phone:hover { color: var(--lx-brand-text); }
+:where(.at-site) .drawer_social { display: flex; align-items: center; gap: 14px; }
+:where(.at-site) .drawer_social a { display: grid; place-items: center; color: var(--lx-text); transition: color var(--lx-ease); }
+:where(.at-site) .drawer_social a:hover { color: var(--lx-brand); }
+:where(.at-site) .drawer_social svg { width: 18px; height: 18px; }
+:where(.at-site) .mobile_menu .btn_close {
+  position: absolute;
+  right: -44px;
+  top: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: var(--lx-ink);
+  visibility: hidden;
+}
+:where(.at-site) .mobile_menu.open .btn_close { visibility: visible; }
+
+/* --------------------------------------------------------------- slider engine */
+:where(.at-site) .tc-slider { overflow: hidden; width: 100%; min-width: 0; }
+:where(.at-site) .tc-slider-track {
+  display: flex;
+  transition: transform .45s cubic-bezier(.22,.61,.36,1);
+  will-change: transform;
+}
+:where(.at-site) .tc-slide { flex: 0 0 auto; }
+
+:where(.at-site) .carousel-wrapper { position: relative; }
+
+/* Round arrows: white, hairline, soft shadow */
+:where(.at-site) .custom-owl-prev, :where(.at-site) .custom-owl-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: var(--lx-outline);
+  border-radius: 50%;
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--lx-text);
+  z-index: 5;
+  transition: background var(--lx-ease), opacity var(--lx-ease);
+}
+:where(.at-site) .custom-owl-prev { left: 6px; }
+:where(.at-site) .custom-owl-next { right: 6px; }
+:where(.at-site) .custom-owl-prev:hover:not(:disabled), :where(.at-site) .custom-owl-next:hover:not(:disabled) { background: var(--lx-hover); }
+:where(.at-site) .custom-owl-prev img, :where(.at-site) .custom-owl-next img { width: 18px; height: 18px; filter: brightness(0) saturate(100%); opacity: .85; }
+:where(.at-site) .custom-owl-prev:disabled, :where(.at-site) .custom-owl-next:disabled { opacity: 0; pointer-events: none; }
+
+:where(.at-site) .swiper-pagination {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  z-index: 5;
+}
+:where(.at-site) .swiper-pagination span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.55);
+  cursor: pointer;
+  transition: width .2s ease, background .2s ease;
+}
+:where(.at-site) .swiper-pagination span.active { background: #fff; width: 20px; }
+
+/* --------------------------------------------------------------- footer
+   Laid out like pickyourtrail.com's: pure black; a centred row, then
+   blocks split by hairlines (about + logo mark, link groups on a
+   four-column grid) and four short columns at the foot. */
+:where(.at-site) .site_footer {
+  background: #000;
+  color: #fff;
+  padding: 64px 0 40px;
+}
+:where(.at-site) .ftr_pay,
+:where(.at-site) .ftr_about,
+:where(.at-site) .ftr_group { padding-bottom: 40px; margin-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,.14); }
+
+:where(.at-site) .ftr_pay { display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center; }
+:where(.at-site) .ftr_pay h2 { font-size: 18px; font-weight: 500; color: #fff; }
+:where(.at-site) .ftr_pay ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+:where(.at-site) .ftr_pay li {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 22px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+:where(.at-site) .ftr_about { display: flex; align-items: center; justify-content: space-between; gap: 48px; }
+:where(.at-site) .ftr_about p { max-width: 60%; color: #fff; font-size: 14px; line-height: 24px; }
+:where(.at-site) .ftr_about img { flex-shrink: 0; width: 220px; height: auto; margin-right: 40px; opacity: .9; }
+
+:where(.at-site) .ftr_group__title { margin-bottom: 18px; color: #9ca3af; font-size: 18px; font-weight: 500; }
+:where(.at-site) .ftr_group__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 24px; }
+:where(.at-site) .ftr_group__grid a {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: 14px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--lx-ease);
+}
+:where(.at-site) .ftr_group__grid a:hover { color: var(--brand-300); }
+
+:where(.at-site) .ftr_bottom { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 24px; padding-top: 8px; }
+:where(.at-site) .ftr_col h3 { color: #9ca3af; font-size: 14px; font-weight: 500; line-height: 24px; }
+:where(.at-site) .ftr_col ul { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+:where(.at-site) .ftr_col a,
+:where(.at-site) .ftr_address {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 20px;
+  transition: color var(--lx-ease);
+}
+:where(.at-site) .ftr_col a:hover { color: var(--brand-300); }
+:where(.at-site) .ftr_col svg { flex-shrink: 0; width: 15px; height: 15px; margin-top: 2.5px; }
+:where(.at-site) .ftr_address { color: rgba(255,255,255,.7); font-size: 13px; }
+:where(.at-site) .ftr_copy { margin-top: 26px; color: #fff; font-size: 14px; line-height: 22px; }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 1100px) {
+  :where(.at-site) .strip_code { display: none; }
+  :where(.at-site) .nav-links { gap: 22px; }
+  :where(.at-site) .nav-actions { padding-left: 16px; }
+}
+
+@media (max-width: 991px) {
+  :where(.at-site) .strip_social { display: none; }
+  :where(.at-site) .nav-wrapper { gap: 16px; }
+  :where(.at-site) .nav-links { gap: 18px; }
+  :where(.at-site) .nav-link { font-size: 13px; }
+  :where(.at-site) .nav-sep { display: none; }
+  :where(.at-site) .ftr_about p { max-width: none; }
+  :where(.at-site) .ftr_about img { width: 160px; margin-right: 0; }
+  :where(.at-site) .ftr_group__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :where(.at-site) .ftr_bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  :where(.at-site) .d-none.d-lg-block { display: none; }
+  :where(.at-site) .d-lg-none { display: block; }
+  :where(.at-site) .strip_wrapper { justify-content: center; height: 34px; }
+  :where(.at-site) .strip_offer { gap: 8px; font-size: 12px; }
+  :where(.at-site) .strip_text { display: none; }
+  :where(.at-site) .menu_btn { display: inline-flex; }
+  :where(.at-site) .nav-wrapper { height: 58px; gap: 8px; }
+  :where(.at-site) .navbar-brand img { height: 34px; }
+  :where(.at-site) .nav-links { display: none; }
+  :where(.at-site) .nav-actions { padding-left: 0; border-left: 0; margin-left: 0; gap: 0; }
+  :where(.at-site) .nav-cta .ui-btn { height: var(--lx-btn-h-sm); padding: 0 12px; font-size: 12px; }
+  :where(.at-site) .profile_dropdown { top: calc(50% + 22px); }
+
+  :where(.at-site) .inner__gapTop { margin-top: 20px; }
+
+  :where(.at-site) .site_footer { padding: 48px 0 32px; }
+  :where(.at-site) .ftr_pay, :where(.at-site) .ftr_about, :where(.at-site) .ftr_group { padding-bottom: 32px; margin-bottom: 32px; }
+  :where(.at-site) .ftr_pay li { height: 38px; padding: 0 14px; font-size: 13px; }
+  :where(.at-site) .ftr_about { flex-direction: column-reverse; align-items: flex-start; gap: 24px; }
+  :where(.at-site) .ftr_about img { width: 120px; }
+  :where(.at-site) .ftr_group__title { font-size: 16px; }
+  :where(.at-site) .ftr_group__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+  :where(.at-site) .ftr_group__grid a { font-size: 13px; }
+
+
+  :where(.at-site) .custom-owl-prev, :where(.at-site) .custom-owl-next { width: 32px; height: 32px; }
+  :where(.at-site) .custom-owl-prev img, :where(.at-site) .custom-owl-next img { width: 16px; height: 16px; }
+}
+
+@media (max-width: 479px) {
+  :where(.at-site) .ftr_bottom { grid-template-columns: 1fr; }
+}
+
+/* --------------------------------------------------------------- production additions
+   Signed-in states the design repo doesn't have yet (Supabase session). */
+:where(.at-site) .nav-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--lx-avatar-bg);
+  color: var(--lx-avatar-fg);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+:where(.at-site) .user_block .user_initial { font-size: 15px; font-weight: 700; }
+:where(.at-site) .user_info .user_signout {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(255,255,255,.7);
+  font: inherit;
+  font-size: 11.5px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+:where(.at-site) .user_info .user_signout:hover { color: #fff; }
+:where(.at-site) .profile_dropdown .mega-menu__heading {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tabs that carry both .nav-link and .ui-tabs__tab (Trending, FAQ, footer).
+   In the design repo the header's .nav-link rules (loaded after theme.css)
+   win the tie, so the active tab renders ink-on-ink with an underline and
+   no padding. Hand those tabs back to the CRM tab spec in theme.css. */
+:where(.at-site) .nav-link.ui-tabs__tab {
+  height: 100%;
+  padding: 0 14px;
+  color: var(--lx-muted);
+  font-size: 12.5px;
+}
+:where(.at-site) .nav-link.ui-tabs__tab::after { content: none; }
+:where(.at-site) .nav-link.ui-tabs__tab:hover { color: var(--lx-text); }
+:where(.at-site) .nav-link.ui-tabs__tab.active { color: #fff; }
+:where(.at-site) .ui-tabs--dark .nav-link.ui-tabs__tab { color: rgba(255, 255, 255, .62); }
+:where(.at-site) .ui-tabs--dark .nav-link.ui-tabs__tab:hover { color: #fff; }
+:where(.at-site) .ui-tabs--dark .nav-link.ui-tabs__tab.active { color: var(--lx-ink); }
+
+/* Production's floating chatbot / WhatsApp / enquiry widgets sit at
+   z-index 999-1000; the drawer and its overlay must cover them. */
+:where(.at-site) .menu_overlay { z-index: 1090; }
+:where(.at-site) .mobile_menu { z-index: 1100; }

@@ -1,11 +1,18 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
+import { useBooking } from '@/context/BookingContext';
 import './thank-you.css';
 
 function ThankYouContent() {
+  // the booking is paid for: the next "Book now" starts fresh
+  const { isLoaded, clearBooking } = useBooking();
+  useEffect(() => {
+    if (isLoaded) clearBooking();
+  }, [isLoaded, clearBooking]);
+
   return (
     <div className='thank-you-page'>
       <div className='thank-you-container'>
@@ -24,9 +31,9 @@ function ThankYouContent() {
             <Home size={20} />
             Go to Home
           </Link>
-          <Link href='/cart' className='thank-you-button secondary'>
+          <Link href='/holidays' className='thank-you-button secondary'>
             <ArrowLeft size={20} />
-            Back to Cart
+            Browse holidays
           </Link>
         </div>
       </div>

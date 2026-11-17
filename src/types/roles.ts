@@ -1,5 +1,4 @@
-// Web app roles: Super Admin (1), Content Editor (2)
-// No groups - simplified from CRM
+import { ROLE_IDS } from '@/lib/access/roles';
 
 export interface Role {
   id: number;
@@ -36,7 +35,4 @@ export interface UserWithRoles {
   permissions: string[];
 }
 
-export enum RoleId {
-  SUPER_ADMIN = 1,
-  CONTENT_EDITOR = 2,
-}
+export const RoleId = ROLE_IDS;

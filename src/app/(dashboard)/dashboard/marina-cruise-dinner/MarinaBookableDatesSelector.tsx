@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { parseDateStringToLocal } from '@/lib/utils';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
 
 type MarinaBookableDatesSelectorProps = {
   dates: string[];
@@ -40,7 +41,7 @@ export default function MarinaBookableDatesSelector({
         days are selected above; otherwise optional extras on top of weekdays.
       </p>
       <div className='date_input_group'>
-        <input
+        <CrmDateInput
           type='date'
           value={pendingDate}
           onChange={e => setPendingDate(e.target.value)}

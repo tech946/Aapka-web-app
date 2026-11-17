@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Mail, Phone } from 'lucide-react';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 const STATUS_IN_UAE_LABELS: Record<string, string> = {
   residence_in_uae: 'Residence in UAE',
@@ -251,7 +252,7 @@ export default function OmanTransportEnquiriesClient() {
           >
             Next
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -262,12 +263,12 @@ export default function OmanTransportEnquiriesClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
       {modalOpen && selectedRow && (
-        <div className='modal_overlay' onClick={() => setModalOpen(false)}>
+        <div className='modal_overlay'>
           <div className='modal_content' onClick={e => e.stopPropagation()}>
             <div className='modal_header'>
               <h3>Oman Transport Enquiry Details</h3>

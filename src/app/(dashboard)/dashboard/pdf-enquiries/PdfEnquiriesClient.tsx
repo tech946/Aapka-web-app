@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { FileDown, Mail, Phone } from 'lucide-react';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type PdfEnquiryRow = {
   id: string;
@@ -212,7 +213,7 @@ export default function PdfEnquiriesClient() {
           >
             Next
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -223,13 +224,13 @@ export default function PdfEnquiriesClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
       {/* Details Modal */}
       {modalOpen && selectedRow && (
-        <div className='modal_overlay' onClick={() => setModalOpen(false)}>
+        <div className='modal_overlay'>
           <div className='modal_content' onClick={e => e.stopPropagation()}>
             <div className='modal_header'>
               <h3>PDF Enquiry Details</h3>

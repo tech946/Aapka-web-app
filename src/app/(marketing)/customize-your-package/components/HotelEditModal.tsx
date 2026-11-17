@@ -57,22 +57,13 @@ export function HotelEditModal({
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') onClose();
-      };
-      document.addEventListener('keydown', handleEscape);
       return () => {
         document.body.style.overflow = originalOverflow;
-        document.removeEventListener('keydown', handleEscape);
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -87,7 +78,6 @@ export function HotelEditModal({
   const modalContent = (
     <div
       className={`${overlayClass} hotel-edit-modal-overlay`}
-      onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
     >

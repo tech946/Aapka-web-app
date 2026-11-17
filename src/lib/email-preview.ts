@@ -69,8 +69,11 @@ export function getCustomerEmailTemplate(data: BookingEmailData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Booking Confirmation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background-color: #f5f7fa;">
   <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f7fa; padding: 40px 20px;">
     <tr>
       <td align="center">
@@ -205,7 +208,7 @@ export function getCustomerEmailTemplate(data: BookingEmailData): string {
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #6c757d; font-size: 14px;">Transaction ID:</td>
-                    <td style="padding: 8px 0; color: #212529; font-size: 13px; font-weight: 500; text-align: right; font-family: monospace;">${data.paymentTransactionId}</td>
+                    <td style="padding: 8px 0; color: #212529; font-size: 13px; font-weight: 500; text-align: right; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${data.paymentTransactionId}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #6c757d; font-size: 14px;">Payment Status:</td>
@@ -335,8 +338,11 @@ export function getInternalEmailTemplate(data: BookingEmailData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Booking Notification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f7fa;">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background-color: #f5f7fa;">
   <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f7fa; padding: 40px 20px;">
     <tr>
       <td align="center">
@@ -424,7 +430,7 @@ export function getInternalEmailTemplate(data: BookingEmailData): string {
                 <table role="presentation" style="width: 100%; border-collapse: collapse;">
                   <tr>
                     <td style="padding: 8px 0; color: #6c757d; font-size: 14px; width: 150px; font-weight: 600;">Package ID:</td>
-                    <td style="padding: 8px 0; color: #212529; font-size: 14px; font-family: monospace;">${pkg.packageId}</td>
+                    <td style="padding: 8px 0; color: #212529; font-size: 14px; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${pkg.packageId}</td>
                   </tr>
                   <tr>
                     <td style="padding: 8px 0; color: #6c757d; font-size: 14px; font-weight: 600;">Travel Date:</td>
@@ -472,7 +478,7 @@ export function getInternalEmailTemplate(data: BookingEmailData): string {
                   </tr>
                   <tr>
                     <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 600;">Transaction ID:</td>
-                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 500; text-align: right; font-family: monospace;">${data.paymentTransactionId}</td>
+                    <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 500; text-align: right; font-family: 'DM Sans', Arial, Helvetica, sans-serif;">${data.paymentTransactionId}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px 0; color: #856404; font-size: 14px; font-weight: 600;">Payment Gateway:</td>

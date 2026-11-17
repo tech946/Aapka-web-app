@@ -4,7 +4,7 @@ import { useState, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState<1 | 2>(1);

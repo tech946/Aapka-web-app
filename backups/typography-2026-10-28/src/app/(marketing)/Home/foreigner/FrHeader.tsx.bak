@@ -1,0 +1,122 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { LIMITED_DEALS, holidaysHref } from '@/config/holiday-types';
+import { ALL_HOLIDAYS, useHolidayMenu } from '@/components/site/useHolidayMenu';
+import { Roll } from './Art';
+import { TPL } from './content';
+
+type Item = { label: string; href: string };
+
+const SOLID_AFTER = 88;
+
+function NavLink({ label, href }: Item) {
+  return (
+    <Link href={href} className="fr-nav__link">
+      <Roll>{label}</Roll>
+    </Link>
+  );
+}
+
+function Dropdown({ label, items, wide }: { label: string; items: Item[]; wide?: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={'fr-dd' + (open ? ' is-open' : '')} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button type="button" className="fr-dd__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <Roll>{label}</Roll>
+        <span className="fr-dd__plus">
+          <img src={TPL.plus} alt="" className="fr-dd__icon" />
+        </span>
+      </button>
+      <div className={'fr-dd__list' + (wide ? ' is-wide' : '')}>
+        <div className="fr-dd__card">
+          {items.map((it) => (
+            <Link key={it.href + it.label} href={it.href} className="fr-dd__link">
+              <span className="fr-dd__line" />
+              {it.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useScrollFade(enabled: boolean) {
+  const [fade, setFade] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    const onScroll = () => setFade(Math.min(1, window.scrollY / SOLID_AFTER));
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [enabled]);
+  return fade;
+}
+
+export default function FrHeader({ tone = 'cream', placement = 'fixed' }: { tone?: 'cream' | 'light'; placement?: 'fixed' | 'static' }) {
+  const holidays = useHolidayMenu();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const light = tone === 'light';
+  const fade = useScrollFade(light);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
+
+  const holidayItems: Item[] = [ALL_HOLIDAYS, ...holidays].map(({ label, href }) => ({ label, href }));
+  const moreItems: Item[] = [
+    { label: 'Oman Visa', href: '/visas/apply-for-oman-visa' },
+    { label: 'Oman Transport', href: '/oman-transport' },
+    { label: 'Submit Enquiry', href: '/travel-enquiry' },
+  ];
+
+  const logo = (onDark: boolean) =>
+    onDark ? (
+      <img className="fr-logo__img" src="/aapka-tourism-logo-dark.png" width="404" height="322" alt="Aapka Tourism" />
+    ) : (
+      <img className="fr-logo__img" src="/aapka-tourism-logo-footer.png" width="500" height="500" alt="Aapka Tourism" />
+    );
+
+  return (
+    <div className={'fr-navbar' + (light ? ' fr-navbar--light' : '') + (placement === 'static' ? ' fr-navbar--static' : '') + (menuOpen ? ' is-open' : '')}>
+      <div className="fr-nav" style={light ? { backgroundColor: `color-mix(in srgb, var(--fr-dark) ${Math.round(fade * 100)}%, transparent)` } : undefined}>
+        <div className="fr-nav__flex">
+          <Link href="/" className="fr-logo" aria-label="Aapka Tourism home">
+            {logo(light)}
+          </Link>
+          <nav className="fr-nav__menu" aria-label="Main">
+            <div className="fr-nav__tablet">
+              <Link href="/" className="fr-logo fr-logo--tablet" aria-label="Aapka Tourism home">
+                {logo(false)}
+              </Link>
+              <button type="button" className="fr-nav__close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+                <img src={TPL.close} alt="" />
+              </button>
+            </div>
+            <div className="fr-nav__wrap" onClick={(e) => (e.target as HTMLElement).closest('a') && setMenuOpen(false)}>
+              <div className="fr-nav__side">
+                <NavLink label={LIMITED_DEALS.label} href={holidaysHref(LIMITED_DEALS.key)} />
+                {holidayItems.length > 1 && <Dropdown label="Holidays" items={holidayItems} />}
+                <NavLink label="Become a Partner" href="/become-partner" />
+              </div>
+              <div className="fr-nav__side fr-nav__side--right">
+                <NavLink label="Blogs" href="/blogs" />
+                <NavLink label="Contact Us" href="/contact" />
+                <Dropdown label="More" items={moreItems} wide />
+              </div>
+            </div>
+          </nav>
+          <button type="button" className="fr-nav__burger" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <img src={TPL.menu} alt="" />
+            <span>Menu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

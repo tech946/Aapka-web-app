@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import EditPackageClient from './EditPackageClient';
 import { toast } from 'sonner';
 import { AlertCircle, X, Trash2, Link2 } from 'lucide-react';
@@ -11,6 +11,7 @@ import {
   normalizeAcceptPayment,
   type AcceptPayment,
 } from '@/lib/package-payment';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type Pkg = {
   package_id: string;
@@ -36,10 +37,16 @@ export default function CategoryPackagesClient({
   categoryId,
   categorySlug,
   categoryName,
+  title,
+  subtitle,
+  actions,
 }: {
   categoryId: string;
   categorySlug: string;
   categoryName: string;
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
 }) {
   const [rows, setRows] = useState<Pkg[]>([]);
   const [total, setTotal] = useState(0);
@@ -483,6 +490,27 @@ export default function CategoryPackagesClient({
 
   return (
     <>
+      {/* title row: heading, search and the page's actions on one line */}
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>{title}</h3>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search packages...'
+              value={pendingQuery}
+              onChange={e => {
+                setPage(1);
+                setPendingQuery(e.target.value);
+              }}
+            />
+          </div>
+          <div className='table_actions'>{actions}</div>
+        </div>
+      </div>
       {error && (
         <div
           style={{
@@ -496,20 +524,6 @@ export default function CategoryPackagesClient({
           Error: {error}
         </div>
       )}
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search packages...'
-            value={pendingQuery}
-            onChange={e => {
-              setPage(1);
-              setPendingQuery(e.target.value);
-            }}
-          />
-        </div>
-        <div className='table_actions'></div>
-      </div>
 
       <div className='table_wrapper'>
         <table className='table'>
@@ -747,7 +761,7 @@ export default function CategoryPackagesClient({
           >
             Previous
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -758,7 +772,7 @@ export default function CategoryPackagesClient({
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
@@ -770,7 +784,7 @@ export default function CategoryPackagesClient({
 
       {/* Confirmation Modal */}
       {confirmModal && (
-        <div className='modal_overlay' onClick={handleCancelStatusChange}>
+        <div className='modal_overlay'>
           <div
             className='modal status_confirm_modal'
             onClick={e => e.stopPropagation()}
@@ -855,7 +869,7 @@ export default function CategoryPackagesClient({
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (
-        <div className='modal_overlay' onClick={handleCancelDelete}>
+        <div className='modal_overlay'>
           <div
             className='modal status_confirm_modal'
             onClick={e => e.stopPropagation()}

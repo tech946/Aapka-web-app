@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { Mail, Phone, MessageSquare, Send, CheckCircle2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { SearchSelect } from '@/components/dashboard/SearchSelect';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type ContactQueryRow = {
   id: string;
@@ -251,35 +252,36 @@ export default function ContactQueriesClient() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Contact Queries</h3>
-        <p>Manage and respond to customer inquiries</p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search by name, email, phone...'
-            value={pendingQuery}
-            onChange={e => setPendingQuery(e.target.value)}
-          />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Contact Queries</h3>
+          <p>Manage and respond to customer inquiries</p>
         </div>
-        <div className='table_actions'>
-          <select
-            value={statusFilter}
-            onChange={e => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className='select_filter'
-          >
-            <option value=''>All Status</option>
-            <option value='new'>New</option>
-            <option value='contacted'>Contacted</option>
-            <option value='resolved'>Resolved</option>
-            <option value='archived'>Archived</option>
-          </select>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search by name, email, phone...'
+              value={pendingQuery}
+              onChange={e => setPendingQuery(e.target.value)}
+            />
+          </div>
+          <div className='table_actions'>
+            <CrmSelect
+              value={statusFilter}
+              onChange={e => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className='select_filter'
+            >
+              <option value=''>All Status</option>
+              <option value='new'>New</option>
+              <option value='contacted'>Contacted</option>
+              <option value='resolved'>Resolved</option>
+              <option value='archived'>Archived</option>
+            </CrmSelect>
+          </div>
         </div>
       </div>
 
@@ -396,7 +398,7 @@ export default function ContactQueriesClient() {
           >
             Next
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -407,13 +409,13 @@ export default function ContactQueriesClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
       {/* Details Modal */}
       {modalOpen && selectedQuery && (
-        <div className='modal_overlay' onClick={() => setModalOpen(false)}>
+        <div className='modal_overlay'>
           <div className='modal_content' onClick={e => e.stopPropagation()}>
             <div className='modal_header'>
               <h3>Contact Query Details</h3>
@@ -526,7 +528,7 @@ export default function ContactQueriesClient() {
 
       {/* Push to CRM dialog: pick the agent, then push */}
       {pushTarget && (
-        <div className='modal_overlay' onClick={() => !pushing && setPushTarget(null)}>
+        <div className='modal_overlay'>
           <div
             className='modal_content modal_content--sm'
             onClick={e => e.stopPropagation()}

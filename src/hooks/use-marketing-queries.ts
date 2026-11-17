@@ -194,7 +194,7 @@ export function useFooterPackages() {
     queryKey: ['marketing', 'packages', 'footer', 'offer-packages'],
     queryFn: () =>
       fetcher<{ data?: unknown[]; success?: boolean }>(
-        '/api/packages?categorySlug=offer-packages&limit=4'
+        '/api/packages?categorySlug=offer-packages&limit=8'
       ),
     ...defaultOptions,
   });
@@ -202,7 +202,7 @@ export function useFooterPackages() {
     queryKey: ['marketing', 'packages', 'footer', 'uae-tours'],
     queryFn: () =>
       fetcher<{ data?: unknown[]; success?: boolean }>(
-        '/api/packages?categorySlug=uae-tours&limit=7'
+        '/api/packages?categorySlug=uae-tours&limit=8'
       ),
     ...defaultOptions,
   });
@@ -230,7 +230,7 @@ export function useBlogs(limit = 10) {
   return useQuery({
     queryKey: ['marketing', 'blogs', limit],
     queryFn: () =>
-      fetcher<{ data?: unknown[] }>(`/api/blogs?status=active&limit=${limit}`).then(
+      fetcher<{ data?: unknown[] }>(`/api/cms/blogs?limit=${limit}`).then(
         r => r.data ?? []
       ),
     ...defaultOptions,
@@ -362,7 +362,7 @@ export function useAgentStatus(enabled = true) {
   });
 }
 
-// --- Addon names map (for cart/checkout display) ---
+// --- Addon names map (for checkout display) ---
 export function useAddonNames() {
   const deals = useAddonDeals();
   const services = useAddonHotelServices();

@@ -1,7 +1,6 @@
 // File: app/disclaimer/page.tsx
 
 import React from 'react';
-import './disclaimer.css'; // <-- using separate CSS file
 
 export default function DisclaimerPage() {
   return (

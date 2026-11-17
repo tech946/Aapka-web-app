@@ -5,7 +5,7 @@
 }
 
 .customize-package-label {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 13px;
   font-weight: 600;
   color: #1f2d22;
@@ -18,7 +18,7 @@
   padding: 10px 14px;
   color: #6b7280;
   font-size: 13px;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .customize-package-spinner {
@@ -45,7 +45,7 @@
   border-radius: 6px;
   background: #fff;
   font-size: 0.95rem;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   color: #111827;
   cursor: pointer;
   font-size: 14px;
@@ -128,11 +128,11 @@
   font-size: 12px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .customize-package-option-meta {
   font-size: 11px;
   color: #6b7280;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }

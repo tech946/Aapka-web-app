@@ -2,13 +2,18 @@
 
 import { useState, FormEvent, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import toast from 'react-hot-toast';
-import { CountrySelect } from '@/components/ui/country-select';
+import { toast } from 'sonner';
 import {
   uploadImageToSupabase,
   deleteImageFromSupabase,
 } from '@/lib/supabase-storage';
-import { Upload, X, Loader2, Info } from 'lucide-react';
+import { COUNTRIES } from '@/lib/countries';
+import { Check, Info, Loader2, Lock, Shield, Upload, X } from 'lucide-react';
+import Select from '@/components/site/ui/Select';
+import NavyHeader from '@/components/marketing/Header/NavyHeader';
+import NavyFooter from '@/components/marketing/Footer/NavyFooter';
+import { FR_FONTS } from '../../Home/foreigner/fonts';
+import '../../Home/foreigner/foreigner.css';
 import './subscribe.css';
 
 function SubscribePageContent() {
@@ -285,155 +290,174 @@ function SubscribePageContent() {
     setErrors(prev => ({ ...prev, documentImage: undefined }));
   };
 
+
   return (
-    <div className='subscribe-page'>
-      <div className='subscribe-container'>
-        <div className='subscribe-header'>
-          <h1 className='subscribe-title'>Agent Registration</h1>
-          <p className='subscribe-subtitle'>
-            Fill in your details to complete your agent subscription
+    <SubscribeShell>
+      <header className='sp-head'>
+        <p className='sp-eyebrow'>Partner sign-up</p>
+        <h1 className='sp-title'>Agent Registration</h1>
+        <p className='sp-sub'>
+          Fill in your details to complete your agent subscription
+        </p>
+      </header>
+
+      <form onSubmit={handleSubmit} className='sp-card' noValidate>
+        <div className='sp-plan'>
+          <span className='sp-plan__icon' aria-hidden='true'>
+            <Shield />
+          </span>
+          <div className='sp-plan__text'>
+            <b>Aapka Partner Premium</b>
+            <span>Instant activation after payment</span>
+          </div>
+          <p className='sp-plan__price'>
+            AED 110 <small>/ year</small>
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className='subscribe-form'>
+        <div className='sp-body'>
           {errors.general && (
-            <div className='subscribe-error-general' style={{
-              padding: '12px 16px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              color: '#dc2626',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}>
+            <p className='sp-alert' role='alert'>
               {errors.general}
-            </div>
+            </p>
           )}
-          <div className='subscribe-form-group'>
-            <label htmlFor='email' className='subscribe-label'>
-              Email Address <span className='required'>*</span>
-            </label>
-            <input
-              type='email'
-              id='email'
-              value={formData.email}
-              onChange={e => handleInputChange('email', e.target.value)}
-              className={`subscribe-input ${errors.email ? 'error' : ''}`}
-              placeholder='your.email@example.com'
-              disabled={isSubmitting}
-            />
-            {errors.email && (
-              <p className='subscribe-error'>{errors.email}</p>
-            )}
-          </div>
 
-          <div className='subscribe-form-group'>
-            <label htmlFor='fullName' className='subscribe-label'>
-              Full Name <span className='required'>*</span>
-            </label>
-            <input
-              type='text'
-              id='fullName'
-              value={formData.fullName}
-              onChange={e => handleInputChange('fullName', e.target.value)}
-              className={`subscribe-input ${errors.fullName ? 'error' : ''}`}
-              placeholder='John Doe'
-              disabled={isSubmitting}
-            />
-            {errors.fullName && (
-              <p className='subscribe-error'>{errors.fullName}</p>
-            )}
-          </div>
-
-          <div className='subscribe-form-group'>
-            <label htmlFor='residentCountry' className='subscribe-label'>
-              Resident Country <span className='required'>*</span>
-            </label>
-            <CountrySelect
-              value={formData.residentCountry}
-              onChange={value => handleInputChange('residentCountry', value)}
-              placeholder='Select country'
-              disabled={isSubmitting}
-              error={!!errors.residentCountry}
-            />
-            {errors.residentCountry && (
-              <p className='subscribe-error'>{errors.residentCountry}</p>
-            )}
-          </div>
-
-          <div className='subscribe-form-group'>
-            <label htmlFor='mobileNumber' className='subscribe-label'>
-              Mobile Number <span className='required'>*</span>
-            </label>
-            <input
-              type='tel'
-              id='mobileNumber'
-              value={formData.mobileNumber}
-              onChange={e => handleInputChange('mobileNumber', e.target.value)}
-              className={`subscribe-input ${errors.mobileNumber ? 'error' : ''}`}
-              placeholder='+971567809460'
-              disabled={isSubmitting}
-            />
-            {errors.mobileNumber && (
-              <p className='subscribe-error'>{errors.mobileNumber}</p>
-            )}
-          </div>
-
-          <div className='subscribe-form-group'>
-            <label htmlFor='password' className='subscribe-label'>
-              Password <span className='required'>*</span>
-            </label>
-            <input
-              type='password'
-              id='password'
-              value={formData.password}
-              onChange={e => handleInputChange('password', e.target.value)}
-              className={`subscribe-input ${errors.password ? 'error' : ''}`}
-              placeholder='Enter your password (min. 8 characters)'
-              disabled={isSubmitting}
-            />
-            {errors.password && (
-              <p className='subscribe-error'>{errors.password}</p>
-            )}
-          </div>
-
-          <div className='subscribe-form-group'>
-            <label htmlFor='confirmPassword' className='subscribe-label'>
-              Confirm Password <span className='required'>*</span>
-            </label>
-            <input
-              type='password'
-              id='confirmPassword'
-              value={formData.confirmPassword}
-              onChange={e => handleInputChange('confirmPassword', e.target.value)}
-              className={`subscribe-input ${errors.confirmPassword ? 'error' : ''}`}
-              placeholder='Confirm your password'
-              disabled={isSubmitting}
-            />
-            {errors.confirmPassword && (
-              <p className='subscribe-error'>{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          <div className='subscribe-form-group'>
-            <label htmlFor='documentImage' className='subscribe-label'>
-              Passport/PAN Card/Resident ID <span className='required'>*</span>
-              <button
-                type='button'
-                onClick={() => setShowDocumentExamples(true)}
-                className='document-examples-btn'
-                title='View document examples'
+          <div className='sp-grid'>
+            <div className='sp-field'>
+              <label htmlFor='email' className='sp-label'>
+                Email Address <em className='sp-req'>*</em>
+              </label>
+              <input
+                type='email'
+                id='email'
+                value={formData.email}
+                onChange={e => handleInputChange('email', e.target.value)}
+                className={'sp-input' + (errors.email ? ' is-error' : '')}
+                placeholder='your.email@example.com'
+                autoComplete='email'
                 disabled={isSubmitting}
-              >
-                <Info size={16} />
-              </button>
-            </label>
-            <div className='document-upload-container'>
+              />
+              {errors.email && <p className='sp-error'>{errors.email}</p>}
+            </div>
+
+            <div className='sp-field'>
+              <label htmlFor='fullName' className='sp-label'>
+                Full Name <em className='sp-req'>*</em>
+              </label>
+              <input
+                type='text'
+                id='fullName'
+                value={formData.fullName}
+                onChange={e => handleInputChange('fullName', e.target.value)}
+                className={'sp-input' + (errors.fullName ? ' is-error' : '')}
+                placeholder='John Doe'
+                autoComplete='name'
+                disabled={isSubmitting}
+              />
+              {errors.fullName && (
+                <p className='sp-error'>{errors.fullName}</p>
+              )}
+            </div>
+
+            <div className='sp-field'>
+              <label htmlFor='residentCountry' className='sp-label'>
+                Resident Country <em className='sp-req'>*</em>
+              </label>
+              <Select
+                id='residentCountry'
+                value={formData.residentCountry}
+                onChange={value => handleInputChange('residentCountry', value)}
+                options={COUNTRIES}
+                placeholder='Select country'
+                searchPlaceholder='Search countries…'
+                disabled={isSubmitting}
+                invalid={!!errors.residentCountry}
+              />
+              {errors.residentCountry && (
+                <p className='sp-error'>{errors.residentCountry}</p>
+              )}
+            </div>
+
+            <div className='sp-field'>
+              <label htmlFor='mobileNumber' className='sp-label'>
+                Mobile Number <em className='sp-req'>*</em>
+              </label>
+              <input
+                type='tel'
+                id='mobileNumber'
+                value={formData.mobileNumber}
+                onChange={e => handleInputChange('mobileNumber', e.target.value)}
+                className={'sp-input' + (errors.mobileNumber ? ' is-error' : '')}
+                placeholder='+971567809460'
+                autoComplete='tel'
+                disabled={isSubmitting}
+              />
+              {errors.mobileNumber && (
+                <p className='sp-error'>{errors.mobileNumber}</p>
+              )}
+            </div>
+
+            <div className='sp-field'>
+              <label htmlFor='password' className='sp-label'>
+                Password <em className='sp-req'>*</em>
+              </label>
+              <input
+                type='password'
+                id='password'
+                value={formData.password}
+                onChange={e => handleInputChange('password', e.target.value)}
+                className={'sp-input' + (errors.password ? ' is-error' : '')}
+                placeholder='Min. 8 characters'
+                autoComplete='new-password'
+                disabled={isSubmitting}
+              />
+              {errors.password && (
+                <p className='sp-error'>{errors.password}</p>
+              )}
+            </div>
+
+            <div className='sp-field'>
+              <label htmlFor='confirmPassword' className='sp-label'>
+                Confirm Password <em className='sp-req'>*</em>
+              </label>
+              <input
+                type='password'
+                id='confirmPassword'
+                value={formData.confirmPassword}
+                onChange={e => handleInputChange('confirmPassword', e.target.value)}
+                className={'sp-input' + (errors.confirmPassword ? ' is-error' : '')}
+                placeholder='Confirm your password'
+                autoComplete='new-password'
+                disabled={isSubmitting}
+              />
+              {errors.confirmPassword && (
+                <p className='sp-error'>{errors.confirmPassword}</p>
+              )}
+            </div>
+
+            <div className='sp-field sp-field--wide'>
+              <div className='sp-label'>
+                <label htmlFor='documentImage'>
+                  Passport/PAN Card/Resident ID <em className='sp-req'>*</em>
+                </label>
+                <button
+                  type='button'
+                  onClick={() => setShowDocumentExamples(true)}
+                  className='sp-info'
+                  disabled={isSubmitting}
+                >
+                  <Info aria-hidden='true' />
+                  See examples
+                </button>
+              </div>
               {!documentPreview ? (
                 <label
                   htmlFor='documentImage'
-                  className={`document-upload-area ${errors.documentImage ? 'error' : ''} ${isUploadingDocument ? 'uploading' : ''}`}
+                  className={
+                    'sp-drop' +
+                    (errors.documentImage ? ' is-error' : '') +
+                    (isUploadingDocument ? ' is-uploading' : '')
+                  }
                 >
                   <input
                     ref={documentInputRef}
@@ -442,157 +466,144 @@ function SubscribePageContent() {
                     accept='image/jpeg,image/jpg,image/png,image/webp'
                     onChange={handleDocumentUpload}
                     disabled={isSubmitting || isUploadingDocument}
-                    className='document-upload-input'
+                    className='sp-drop__input'
                   />
-                  {isUploadingDocument ? (
-                    <>
-                      <Loader2 className='document-upload-icon' size={32} />
-                      <span className='document-upload-text'>Uploading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className='document-upload-icon' size={32} />
-                      <span className='document-upload-text'>
-                        Click to upload or drag and drop
-                      </span>
-                      <span className='document-upload-hint'>
-                        PNG, JPG, WEBP up to 5MB
-                      </span>
-                    </>
+                  <span className='sp-drop__icon' aria-hidden='true'>
+                    {isUploadingDocument ? <Loader2 className='sp-spin' /> : <Upload />}
+                  </span>
+                  <span className='sp-drop__text'>
+                    {isUploadingDocument ? 'Uploading...' : 'Click to upload or drag and drop'}
+                  </span>
+                  {isUploadingDocument ? null : (
+                    <span className='sp-drop__hint'>PNG, JPG, WEBP up to 5MB</span>
                   )}
                 </label>
               ) : (
-                <div className='document-preview-container'>
-                  <div className='document-preview-wrapper'>
-                    <img
-                      src={documentPreview}
-                      alt='Document preview'
-                      className='document-preview-image'
-                    />
+                <div className='sp-preview'>
+                  <div className='sp-preview__frame'>
+                    <img src={documentPreview} alt='Document preview' />
                     <button
                       type='button'
                       onClick={handleRemoveDocument}
-                      className='document-remove-btn'
+                      className='sp-preview__remove'
                       disabled={isSubmitting || isUploadingDocument}
+                      aria-label='Remove document'
                     >
-                      <X size={20} />
+                      <X aria-hidden='true' />
                     </button>
                   </div>
-                  <p className='document-preview-success'>
+                  <p className='sp-preview__ok'>
+                    <Check aria-hidden='true' />
                     Document uploaded successfully
                   </p>
                 </div>
               )}
+              {errors.documentImage && (
+                <p className='sp-error'>{errors.documentImage}</p>
+              )}
             </div>
-            {errors.documentImage && (
-              <p className='subscribe-error'>{errors.documentImage}</p>
+          </div>
+        </div>
+
+        <div className='sp-foot'>
+          <p className='sp-secure'>
+            <Lock aria-hidden='true' />
+            Secure payment via CCAvenue
+          </p>
+          <button type='submit' disabled={isSubmitting} className='sp-btn'>
+            {isSubmitting ? (
+              <>
+                <Loader2 className='sp-spin' aria-hidden='true' />
+                Processing...
+              </>
+            ) : (
+              'Proceed to Payment (110 AED)'
             )}
-          </div>
+          </button>
+        </div>
+      </form>
 
-          <div className='subscribe-form-actions'>
-            <button
-              type='submit'
-              disabled={isSubmitting}
-              className='subscribe-submit-btn'
-            >
-              {isSubmitting ? 'Processing...' : 'Proceed to Payment (110 AED)'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Document Examples Modal */}
       {showDocumentExamples && (
-        <div className='document-examples-modal-overlay' onClick={() => setShowDocumentExamples(false)}>
-          <div className='document-examples-modal' onClick={(e) => e.stopPropagation()}>
-            <div className='document-examples-modal-header'>
-              <h2 className='document-examples-modal-title'>Document Examples</h2>
+        <div className='sp-modal'>
+          <div
+            className='sp-modal__box'
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby='sp-modal-title'
+            onClick={e => e.stopPropagation()}
+          >
+            <div className='sp-modal__head'>
+              <h2 id='sp-modal-title' className='sp-modal__title'>
+                Document Examples
+              </h2>
               <button
                 type='button'
                 onClick={() => setShowDocumentExamples(false)}
-                className='document-examples-modal-close'
+                className='sp-modal__close'
                 aria-label='Close modal'
               >
-                <X size={24} />
+                <X aria-hidden='true' />
               </button>
             </div>
-            <div className='document-examples-modal-content'>
-              <p className='document-examples-modal-description'>
+            <div className='sp-modal__body'>
+              <p className='sp-modal__desc'>
                 Please upload a clear image of one of the following documents:
               </p>
-              <div className='document-examples-grid'>
-                <div className='document-example-item'>
-                  <h3 className='document-example-title'>PAN Card</h3>
-                  <div className='document-example-image-wrapper'>
-                    <img
-                      src='/images/pan-card-sample.jpg'
-                      alt='PAN Card example'
-                      className='document-example-image'
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const parent = (e.target as HTMLImageElement).parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="document-example-placeholder">Image not found</div>';
-                        }
-                      }}
-                    />
+              <div className='sp-examples'>
+                {DOCUMENT_EXAMPLES.map(doc => (
+                  <div key={doc.title} className='sp-example'>
+                    <h3 className='sp-example__title'>{doc.title}</h3>
+                    <div className='sp-example__frame'>
+                      <ExampleImage src={doc.src} alt={doc.title + ' example'} />
+                    </div>
                   </div>
-                </div>
-                <div className='document-example-item'>
-                  <h3 className='document-example-title'>Aadhar Card</h3>
-                  <div className='document-example-image-wrapper'>
-                    <img
-                      src='/images/aadhar-card-sample.jpg'
-                      alt='Aadhar Card example'
-                      className='document-example-image'
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const parent = (e.target as HTMLImageElement).parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="document-example-placeholder">Image not found</div>';
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className='document-example-item'>
-                  <h3 className='document-example-title'>Resident ID</h3>
-                  <div className='document-example-image-wrapper'>
-                    <img
-                      src='/images/resident-id-sample.jpg'
-                      alt='Resident ID example'
-                      className='document-example-image'
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const parent = (e.target as HTMLImageElement).parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="document-example-placeholder">Image not found</div>';
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       )}
+    </SubscribeShell>
+  );
+}
+
+const DOCUMENT_EXAMPLES = [
+  { title: 'PAN Card', src: '/images/pan-card-sample.jpg' },
+  { title: 'Aadhar Card', src: '/images/aadhar-card-sample.jpg' },
+  { title: 'Resident ID', src: '/images/resident-id-sample.jpg' },
+];
+
+function ExampleImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <p className='sp-example__missing'>Image not found</p>;
+  return <img src={src} alt={alt} onError={() => setFailed(true)} />;
+}
+
+function SubscribeShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={'fr ' + FR_FONTS}>
+      <NavyHeader />
+      <main className='sp-page'>
+        <div className='sp-wrap'>{children}</div>
+      </main>
+      <NavyFooter />
     </div>
   );
 }
 
 export default function SubscribePage() {
   return (
-    <Suspense fallback={
-      <div className='subscribe-page'>
-        <div className='subscribe-container'>
-          <div className='subscribe-header'>
-            <h1 className='subscribe-title'>Agent Registration</h1>
-            <p className='subscribe-subtitle'>Loading...</p>
-          </div>
-        </div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <SubscribeShell>
+          <header className='sp-head'>
+            <p className='sp-eyebrow'>Partner sign-up</p>
+            <h1 className='sp-title'>Agent Registration</h1>
+            <p className='sp-sub'>Loading...</p>
+          </header>
+        </SubscribeShell>
+      }
+    >
       <SubscribePageContent />
     </Suspense>
   );

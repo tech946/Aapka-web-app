@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Bus, Compass, Hotel, Loader2, MapPinned, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
-import './b2b-collaboration.css';
+import Select from '@/components/site/ui/Select';
+import { FactList, HelpCard, PageShell, SideCard } from '@/components/site/page/PageShell';
 
 const SERVICE_OPTIONS = [
   { value: 'hotel', label: 'Hotel' },
@@ -13,6 +14,14 @@ const SERVICE_OPTIONS = [
   { value: 'tour_operator', label: 'Tour operator' },
 ] as const;
 
+const PARTNER_TYPES = [
+  { icon: Hotel, title: 'Hotels' },
+  { icon: UtensilsCrossed, title: 'Restaurants' },
+  { icon: MapPinned, title: 'DMCs' },
+  { icon: Bus, title: 'Transport companies' },
+  { icon: Compass, title: 'Tour operators' },
+];
+
 const YEARS_OPTIONS = Array.from({ length: 10 }, (_, i) => ({
   value: String(i + 1),
   label: String(i + 1),
@@ -20,7 +29,7 @@ const YEARS_OPTIONS = Array.from({ length: 10 }, (_, i) => ({
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-const REQ = <span style={{ color: '#dc2626' }}>*</span>;
+const REQ = <span className='xp-req'>*</span>;
 
 export default function B2BCollaborationPage() {
   const [loading, setLoading] = useState(false);
@@ -175,21 +184,25 @@ export default function B2BCollaborationPage() {
   };
 
   return (
-    <div className='b2b-collab-page'>
-      <div className='b2b-collab-container'>
-        <div className='b2b-collab-header'>
-          <h1 className='b2b-collab-title'>B2B collaboration</h1>
-          <p className='b2b-collab-intro'>
-            Partner with Aapka Tourism. Complete the form below and we will
-            review your profile and get back to you.
-          </p>
-        </div>
-
-        <form className='b2b-collab-form' onSubmit={handleSubmit}>
-          <div className='b2b-collab-section'>
-            <h3 className='b2b-collab-section-title'>Company & contact</h3>
-            <div className='b2b-collab-form-grid'>
-              <div className='b2b-collab-form-group'>
+    <PageShell
+      kicker='Do business with us'
+      title='B2B collaboration'
+      text='Hotels, restaurants, DMCs, transport and tour operators: partner with Aapka Tourism. Fill in the form and our team will review your profile and get back to you.'
+      image='/images/stock/banner-burj-palms.jpg'
+      aside={
+        <>
+          <SideCard title='Who we work with'>
+            <FactList items={PARTNER_TYPES} />
+          </SideCard>
+          <HelpCard text='Questions before you apply? Talk to our team.' />
+        </>
+      }
+    >
+        <form className='xp-form' onSubmit={handleSubmit}>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Company & contact</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>Company name {REQ}</label>
                 <input
                   type='text'
@@ -199,10 +212,10 @@ export default function B2BCollaborationPage() {
                   autoComplete='organization'
                 />
                 {errors.company_name && (
-                  <p className='b2b-collab-error'>{errors.company_name}</p>
+                  <p className='xp-error'>{errors.company_name}</p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>Contact person name {REQ}</label>
                 <input
                   type='text'
@@ -214,12 +227,12 @@ export default function B2BCollaborationPage() {
                   autoComplete='name'
                 />
                 {errors.contact_person_name && (
-                  <p className='b2b-collab-error'>
+                  <p className='xp-error'>
                     {errors.contact_person_name}
                   </p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>WhatsApp number {REQ}</label>
                 <input
                   type='tel'
@@ -231,10 +244,10 @@ export default function B2BCollaborationPage() {
                   className={errors.whatsapp_number ? 'error' : ''}
                 />
                 {errors.whatsapp_number && (
-                  <p className='b2b-collab-error'>{errors.whatsapp_number}</p>
+                  <p className='xp-error'>{errors.whatsapp_number}</p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>Email {REQ}</label>
                 <input
                   type='email'
@@ -244,16 +257,16 @@ export default function B2BCollaborationPage() {
                   autoComplete='email'
                 />
                 {errors.email && (
-                  <p className='b2b-collab-error'>{errors.email}</p>
+                  <p className='xp-error'>{errors.email}</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className='b2b-collab-section'>
-            <h3 className='b2b-collab-section-title'>Location</h3>
-            <div className='b2b-collab-form-grid'>
-              <div className='b2b-collab-form-group'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Location</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>Country {REQ}</label>
                 <input
                   type='text'
@@ -263,10 +276,10 @@ export default function B2BCollaborationPage() {
                   autoComplete='country-name'
                 />
                 {errors.country && (
-                  <p className='b2b-collab-error'>{errors.country}</p>
+                  <p className='xp-error'>{errors.country}</p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>City {REQ}</label>
                 <input
                   type='text'
@@ -276,56 +289,44 @@ export default function B2BCollaborationPage() {
                   autoComplete='address-level2'
                 />
                 {errors.city && (
-                  <p className='b2b-collab-error'>{errors.city}</p>
+                  <p className='xp-error'>{errors.city}</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className='b2b-collab-section'>
-            <h3 className='b2b-collab-section-title'>Service profile</h3>
-            <div className='b2b-collab-form-grid'>
-              <div className='b2b-collab-form-group'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Service profile</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>Type of service {REQ}</label>
-                <select
+                <Select
                   value={formData.type_of_service}
-                  onChange={e =>
-                    handleChange('type_of_service', e.target.value)
-                  }
-                  className={errors.type_of_service ? 'error' : ''}
-                >
-                  <option value=''>Select</option>
-                  {SERVICE_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleChange('type_of_service', v)}
+                  options={[...SERVICE_OPTIONS]}
+                  placeholder='Select'
+                  invalid={!!errors.type_of_service}
+                  aria-label='Type of service'
+                />
                 {errors.type_of_service && (
-                  <p className='b2b-collab-error'>{errors.type_of_service}</p>
+                  <p className='xp-error'>{errors.type_of_service}</p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>Years in business {REQ}</label>
-                <select
+                <Select
                   value={formData.years_in_business}
-                  onChange={e =>
-                    handleChange('years_in_business', e.target.value)
-                  }
-                  className={errors.years_in_business ? 'error' : ''}
-                >
-                  <option value=''>Select (1–10)</option>
-                  {YEARS_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleChange('years_in_business', v)}
+                  options={YEARS_OPTIONS}
+                  placeholder='Select (1–10)'
+                  invalid={!!errors.years_in_business}
+                  aria-label='Years in business'
+                />
                 {errors.years_in_business && (
-                  <p className='b2b-collab-error'>{errors.years_in_business}</p>
+                  <p className='xp-error'>{errors.years_in_business}</p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>Company website / Instagram</label>
                 <input
                   type='text'
@@ -336,7 +337,7 @@ export default function B2BCollaborationPage() {
                   placeholder='https://… or @handle'
                 />
               </div>
-              <div className='b2b-collab-form-group full-width'>
+              <div className='xp-form-group full-width'>
                 <label>Services offered (in detail) {REQ}</label>
                 <textarea
                   value={formData.services_offered_detail}
@@ -346,12 +347,12 @@ export default function B2BCollaborationPage() {
                   className={errors.services_offered_detail ? 'error' : ''}
                 />
                 {errors.services_offered_detail && (
-                  <p className='b2b-collab-error'>
+                  <p className='xp-error'>
                     {errors.services_offered_detail}
                   </p>
                 )}
               </div>
-              <div className='b2b-collab-form-group full-width'>
+              <div className='xp-form-group full-width'>
                 <label>Key products {REQ}</label>
                 <textarea
                   value={formData.key_products}
@@ -359,16 +360,16 @@ export default function B2BCollaborationPage() {
                   className={errors.key_products ? 'error' : ''}
                 />
                 {errors.key_products && (
-                  <p className='b2b-collab-error'>{errors.key_products}</p>
+                  <p className='xp-error'>{errors.key_products}</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className='b2b-collab-section'>
-            <h3 className='b2b-collab-section-title'>Compliance</h3>
-            <div className='b2b-collab-form-grid'>
-              <div className='b2b-collab-form-group full-width'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Compliance</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group full-width'>
                 <label>Company registration proof (optional)</label>
                 <input
                   type='file'
@@ -386,14 +387,14 @@ export default function B2BCollaborationPage() {
                   }}
                   className={errors.company_registration_proof ? 'error' : ''}
                 />
-                <p className='b2b-collab-hint'>PDF or image, max 10 MB.</p>
+                <p className='xp-hint'>PDF or image, max 10 MB.</p>
                 {errors.company_registration_proof && (
-                  <p className='b2b-collab-error'>
+                  <p className='xp-error'>
                     {errors.company_registration_proof}
                   </p>
                 )}
               </div>
-              <div className='b2b-collab-form-group'>
+              <div className='xp-form-group'>
                 <label>License type {REQ}</label>
                 <input
                   type='text'
@@ -402,16 +403,16 @@ export default function B2BCollaborationPage() {
                   className={errors.license_type ? 'error' : ''}
                 />
                 {errors.license_type && (
-                  <p className='b2b-collab-error'>{errors.license_type}</p>
+                  <p className='xp-error'>{errors.license_type}</p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className='b2b-collab-section'>
-            <h3 className='b2b-collab-section-title'>Partnership</h3>
-            <div className='b2b-collab-form-grid'>
-              <div className='b2b-collab-form-group full-width'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Partnership</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group full-width'>
                 <label>Why do you want to partner with Aapka? {REQ}</label>
                 <textarea
                   value={formData.why_partner_with_aapka}
@@ -421,14 +422,14 @@ export default function B2BCollaborationPage() {
                   className={errors.why_partner_with_aapka ? 'error' : ''}
                 />
                 {errors.why_partner_with_aapka && (
-                  <p className='b2b-collab-error'>
+                  <p className='xp-error'>
                     {errors.why_partner_with_aapka}
                   </p>
                 )}
               </div>
-              <div className='b2b-collab-form-group full-width'>
+              <div className='xp-form-group full-width'>
                 <label>Dedicated manager available? {REQ}</label>
-                <div className='b2b-collab-radio-group'>
+                <div className='xp-radio-group'>
                   <label>
                     <input
                       type='radio'
@@ -453,7 +454,7 @@ export default function B2BCollaborationPage() {
                   </label>
                 </div>
                 {errors.dedicated_manager_available && (
-                  <p className='b2b-collab-error'>
+                  <p className='xp-error'>
                     {errors.dedicated_manager_available}
                   </p>
                 )}
@@ -461,15 +462,15 @@ export default function B2BCollaborationPage() {
             </div>
           </div>
 
-          <div className='b2b-collab-form-actions'>
+          <div className='xp-form-actions'>
             <button
               type='submit'
-              className='b2b-collab-submit-btn'
+              className='xp-submit-btn'
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Loader2 size={20} className='b2b-collab-spin' />
+                  <Loader2 size={20} className='xp-spin' />
                   Submitting…
                 </>
               ) : (
@@ -478,7 +479,6 @@ export default function B2BCollaborationPage() {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </PageShell>
   );
 }

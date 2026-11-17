@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { Plus, Edit, Trash2, X, Calendar, Zap, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { generateShortSlug } from '@/lib/utils';
 import './deals-modal.css';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 interface Package {
   package_id: string;
@@ -211,21 +213,19 @@ export default function LimitedTimeDealsClient() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   return (
-    <div className="dashboard_page">
-      <div className="heading_block">
-        <h3>Limited Time Deals</h3>
-        <p>Same offer packages with 100 AED booking fee, mid Oct–mid March, max 46 bookings/day</p>
-      </div>
-
-      <div className="deals-toolbar">
-        <div className="deals-toolbar-content">
-          <div className="deals-toolbar-info">
-            <h4 className="deals-toolbar-title">Limited Time Deals</h4>
-            <p className="deals-toolbar-subtitle">{deals.length} deal{deals.length !== 1 ? 's' : ''} total</p>
-          </div>
-          <button className="btn_primary deals-add-btn" onClick={() => handleOpenModal()}>
-            <Plus size={18} />
-            <span>Add Deal</span>
+    <div className="dashboard_page crm_card_page deals_page">
+      <div className="heading_block heading_block--actions">
+        <div className="heading_text">
+          <h3>
+            Limited Time Deals
+            <span className="heading_count">{deals.length} deal{deals.length !== 1 ? 's' : ''}</span>
+          </h3>
+          <p>Same offer packages with 100 AED booking fee, mid Oct–mid March, max 46 bookings/day</p>
+        </div>
+        <div className="table_actions">
+          <button className="btn_primary" onClick={() => handleOpenModal()}>
+            <Plus size={14} />
+            Add Deal
           </button>
         </div>
       </div>
@@ -334,7 +334,7 @@ export default function LimitedTimeDealsClient() {
       )}
 
       {showModal && (
-        <div className="modal_overlay" onClick={handleCloseModal}>
+        <div className="modal_overlay">
           <div className="modal deals-modal" onClick={(e) => e.stopPropagation()}>
             <div className="deals-modal-header">
               <h4>{editingDeal ? 'Edit Limited Time Deal' : 'Create Limited Time Deal'}</h4>
@@ -348,7 +348,7 @@ export default function LimitedTimeDealsClient() {
                   <label className="deals-form-label">
                     Offer Package <span className="deals-form-label-required">*</span>
                   </label>
-                  <select
+                  <CrmSelect
                     className="deals-form-select"
                     value={formData.offer_package_id}
                     onChange={(e) => setFormData({ ...formData, offer_package_id: e.target.value })}
@@ -361,14 +361,14 @@ export default function LimitedTimeDealsClient() {
                         {packageOptionLabel(p)}
                       </option>
                     ))}
-                  </select>
+                  </CrmSelect>
                 </div>
 
                 <div className="deals-form-row">
                   <label className="deals-form-label">
                     Start Date (e.g. mid Oct) <span className="deals-form-label-required">*</span>
                   </label>
-                  <input
+                  <CrmDateInput
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
@@ -381,7 +381,7 @@ export default function LimitedTimeDealsClient() {
                   <label className="deals-form-label">
                     End Date (e.g. mid March) <span className="deals-form-label-required">*</span>
                   </label>
-                  <input
+                  <CrmDateInput
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}

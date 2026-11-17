@@ -12,6 +12,7 @@ import {
   normalizeSurchargeBlockDaysBefore,
 } from '@/lib/anydate-availability';
 import type { SurchargeMasterEntry } from '@/lib/surcharge-master';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
 
 /**
  * Any-date packages are bookable on any date. The only thing configured here is
@@ -292,7 +293,7 @@ export default function FlexibleDatePackageDates({
             >
               From Date *
             </label>
-            <input
+            <CrmDateInput
               type='date'
               value={soldOutFromDate}
               onChange={e => setSoldOutFromDate(e.target.value)}
@@ -311,7 +312,7 @@ export default function FlexibleDatePackageDates({
             >
               To Date *
             </label>
-            <input
+            <CrmDateInput
               type='date'
               value={soldOutToDate}
               onChange={e => setSoldOutToDate(e.target.value)}

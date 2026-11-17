@@ -150,7 +150,7 @@ export function CustomizePackagePDFModal({
   };
 
   return (
-    <div className={`${overlayClass} customize-pdf-overlay`} onClick={onClose}>
+    <div className={`${overlayClass} customize-pdf-overlay`}>
       <div className={`${modalClass} customize-pdf-container`} onClick={(e) => e.stopPropagation()}>
         <div className={headerClass}>
           <h3 className={titleClass}>{pkg.package_name}</h3>
@@ -207,7 +207,6 @@ export function CustomizePackagePDFModal({
       {showFormModal && (
         <div
           className={`${overlayClass} customize-pdf-form-overlay`}
-          onClick={() => setShowFormModal(false)}
         >
           <div
             className={`${modalClass} customize-pdf-form-modal`}

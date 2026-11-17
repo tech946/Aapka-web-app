@@ -211,7 +211,7 @@
   border: none;
   border-radius: 8px;
   color: #6b7280;
-  font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
+  font-family: 'DM Sans', var(--font-site), system-ui, sans-serif;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
@@ -343,15 +343,12 @@
 }
 
 .wallet-summary-card.available {
-  border-left: 4px solid #10b981;
 }
 
 .wallet-summary-card.pending {
-  border-left: 4px solid #f59e0b;
 }
 
 .wallet-summary-card.total {
-  border-left: 4px solid #3b82f6;
 }
 
 .wallet-card-content {
@@ -921,11 +918,9 @@
 }
 
 .referral-item.discount {
-  border-left: 4px solid #f59e0b;
 }
 
 .referral-item.commission {
-  border-left: 4px solid #10b981;
 }
 
 .referral-item-header {

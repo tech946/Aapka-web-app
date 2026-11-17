@@ -1,0 +1,1292 @@
+/* ==========================================================================
+   Package details page, laid out like a tripadvisor.in attraction page
+   (measured at 1280px), widened to a 1280px container / 20px gutters, 44px/900 title,
+   409px photo grid (755 + 377, 4px gaps, 12px corners), a fluid main
+   column beside a 347px column of bordered cards, 20px/800 section titles.
+   Desert Ember tokens throughout (the page root carries .desert-ember).
+   pdp.css still styles the booking card internals, rich text, lightbox,
+   share dialog and the phone price bar.
+   ========================================================================== */
+
+:where(.tap) :where(h1, h2, h3, p, ul) {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  letter-spacing: normal;
+}
+:where(.tap) ul {
+  list-style: none;
+}
+:where(.tap) a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tap {
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.tap [id] {
+  scroll-margin-top: 84px;
+}
+.tap-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 20px 64px;
+}
+
+/* ── shared bits ────────────────────────────────────────────────────── */
+.tap-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.tap-pill svg {
+  width: 18px;
+  height: 18px;
+}
+.tap .tap-pill--outline {
+  background: var(--card);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.tap .tap-pill--outline:hover {
+  background: var(--surface);
+}
+/* border ~27% darker than the fill, like Tripadvisor's green (#00EB5B / #00AB42) */
+.tap .tap-pill--brand {
+  background: var(--brand);
+  border-color: var(--brand-edge);
+  color: var(--on-brand);
+}
+.tap .tap-pill--brand:hover {
+  background: var(--brand-hover);
+}
+.tap-pill--block {
+  width: 100%;
+}
+
+.tap-link {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.tap-link--sm {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.tap-sec {
+  margin-top: 48px;
+}
+.tap-sec__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.tap h2 {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 24px;
+  color: var(--ink);
+}
+.tap-sec__count {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+/* ── breadcrumbs / back / title ─────────────────────────────────────── */
+.tap-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+.tap-crumbs a:hover {
+  text-decoration: underline;
+}
+.tap-crumbs svg {
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+}
+.tap-crumbs span {
+  overflow: hidden;
+  max-width: 360px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tap-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 24px;
+}
+.tap-title h1 {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 44px;
+  color: var(--ink);
+}
+.tap-title__actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.tap-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tap-save svg {
+  width: 18px;
+  height: 18px;
+}
+.tap-save span {
+  text-decoration: underline;
+}
+
+/* ── photo grid (PdpGallery) ────────────────────────────────────────── */
+.tap-gal {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 755fr) minmax(0, 377fr);
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  height: 409px;
+  margin-top: 16px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--border);
+}
+.tap-gal--empty {
+  display: block;
+}
+.tap-gal--n1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+.tap-gal--n2 {
+  grid-template-rows: 1fr;
+}
+.tap-gal__tile {
+  position: relative;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--border);
+  border: 0;
+  cursor: pointer;
+}
+.tap-gal__tile:first-child {
+  grid-row: 1 / -1;
+}
+.tap-gal__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.tap-gal__tile:hover img {
+  transform: scale(1.03);
+}
+.tap-gal__all {
+  position: absolute;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 15px;
+  background: var(--black);
+  border: 1px solid var(--black);
+  border-radius: var(--radius-full);
+  color: var(--card);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* the pill sits on the big photo's bottom-right corner */
+.tap-gal--n2 .tap-gal__all,
+.tap-gal--n3 .tap-gal__all {
+  right: calc((100% - 4px) * 377 / 1132 + 4px + 16px);
+}
+.tap-gal--n1 .tap-gal__all {
+  right: 16px;
+}
+.tap-gal__all svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── left column + aside ────────────────────────────────────────────── */
+.tap-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 347px);
+  align-items: start;
+  column-gap: 48px;
+  margin-top: 32px;
+}
+/* every left-column block stacks in column 1; the aside spans them all */
+.tap-grid > :not(.tap-aside) {
+  grid-column: 1;
+}
+
+/* left-column blocks: hairline between, 32px air */
+.tap-block {
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+}
+.tap-block:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.tap-block > h2 {
+  margin-bottom: 16px;
+}
+.tap-block .tap-link {
+  margin-top: 12px;
+}
+
+/* clamped text with a soft fade, opened by its Read more */
+.tap-fade {
+  position: relative;
+  overflow: hidden;
+}
+.tap-fade:not(.is-open)::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 56px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 0%, transparent),
+    var(--card)
+  );
+  pointer-events: none;
+}
+.tap-fade.is-open {
+  max-height: none;
+}
+.tap-fade.no-fade::after {
+  display: none;
+}
+
+/* About */
+.tap-about .pdp-offer {
+  margin-bottom: 16px;
+}
+.tap-about__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 26px;
+}
+.tap-about__text.is-open {
+  display: block;
+}
+.tap-about__text > * + * {
+  margin-top: 12px;
+}
+.tap-about__text .pdp-rich {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 26px;
+}
+
+/* Itinerary: a day-by-day timeline — numbered marker on a line, the day's
+   title + first stops as chips; an open day lists every stop in full */
+.tap-itin__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 18px;
+}
+.tap-itin__meta .tap-link {
+  margin-top: 0;
+}
+.tap-days {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tap-day {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  column-gap: 16px;
+}
+/* the line from one day's marker down to the next */
+.tap-day:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 23px;
+  top: 52px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border);
+}
+.tap-day__num {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-full);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 18px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.tap-day__num small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tap-day.is-open .tap-day__num {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--card);
+}
+.tap-day.is-open .tap-day__num small {
+  color: color-mix(in srgb, var(--card) 70%, transparent);
+}
+.tap-day__main {
+  min-width: 0;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tap-day:last-child .tap-day__main {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.tap-day__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 0 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tap-day__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.tap-day__title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 24px;
+}
+.tap-day__head:hover .tap-day__title {
+  text-decoration: underline;
+}
+.tap-day__chev {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  transition: transform 0.15s ease;
+}
+.tap-day.is-open .tap-day__chev {
+  transform: rotate(180deg);
+}
+.tap-day__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tap-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 10px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tap-tag svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--brand);
+}
+.tap-tag--more {
+  background: var(--card);
+  color: var(--muted);
+}
+.tap-stops {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tap-stop {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 12px;
+}
+.tap-stop__icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: var(--brand-tint);
+  border-radius: var(--radius-full);
+  color: var(--brand);
+}
+.tap-stop__icon svg {
+  width: 16px;
+  height: 16px;
+}
+.tap-stop__title {
+  padding-top: 5px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+}
+.tap-stop__text {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+/* Inclusions / exclusions: chips, then a two-column tick / cross list */
+.tap-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tap-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.tap-chips svg {
+  width: 15px;
+  height: 15px;
+  color: var(--brand);
+}
+.tap-list__items {
+  max-height: 264px;
+}
+.tap-list__items .pdp-rich {
+  columns: 2;
+  column-gap: 32px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 22px;
+}
+.tap-list__items .pdp-rich :is(ul, ol) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tap-list__items .pdp-rich :is(li, p):not(.is-head) {
+  position: relative;
+  margin: 0 0 12px;
+  padding-left: 28px;
+  break-inside: avoid;
+}
+.tap-list__items .pdp-rich :is(li, p):not(.is-head)::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--success) 14%, var(--card));
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+.tap-list--out .tap-list__items .pdp-rich :is(li, p):not(.is-head)::before {
+  content: '✕';
+  background: color-mix(in srgb, var(--deal) 12%, var(--card));
+  color: var(--deal);
+}
+.tap-list__items .pdp-rich .is-head {
+  margin: 4px 0 10px;
+  font-weight: 700;
+  break-after: avoid;
+}
+
+/* Terms */
+.tap-terms__text {
+  max-height: 216px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 24px;
+}
+.tap-terms__text .pdp-rich {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 24px;
+}
+.tap-terms .tap-know:first-of-type {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.tap-aside {
+  grid-column: 2;
+  grid-row: 1 / span 20;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.tap-card {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+.tap-card__open {
+  margin-top: 16px;
+  color: var(--success);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+.tap-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+.tap-card__rows li {
+  display: flex;
+  gap: 16px;
+  font-size: 16px;
+  line-height: 24px;
+}
+.tap-card__rows b {
+  width: 110px;
+  font-weight: 700;
+}
+.tap-card__rows a {
+  color: var(--muted);
+}
+.tap-card__rows a:hover {
+  text-decoration: underline;
+}
+
+/* booking card (pdp.css) in Tripadvisor's "Admission tickets" dress */
+.tap .bk {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: none;
+  max-height: calc(100vh - 180px);
+}
+.tap .bk__head {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tap .bk__eyebrow {
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 24px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.tap .bk__now b {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+.tap .bk__now span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.tap .bk .ui-btn--primary {
+  height: 48px;
+  border: 1px solid var(--brand-edge);
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  box-shadow: none;
+  color: var(--on-brand);
+  font-size: 16px;
+  font-weight: 700;
+}
+.tap .bk .ui-btn--primary:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+/* accordion rows (booking notes under Terms) */
+.tap-know {
+  border-bottom: 1px solid var(--border);
+}
+.tap-know__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tap-know__btn b {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+.tap-know__btn small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 18px;
+}
+.tap-know__btn svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  transition: transform 0.15s ease;
+}
+.tap-know.is-open .tap-know__btn svg {
+  transform: rotate(180deg);
+}
+.tap-know__body {
+  padding: 0 0 20px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 24px;
+}
+.tap-know__body .pdp-rich {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* ── "More …" package cards (PdpRelated): three a row, photo on top, name,
+   "From" over the price on the left and View details on the right ─────── */
+.tap-feat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: box-shadow 0.2s ease;
+}
+.tap-feat:hover {
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--black) 10%, transparent);
+}
+.tap-feat__media {
+  display: block;
+  aspect-ratio: 368 / 234;
+  overflow: hidden;
+  background: var(--border);
+}
+.tap-feat__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.tap-feat:hover .tap-feat__media img {
+  transform: scale(1.04);
+}
+.tap-feat__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+.tap .tap-feat__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 22px;
+}
+.tap-feat__title a:hover {
+  text-decoration: underline;
+}
+.tap-feat__foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.tap-feat__price {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tap-feat__price small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 16px;
+}
+.tap-feat__price b {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 24px;
+}
+.tap-feat .tap-pill {
+  flex: none;
+}
+.tap-sec .ta-rail .tap-link {
+  font-size: 16px;
+}
+
+/* ── reviews (PdpReviews): the testimonials across the full width ─────── */
+.tap-reviews__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.tap-reviews__head p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 22px;
+}
+.tap-reviews__count {
+  flex: none;
+  padding: 6px 12px;
+  background: var(--brand-tint);
+  border-radius: var(--radius-full);
+  color: var(--brand-hover);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+/* two a row across the full width; the featured (first) one spans both */
+.tap-rvs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.tap-rvs > .is-featured {
+  grid-column: 1 / -1;
+}
+.tap-rv {
+  position: relative;
+  padding: 22px 24px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--black) 4%, transparent);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tap-rv:hover {
+  border-color: color-mix(in srgb, var(--brand) 25%, var(--border));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--black) 8%, transparent);
+}
+/* the first review, highlighted */
+.tap-rv.is-featured {
+  background: var(--brand-tint);
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--border));
+}
+.tap-rv__mark {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  width: 34px;
+  height: 34px;
+  color: color-mix(in srgb, var(--brand) 28%, transparent);
+  fill: currentColor;
+  stroke: none;
+}
+.tap-rv__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 48px;
+}
+.tap-rv__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  background: var(--brand-tint);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  border-radius: var(--radius-full);
+  color: var(--brand-hover);
+  font-size: 17px;
+  font-weight: 800;
+}
+.tap-rv.is-featured .tap-rv__avatar {
+  background: var(--brand);
+  border-color: var(--brand-edge);
+  color: var(--on-brand);
+}
+.tap-rv__name {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+.tap-rv__date {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.tap-rv__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 14px;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 26px;
+}
+.tap-rv__text.is-open {
+  display: block;
+}
+.tap-rv .tap-link {
+  margin-top: 8px;
+}
+.tap-reviews__more {
+  display: flex;
+  width: fit-content;
+  margin: 24px auto 0;
+}
+
+/* ── the slide-down bar (PdpFloatNav) ───────────────────────────────── */
+/* slides in by animating `top`, not transform: a transformed layer is drawn
+   as a bitmap and its text looks blurry until the animation settles */
+.tap-bar {
+  position: fixed;
+  top: -62px;
+  left: 0;
+  right: 0;
+  z-index: 70;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  /* same soft shadow as the phone price bar, cast downwards */
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--black) 8%, transparent);
+  visibility: hidden;
+  transition:
+    top 0.2s ease,
+    visibility 0.2s;
+}
+.tap-bar.is-shown {
+  top: 0;
+  visibility: visible;
+}
+/* phone-only pieces of the bar (Back, and the price bar at the foot) */
+.tap-bar__back,
+.tap-buybar {
+  display: none;
+}
+.tap-bar__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  max-width: 1280px;
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.tap-bar__row--tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  height: 60px;
+}
+.tap-bar__tabs {
+  display: flex;
+  gap: 16px;
+}
+.tap-bar__tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 4px 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.tap-bar__tab::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transition: transform 0.15s ease;
+}
+.tap-bar__tab:hover::after,
+.tap-bar__tab.is-on::after {
+  transform: none;
+}
+.tap-bar__buy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.tap-bar__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.tap-bar__price small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.tap-bar__price b {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+/* ── tablet ─────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .tap-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    column-gap: 32px;
+  }
+  .tap-title h1 {
+    font-size: 32px;
+    line-height: 40px;
+  }
+  .tap-gal {
+    height: 340px;
+  }
+}
+
+/* ── phones: no site header and no bottom bars; the same section bar
+   slides down on scroll, tabs swipeable, a compact price + Book now ── */
+@media (max-width: 767px) {
+  .pdp.tap {
+    padding-bottom: 0;
+  }
+  /* top: Back + swipeable section tabs */
+  .tap-bar__row--tabs {
+    height: 52px;
+    gap: 0;
+    padding: 0 8px 0 4px;
+  }
+  .tap-bar__back {
+    display: grid;
+    place-items: center;
+    flex: none;
+    align-self: stretch;
+    width: 40px;
+    /* the tabs sit 4px low (room for their underline); match it so the arrow lines up with the labels */
+    padding: 4px 0 0;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-full);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .tap-bar__back svg {
+    width: 22px;
+    height: 22px;
+  }
+  .tap-bar__tabs {
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tap-bar__tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tap-bar__tab {
+    flex: none;
+    padding: 4px 8px 0;
+    font-size: 14px;
+  }
+  .tap-bar__tab::after {
+    left: 8px;
+    right: 8px;
+  }
+  .tap-bar__buy {
+    display: none;
+  }
+
+  /* foot: "from" over the price on the left, Book now on the right */
+  .tap-buybar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: -96px;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -6px 20px color-mix(in srgb, var(--black) 8%, transparent);
+    visibility: hidden;
+    transition:
+      bottom 0.2s ease,
+      visibility 0.2s;
+  }
+  .tap-buybar.is-shown {
+    bottom: 0;
+    visibility: visible;
+  }
+  .tap-buybar__price {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tap-buybar__price small {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 14px;
+  }
+  .tap-buybar__price b {
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 22px;
+    white-space: nowrap;
+  }
+  .tap-buybar .tap-pill--brand {
+    flex: none;
+    height: 44px;
+    padding: 0 18px;
+    font-size: 15px;
+  }
+  .tap-wrap {
+    padding: 12px 16px 32px;
+  }
+  .tap-crumbs {
+    display: none;
+  }
+  .tap-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .tap-title h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .tap-title__actions {
+    padding: 0;
+  }
+  .tap-gal {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    height: 260px;
+  }
+  .tap-gal__tile:not(:first-child) {
+    display: none;
+  }
+  .tap-gal .tap-gal__all {
+    right: 12px;
+    bottom: 12px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .tap-grid {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 24px;
+  }
+  /* About, then the price card, then the rest */
+  .tap-grid > * {
+    order: 3;
+  }
+  .tap-grid > .tap-about {
+    order: 1;
+  }
+  .tap-aside {
+    order: 2;
+    grid-column: 1;
+    grid-row: auto;
+    margin: 8px 0 32px;
+  }
+  .tap-day {
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+  .tap-day__num {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  .tap-day:not(:last-child)::before {
+    left: 19px;
+    top: 44px;
+  }
+  .tap-day__head {
+    padding-top: 8px;
+  }
+  .tap-day__title {
+    font-size: 16px;
+  }
+  .tap-list__items .pdp-rich {
+    columns: 1;
+  }
+  .tap .bk {
+    max-height: none;
+  }
+  .tap-sec {
+    margin-top: 36px;
+  }
+  .tap-rvs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tap-rv {
+    padding: 18px 16px 16px;
+  }
+  .tap-rv__mark {
+    top: 14px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ── right-hand price card (Tripadvisor's "Admission tickets") ──────── */
+/* measured on tripadvisor.in: 24px padding, 20px/800 heading, 4px, then
+   "From ₹5,265" 16/24 with the price bold, 16px, then a 48px pill */
+.tap-buy__from {
+  margin-top: 4px;
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--ink);
+}
+.tap-buy__from b {
+  font-weight: 700;
+}
+.tap-buy__from s {
+  margin-right: 4px;
+  color: var(--muted);
+}
+.tap .tap-buy__go {
+  height: 48px;
+  margin-top: 16px;
+  padding: 0 23px;
+}
+
+@media (max-width: 767px) {
+  .tap-wrap {
+    padding-bottom: 96px;
+  }
+}

@@ -1,5 +1,4 @@
 import React from 'react';
-import './cancellation.css';
 
 export default function CancellationPolicyPage() {
   return (

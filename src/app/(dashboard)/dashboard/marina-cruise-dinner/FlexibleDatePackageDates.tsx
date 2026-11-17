@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { parseDateStringToLocal } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Edit2, X, Plus } from 'lucide-react';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
 
 export interface DateRange {
   id: string;
@@ -292,7 +293,7 @@ export default function FlexibleDatePackageDates({
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
             From Date *
           </label>
-          <input
+          <CrmDateInput
             type='date'
             value={fromDate}
             onChange={e => setFromDate(e.target.value)}
@@ -303,7 +304,7 @@ export default function FlexibleDatePackageDates({
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
             To Date *
           </label>
-          <input
+          <CrmDateInput
             type='date'
             value={toDate}
             onChange={e => setToDate(e.target.value)}
@@ -514,7 +515,7 @@ export default function FlexibleDatePackageDates({
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
               From Date *
             </label>
-            <input
+            <CrmDateInput
               type='date'
               value={soldOutFromDate}
               onChange={e => setSoldOutFromDate(e.target.value)}
@@ -525,7 +526,7 @@ export default function FlexibleDatePackageDates({
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px' }}>
               To Date *
             </label>
-            <input
+            <CrmDateInput
               type='date'
               value={soldOutToDate}
               onChange={e => setSoldOutToDate(e.target.value)}
@@ -618,7 +619,6 @@ export default function FlexibleDatePackageDates({
       {showEditModal && editingRange && editForm && (
         <div 
           className='modal_overlay' 
-          onClick={cancelEdit}
           style={{
             position: 'fixed',
             top: 0,
@@ -686,7 +686,7 @@ export default function FlexibleDatePackageDates({
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
                     From Date *
                   </label>
-                  <input
+                  <CrmDateInput
                     type='date'
                     value={editForm.fromDate}
                     onChange={e => setEditForm({ ...editForm, fromDate: e.target.value })}
@@ -697,7 +697,7 @@ export default function FlexibleDatePackageDates({
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
                     To Date *
                   </label>
-                  <input
+                  <CrmDateInput
                     type='date'
                     value={editForm.toDate}
                     onChange={e => setEditForm({ ...editForm, toDate: e.target.value })}

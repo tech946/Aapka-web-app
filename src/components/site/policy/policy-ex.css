@@ -1,0 +1,259 @@
+.pl {
+  --pl-soft: color-mix(in srgb, var(--ink) 66%, var(--card));
+  --pl-line: var(--border);
+  --pl-edge: color-mix(in srgb, var(--brand) 22%, var(--card));
+  --pl-r: calc(var(--radius-sm) * 1.75);
+  --pl-shadow-lg: 0 2px 6px color-mix(in srgb, var(--ink) 5%, transparent), 0 18px 44px color-mix(in srgb, var(--ink) 11%, transparent);
+  position: relative;
+  padding-bottom: 72px;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.pl-band {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 280px;
+  background: var(--brand);
+}
+
+.pl .page {
+  position: relative;
+  max-width: calc(880px + 2 * var(--ex-gutter));
+  margin-inline: auto;
+  padding: 64px var(--ex-gutter) 0;
+}
+
+.pl .card {
+  padding: 44px 48px 36px;
+  border: 1px solid var(--pl-line);
+  border-radius: var(--pl-r);
+  background: var(--card);
+  box-shadow: var(--pl-shadow-lg);
+}
+
+.pl .header {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--pl-line);
+}
+
+.pl .title {
+  font-family: var(--ex-display);
+  font-size: 34px;
+  line-height: 42px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.pl .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pl .meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--brand-tint);
+  color: var(--pl-soft);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.pl .meta strong {
+  color: var(--brand-deep);
+  font-weight: 700;
+}
+
+.pl .meta .link {
+  color: var(--brand-deep);
+  font-weight: 700;
+}
+
+.pl .intro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 0 8px;
+  color: var(--pl-soft);
+  font-size: 17px;
+  line-height: 28px;
+}
+
+.pl .intro strong {
+  color: var(--ink);
+}
+
+.pl .list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pl .list > li {
+  padding: 26px 0;
+  border-top: 1px solid var(--pl-line);
+}
+
+.pl .list > li:first-child {
+  margin-top: 16px;
+}
+
+.pl .sectionTitle {
+  margin-bottom: 14px;
+  font-family: var(--ex-display);
+  font-size: 21px;
+  line-height: 28px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pl .subHeading {
+  margin: 18px 0 8px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pl .list > li > p,
+.pl .contactWrap > p {
+  color: var(--pl-soft);
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.pl .list > li > p + .bullets,
+.pl .list > li > .bullets + p {
+  margin-top: 10px;
+}
+
+.pl .bullets,
+.pl .contactList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pl .bullets li,
+.pl .contactList li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--pl-soft);
+  font-size: 16px;
+  line-height: 26px;
+}
+
+.pl .bullets li::before,
+.pl .contactList li::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--brand);
+}
+
+.pl .bullets strong {
+  color: var(--ink);
+}
+
+.pl .contactWrap,
+.pl .list > li > .contactList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  border: 1px solid var(--pl-edge);
+  border-radius: var(--radius-sm);
+  background: var(--brand-tint);
+}
+
+.pl .contactList li {
+  color: var(--ink);
+}
+
+.pl .link {
+  color: var(--brand-edge);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.pl .link:hover {
+  color: var(--brand);
+}
+
+.pl .tel {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.pl .tel:hover {
+  color: var(--brand-edge);
+}
+
+.pl .footer {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--pl-line);
+  color: color-mix(in srgb, var(--ink) 48%, var(--card));
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .pl {
+    padding-bottom: 40px;
+  }
+
+  .pl-band {
+    height: 200px;
+  }
+
+  .pl .page {
+    padding: 28px 16px 0;
+  }
+
+  .pl .card {
+    padding: 26px 18px 24px;
+  }
+
+  .pl .title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .pl .intro {
+    font-size: 16px;
+    line-height: 26px;
+  }
+
+  .pl .sectionTitle {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .pl .list > li {
+    padding: 22px 0;
+  }
+
+  .pl .contactWrap,
+  .pl .list > li > .contactList {
+    padding: 16px;
+  }
+}

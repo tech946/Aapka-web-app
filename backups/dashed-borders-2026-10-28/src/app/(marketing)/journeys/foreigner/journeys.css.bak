@@ -1,0 +1,130 @@
+.jr-banner { padding-top: 160px; overflow: hidden; }
+.jr-banner__text {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+.fr .jr-banner__title { font-size: 120px; }
+.fr .jr-banner__art { position: absolute; }
+.fr .jr-banner__art--balloon { bottom: 7%; left: 14%; }
+.fr .jr-banner__art--plane { top: 28%; right: 10%; }
+
+.jr-list { padding-top: 0; padding-bottom: 40px; }
+.jr-grid {
+  position: relative;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 380px 120px 380px 380px 120px 380px;
+  gap: 16px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.jr-grid > :nth-child(2) { grid-area: 1 / 2 / 3 / 3; }
+.jr-grid > :nth-child(4) { grid-area: 2 / 1 / 4 / 2; }
+.jr-grid > :nth-child(5) { grid-area: 3 / 2 / 4 / 3; }
+.jr-grid > :nth-child(6) { grid-area: 2 / 3 / 4 / 4; }
+.jr-grid > :nth-child(8) { grid-area: 4 / 2 / 6 / 3; }
+.jr-grid > :nth-child(10) { grid-area: 5 / 1 / 7 / 2; }
+.jr-grid > :nth-child(11) { grid-area: 6 / 2 / 7 / 3; }
+.jr-grid > :nth-child(12) { grid-area: 5 / 3 / 7 / 4; }
+
+.jr-card,
+.jr-reel__card {
+  position: relative;
+  display: flex;
+  flex-flow: column;
+  justify-content: space-between;
+  align-items: stretch;
+  width: 100%;
+  height: 380px;
+  min-height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: var(--fr-radius);
+}
+.jr-reel__photo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--fr-radius);
+  background-image: linear-gradient(0deg, #000c, #0000 44%);
+}
+.fr .jr-reel__img { position: relative; z-index: -1; display: block; width: 100%; height: 100%; object-fit: cover; }
+.jr-reel__photo--dim::after { content: ''; position: absolute; inset: 0; background-color: #00000040; }
+
+.fr .jr-ig {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  width: 51px;
+  height: 51px;
+  padding: 14px 10px;
+  box-sizing: border-box;
+  border: 1px dashed var(--fr-cream);
+  border-radius: var(--fr-radius);
+  color: var(--fr-cream);
+}
+.fr .jr-ig--dark { border-color: var(--fr-dark); }
+.fr .jr-ig--dark .fr-roll__top { color: var(--fr-dark); }
+.fr .jr-ig--dark:hover { border-color: var(--fr-yellow); }
+.jr-ig:hover .fr-roll > span { transform: translateY(-100%); }
+
+@media (min-width: 1280px) {
+  .fr .jr-banner__title { font-size: 150px; }
+  .jr-grid { grid-template-rows: 420px 150px 420px 420px 150px 420px; }
+  .jr-card { height: 420px; padding: 30px; }
+  .jr-reel__card { height: 500px; padding: 30px; }
+}
+@media (min-width: 1440px) {
+  .fr .jr-banner__title { font-size: 120px; }
+}
+@media (min-width: 1920px) {
+  .fr .jr-banner__art--balloon { left: 22%; }
+  .fr .jr-banner__art--plane { right: 20%; }
+}
+@media (max-width: 991px) {
+  .jr-banner { padding-top: 140px; }
+  .fr .jr-banner__title { font-size: 84px; }
+  .fr .jr-banner__art--balloon { left: 8%; }
+  .fr .jr-banner__art--plane { top: 25%; right: 6%; }
+  .jr-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 380px 120px 380px 380px 120px 380px auto auto auto;
+  }
+  .jr-list { padding-bottom: 0; }
+  .jr-grid > :nth-child(1) { grid-area: 1 / 1 / 2 / 2; }
+  .jr-grid > :nth-child(3) { grid-area: 3 / 2 / 4 / 3; }
+  .jr-grid > :nth-child(5) { grid-area: 4 / 1 / 5 / 2; }
+  .jr-grid > :nth-child(6) { grid-area: 5 / 1 / 7 / 2; }
+  .jr-grid > :nth-child(7) { grid-area: 6 / 2 / 7 / 3; }
+  .jr-grid > :nth-child(9) { grid-area: 7 / 1 / 8 / 2; }
+  .jr-grid > :nth-child(10) { grid-area: 8 / 1 / 10 / 2; }
+  .jr-grid > :nth-child(11) { grid-area: 9 / 2 / 10 / 3; }
+  .jr-grid > :nth-child(12) { grid-area: 7 / 2 / 9 / 3; }
+}
+@media (max-width: 767px) {
+  .jr-banner { padding-top: 120px; }
+  .fr .jr-banner__title { font-size: var(--fr-h1); }
+  .fr .jr-banner__art--balloon { bottom: 4%; left: 2%; width: 60px; }
+  .fr .jr-banner__art--plane { top: 27%; right: 3%; width: 90px; }
+  .jr-grid { display: flex; flex-flow: column; align-items: stretch; }
+  .jr-reel { width: 100%; max-width: 440px; margin: 0 auto; }
+  .jr-card { max-width: 440px; height: 420px; margin: 0 auto; }
+  .jr-reel__card { height: 450px; }
+}
+@media (max-width: 479px) {
+  .fr .jr-banner__art--balloon { width: 50px; }
+  .fr .jr-banner__art--plane { width: 75px; }
+  .jr-card { height: 400px; }
+  .jr-reel__card { height: 400px; }
+}

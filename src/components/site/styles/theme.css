@@ -1,0 +1,1328 @@
+/* ===========================================================================
+   theme.css — the Aapka Tourism CRM design language, on the website
+   ---------------------------------------------------------------------------
+   Ported 1:1 from the CRM's newest theme (aapka-tourism-crm:
+   components/leads/all-leads.css `--lx-*`, leads/add/add-lead.css `.al-*`,
+   components/master/master-theme.css). Same tokens, same sizes, same rules:
+
+     · warm neutrals, never blue-grey          · DM Sans (website)
+     · ink outline + offset shadow on cards,    · 32px controls, 8px radius,
+       menus, modals and the active choice        12.5px text
+     · pill buttons (34px, 28px small)          · focus = brand border only,
+     · brand orange for accents + primary CTA     no glow ring
+
+   On the public site the `.at-site` block below re-sets the geometry and
+   depth tokens to a marketing scale (40px controls, soft shadows, hairline
+   --lx-outline instead of the ink outline) — the rules stay the same.
+
+   Sections
+     01  Tokens
+     02  Base
+     03  Buttons            .ui-btn
+     04  Fields + inputs    .ui-field  .ui-input  .ui-group  .ui-check
+     05  Menus              .ui-menu
+     06  Cards + surfaces   .ui-card
+     07  Choice + stepper   .ui-choice .ui-stepper
+     08  Chips, tags, refs  .ui-tag    .ui-ref    .ui-count  .ui-flag
+     09  Modal shell        .ui-modal
+     10  Responsive
+
+   Scope (production web app)
+     Copied from apkatourism-new-design/components/site/theme.css and run
+     through scripts/scope-design-css.mjs: every rule is prefixed with
+     :where(.at-site) (zero specificity), so the redesign only styles markup
+     inside an `.at-site` wrapper. Wrap redesigned pages, the site chrome and
+     any portal (Select menu, modals) in one. Tokens stay global on :root.
+   =========================================================================== */
+
+/* The wrapper never draws a box — it only scopes the redesign's rules, so
+   sticky headers and grid/flex children behave as if it weren't there. */
+.at-site {
+  display: contents;
+  /* Website face (loaded in app/layout.tsx): DM Sans for text and headings.
+     --lx-font-display is DM Sans too now; elements that opt in through
+     `--app-heading-font: var(--lx-font-display)` keep working.
+     globals.css forces its fonts with !important through the two --app-*
+     vars. Set here, not on :root, so the dashboard keeps DM Sans. */
+  --lx-font: var(--font-site), 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --lx-font-display: var(--font-site), 'DM Sans', system-ui, sans-serif;
+  --app-font: var(--lx-font);
+  --app-heading-font: var(--lx-font);
+
+  /* Colour theme: Aapka orange on pickyourtrail.com's layout. The hero
+     panel, its cards and the search glow are derived from the brand + ink
+     here; home.css only reads these tokens. */
+  --mk-navy: #1c1b1a;        /* display titles on white (ink) */
+  --mk-text: #21242c;        /* body text */
+  --mk-lime: #fb923c;        /* search ring + accents on dark (orange 400) */
+  --mk-glow: 249, 115, 22;   /* rgb of the brand, for glows: rgba(var(--mk-glow), a) */
+  --mk-forest: #1c1b1a;      /* the hero panel (ink) */
+  --mk-forest-card: #121110; /* cards on the panel */
+  --mk-forest-card-hover: #262321;
+  --mk-forest-btn: #343230;  /* round arrows on the panel */
+  --mk-forest-line: #57544f;
+  --mk-chip: #f3f2f0;        /* filter chips */
+  --mk-chip-border: #e8e6e2;
+  --mk-chip-on: #1c1b1a;
+
+  /* Marketing scale. The CRM sizes above are tuned for a dense dashboard;
+     the public site sells holidays, so it gets bigger controls, soft
+     shadows and quiet hairline outlines instead of the ink outline + hard
+     offset. Set here (not on :root) so the dashboard keeps its own look. */
+  --lx-control-h: 40px;
+  --lx-btn-h: 40px;
+  --lx-btn-h-sm: 32px;
+  --lx-btn-h-lg: 48px;
+  --lx-offset-sm: 0 1px 2px rgba(23, 22, 20, 0.05), 0 8px 20px -10px rgba(23, 22, 20, 0.22);
+  --lx-offset: 0 2px 6px rgba(23, 22, 20, 0.05), 0 18px 36px -16px rgba(23, 22, 20, 0.28);
+  --lx-offset-lg: 0 4px 12px rgba(23, 22, 20, 0.05), 0 30px 60px -24px rgba(23, 22, 20, 0.32);
+  --lx-outline: 1px solid var(--lx-border);
+
+  /* type scale + rhythm for page sections */
+  --mk-h1: 40px;
+  --mk-h2: 32px;
+  --mk-section: 64px;
+  --mk-sand: #effaf4;
+  --mk-ease: 0.25s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (max-width: 767px) {
+  .at-site {
+    --mk-h1: 26px;
+    --mk-h2: 22px;
+    --mk-section: 40px;
+  }
+}
+
+/* ── 01  Tokens ───────────────────────────────────────────────────────── */
+
+:root {
+  /* surfaces */
+  --lx-surface: #ffffff;
+  --lx-sunken: #fbfaf9;
+  --lx-row-hover: #faf8f5;
+  --lx-hover: #f3f2f0;
+  --lx-active: #eceae6;
+
+  /* lines */
+  --lx-border: #e8e6e2;
+  --lx-border-strong: #dcd9d4;
+  --lx-border-hover: #cbc7c0;
+
+  /* text */
+  --lx-text: #1c1b1a;
+  --lx-text-soft: #57544f;
+  --lx-muted: #78756f;
+  --lx-faint: #a3a09a;
+  --lx-ink: #1c1b1a;
+  --lx-ink-hover: #343230;
+
+  /* brand */
+  --lx-brand: #f97316;
+  --lx-brand-hover: #ea640c;
+  --lx-brand-soft: #fff1e7;
+  --lx-brand-soft-hover: #ffe4d1;
+  --lx-brand-text: #c2410c;
+  --lx-brand-border: #fbd5b5;
+
+  /* status */
+  --lx-green: #16a34a;
+  --lx-green-soft: #e8f7ee;
+  --lx-success-text: #1f7a4d;
+  --lx-blue-soft: #eef3fc;
+  --lx-blue-text: #2f5da8;
+  --lx-amber: #e3a008;
+  --lx-amber-soft: #fdecc8;
+  --lx-amber-text: #8a5a12;
+  --lx-amber-border: #f3dfb0;
+  --lx-violet-soft: #f3edff;
+  --lx-violet-text: #6d28d9;
+  --lx-danger: #dc4a4a;
+  --lx-danger-soft: #fdf0f0;
+  --lx-danger-border: #f2c4c4;
+  --lx-avatar-bg: #ede9fe;
+  --lx-avatar-fg: #6d28d9;
+
+  /* geometry */
+  --lx-control-h: 32px;
+  --lx-btn-h: 34px;
+  --lx-btn-h-sm: 28px;
+  --lx-btn-h-lg: 40px;
+  --lx-r-control: 8px;
+  --lx-r-item: 7px;
+  --lx-r-tile: 10px;
+  --lx-r-menu: 12px;
+  --lx-r-card: 14px;
+  --lx-r-modal: 16px;
+
+  /* depth */
+  --lx-shadow-sm: 0 1px 2px rgba(23, 22, 20, 0.05);
+  --lx-shadow-md: 0 1px 2px rgba(23, 22, 20, 0.05), 0 10px 28px -18px rgba(23, 22, 20, 0.28);
+  --lx-offset-sm: 3px 3px 0 var(--lx-ink);
+  --lx-offset: 4px 4px 0 var(--lx-ink);
+  --lx-offset-lg: 5px 5px 0 var(--lx-ink);
+  /* outline of menus, cards and popovers (softened on the website below) */
+  --lx-outline: 1.5px solid var(--lx-ink);
+  --lx-overlay: rgba(28, 27, 26, 0.42);
+
+  --lx-ease: 0.14s ease;
+  --header-h: 64px;
+  --lx-font: var(--font-site), 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ---- legacy site tokens, remapped onto the CRM palette ----------------
+     Older rules still reference these; pointing them at the lx values keeps
+     every page in one temperature while the stylesheets are migrated. */
+  --brand-50: #fff1e7;
+  --brand-100: #ffe4d1;
+  --brand-200: #fbd5b5;
+  --brand-300: #fdba74;
+  --brand-400: #fb923c;
+  --brand-500: #f97316;
+  --brand-600: #ea640c;
+  --brand-700: #c2410c;
+  --brand-800: #9a3412;
+  --brand-900: #7c2d12;
+
+  --gold-50: #fdf6e3;
+  --gold-100: #fdecc8;
+  --gold-200: #f3dfb0;
+  --gold-400: #e9b949;
+  --gold-500: #e3a008;
+  --gold-600: #8a5a12;
+
+  --ink-900: #141312;
+  --ink-800: #1c1b1a;
+  --ink-750: #262523;
+  --ink-700: #343230;
+  --ink-600: #57544f;
+  --ink-500: #6a6761;
+  --ink-450: #78756f;
+  --ink-400: #8e8b85;
+  --ink-350: #a3a09a;
+  --ink-300: #cbc7c0;
+  --ink-200: #dcd9d4;
+  --ink-100: #e8e6e2;
+  --ink-50: #f3f2f0;
+  --ink-25: #fbfaf9;
+
+  --surface-cream: #ffffff;
+  --surface-sand: #ffffff;
+
+  --color-primary: var(--lx-brand);
+  --color-secondary: var(--lx-ink);
+  --color-white: #fff;
+  --color-black: var(--lx-ink);
+  --body-text: var(--lx-text);
+  --brand-ink: var(--lx-brand-text);
+  --font-primary: var(--lx-font);
+  --font-heading: var(--lx-font);
+}
+
+/* ── 02  Base ─────────────────────────────────────────────────────────── */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+:where(.at-site) {
+  font-family: var(--lx-font);
+  color: var(--lx-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+:where(.at-site) button,
+:where(.at-site) input,
+:where(.at-site) select,
+:where(.at-site) textarea {
+  font-family: inherit;
+}
+
+:where(.at-site) ::selection {
+  background: var(--lx-brand-soft-hover);
+  color: var(--lx-text);
+}
+
+/* Keyboard focus: one rule everywhere — brand outline, never a glow */
+:where(.at-site) :where(a, button, [role='button'], summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--lx-brand);
+  outline-offset: 2px;
+}
+
+/* ── 03  Buttons ──────────────────────────────────────────────────────
+   primary  brand orange — the one conversion action per view
+   dark     ink — confirm / submit inside cards and modals, row actions
+   outline  white with a strong hairline — everything else
+   ghost    text only, hover wash                                       */
+
+:where(.at-site) .ui-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--lx-btn-h);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lx-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--lx-ease),
+    border-color var(--lx-ease),
+    color var(--lx-ease),
+    opacity var(--lx-ease);
+}
+
+:where(.at-site) .ui-btn svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+:where(.at-site) .ui-btn--primary {
+  border-color: var(--lx-brand);
+  background: var(--lx-brand);
+  color: #fff;
+}
+
+:where(.at-site) .ui-btn--primary:hover:not(:disabled) {
+  border-color: var(--lx-brand-hover);
+  background: var(--lx-brand-hover);
+  color: #fff;
+}
+
+:where(.at-site) .ui-btn--dark {
+  border-color: var(--lx-ink);
+  background: var(--lx-ink);
+  color: #fff;
+}
+
+:where(.at-site) .ui-btn--dark:hover:not(:disabled) {
+  border-color: var(--lx-ink-hover);
+  background: var(--lx-ink-hover);
+  color: #fff;
+}
+
+:where(.at-site) .ui-btn--outline {
+  border-color: var(--lx-border-strong);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-shadow-sm);
+}
+
+:where(.at-site) .ui-btn--outline:hover:not(:disabled) {
+  background: var(--lx-hover);
+}
+
+:where(.at-site) .ui-btn--ghost:hover:not(:disabled) {
+  background: var(--lx-hover);
+}
+
+:where(.at-site) .ui-btn--add {
+  border: 1px dashed var(--lx-brand-border);
+  background: var(--lx-brand-soft);
+  color: var(--lx-brand-text);
+}
+
+:where(.at-site) .ui-btn--add:hover:not(:disabled) {
+  border-color: var(--lx-brand);
+  background: var(--lx-brand-soft-hover);
+}
+
+:where(.at-site) .ui-btn--sm {
+  gap: 5px;
+  height: var(--lx-btn-h-sm);
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+:where(.at-site) .ui-btn--sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+:where(.at-site) .ui-btn--lg {
+  height: var(--lx-btn-h-lg);
+  padding: 0 22px;
+  font-size: 13.5px;
+}
+
+:where(.at-site) .ui-btn--block {
+  width: 100%;
+}
+
+:where(.at-site) .ui-btn:disabled,
+:where(.at-site) .ui-btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* round icon button — the modal close / calendar arrow */
+:where(.at-site) .ui-icon-btn {
+  display: inline-flex;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-surface);
+  color: var(--lx-text-soft);
+  cursor: pointer;
+  transition:
+    background var(--lx-ease),
+    color var(--lx-ease);
+}
+
+:where(.at-site) .ui-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+:where(.at-site) .ui-icon-btn:hover:not(:disabled) {
+  background: var(--lx-hover);
+  color: var(--lx-text);
+}
+
+:where(.at-site) .ui-icon-btn:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+/* ── 04  Fields + inputs ──────────────────────────────────────────────
+   Label sits above the control (no floating labels — CRM Add Lead spec). */
+
+:where(.at-site) .ui-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+:where(.at-site) .ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+:where(.at-site) .ui-field--wide {
+  grid-column: 1 / -1;
+}
+
+:where(.at-site) .ui-label {
+  color: var(--lx-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+:where(.at-site) .ui-req {
+  margin-left: 3px;
+  color: var(--lx-danger);
+  font-style: normal;
+}
+
+:where(.at-site) .ui-optional {
+  margin-left: 4px;
+  color: var(--lx-faint);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+:where(.at-site) .ui-hint {
+  margin: 0;
+  color: var(--lx-faint);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+:where(.at-site) .ui-error {
+  margin: 0;
+  color: var(--lx-danger);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+:where(.at-site) .ui-input,
+:where(.at-site) .form-control {
+  display: block;
+  width: 100%;
+  height: var(--lx-control-h);
+  padding: 0 10px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-control);
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  box-shadow: var(--lx-shadow-sm);
+  transition:
+    border-color var(--lx-ease),
+    background var(--lx-ease);
+}
+
+:where(.at-site) .ui-input::placeholder,
+:where(.at-site) .form-control::placeholder {
+  color: var(--lx-faint);
+  opacity: 1;
+}
+
+:where(.at-site) .ui-input:hover:not(:disabled):not(:focus),
+:where(.at-site) .form-control:hover:not(:disabled):not(:focus) {
+  border-color: var(--lx-border-hover);
+}
+
+/* Focus is a border colour change only — no glow ring (CRM rule) */
+:where(.at-site) .ui-input:focus,
+:where(.at-site) .form-control:focus {
+  border-color: var(--lx-brand);
+  outline: none;
+  box-shadow: none;
+}
+
+:where(.at-site) .ui-input:disabled,
+:where(.at-site) .form-control:disabled {
+  background: var(--lx-sunken);
+  color: var(--lx-muted);
+  cursor: not-allowed;
+}
+
+:where(.at-site) textarea.ui-input,
+:where(.at-site) textarea.form-control {
+  height: auto;
+  min-height: 68px;
+  padding: 8px 10px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+:where(.at-site) .ui-input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+:where(.at-site) .ui-input[type='number']::-webkit-inner-spin-button,
+:where(.at-site) .ui-input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+:where(.at-site) .ui-field.has-error .ui-input,
+:where(.at-site) .ui-input.is-error {
+  border-color: var(--lx-danger);
+}
+
+/* Group: a prefix control (dial code Select) + input as one row */
+:where(.at-site) .ui-group {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 6px;
+}
+
+/* Search row: icon inside one field (CRM leads toolbar search) */
+:where(.at-site) .ui-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: var(--lx-control-h);
+  padding: 0 10px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-control);
+  background: var(--lx-sunken);
+  transition:
+    border-color var(--lx-ease),
+    background var(--lx-ease);
+}
+
+:where(.at-site) .ui-search:focus-within {
+  border-color: var(--lx-brand);
+  background: var(--lx-surface);
+}
+
+:where(.at-site) .ui-search > svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--lx-faint);
+}
+
+:where(.at-site) .ui-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lx-text);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+}
+
+:where(.at-site) .ui-search input::placeholder {
+  color: var(--lx-faint);
+}
+
+:where(.at-site) .ui-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+/* Checkbox: square, brand fill when ticked (CRM attraction picker) */
+:where(.at-site) .ui-check,
+:where(.at-site) .form-check-input[type='checkbox'] {
+  position: relative;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--lx-border-strong);
+  border-radius: 5px;
+  background: var(--lx-surface);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    background var(--lx-ease),
+    border-color var(--lx-ease);
+}
+
+:where(.at-site) .ui-check:hover,
+:where(.at-site) .form-check-input[type='checkbox']:hover {
+  border-color: var(--lx-muted);
+}
+
+:where(.at-site) .ui-check:checked,
+:where(.at-site) .form-check-input[type='checkbox']:checked {
+  border-color: var(--lx-brand);
+  background: var(--lx-brand);
+}
+
+/* tick sized + placed in % of the box, so it sits right at any size */
+:where(.at-site) .ui-check:checked::after,
+:where(.at-site) .form-check-input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  top: 45%;
+  left: 52%;
+  width: 30%;
+  height: 58%;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+:where(.at-site) .ui-check:focus-visible,
+:where(.at-site) .form-check-input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--lx-brand);
+  outline-offset: 2px;
+}
+
+/* consent line under a submit button */
+:where(.at-site) .ui-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--lx-text-soft);
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+:where(.at-site) .ui-consent .ui-check {
+  margin-top: 1px;
+}
+
+:where(.at-site) .ui-consent a {
+  color: var(--lx-brand-text);
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
+:where(.at-site) .ui-consent a:hover {
+  text-decoration: underline;
+}
+
+/* ── 05  Menus ────────────────────────────────────────────────────────
+   Ink outline + offset shadow (CRM .ldx-menu / .cm__menu).              */
+
+:where(.at-site) .ui-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 200px;
+  padding: 5px;
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-menu);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset);
+  color: var(--lx-text);
+}
+
+:where(.at-site) .ui-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--lx-r-control);
+  background: transparent;
+  color: var(--lx-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+:where(.at-site) .ui-menu__item:hover,
+:where(.at-site) .ui-menu__item:focus-visible {
+  background: var(--lx-hover);
+  outline: none;
+}
+
+:where(.at-site) .ui-menu__item.is-active {
+  background: var(--lx-brand-soft);
+  color: var(--lx-brand-text);
+  font-weight: 600;
+}
+
+:where(.at-site) .ui-menu__divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--lx-border);
+}
+
+:where(.at-site) .ui-menu__heading {
+  padding: 6px 9px 4px;
+  color: var(--lx-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@keyframes lx-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── 06  Cards + surfaces ─────────────────────────────────────────────
+   .ui-card        ink outline + offset shadow — the hero surface of a view
+   .ui-card--flat  hairline; lifts to the ink outline on hover when linked */
+
+:where(.at-site) .ui-card {
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-modal);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-lg);
+  color: var(--lx-text);
+}
+
+:where(.at-site) .ui-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 24px 18px;
+  border-bottom: 1px dashed var(--lx-border-strong);
+}
+
+:where(.at-site) .ui-card__body {
+  padding: 22px 24px 24px;
+}
+
+:where(.at-site) .ui-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--lx-border);
+  border-radius: 0 0 15px 15px;
+  background: var(--lx-sunken);
+}
+
+:where(.at-site) .ui-eyebrow {
+  margin: 0 0 2px;
+  color: var(--lx-brand-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:where(.at-site) .ui-title {
+  margin: 0;
+  color: var(--lx-text);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+:where(.at-site) .ui-desc {
+  margin: 2px 0 0;
+  color: var(--lx-muted);
+  font-size: 12.5px;
+}
+
+:where(.at-site) .ui-card--flat {
+  border: 1px solid var(--lx-border);
+  border-radius: var(--lx-r-card);
+  box-shadow: none;
+}
+
+/* hover lift for linked flat cards: hairline → ink outline + offset */
+:where(.at-site) .ui-lift {
+  transition:
+    border-color var(--lx-ease),
+    box-shadow var(--lx-ease),
+    transform var(--lx-ease);
+}
+
+:where(.at-site) .ui-lift:hover {
+  border-color: var(--lx-ink);
+  box-shadow: var(--lx-offset);
+  transform: translateY(-4px);
+}
+
+:where(.at-site) .ui-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--lx-danger-border);
+  border-radius: var(--lx-r-tile);
+  background: var(--lx-danger-soft);
+  color: #a33232;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+:where(.at-site) .ui-alert--ok {
+  border-color: #bfe3cd;
+  background: var(--lx-green-soft);
+  color: var(--lx-success-text);
+}
+
+/* ── 07  Choice + stepper ─────────────────────────────────────────────── */
+
+:where(.at-site) .ui-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+:where(.at-site) .ui-choice__item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-surface);
+  color: var(--lx-text-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--lx-ease),
+    border-color var(--lx-ease),
+    color var(--lx-ease),
+    box-shadow var(--lx-ease);
+}
+
+:where(.at-site) .ui-choice__item:hover {
+  border-color: var(--lx-border-hover);
+  background: var(--lx-sunken);
+}
+
+:where(.at-site) .ui-choice__item.is-active,
+:where(.at-site) .ui-choice__item.active {
+  border-color: var(--lx-brand);
+  background: var(--lx-brand-soft);
+  color: var(--lx-brand-text);
+}
+
+/* tile: grid of cards; active = ink outline + offset */
+:where(.at-site) .ui-choice--tile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+:where(.at-site) .ui-choice--tile .ui-choice__item {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  height: auto;
+  min-height: 50px;
+  padding: 8px 12px;
+  border-radius: var(--lx-r-tile);
+  text-align: left;
+  white-space: normal;
+}
+
+:where(.at-site) .ui-choice--tile .ui-choice__item.is-active {
+  border-color: var(--lx-ink);
+  background: var(--lx-surface);
+  color: var(--lx-text);
+  box-shadow: var(--lx-offset-sm);
+}
+
+:where(.at-site) .ui-choice__label {
+  color: var(--lx-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+:where(.at-site) .ui-choice__hint {
+  color: var(--lx-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+:where(.at-site) .ui-stepper {
+  display: flex;
+  align-items: center;
+  height: var(--lx-control-h);
+  overflow: hidden;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: var(--lx-r-control);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-shadow-sm);
+}
+
+:where(.at-site) .ui-stepper__btn {
+  display: inline-flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border: 0;
+  background: var(--lx-sunken);
+  color: var(--lx-text-soft);
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    background var(--lx-ease),
+    color var(--lx-ease);
+}
+
+:where(.at-site) .ui-stepper__btn:hover:not(:disabled) {
+  background: var(--lx-hover);
+  color: var(--lx-text);
+}
+
+:where(.at-site) .ui-stepper__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+:where(.at-site) .ui-stepper__value {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border-inline: 1px solid var(--lx-border);
+  color: var(--lx-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 07b  Tabs ────────────────────────────────────────────────────────
+   CRM tab spec (operations.css .ops-tabs, master-theme.css M6): a sunken
+   pill track, muted 12.5px/600 labels, the active tab filled in ink.
+   No underlines anywhere. Active state accepts .is-active / .active /
+   .is-on / aria-selected so existing tab scripts keep working.          */
+
+:where(.at-site) .ui-tabs {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  max-width: 100%;
+  margin: 0;
+  padding: 3px;
+  overflow-x: auto;
+  border: 1px solid var(--lx-border);
+  border-radius: 999px;
+  background: var(--lx-sunken);
+  list-style: none;
+  scrollbar-width: none;
+}
+
+:where(.at-site) .ui-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+:where(.at-site) .ui-tabs > li {
+  display: flex;
+  flex: 0 0 auto;
+  height: 100%;
+}
+
+:where(.at-site) .ui-tabs__tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  margin: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lx-muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--lx-ease),
+    color var(--lx-ease);
+}
+
+:where(.at-site) .ui-tabs__tab:hover {
+  color: var(--lx-text);
+}
+
+:where(.at-site) .ui-tabs__tab.is-active,
+:where(.at-site) .ui-tabs__tab.active,
+:where(.at-site) .ui-tabs__tab.is-on,
+:where(.at-site) .ui-tabs__tab[aria-selected='true'] {
+  background: var(--lx-ink);
+  color: #fff;
+}
+
+:where(.at-site) .ui-tabs__tab:focus-visible {
+  outline: 2px solid var(--lx-brand);
+  outline-offset: 1px;
+}
+
+:where(.at-site) .ui-tabs__tab svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+/* count badge inside a tab (CRM .cm__count) — inverts on the ink tab */
+:where(.at-site) .ui-tabs__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  margin-right: -6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--lx-active);
+  color: var(--lx-text-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+:where(.at-site) .ui-tabs__tab.is-active .ui-tabs__count,
+:where(.at-site) .ui-tabs__tab.active .ui-tabs__count,
+:where(.at-site) .ui-tabs__tab.is-on .ui-tabs__count {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* on dark surfaces (footer): same track, inverted */
+:where(.at-site) .ui-tabs--dark {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+:where(.at-site) .ui-tabs--dark .ui-tabs__tab {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+:where(.at-site) .ui-tabs--dark .ui-tabs__tab:hover {
+  color: #fff;
+}
+
+:where(.at-site) .ui-tabs--dark .ui-tabs__tab.is-active,
+:where(.at-site) .ui-tabs--dark .ui-tabs__tab.active,
+:where(.at-site) .ui-tabs--dark .ui-tabs__tab.is-on {
+  background: #fff;
+  color: var(--lx-ink);
+}
+
+/* full-width variant: tabs share the track equally */
+:where(.at-site) .ui-tabs--block {
+  display: flex;
+  width: 100%;
+}
+
+:where(.at-site) .ui-tabs--block > li,
+:where(.at-site) .ui-tabs--block > .ui-tabs__tab {
+  flex: 1 1 0;
+}
+
+:where(.at-site) .ui-tabs--block > li > .ui-tabs__tab {
+  width: 100%;
+}
+
+/* ── 08  Chips, tags, refs ────────────────────────────────────────────── */
+
+:where(.at-site) .ui-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-sunken);
+  color: var(--lx-text-soft);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:where(.at-site) .ui-tag--brand {
+  border-color: var(--lx-brand-border);
+  background: var(--lx-brand-soft);
+  color: var(--lx-brand-text);
+}
+
+/* mono reference chip (CRM lead reference) */
+:where(.at-site) .ui-ref {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--lx-active);
+  color: var(--lx-text-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+:where(.at-site) .ui-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--lx-hover);
+  color: var(--lx-text-soft);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+:where(.at-site) .ui-flag {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:where(.at-site) .ui-flag--amber {
+  background: var(--lx-amber-soft);
+  color: var(--lx-amber-text);
+}
+
+:where(.at-site) .ui-flag--green {
+  background: var(--lx-green-soft);
+  color: var(--lx-success-text);
+}
+
+:where(.at-site) .ui-flag--brand {
+  background: var(--lx-brand-soft);
+  color: var(--lx-brand-text);
+}
+
+:where(.at-site) .ui-flag--ink {
+  background: var(--lx-ink);
+  color: #fff;
+}
+
+/* ── 09  Modal shell (CRM master modal) ───────────────────────────────── */
+
+:where(.at-site) .ui-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--lx-overlay);
+  backdrop-filter: blur(2px);
+  animation: lx-fade 0.12s ease-out;
+}
+
+:where(.at-site) .ui-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  max-height: min(88vh, 820px);
+  overflow: hidden;
+  border: var(--lx-outline);
+  border-radius: var(--lx-r-modal);
+  background: var(--lx-surface);
+  box-shadow: var(--lx-offset-lg);
+  color: var(--lx-text);
+  font-size: 13px;
+  animation: lx-modal-in 0.14s ease-out;
+}
+
+:where(.at-site) .ui-modal__head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 14px 20px;
+  border-bottom: 1px dashed var(--lx-border-strong);
+}
+
+:where(.at-site) .ui-modal__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+:where(.at-site) .ui-modal__sub {
+  margin: 2px 0 0;
+  color: var(--lx-muted);
+  font-size: 12px;
+}
+
+:where(.at-site) .ui-modal__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+}
+
+:where(.at-site) .ui-modal__foot {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--lx-border);
+  background: var(--lx-sunken);
+}
+
+@keyframes lx-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lx-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── 10  Responsive ───────────────────────────────────────────────────
+   Phones: inputs go to 16px text so iOS Safari doesn't zoom the page on
+   focus, and a little taller for thumbs. Everything else stays CRM-size. */
+
+@media (max-width: 767px) {
+  :root {
+    --header-h: 56px;
+  }
+
+  :where(.at-site) .ui-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :where(.at-site) .ui-input,
+  :where(.at-site) .form-control,
+  :where(.at-site) .ui-search input {
+    font-size: 16px;
+  }
+
+  :where(.at-site) .ui-input,
+  :where(.at-site) .form-control,
+  :where(.at-site) .ui-search {
+    height: 40px;
+  }
+
+  :where(.at-site) textarea.ui-input,
+  :where(.at-site) textarea.form-control {
+    height: auto;
+  }
+
+  :where(.at-site) .ui-card__head,
+  :where(.at-site) .ui-card__body {
+    padding-inline: 18px;
+  }
+
+  :where(.at-site) .ui-card__foot {
+    padding-inline: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.at-site) .ui-modal,
+  :where(.at-site) .ui-modal-overlay,
+  :where(.at-site) .ui-lift {
+    animation: none;
+    transition: none;
+  }
+
+  :where(.at-site) .ui-lift:hover {
+    transform: none;
+  }
+}

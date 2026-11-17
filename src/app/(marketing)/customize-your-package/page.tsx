@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAddonDeals, useAddonHotelServices, useAddonPrivateTransfers, useCRMPackage } from '@/hooks/use-marketing-queries';
 import { useHotelSurchargeTotal } from './hooks/useHotelSurchargeTotal';
-import { ShoppingCart, ArrowLeft, FileDown, FileText } from 'lucide-react';
+import { ArrowRight, ArrowLeft, FileDown, FileText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useCart } from '@/context/CartContext';
+import { useBooking } from '@/context/BookingContext';
 import { PackageSelector } from './components/PackageSelector';
 import { PersonSelector } from './components/PersonSelector';
 import { CheckInDateSelector } from './components/CheckInDateSelector';
@@ -137,7 +137,7 @@ function calcPackageBase(
 
 export default function CustomizeYourPackagePage() {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { startBooking } = useBooking();
   const [selectedPackage, setSelectedPackage] = useState<PackageOption | null>(null);
   const [persons, setPersons] = useState<PersonCounts>({ adults: 2, children: 0, infants: 0 });
   const [isSoloTraveller, setIsSoloTraveller] = useState(false);
@@ -246,13 +246,13 @@ export default function CustomizeYourPackagePage() {
     }
   }, [selectedPackage?.crm_package_id]);
 
-  const handleAddToCart = () => {
+  const handleBookNow = () => {
     if (!selectedPackage) return;
     const categorySlug = selectedPackage.category_slug ?? 'offer-packages';
     const serviceIds = selectedServices.length > 0
       ? selectedServices.map((s) => s.serviceId)
       : undefined;
-    addToCart({
+    startBooking({
       packageId: selectedPackage.package_id,
       packageSlug: selectedPackage.package_id,
       categorySlug,
@@ -265,10 +265,10 @@ export default function CustomizeYourPackagePage() {
       addonHotelServices: serviceIds,
       addonPrivateTransfers: selectedTransferIds.length > 0 ? selectedTransferIds : undefined,
     });
-    router.push('/cart');
+    router.push('/checkout');
   };
 
-  const canAddToCart =
+  const canBook =
     !!selectedPackage &&
     (isSoloTraveller && selectedPackage.solo_traveller_enabled
       ? persons.adults === 1
@@ -450,14 +450,14 @@ export default function CustomizeYourPackagePage() {
                 selectedTransferIds={selectedTransferIds}
               />
             )}
-            {canAddToCart && (
+            {canBook && (
               <button
                 type="button"
-                className="customize-page-add-to-cart"
-                onClick={handleAddToCart}
+                className="customize-page-book-now"
+                onClick={handleBookNow}
               >
-                <ShoppingCart size={20} />
-                Add to Cart
+                <ArrowRight size={20} />
+                Book now
               </button>
             )}
             {selectedPackage && !selectedPackage.crm_package_id && (
@@ -487,14 +487,14 @@ export default function CustomizeYourPackagePage() {
               <FileDown size={18} />
               Preview
             </button>
-            {canAddToCart && (
+            {canBook && (
               <button
                 type="button"
-                className="customize-page-mobile-btn customize-page-mobile-btn-cart"
-                onClick={handleAddToCart}
+                className="customize-page-mobile-btn customize-page-mobile-btn-book"
+                onClick={handleBookNow}
               >
-                <ShoppingCart size={20} />
-                Add to Cart
+                <ArrowRight size={20} />
+                Book now
               </button>
             )}
             {selectedPackage && (
@@ -511,7 +511,7 @@ export default function CustomizeYourPackagePage() {
           </div>
 
           {showMobileDetailsPanel && (
-            <div className="customize-page-mobile-details-overlay" onClick={() => setShowMobileDetailsPanel(false)}>
+            <div className="customize-page-mobile-details-overlay">
               <div className="customize-page-mobile-details-panel" onClick={(e) => e.stopPropagation()}>
                 <div className="customize-page-mobile-details-header">
                   <h3>Package Details</h3>

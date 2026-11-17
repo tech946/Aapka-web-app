@@ -1,5 +1,4 @@
 import React from 'react';
-import './privacy.css';
 
 export default function PrivacyPolicyPage() {
   return (

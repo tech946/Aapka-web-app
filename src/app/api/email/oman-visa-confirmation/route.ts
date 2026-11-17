@@ -14,8 +14,11 @@ function getOmanVisaConfirmationHtml(name: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Oman Visa Application Received</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background: linear-gradient(to bottom, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);">
   <table role="presentation" style="width: 100%; border-collapse: collapse; padding: 40px 20px;">
     <tr>
       <td align="center">
@@ -60,8 +63,11 @@ function getAdminNotificationHtml(name: string, email: string, contact: string):
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Oman Visa Application</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body, table, td, th, p, a, span, div, h1, h2, h3, h4, li { font-family: 'DM Sans', Arial, Helvetica, sans-serif; }</style>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: #f5f5f5;">
+<body style="margin: 0; padding: 0; font-family: 'DM Sans', Arial, Helvetica, sans-serif; background: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse; padding: 24px;">
     <tr>
       <td align="center">

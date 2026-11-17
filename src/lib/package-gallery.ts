@@ -46,6 +46,19 @@ export function getPackageDisplayImages(
   return galleryUrls;
 }
 
+/** Gallery URLs only, for the package detail pages' photo block (the
+    thumbnail is listing-card art, often with text baked in). Falls back to
+    the thumbnail only when the package has no gallery at all. */
+export function getPackageGalleryImages(
+  gallery: unknown,
+  thumbnailImage?: string | null
+): string[] {
+  const galleryUrls = normalizePackageGallery(gallery);
+  if (galleryUrls.length) return galleryUrls;
+  const thumbnail = thumbnailImage?.trim() || '';
+  return thumbnail ? [thumbnail] : [];
+}
+
 /** Treat literal "null" strings from bad DB values as empty. */
 export function normalizePdfUrl(url: unknown): string {
   if (url == null) return '';

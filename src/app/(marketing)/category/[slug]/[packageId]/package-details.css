@@ -160,9 +160,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-title {
-  font-family: var(--font-work-sans);
+  font-family: var(--font-site);
   font-size: 36px;
-  font-weight: 400;
+  font-weight: 500;
   color: #000;
   margin: 0;
   line-height: 1.4;
@@ -177,7 +177,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-current {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   /* Dominant: this is the number they actually pay */
   font-size: 26px;
   font-weight: 700;
@@ -186,9 +186,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-original {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 500;
   color: #9ca3af;
   text-decoration: line-through;
 }
@@ -199,7 +199,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   padding: 4px 11px;
   background: linear-gradient(135deg, #fd6b06 0%, #ea580c 100%);
   color: white;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 11px;
   font-weight: 700;
   border-radius: 999px;
@@ -210,7 +210,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-description {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   line-height: 1.6;
   color: #374151;
@@ -225,7 +225,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-add-to-cart-button {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   font-weight: 600;
   color: #fff;
@@ -248,7 +248,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-pdf-button {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   font-weight: 600;
   color: #fd6b06;
@@ -302,7 +302,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-label {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   font-weight: 600;
   color: #000;
@@ -312,15 +312,15 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-age {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 13px;
   color: #6b7280;
-  font-weight: 400;
+  font-weight: 500;
   margin-left: 0;
 }
 
 .package-hero-price-item-amount {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 18px;
   font-weight: 600;
   color: #000;
@@ -332,16 +332,16 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-hero-price-item-original {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   color: #9ca3af;
   text-decoration: line-through;
   margin-top: 2px;
 }
 
 .package-hero-price-item-discount {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 13px;
   color: #fd6b06;
   font-weight: 500;
@@ -935,7 +935,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   border-radius: 0;
   background: transparent;
   color: #374151;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -1317,7 +1317,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   align-items: center;
   gap: 5px;
   width: max-content;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.5;
@@ -1379,7 +1379,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-section h2 {
-  font-family: var(--font-work-sans);
+  font-family: var(--font-site);
   font-size: 28px;
   font-weight: 600;
   color: #111827;
@@ -1389,7 +1389,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-section p {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   line-height: 1.8;
   color: #121212;
@@ -1397,7 +1397,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .package-html-content {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   line-height: 1.8;
   color: #121212;
@@ -1459,7 +1459,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .itinerary-heading {
-  font-family: var(--font-work-sans);
+  font-family: var(--font-site);
   font-size: 20px;
   font-weight: 600;
   color: #111827;
@@ -1481,7 +1481,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .itinerary-description {
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   font-size: 16px;
   line-height: 1.8;
   color: #121212;
@@ -1610,9 +1610,9 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 }
 
 .desktop-booking-modal-title {
-  font-family: var(--font-work-sans);
+  font-family: var(--font-site);
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 500;
   color: #111827;
   text-transform: uppercase;
   margin: 0;
@@ -1724,7 +1724,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   color: #fd6b06;
   letter-spacing: -0.02em;
   line-height: 1;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .desktop-booking-modal-content
@@ -1739,7 +1739,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .desktop-booking-modal-content .input-selectors {
@@ -1850,7 +1850,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .pdf-modal-view-pdf-btn:hover {
@@ -1868,7 +1868,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   border: 1px solid #e5e7eb;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .pdf-modal-cancel-button:hover {
@@ -1907,7 +1907,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-weight: 500;
   color: #374151;
   margin-bottom: 6px;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 .desktop-booking-modal-content
   .booking-input-wrapper:not(.booking-modal-field)
@@ -1920,7 +1920,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   font-size: 14px;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
   color: #111827;
   background: #fff;
 }
@@ -1932,7 +1932,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 .desktop-booking-modal-content .ltd-persons-row {
   display: flex;
@@ -1943,7 +1943,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 .desktop-booking-modal-content .ltd-person-stepper {
   display: flex;
@@ -1979,7 +1979,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 .desktop-booking-modal-content .ltd-modal-checkbox-row input[type='checkbox'] {
   width: 18px;
@@ -1996,7 +1996,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 .desktop-booking-modal-content .ltd-modal-stepper {
   display: flex;
@@ -2083,7 +2083,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-weight: 500;
   color: #111827;
   cursor: pointer;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .solo-checkbox input[type='checkbox'] {
@@ -2135,7 +2135,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   color: #111827;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .solo-pill:hover {
@@ -2157,7 +2157,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 13px;
   line-height: 1.5;
   color: #374151;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .solo-consent input[type='checkbox'] {
@@ -2206,7 +2206,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 14px;
   font-weight: 600;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .visa-checkbox {
@@ -2217,7 +2217,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-weight: 500;
   color: #111827;
   cursor: pointer;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .visa-checkbox input[type='checkbox'] {
@@ -2252,7 +2252,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 13px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .visa-counter-controls {
@@ -2291,7 +2291,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 13px;
   font-weight: 500;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .solo-consent input {
@@ -2388,7 +2388,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
 
 .booking-input::placeholder {
   color: #9ca3af;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .booking-input:hover {
@@ -2467,14 +2467,14 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 14px;
   color: #111827;
   font-weight: 500;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 .person-age-info {
   font-size: 12px;
   color: #6b7280;
-  font-weight: 400;
-  font-family: var(--font-inter);
+  font-weight: 500;
+  font-family: var(--font-site);
 }
 
 .person-counter {
@@ -2530,7 +2530,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   font-size: 15px;
   font-weight: 600;
   color: #111827;
-  font-family: var(--font-inter);
+  font-family: var(--font-site);
 }
 
 /* Dates Dropdown */
@@ -2836,7 +2836,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   border: none;
   color: #9ca3af;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   cursor: pointer;
   padding: 0;
   transition: all 0.2s;
@@ -3161,7 +3161,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   }
 
   .mobile-booking-modal-title {
-    font-family: var(--font-work-sans);
+    font-family: var(--font-site);
     font-size: 22px;
     font-weight: 700;
     color: #111827;
@@ -3227,7 +3227,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     font-weight: 700;
     color: #fd6b06;
     line-height: 1;
-    font-family: var(--font-inter);
+    font-family: var(--font-site);
   }
 
   .mobile-booking-price-amount.discounted {
@@ -3240,7 +3240,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-family: var(--font-inter);
+    font-family: var(--font-site);
   }
 
   .mobile-input-selectors {
@@ -3354,7 +3354,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
   .mobile-person-label .person-age-info {
     font-size: 11px;
     color: #6b7280;
-    font-weight: 400;
+    font-weight: 500;
   }
 
   .mobile-person-counter {
@@ -3664,7 +3664,7 @@ html.is-scrolling::-webkit-scrollbar-thumb {
     border: none;
     color: #9ca3af;
     font-size: 14px;
-    font-weight: 400;
+    font-weight: 500;
     cursor: pointer;
     padding: 0;
     transition: all 0.2s;

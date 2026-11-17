@@ -1,0 +1,656 @@
+/* ===========================================================================
+   The search: the field (HeroSearch) and the content of its sheet
+   (HolidaySearchSheet, opened from every TaSearch pill). The sheet's frame
+   comes from components/site/styles/sheet.css — this file only styles
+   what goes inside it, plus the panel's colours.
+   =========================================================================== */
+
+/* ── the search field (HeroSearch) — pickyourtrail.com's: white box, 3px
+   brand ring with a soft brand glow, search glyph, a prompt that rolls upward ── */
+:where(.at-site) .hsf {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 562px;
+  height: 50px;
+  margin: 0 auto;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 20px;
+  background: #fff;
+  color: var(--mk-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:where(.at-site) .hsf__ring {
+  position: absolute;
+  inset: -3px;
+  border: 3px solid var(--mk-lime);
+  border-radius: 24px;
+  box-shadow: 0 4px 27px 0 rgba(var(--mk-glow), 0.55);
+  pointer-events: none;
+  transition: box-shadow var(--mk-ease);
+}
+:where(.at-site) .hsf:hover .hsf__ring { box-shadow: 0 4px 34px 2px rgba(var(--mk-glow), 0.7); }
+:where(.at-site) .hsf:focus-visible { outline: none; }
+:where(.at-site) .hsf:focus-visible .hsf__ring { border-color: #fff; }
+:where(.at-site) .hsf__icon { flex-shrink: 0; width: 24px; height: 24px; color: var(--mk-text); stroke-width: 2; }
+:where(.at-site) .hsf__prompts { position: relative; flex: 1; min-width: 0; height: 24px; overflow: hidden; }
+:where(.at-site) .hsf__prompt {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #464e67;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.45s ease;
+}
+:where(.at-site) .hsf__prompt.is-on { opacity: 1; transform: none; }
+:where(.at-site) .hsf__prompt.is-out { opacity: 0; transform: translateY(-100%); }
+
+/* compact: the scrolled homepage header */
+:where(.at-site) .hsf--compact { max-width: 470px; height: 44px; border-radius: 14px; gap: 12px; padding: 0 16px; }
+:where(.at-site) .hsf--compact .hsf__ring { border-radius: 17px; box-shadow: 0 2px 16px 0 rgba(var(--mk-glow), 0.45); }
+:where(.at-site) .hsf--compact .hsf__icon { width: 18px; height: 18px; }
+:where(.at-site) .hsf--compact .hsf__prompt { font-size: 15px; }
+
+@media (max-width: 767px) {
+  :where(.at-site) .hsf { height: 46px; gap: 12px; padding: 0 16px; }
+  :where(.at-site) .hsf__icon { width: 20px; height: 20px; }
+  :where(.at-site) .hsf__prompt { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.at-site) .hsf__prompt { transition: none; }
+}
+
+/* ── search sheet (HolidaySearchSheet) ────────────────────────────────────
+   The detail / listing pages' look in Desert Ember tokens (the panel carries
+   .desert-ember): white panel, hairline head with a 20px/800 title and a
+   round ✕, 16px/700 section titles, outline pill chips (the picked one solid
+   black), package rows with a radio dot (picked: orange edge on a soft tint),
+   a bordered travellers card with round − / + buttons, and a white foot with
+   the summary over the orange Search pill. The frame (slide-in, overlay,
+   focus) is the shared Sheet (styles/sheet.css). */
+
+.ui-sheet.hs-sheet {
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+@media (min-width: 768px) {
+  .ui-sheet.hs-sheet {
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px -16px color-mix(in srgb, var(--black) 45%, transparent);
+  }
+}
+
+
+/* head: title + count on the left, ✕ on the right */
+.hs-sheet .ui-sheet__head {
+  gap: 16px;
+  min-height: 72px;
+  padding: 0 16px 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.hs-sheet .ui-sheet__heading h2 {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 26px;
+}
+.hs-sheet .ui-sheet__heading p {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.hs-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.hs-close:hover {
+  background: var(--surface);
+}
+.hs-close svg {
+  width: 22px;
+  height: 22px;
+}
+
+.hs-sheet .ui-sheet__body {
+  gap: 28px;
+  padding: 20px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--card);
+}
+
+/* section titles */
+.hs-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+.hs-label span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* search field: pill like the header's */
+.hs-search {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 6px 0 18px;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, var(--card));
+  border-radius: var(--radius-full);
+  background: var(--card);
+  transition: border-color 0.15s ease;
+}
+.hs-search:hover {
+  border-color: var(--ink);
+}
+.hs-search:focus-within {
+  border-color: var(--brand);
+}
+.hs-search > svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--ink);
+}
+.hs-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* no iOS zoom on focus */
+}
+.hs-search input::placeholder {
+  color: var(--muted);
+}
+.hs-search__clear {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.hs-search__clear svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* chips: one scrolling row (types) or wrapped (dates) */
+.hs-chips {
+  display: flex;
+  gap: 8px;
+  margin: 0 -24px;
+  padding: 2px 24px 4px;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+.hs-chips::-webkit-scrollbar {
+  display: none;
+}
+.hs-chips--wrap {
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+.hs-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-full);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.hs-chip:hover {
+  background: var(--surface);
+}
+.hs-chip.is-on {
+  border-color: var(--black);
+  background: var(--black);
+  color: var(--card);
+  font-weight: 700;
+}
+.hs-chip__new {
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: var(--brand-glow);
+  color: var(--black);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+/* packages: a row each with a radio dot; the picked one gets the orange edge */
+.hs-pkgs {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hs-pkg {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.hs-pkg:hover {
+  border-color: color-mix(in srgb, var(--ink) 35%, var(--card));
+}
+.hs-pkg.is-on {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.hs-pkg__radio {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 40%, var(--card));
+  border-radius: var(--radius-full);
+  background: var(--card);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.hs-pkg.is-on .hs-pkg__radio {
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 4px var(--card), inset 0 0 0 10px var(--brand);
+}
+.hs-pkg__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.hs-pkg__text b {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.hs-pkg__text small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+/* empty / waiting states */
+.hs-note {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.hs-cal .flexible-date-calendar-wrapper {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: none;
+}
+
+/* travellers: a bordered card, one row each, round − / + buttons */
+.bk-pax.hs-pax {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: none;
+}
+.hs-pax .bk-pax__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.hs-pax .bk-pax__row + .bk-pax__row {
+  border-top: 1px solid var(--border);
+}
+.hs-pax .bk-pax__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hs-pax .bk-pax__text b {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+}
+.hs-pax .bk-pax__text small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
+.hs-pax .bk-pax__stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: auto;
+  overflow: visible;
+  border: 0;
+  background: none;
+}
+.hs-pax .bk-pax__stepper button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-full);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.hs-pax .bk-pax__stepper button:hover:not(:disabled) {
+  background: var(--surface);
+}
+.hs-pax .bk-pax__stepper button:disabled {
+  border-color: var(--border);
+  color: var(--ash);
+  cursor: not-allowed;
+}
+.hs-pax .bk-pax__stepper output {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  border: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* foot: what you picked, then the orange Search pill */
+.hs-sheet .ui-sheet__foot {
+  padding: 14px 24px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 -6px 16px color-mix(in srgb, var(--black) 6%, transparent);
+}
+.hs-foot__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+.hs-foot__summary b {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs-foot__summary span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.hs-go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  padding: 0 24px;
+  border: 1px solid var(--brand-edge);
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: var(--on-brand);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.hs-go:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+.hs-go svg {
+  width: 18px;
+  height: 18px;
+}
+.hs-go:disabled {
+  border-color: var(--border);
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* phones: full screen, a little tighter */
+@media (max-width: 767px) {
+  .hs-sheet .ui-sheet__head {
+    min-height: 64px;
+    padding: 0 12px 0 16px;
+  }
+  .hs-sheet .ui-sheet__heading h2 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+  .hs-sheet .ui-sheet__body {
+    gap: 24px;
+    padding: 16px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  .hs-chips {
+    margin: 0 -16px;
+    padding: 2px 16px 4px;
+  }
+  .hs-chips--wrap {
+    margin: 0;
+    padding: 0;
+  }
+  .hs-sheet .ui-sheet__foot {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* holiday-type cards (HolidaySearchSheet): three across — the looping clip
+   (no border), and under it a square checkbox + the name, centred. Picked:
+   the checkbox fills orange with a tick. Phones: one per row, the clip on the
+   left and the label beside it. */
+.hs-types {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hs-type {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.hs-type:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+.hs-type__box {
+  display: block;
+}
+.hs-type__media {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+}
+.hs-type__media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.hs-type__glyph {
+  width: 48px;
+  height: 48px;
+  color: var(--brand);
+}
+.hs-type__check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--ash);
+  border-radius: calc(var(--radius-sm) / 2);
+  background: var(--card);
+  color: transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.hs-type:hover .hs-type__check {
+  border-color: var(--muted);
+}
+.hs-type__check svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3.2;
+}
+.hs-type.is-on .hs-type__check {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+.hs-type__name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+@media (max-width: 767px) {
+  .hs-types {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .hs-type {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+  }
+  .hs-type__box {
+    flex: none;
+    width: 140px;
+  }
+  .hs-type__name {
+    flex: 1;
+    justify-content: flex-start;
+    font-size: 16px;
+    text-align: left;
+  }
+}
+
+/* foot: what's picked on the left, Continue on the right */
+.hs-sheet .ui-sheet__foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.hs-sheet .hs-foot__summary {
+  flex: 1;
+  margin-bottom: 0;
+}
+.hs-sheet .hs-go {
+  flex: none;
+  width: auto;
+  min-width: 148px;
+}

@@ -1,100 +1,94 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import type { Metadata } from 'next';
+import { applyPageSeo } from '@/features/seo/server';
 import Link from 'next/link';
-import { Check, Shield, Star, Zap, TrendingUp, Users, Award } from 'lucide-react';
-import './become-agent.css';
+import { ArrowRight, Award, Check, Shield, TrendingUp, Users, Zap } from 'lucide-react';
+import NavyHeader from '@/components/marketing/Header/NavyHeader';
+import NavyFooter from '@/components/marketing/Footer/NavyFooter';
+import { FactList, HelpCard, PageShell, SideCard } from '@/components/site/page/PageShell';
+
+const PAGE_METADATA: Metadata = {
+  title: 'Become a Partner | Aapka Tourism',
+  description: 'Join the Aapka Tourism partner programme for partner prices, priority support and your own booking dashboard.',
+};
+
+export function generateMetadata(): Promise<Metadata> {
+  return applyPageSeo(PAGE_METADATA);
+}
+
+const FEATURES = [
+  { icon: TrendingUp, title: 'Partner discounts', text: 'Exclusive partner prices on all our packages.' },
+  { icon: Zap, title: 'Priority support', text: 'Faster answers from our team in Dubai and Delhi.' },
+  { icon: Shield, title: 'Partner dashboard', text: 'Your own dashboard for bookings and clients.' },
+  { icon: Users, title: 'Booking management', text: 'Follow every booking in real time.' },
+  { icon: Award, title: 'Commissions & invoices', text: 'Track your commission and download invoices.' },
+];
+
+const STEPS = [
+  { title: 'Subscribe', text: 'Pay the yearly fee securely online.' },
+  { title: 'Get your login', text: 'Your partner account is activated straight away.' },
+  { title: 'Book at partner prices', text: 'Log in and book holidays for your clients.' },
+];
 
 export default function BecomeAgentPage() {
-  const router = useRouter();
-
-  const handleSubscribe = () => {
-    router.push('/become-partner/subscribe');
-  };
-
-  const features = [
-    { icon: TrendingUp, text: 'Access to exclusive partner discounts on all packages' },
-    { icon: Zap, text: 'Priority customer support' },
-    { icon: Shield, text: 'Dedicated partner dashboard' },
-    { icon: Users, text: 'Real-time booking management' },
-    { icon: Award, text: 'Commission tracking and invoicing' },
-  ];
-
   return (
-    <div className='become-agent-page'>
-      <div className='become-agent-container'>
-        {/* Premium Badge */}
-        <div className='premium-badge'>
-          <Star size={18} />
-          <span>PREMIUM MEMBERSHIP</span>
-        </div>
-
-        <div className='become-agent-header'>
-          <h1 className='become-agent-title'>
-            Become AAPKA <span className='title-highlight'>Partner</span>
-          </h1>
-          <p className='become-agent-subtitle'>
-            Join our network of Aapka travel partners and unlock exclusive benefits
-          </p>
-        </div>
-
-        <div className='pricing-card-container'>
-          <div className='pricing-card'>
-            {/* Popular Badge */}
-            <div className='popular-badge'>
-              <TrendingUp size={14} />
-              <span>Most Popular</span>
-            </div>
-
-            <div className='pricing-card-header'>
-              <div className='pricing-card-title-wrapper'>
-                <Shield size={24} className='title-icon' />
-                <h2 className='pricing-card-title'>Aapka Partner Premium</h2>
+    <>
+      <NavyHeader />
+      <PageShell
+        kicker="Aapka Partner Programme"
+        title="Become an Aapka Partner"
+        text="Join our network of travel partners and book Dubai holidays for your clients at partner prices."
+        image="/images/stock/traveller-downtown.jpg"
+        position="center 40%"
+        aside={
+          <>
+            <SideCard title="Aapka Partner Premium" tone="lift">
+              <div className="xp-plan__price">
+                <b>AED 110</b>
+                <span>per year</span>
               </div>
-              <div className='pricing-card-price'>
-                <span className='price-amount'>110</span>
-                <span className='price-currency'>AED</span>
-              </div>
-              <p className='pricing-card-period'>per year</p>
-              <div className='price-savings'>
-                <span>Best value for Aapka travel partners</span>
-              </div>
-            </div>
-
-            <div className='pricing-card-features'>
-              <div className='features-header'>
-                <h3>What's Included</h3>
-              </div>
-              <ul className='features-list'>
-                {features.map((feature, index) => {
-                  const IconComponent = feature.icon;
-                  return (
-                    <li key={index} className='feature-item'>
-                      <div className='feature-icon-wrapper'>
-                        <IconComponent size={18} className='feature-icon' />
-                      </div>
-                      <span>{feature.text}</span>
-                    </li>
-                  );
-                })}
+              <p className="xp-sidecard__text">Best value for Aapka travel partners.</p>
+              <Link className="xp-btn xp-btn--brand xp-btn--block" href="/become-partner/subscribe">
+                Subscribe now
+                <ArrowRight aria-hidden="true" />
+              </Link>
+              <ul className="xp-plan__trust">
+                <li>
+                  <Check aria-hidden="true" />
+                  Secure payment via CCAvenue
+                </li>
+                <li>
+                  <Check aria-hidden="true" />
+                  Instant activation after payment
+                </li>
               </ul>
-            </div>
-
-            <button
-              onClick={handleSubscribe}
-              className='pricing-card-button'
-            >
-              <span>Subscribe Now</span>
-              <Zap size={18} />
-            </button>
-
-            <div className='pricing-card-footer'>
-              <p>✓ Secure payment via CCAvenue</p>
-              <p>✓ Instant activation after payment</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+            </SideCard>
+            <HelpCard text="Questions about the partner programme? Talk to our team." />
+          </>
+        }
+      >
+        <section className="xp-card">
+          <h2>What&apos;s included</h2>
+          <FactList items={FEATURES} />
+        </section>
+        <section className="xp-card">
+          <h2>How it works</h2>
+          <ol className="xp-steps">
+            {STEPS.map((s, i) => (
+              <li key={s.title}>
+                <span className="xp-steps__num" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <b>{s.title}</b>
+                {s.text}
+              </li>
+            ))}
+          </ol>
+        </section>
+        <p className="xp-hint">
+          Already a partner? <Link href="/agent/login" className="xp-terms-link">Log in here</Link>
+        </p>
+      </PageShell>
+      <NavyFooter />
+    </>
   );
 }

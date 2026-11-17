@@ -1,0 +1,46 @@
+/* TrustBadge — avatar stack + stars + claim (components/site/TrustBadge.tsx).
+   Faces: initials on soft tints, ink ring, overlapping like a CRM assignee
+   stack. Tokens from theme.css. */
+
+:where(.at-site) .trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px 5px 6px;
+  border: 1px solid var(--lx-border-strong);
+  border-radius: 999px;
+  background: var(--lx-surface);
+  box-shadow: var(--lx-shadow-sm);
+}
+
+:where(.at-site) .trust-badge__faces { display: inline-flex; }
+:where(.at-site) .trust-badge__face {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--lx-surface);
+  border-radius: 50%;
+  background: var(--lx-avatar-bg);
+  color: var(--lx-avatar-fg);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+:where(.at-site) .trust-badge__face + .trust-badge__face { margin-left: -9px; }
+:where(.at-site) .trust-badge__face:nth-child(2) { background: var(--lx-brand-soft-hover); color: var(--lx-brand-text); }
+:where(.at-site) .trust-badge__face:nth-child(3) { background: var(--lx-green-soft); color: var(--lx-success-text); }
+:where(.at-site) .trust-badge__face:nth-child(4) { background: var(--lx-blue-soft); color: var(--lx-blue-text); }
+
+:where(.at-site) .trust-badge__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  color: var(--lx-text-soft);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+:where(.at-site) .trust-badge__stars { display: inline-flex; gap: 1px; color: var(--lx-amber); }
+:where(.at-site) .trust-badge__stars svg { width: 12px; height: 12px; fill: currentColor; stroke-width: 0; }

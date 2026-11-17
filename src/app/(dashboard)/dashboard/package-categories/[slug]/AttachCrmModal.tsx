@@ -51,7 +51,7 @@ export function AttachCrmModal({
   };
 
   return (
-    <div className='modal_overlay' onClick={onClose}>
+    <div className='modal_overlay'>
       <div className='modal' onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
         <div className='modal_header'>
           <h4>Attach CRM Package</h4>

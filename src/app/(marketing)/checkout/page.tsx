@@ -1,19 +1,26 @@
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useCart } from '@/context/CartContext';
+import { useBooking } from '@/context/BookingContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft,
-  Upload,
-  X,
-  CreditCard,
-  Wallet,
   AlertCircle,
-  Loader2,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  FileText,
   Globe,
+  ImagePlus,
+  Loader2,
+  Lock,
+  MapPin,
+  ShieldCheck,
+  Users,
+  X,
 } from 'lucide-react';
+import Select from '@/components/site/ui/Select';
+import DateField from '@/components/site/ui/DateField';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
@@ -24,6 +31,9 @@ import {
 import { parseDateStringToLocal } from '@/lib/utils';
 import { useAddonNames, useAgentStatus } from '@/hooks/use-marketing-queries';
 import { AgentDiscountBadge } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
+import ExHeader from '../Home/ex/ExHeader';
+import { EX_FONTS } from '../Home/ex/fonts';
+import '../Home/ex/ex.css';
 import './checkout.css';
 
 interface PassengerData {
@@ -64,13 +74,32 @@ type TourPickupInfo = {
 
 function CheckoutPageContent() {
   const router = useRouter();
-  const { cartItems, getTotalPrice, clearCart } = useCart();
+  const {
+    booking,
+    isValidating,
+    bookingError,
+    isLoaded: isBookingLoaded,
+  } = useBooking();
+  // One package per booking. The rules below stay written over a list so
+  // every per-item check (tours, offers, visa, documents) reads as before.
+  const bookingItems = useMemo(() => (booking ? [booking] : []), [booking]);
+  // Only a server-validated price counts
+  const getTotalPrice = () => (booking?.validated ? booking.price : 0);
+  const isPriced = !!booking?.validated && !isValidating && !bookingError;
+
+  // "Book now" arrives from part-way down the package page; start at the top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [paymentType, setPaymentType] = useState<'half' | 'full'>('full');
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [platformFeePercentage, setPlatformFeePercentage] = useState<number>(0);
+  const [closedSections, setClosedSections] = useState<Record<string, boolean>>(
+    {}
+  );
   const { addonNames } = useAddonNames();
 
   // Subscribed agents must pay in full. `isAgentStatusResolved` gates the
@@ -79,20 +108,20 @@ function CheckoutPageContent() {
   const isSubscribedAgent = !!agentData?.hasActiveSubscription;
   const isAgentStatusResolved = !isAgentStatusPending;
 
-  // Check if any cart item is a tour (not a package)
+  // Check if the booking is a tour (not a package)
   // Tours typically have "tour" in the category slug/name
   const isFullPaymentOnlySlug = (slug: string) => {
     const s = slug.toLowerCase();
     return s.includes('tour') || s === 'marina-cruise-dinner';
   };
 
-  const isTourCheckout = cartItems.some(item =>
+  const isTourCheckout = bookingItems.some(item =>
     isFullPaymentOnlySlug(item.categorySlug || '')
   );
 
   // Per-package rule from packages.accept_payment (server-validated).
-  // One 'full' package in the cart makes the whole cart full-payment.
-  const hasFullPaymentOnlyPackage = cartItems.some(
+  // A package marked accept_payment=.full. makes the booking full-payment.
+  const hasFullPaymentOnlyPackage = bookingItems.some(
     item => item.acceptPayment === 'full'
   );
 
@@ -103,51 +132,51 @@ function CheckoutPageContent() {
     isTourCheckout || hasFullPaymentOnlyPackage || isSubscribedAgent;
 
   // Pickup location only for real UAE tours, not marina cruise
-  const showTourPickup = cartItems.some(item =>
+  const showTourPickup = bookingItems.some(item =>
     (item.categorySlug || '').toLowerCase().includes('tour')
   );
 
-  // Check if cart has only tours (no packages)
+  // Check if the booking has only tours (no packages)
   const hasOnlyTours =
-    cartItems.length > 0 &&
-    cartItems.every(item => isFullPaymentOnlySlug(item.categorySlug || ''));
+    bookingItems.length > 0 &&
+    bookingItems.every(item => isFullPaymentOnlySlug(item.categorySlug || ''));
 
-  // Check if cart has packages (not tours)
-  const hasPackages = cartItems.some(
+  // Check if the booking has packages (not tours)
+  const hasPackages = bookingItems.some(
     item => !isFullPaymentOnlySlug(item.categorySlug || '')
   );
 
-  // Show passport expiry only if cart has packages (or both tours and packages)
-  // Hide passport expiry if cart has only tours
+  // Show passport expiry only for packages
+  // Hide passport expiry for tours
   const shouldShowPassportExpiry = hasPackages;
 
-  // Check if any cart item is a flexible date package
-  const hasFlexibleDatePackage = cartItems.some(item => {
+  // Check if the booking is a flexible date package
+  const hasFlexibleDatePackage = bookingItems.some(item => {
     const categorySlug = item.categorySlug?.toLowerCase() || '';
     return categorySlug === 'flexible-date-packages';
   });
 
-  // Check if any cart item is an offer package
-  const hasOfferPackage = cartItems.some(item => {
+  // Check if the booking is an offer package
+  const hasOfferPackage = bookingItems.some(item => {
     const categorySlug = item.categorySlug?.toLowerCase() || '';
     return categorySlug === 'offer-packages';
   });
 
-  // Check if any cart item has visa selected
-  const hasVisaSelected = cartItems.some(item => item.withVisa === true);
+  // Check if the booking has visa selected
+  const hasVisaSelected = bookingItems.some(item => item.withVisa === true);
 
-  const tourCartItems = useMemo(
+  const tourItems = useMemo(
     () =>
-      cartItems.filter(item => {
+      bookingItems.filter(item => {
         const categorySlug = item.categorySlug?.toLowerCase() || '';
         return categorySlug.includes('tour');
       }),
-    [cartItems]
+    [bookingItems]
   );
 
-  const tourCartItemIds = useMemo(
-    () => tourCartItems.map(item => item.packageId).join(','),
-    [tourCartItems]
+  const tourItemIds = useMemo(
+    () => tourItems.map(item => item.packageId).join(','),
+    [tourItems]
   );
 
   const [tourPickupLocations, setTourPickupLocations] = useState<
@@ -165,7 +194,7 @@ function CheckoutPageContent() {
 
   // Load tour pickup locations from package data (read-only at checkout)
   useEffect(() => {
-    if (!isTourCheckout || tourCartItems.length === 0) {
+    if (!isTourCheckout || tourItems.length === 0) {
       setTourPickupLocations([]);
       return;
     }
@@ -176,7 +205,7 @@ function CheckoutPageContent() {
       setLoadingTourPickups(true);
       try {
         const results = await Promise.all(
-          tourCartItems.map(async item => {
+          tourItems.map(async item => {
             try {
               const res = await fetch(
                 `/api/packages/${encodeURIComponent(item.packageId)}`
@@ -208,7 +237,7 @@ function CheckoutPageContent() {
         const combinedPickup = results
           .filter(r => r.pickupLocation)
           .map(r =>
-            tourCartItems.length > 1
+            tourItems.length > 1
               ? `${r.packageName}: ${r.pickupLocation}`
               : r.pickupLocation
           )
@@ -232,18 +261,18 @@ function CheckoutPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [isTourCheckout, tourCartItemIds, tourCartItems]);
+  }, [isTourCheckout, tourItemIds, tourItems]);
 
   // Calculate total passengers
-  const totalAdults = cartItems.reduce(
+  const totalAdults = bookingItems.reduce(
     (sum, item) => sum + (item.isSoloTraveller ? 1 : item.adults),
     0
   );
-  const totalChildren = cartItems.reduce(
+  const totalChildren = bookingItems.reduce(
     (sum, item) => sum + (item.isSoloTraveller ? 0 : item.children),
     0
   );
-  const totalInfants = cartItems.reduce(
+  const totalInfants = bookingItems.reduce(
     (sum, item) => sum + (item.infants || 0),
     0
   );
@@ -290,7 +319,7 @@ function CheckoutPageContent() {
 
   // Sync infantDocuments when totalInfants changes
   useEffect(() => {
-    const inf = cartItems.reduce((s, i) => s + (i.infants || 0), 0);
+    const inf = bookingItems.reduce((s, i) => s + (i.infants || 0), 0);
     setInfantDocuments(prev => {
       if (prev.length === inf) return prev;
       return Array.from(
@@ -305,15 +334,17 @@ function CheckoutPageContent() {
           }
       );
     });
-  }, [cartItems]);
+  }, [bookingItems]);
 
-  // Update passengers when cart changes
+  // Update passengers when the booking changes
   useEffect(() => {
-    const newTotal = cartItems.reduce(
+    const newTotal = bookingItems.reduce(
       (sum, item) => sum + item.adults + item.children,
       0
     );
-    if (newTotal !== totalPassengers) {
+    // Compare with the forms we have, not this render's total: after a
+    // reload the booking arrives after the first render.
+    if (newTotal !== passengers.length) {
       const newPassengers: PassengerData[] = [];
       for (let i = 0; i < newTotal; i++) {
         newPassengers.push({
@@ -339,16 +370,19 @@ function CheckoutPageContent() {
       }
       setPassengers(newPassengers);
     }
-  }, [cartItems]);
+  }, [bookingItems]);
 
-  // Redirect if cart is empty (unless we have an error param from payment callback – e.g. Oman visa users)
+  // Nothing being booked: back to the holidays list (unless we have an error
+  // param from payment callback – e.g. Oman visa users). Waits for the stored
+  // booking to load, so a refresh on /checkout keeps the booking.
   const searchParams = useSearchParams();
   const hasPaymentError = !!searchParams?.get('error');
+  const paymentErrorCode = searchParams?.get('error') || null;
   useEffect(() => {
-    if (cartItems.length === 0 && !hasPaymentError) {
-      router.push('/cart');
+    if (isBookingLoaded && bookingItems.length === 0 && !hasPaymentError) {
+      router.replace('/holidays');
     }
-  }, [cartItems, router, hasPaymentError]);
+  }, [isBookingLoaded, bookingItems, router, hasPaymentError]);
 
   // Document display logic:
   // - For tours: never show documents
@@ -434,9 +468,11 @@ function CheckoutPageContent() {
 
   // Helper function to format price - always shows AED
   const formatPrice = (price: number): string => {
-    return `AED ${price.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+    const rounded = Math.round(price * 100) / 100;
+    const digits = Number.isInteger(rounded) ? 0 : 2;
+    return `AED ${rounded.toLocaleString('en-US', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
     })}`;
   };
 
@@ -531,7 +567,7 @@ function CheckoutPageContent() {
         newErrors[`passenger_${actualIndex}_lastName`] =
           'Last name is required';
       }
-      // Only validate passport expiry if it should be shown (has packages in cart)
+      // Only validate passport expiry if it should be shown (packages, not tours)
       if (shouldShowPassportExpiry && !passenger.passportExpiry) {
         newErrors[`passenger_${actualIndex}_passportExpiry`] =
           'Passport expiry date is required';
@@ -641,21 +677,20 @@ function CheckoutPageContent() {
   const handlePayment = async () => {
     if (!validateForm()) {
       toast.error('Please fill all required fields correctly');
-      // Scroll to first error
-      const firstErrorKey = Object.keys(errors)[0];
-      if (firstErrorKey) {
+      // Scroll to the first error, once the new errors have rendered
+      requestAnimationFrame(() => {
         const element = document.querySelector(
-          `[data-field="${firstErrorKey}"]`
+          '.co .ui-field.has-error, .co .co-file.is-error'
         );
         element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      });
       return;
     }
 
     // Validate minimum adults and total passengers for all packages
-    for (const item of cartItems) {
+    for (const item of bookingItems) {
       // A solo traveller booking is exactly one adult and no children/infants,
-      // whatever the raw counts say. Mirrors how /api/cart/validate prices it.
+      // whatever the raw counts say. Mirrors how /api/booking/validate prices it.
       const effectiveAdults = item.isSoloTraveller ? 1 : item.adults;
       const effectiveChildren = item.isSoloTraveller ? 0 : item.children;
       const effectiveInfants = item.isSoloTraveller ? 0 : item.infants || 0;
@@ -665,7 +700,7 @@ function CheckoutPageContent() {
         effectiveAdults + effectiveChildren + effectiveInfants;
       if (totalPassengers === 0) {
         toast.error(
-          `Please select at least one passenger for "${item.packageName}". Please update your cart.`
+          `Please select at least one passenger for "${item.packageName}". Please update your booking.`
         );
         return;
       }
@@ -673,7 +708,7 @@ function CheckoutPageContent() {
       // All packages require at least 1 adult
       if (effectiveAdults === 0) {
         toast.error(
-          `At least 1 adult is required for "${item.packageName}". Please update your cart.`
+          `At least 1 adult is required for "${item.packageName}". Please update your booking.`
         );
         return;
       }
@@ -687,13 +722,13 @@ function CheckoutPageContent() {
         effectiveAdults < 2
       ) {
         toast.error(
-          `Offer packages require a minimum of 2 adults. Please update "${item.packageName}" in your cart.`
+          `Offer packages require a minimum of 2 adults. Please update "${item.packageName}" in your booking.`
         );
         return;
       }
     }
 
-    // Half payment is not allowed for this cart
+    // Half payment is not allowed for this booking
     if (requiresFullPayment && paymentType === 'half') {
       toast.error(
         isSubscribedAgent
@@ -706,6 +741,14 @@ function CheckoutPageContent() {
 
     if (!userLocation) {
       toast.error('Please wait while we detect your location...');
+      return;
+    }
+
+    // Never charge a price the server hasn't confirmed
+    if (!isPriced) {
+      toast.error(
+        bookingError || 'Please wait while we confirm the price of your booking.'
+      );
       return;
     }
 
@@ -788,7 +831,8 @@ function CheckoutPageContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cartItems: cartItems.map(item => ({
+          // API field (stored as bookings.cart_items) - always one booking now
+          cartItems: bookingItems.map(item => ({
             packageId: item.packageId,
             packageName: item.packageName,
             categorySlug: item.categorySlug,
@@ -1005,386 +1049,393 @@ function CheckoutPageContent() {
     }
   };
 
-  if (cartItems.length === 0) {
-    if (hasPaymentError) {
+  if (bookingItems.length === 0) {
+    if (hasPaymentError && isBookingLoaded) {
       // Payment callback sent user here with error (e.g. Oman visa user, decryption failed)
-      const err = searchParams?.get('error') || 'payment_failed';
-      const msg =
-        err === 'payment_cancelled'
-          ? 'Payment was cancelled.'
-          : err === 'payment_processing_failed'
-            ? 'Payment processing failed. Please try again.'
-            : 'Payment could not be completed. Please try again.';
       return (
-        <div className='checkout-page'>
-          <div
-            className='checkout-container'
-            style={{ textAlign: 'center', padding: '48px 24px' }}
-          >
-            <h2>Payment Error</h2>
-            <p style={{ marginBottom: 24 }}>{msg}</p>
-            <div
-              style={{
-                display: 'flex',
-                gap: 12,
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-              }}
-            >
-              <Link
-                href='/visas/apply-for-oman-visa'
-                className='checkout-back-button'
-              >
-                Oman Visa Application
-              </Link>
-              <Link href='/' className='checkout-back-button'>
-                Back to Home
-              </Link>
+        <CheckoutShell>
+          <div className='co'>
+            <div className='container'>
+              <div className='co-empty'>
+                <span className='co-empty__icon' aria-hidden='true'>
+                  <AlertCircle strokeWidth={2} />
+                </span>
+                <h1>Payment error</h1>
+                <p>{paymentErrorText(paymentErrorCode)}</p>
+                <div className='co-empty__actions'>
+                  <Link
+                    href='/visas/apply-for-oman-visa'
+                    className='ui-btn ui-btn--outline ui-btn--lg'
+                  >
+                    Oman Visa Application
+                  </Link>
+                  <Link href='/' className='ui-btn ui-btn--dark ui-btn--lg'>
+                    Back to Home
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </CheckoutShell>
       );
     }
-    return null; // Will redirect to cart
+    // Loading the stored booking, or on the way to /holidays
+    return <CheckoutLoading />;
   }
 
-  return (
-    <div className='checkout-page'>
-      <div className='checkout-container'>
-        <div className='checkout-header'>
-          <Link href='/cart' className='checkout-back-button'>
-            <ArrowLeft size={20} />
-            Back to Cart
-          </Link>
-          <h1>Checkout</h1>
-        </div>
+  const item = bookingItems[0];
+  const isOtherCountry = passengers[0]?.country === 'Other';
+  const backHref =
+    item.returnPath ||
+    (item.categorySlug === 'marina-cruise-dinner'
+      ? `/marina-cruise-dinner/${item.packageSlug}`
+      : `/category/${item.categorySlug}/${item.packageSlug}`);
+  const travelDate = item.selectedDate
+    ? parseDateStringToLocal(item.selectedDate)
+    : null;
+  const dateLabel = travelDate
+    ? format(travelDate, 'EEE, d MMM yyyy')
+    : 'Not selected';
+  const travellersLabel = item.isSoloTraveller
+    ? `Solo traveller · ${item.soloTravellerGender || 'N/A'}`
+    : [
+        `${item.adults} Adult${item.adults !== 1 ? 's' : ''}`,
+        item.children > 0
+          ? `${item.children} Child${item.children !== 1 ? 'ren' : ''}`
+          : null,
+        (item.infants || 0) > 0
+          ? `${item.infants} Infant${item.infants !== 1 ? 's' : ''}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+  const visaCount =
+    (item.visaForAdults || 0) +
+    (item.visaForChildren || 0) +
+    (item.visaForInfants || 0);
+  const duration =
+    item.nights || item.days
+      ? [
+          item.days ? `${item.days} Day${item.days !== 1 ? 's' : ''}` : null,
+          item.nights
+            ? `${item.nights} Night${item.nights !== 1 ? 's' : ''}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' / ')
+      : null;
 
-        <div className='checkout-content'>
-          <div className='checkout-form-section'>
-            {passengers
-              .map((passenger, index) => {
-                // If "Other" is selected, only show the first passenger
-                const isOtherCountry = passengers[0]?.country === 'Other';
-                if (isOtherCountry && index > 0) {
-                  return null; // Don't render additional passengers for "Other"
-                }
+  // Offer add-ons (ids → names) and Marina add-ons (server labels)
+  const offerAddonIds: string[] =
+    item.categorySlug === 'offer-packages'
+      ? [
+          ...(item.addonDeals || []),
+          ...(item.addonHotelServices || []),
+          ...(item.addonPrivateTransfers || []),
+        ]
+      : [];
+  const offerAddonLabels = offerAddonIds
+    .map(id => addonNames[id])
+    .filter((name): name is string => Boolean(name));
+  const marinaAddonLabels =
+    item.categorySlug === 'marina-cruise-dinner'
+      ? item.marinaAddonLabels?.length
+        ? item.marinaAddonLabels
+        : item.marinaAddons || []
+      : [];
+
+  const fullBase = getTotalPrice();
+  const halfBase = getTotalPrice() / 2;
+  const withFee = (amount: number) =>
+    amount + (amount * platformFeePercentage) / 100;
+  const baseAmount = paymentType === 'half' ? halfBase : fullBase;
+  const platformFee = (baseAmount * platformFeePercentage) / 100;
+  const amountToPay = baseAmount + platformFee;
+  const canPay =
+    isPriced && !isSubmitting && !isLoadingLocation && !!userLocation;
+
+  const sectionOpen = (id: string, errorPrefix?: string) =>
+    !closedSections[id] ||
+    (!!errorPrefix &&
+      Object.keys(errors).some(key => key.startsWith(errorPrefix)));
+  const toggleSection = (id: string) =>
+    setClosedSections(prev => ({ ...prev, [id]: !prev[id] }));
+  const showPaymentType = isPriced && !!userLocation && isAgentStatusResolved;
+  const hasDealPrice =
+    (item.hasActiveDeal || item.isDiscountActive) &&
+    !!item.originalPrice &&
+    item.originalPrice > item.price;
+
+  return (
+    <CheckoutShell>
+      <div className='co'>
+        <div className='container'>
+          <header className='co-head'>
+            <div>
+              <h1>Checkout</h1>
+              <p className='co-head__sub'>
+                Fill in each traveller as on their passport, then pay to
+                confirm your booking.
+              </p>
+            </div>
+            <p className='co-head__alt'>
+              Need a change? <Link href={backHref}>Change booking</Link>
+            </p>
+          </header>
+
+          {hasPaymentError ? (
+            <p className='ui-alert co-alert' role='alert'>
+              <AlertCircle size={16} strokeWidth={2} aria-hidden='true' />
+              <span>
+                {paymentErrorText(paymentErrorCode)} Your booking is still
+                here - check the details and pay again.
+              </span>
+            </p>
+          ) : null}
+
+          <div className='co-body'>
+            <div className='co-main'>
+              {passengers.map((passenger, index) => {
+                if (isOtherCountry && index > 0) return null;
+
+                const isLead = index === 0;
+                const isChild = index >= totalAdults;
+                const err = (field: keyof PassengerData) =>
+                  errors[`passenger_${index}_${field}`];
+                const fieldKey = (field: keyof PassengerData) =>
+                  `passenger_${index}_${field}`;
+                const sectionId = `traveller-${index}`;
+                const open =
+                  sectionOpen(sectionId, `passenger_${index}_`) ||
+                  (isLead && !!errors.tourPickupLocation);
 
                 return (
-                  <div key={index} className='passenger-section'>
-                    <h2 className='passenger-section-title'>
-                      {index === 0
+                  <Section
+                    key={index}
+                    id={sectionId}
+                    title={
+                      isLead
                         ? 'Lead Passenger Information'
-                        : index >= totalAdults
-                          ? `Child ${index - totalAdults + 1} Documents`
-                          : `Passenger ${index + 1}`}
-                    </h2>
-
-                    <div className='passenger-form'>
-                      {/* Salutation */}
-                      <div className='form-group'>
-                        <label>
-                          Salutation <span className='required'>*</span>
-                        </label>
-                        <select
-                          value={passenger.salutation}
-                          onChange={e =>
-                            updatePassenger(index, 'salutation', e.target.value)
-                          }
-                          className={
-                            errors[`passenger_${index}_salutation`]
-                              ? 'error'
-                              : ''
-                          }
-                          data-field={`passenger_${index}_salutation`}
-                        >
-                          <option value='Mr'>Mr</option>
-                          <option value='Mrs'>Mrs</option>
-                          <option value='Ms'>Ms</option>
-                          <option value='Miss'>Miss</option>
-                        </select>
-                        {errors[`passenger_${index}_salutation`] && (
-                          <span className='error-message'>
-                            {errors[`passenger_${index}_salutation`]}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* First Name */}
-                      <div className='form-group'>
-                        <label>
-                          First Name <span className='required'>*</span>
-                        </label>
+                        : isChild
+                          ? `Child ${index - totalAdults + 1}`
+                          : `Passenger ${index + 1}`
+                    }
+                    sub={
+                      isLead
+                        ? 'We send the booking confirmation to these contact details.'
+                        : isChild
+                          ? 'Child traveller, details as on passport'
+                          : 'Adult traveller, details as on passport'
+                    }
+                    open={open}
+                    onToggle={() => toggleSection(sectionId)}
+                    scope='mobile'
+                  >
+                    <div className='co-name'>
+                      <Field
+                        label='Salutation'
+                        required
+                        error={err('salutation')}
+                      >
+                        <div data-field={fieldKey('salutation')}>
+                          <Select
+                            value={passenger.salutation}
+                            onChange={v =>
+                              updatePassenger(index, 'salutation', v)
+                            }
+                            options={SALUTATIONS}
+                            searchable={false}
+                            invalid={!!err('salutation')}
+                            aria-label='Salutation'
+                          />
+                        </div>
+                      </Field>
+                      <Field
+                        label='First Name'
+                        required
+                        error={err('firstName')}
+                        htmlFor={fieldKey('firstName')}
+                      >
                         <input
+                          id={fieldKey('firstName')}
                           type='text'
-                          placeholder='Enter First Name'
+                          className='ui-input'
+                          placeholder='As on passport'
+                          autoComplete={isLead ? 'given-name' : 'off'}
                           value={passenger.firstName}
                           onChange={e =>
                             updatePassenger(index, 'firstName', e.target.value)
                           }
-                          className={
-                            errors[`passenger_${index}_firstName`]
-                              ? 'error'
-                              : ''
-                          }
-                          data-field={`passenger_${index}_firstName`}
+                          data-field={fieldKey('firstName')}
                         />
-                        {errors[`passenger_${index}_firstName`] && (
-                          <span className='error-message'>
-                            {errors[`passenger_${index}_firstName`]}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Last Name */}
-                      <div className='form-group'>
-                        <label>
-                          Last Name <span className='required'>*</span>
-                        </label>
+                      </Field>
+                      <Field
+                        label='Last Name'
+                        required
+                        error={err('lastName')}
+                        htmlFor={fieldKey('lastName')}
+                      >
                         <input
+                          id={fieldKey('lastName')}
                           type='text'
-                          placeholder='Enter Last Name'
+                          className='ui-input'
+                          placeholder='As on passport'
+                          autoComplete={isLead ? 'family-name' : 'off'}
                           value={passenger.lastName}
                           onChange={e =>
                             updatePassenger(index, 'lastName', e.target.value)
                           }
-                          className={
-                            errors[`passenger_${index}_lastName`] ? 'error' : ''
-                          }
-                          data-field={`passenger_${index}_lastName`}
+                          data-field={fieldKey('lastName')}
                         />
-                        {errors[`passenger_${index}_lastName`] && (
-                          <span className='error-message'>
-                            {errors[`passenger_${index}_lastName`]}
-                          </span>
-                        )}
-                      </div>
+                      </Field>
+                    </div>
 
-                      {/* Email - Only for first passenger */}
-                      {index === 0 && (
-                        <div className='form-group'>
-                          <label>
-                            Email Address <span className='required'>*</span>
-                          </label>
-                          <input
-                            type='email'
-                            placeholder='Enter Email Address'
-                            value={passenger.email}
-                            onChange={e =>
-                              updatePassenger(index, 'email', e.target.value)
-                            }
-                            className={
-                              errors[`passenger_${index}_email`] ? 'error' : ''
-                            }
-                            data-field={`passenger_${index}_email`}
-                          />
-                          {errors[`passenger_${index}_email`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_email`]}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Phone - Only for first passenger */}
-                      {index === 0 && (
-                        <div className='form-group'>
-                          <label>
-                            Phone Number <span className='required'>*</span>
-                          </label>
-                          <input
-                            type='tel'
-                            placeholder='Enter Phone Number'
-                            value={passenger.phone}
-                            onChange={e =>
-                              updatePassenger(index, 'phone', e.target.value)
-                            }
-                            className={
-                              errors[`passenger_${index}_phone`] ? 'error' : ''
-                            }
-                            data-field={`passenger_${index}_phone`}
-                          />
-                          {errors[`passenger_${index}_phone`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_phone`]}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* WhatsApp - Only for first passenger */}
-                      {index === 0 && (
-                        <div className='form-group'>
-                          <label>
-                            WhatsApp Contact Number{' '}
-                            <span className='required'>*</span>
-                          </label>
-                          <input
-                            type='tel'
-                            placeholder='Enter WhatsApp Number'
-                            value={passenger.whatsapp}
-                            onChange={e =>
-                              updatePassenger(index, 'whatsapp', e.target.value)
-                            }
-                            className={
-                              errors[`passenger_${index}_whatsapp`]
-                                ? 'error'
-                                : ''
-                            }
-                            data-field={`passenger_${index}_whatsapp`}
-                          />
-                          {errors[`passenger_${index}_whatsapp`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_whatsapp`]}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Country - Only for first passenger */}
-                      {index === 0 && (
-                        <div className='form-group'>
-                          <label>
-                            Country <span className='required'>*</span>
-                          </label>
-                          <select
-                            value={passenger.country}
-                            onChange={e =>
-                              updatePassenger(index, 'country', e.target.value)
-                            }
-                            className={
-                              errors[`passenger_${index}_country`]
-                                ? 'error'
-                                : ''
-                            }
-                            data-field={`passenger_${index}_country`}
+                    <div className='ui-grid co-grid'>
+                      {isLead ? (
+                        <>
+                          <Field
+                            label='Email Address'
+                            required
+                            error={err('email')}
+                            htmlFor={fieldKey('email')}
                           >
-                            <option value=''>Select Country</option>
-                            <option value='India'>India</option>
-                            <option value='Other'>Other</option>
-                          </select>
-                          {errors[`passenger_${index}_country`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_country`]}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Nationality - Only for additional passengers and only if India */}
-                      {index > 0 && passengers[0]?.country === 'India' && (
-                        <div className='form-group'>
-                          <label>
-                            Nationality <span className='required'>*</span>
-                          </label>
-                          <select
-                            value={passenger.nationality || ''}
-                            onChange={e =>
-                              updatePassenger(
-                                index,
-                                'nationality',
-                                e.target.value
-                              )
-                            }
-                            className={
-                              errors[`passenger_${index}_nationality`]
-                                ? 'error'
-                                : ''
-                            }
-                            data-field={`passenger_${index}_nationality`}
+                            <input
+                              id={fieldKey('email')}
+                              type='email'
+                              className='ui-input'
+                              placeholder='name@example.com'
+                              autoComplete='email'
+                              value={passenger.email}
+                              onChange={e =>
+                                updatePassenger(index, 'email', e.target.value)
+                              }
+                              data-field={fieldKey('email')}
+                            />
+                          </Field>
+                          <Field
+                            label='Phone Number'
+                            required
+                            error={err('phone')}
+                            htmlFor={fieldKey('phone')}
                           >
-                            <option value=''>Select Nationality</option>
-                            <option value='India'>India</option>
-                            <option value='UAE'>UAE</option>
-                            <option value='USA'>USA</option>
-                            <option value='UK'>UK</option>
-                            <option value='Canada'>Canada</option>
-                            <option value='Australia'>Australia</option>
-                            <option value='Other'>Other</option>
-                          </select>
-                          {errors[`passenger_${index}_nationality`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_nationality`]}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Tour pickup location — real UAE tours only, not marina cruise */}
-                      {index === 0 && showTourPickup && (
-                        <div className='form-group checkout-tour-pickup-text'>
-                          <label>Tour Pickup Location</label>
-                          {loadingTourPickups ? (
-                            <p className='checkout-tour-pickup-loading'>
-                              Loading pickup details...
-                            </p>
-                          ) : (
-                            <div className='checkout-tour-pickup-list'>
-                              {tourPickupLocations.map(tour => (
-                                <div
-                                  key={tour.packageId}
-                                  className='checkout-tour-pickup-item'
-                                >
-                                  {tourCartItems.length > 1 && (
-                                    <strong>{tour.packageName}</strong>
-                                  )}
-                                  <p>
-                                    {tour.pickupLocation.trim() ||
-                                      'Not specified — please contact support'}
-                                  </p>
-                                </div>
-                              ))}
+                            <input
+                              id={fieldKey('phone')}
+                              type='tel'
+                              className='ui-input'
+                              placeholder='With country code'
+                              autoComplete='tel'
+                              value={passenger.phone}
+                              onChange={e =>
+                                updatePassenger(index, 'phone', e.target.value)
+                              }
+                              data-field={fieldKey('phone')}
+                            />
+                          </Field>
+                          <Field
+                            label='WhatsApp Contact Number'
+                            required
+                            error={err('whatsapp')}
+                            htmlFor={fieldKey('whatsapp')}
+                          >
+                            <input
+                              id={fieldKey('whatsapp')}
+                              type='tel'
+                              className='ui-input'
+                              placeholder='With country code'
+                              value={passenger.whatsapp}
+                              onChange={e =>
+                                updatePassenger(
+                                  index,
+                                  'whatsapp',
+                                  e.target.value
+                                )
+                              }
+                              data-field={fieldKey('whatsapp')}
+                            />
+                          </Field>
+                          <Field
+                            label='Country'
+                            required
+                            error={err('country')}
+                            hint={
+                              isOtherCountry && totalPassengers > 1
+                                ? 'Only the lead traveller’s details are needed for this country.'
+                                : undefined
+                            }
+                          >
+                            <div data-field={fieldKey('country')}>
+                              <Select
+                                value={passenger.country}
+                                onChange={v =>
+                                  updatePassenger(index, 'country', v)
+                                }
+                                options={COUNTRIES}
+                                placeholder='Select Country'
+                                searchable={false}
+                                invalid={!!err('country')}
+                                aria-label='Country'
+                              />
                             </div>
-                          )}
-                          {errors.tourPickupLocation && (
-                            <span className='error-message'>
-                              {errors.tourPickupLocation}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                          </Field>
+                        </>
+                      ) : null}
 
-                      {/* Passport Expiry Date - Only show if cart has packages (not only tours) */}
-                      {shouldShowPassportExpiry && (
-                        <div className='form-group'>
-                          <label>
-                            Passport Expiry Date{' '}
-                            <span className='required'>*</span>
-                          </label>
-                          <input
-                            type='date'
+                      {!isLead && passengers[0]?.country === 'India' ? (
+                        <Field
+                          label='Nationality'
+                          required
+                          error={err('nationality')}
+                        >
+                          <div data-field={fieldKey('nationality')}>
+                            <Select
+                              value={passenger.nationality || ''}
+                              onChange={v =>
+                                updatePassenger(index, 'nationality', v)
+                              }
+                              options={NATIONALITIES}
+                              placeholder='Select Nationality'
+                              searchable={false}
+                              invalid={!!err('nationality')}
+                              aria-label='Nationality'
+                            />
+                          </div>
+                        </Field>
+                      ) : null}
+
+                      {shouldShowPassportExpiry ? (
+                        <Field
+                          label='Passport Expiry Date'
+                          required
+                          error={err('passportExpiry')}
+                          htmlFor={fieldKey('passportExpiry')}
+                        >
+                          <DateField
+                            id={fieldKey('passportExpiry')}
                             value={passenger.passportExpiry}
-                            onChange={e =>
-                              updatePassenger(
-                                index,
-                                'passportExpiry',
-                                e.target.value
-                              )
+                            onChange={iso =>
+                              updatePassenger(index, 'passportExpiry', iso)
                             }
-                            className={
-                              errors[`passenger_${index}_passportExpiry`]
-                                ? 'error'
-                                : ''
-                            }
-                            data-field={`passenger_${index}_passportExpiry`}
+                            placeholder='Select expiry date'
+                            invalid={!!err('passportExpiry')}
+                            dataField={fieldKey('passportExpiry')}
                           />
-                          {errors[`passenger_${index}_passportExpiry`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_passportExpiry`]}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                        </Field>
+                      ) : null}
 
-                      {/* Permanent Address - hidden when cart has only tours */}
-                      {index === 0 && !hasOnlyTours && (
-                        <div className='form-group'>
-                          <label>
-                            Permanent Address{' '}
-                            <span className='required'>*</span>
-                          </label>
+                      {isLead && !hasOnlyTours ? (
+                        <Field
+                          label='Permanent Address'
+                          required
+                          wide
+                          error={err('permanentAddress')}
+                          htmlFor={fieldKey('permanentAddress')}
+                        >
                           <input
+                            id={fieldKey('permanentAddress')}
                             type='text'
-                            placeholder='Enter Permanent Address'
+                            className='ui-input'
+                            placeholder='House, street, city, PIN'
+                            autoComplete='street-address'
                             value={passenger.permanentAddress}
                             onChange={e =>
                               updatePassenger(
@@ -1393,510 +1444,264 @@ function CheckoutPageContent() {
                                 e.target.value
                               )
                             }
-                            className={
-                              errors[`passenger_${index}_permanentAddress`]
-                                ? 'error'
-                                : ''
-                            }
-                            data-field={`passenger_${index}_permanentAddress`}
+                            data-field={fieldKey('permanentAddress')}
                           />
-                          {errors[`passenger_${index}_permanentAddress`] && (
-                            <span className='error-message'>
-                              {errors[`passenger_${index}_permanentAddress`]}
-                            </span>
+                        </Field>
+                      ) : null}
+
+                      {isLead && showTourPickup ? (
+                        <div className='ui-field ui-field--wide co-pickups'>
+                          <span className='co-pickups__label'>
+                            Tour Pickup Location
+                          </span>
+                          {loadingTourPickups ? (
+                            <p className='co-pickup is-loading'>
+                              <Loader2
+                                size={14}
+                                className='spinning'
+                                aria-hidden='true'
+                              />
+                              Loading pickup details...
+                            </p>
+                          ) : (
+                            tourPickupLocations.map(tour => (
+                              <p key={tour.packageId} className='co-pickup'>
+                                <MapPin
+                                  size={14}
+                                  strokeWidth={2}
+                                  aria-hidden='true'
+                                />
+                                <span>
+                                  {tourItems.length > 1 ? (
+                                    <b>{tour.packageName}: </b>
+                                  ) : null}
+                                  {tour.pickupLocation.trim() ||
+                                    'Not specified — please contact support'}
+                                </span>
+                              </p>
+                            ))
                           )}
-                        </div>
-                      )}
-
-                      {/* Documents Section */}
-                      {/* For flexible date packages: only show if visa is selected */}
-                      {/* For other packages: show for India (preserve previous functionality) */}
-                      {shouldShowDocuments && (
-                        <div className='documents-section'>
-                          <h3 className='documents-title'>
-                            {index === 0
-                              ? 'Lead Passenger Documents'
-                              : index >= totalAdults
-                                ? `Child ${index - totalAdults + 1} Documents`
-                                : 'Documents'}
-                          </h3>
-
-                          <div className='documents-grid'>
-                            {/* Applicant Photo */}
-                            <div className='document-upload-group'>
-                              <label>
-                                Applicant Photo{' '}
-                                <span className='required'>*</span>
-                              </label>
-                              <FileUpload
-                                file={passenger.applicantPhoto}
-                                onFileChange={file =>
-                                  handleFileUpload(
-                                    index,
-                                    'applicantPhoto',
-                                    file
-                                  )
-                                }
-                                error={
-                                  errors[`passenger_${index}_applicantPhoto`]
-                                }
-                                fieldKey={`passenger_${index}_applicantPhoto`}
-                              />
-                            </div>
-
-                            {/* Passport Main Copy */}
-                            <div className='document-upload-group'>
-                              <label>
-                                Passport Main Copy [ Indian passport ]{' '}
-                                <span className='required'>*</span>
-                              </label>
-                              <FileUpload
-                                file={passenger.passportMainCopy}
-                                onFileChange={file =>
-                                  handleFileUpload(
-                                    index,
-                                    'passportMainCopy',
-                                    file
-                                  )
-                                }
-                                error={
-                                  errors[`passenger_${index}_passportMainCopy`]
-                                }
-                                fieldKey={`passenger_${index}_passportMainCopy`}
-                              />
-                            </div>
-
-                            {/* Passport Last Page */}
-                            <div className='document-upload-group'>
-                              <label>
-                                Passport Last Page [ Indian passport ]
-                              </label>
-                              <FileUpload
-                                file={passenger.passportLastPage}
-                                onFileChange={file =>
-                                  handleFileUpload(
-                                    index,
-                                    'passportLastPage',
-                                    file
-                                  )
-                                }
-                                error={
-                                  errors[`passenger_${index}_passportLastPage`]
-                                }
-                                fieldKey={`passenger_${index}_passportLastPage`}
-                              />
-                            </div>
-
-                            {/* Passport Cover */}
-                            <div className='document-upload-group'>
-                              <label>Passport Cover</label>
-                              <FileUpload
-                                file={passenger.passportCover}
-                                onFileChange={file =>
-                                  handleFileUpload(index, 'passportCover', file)
-                                }
-                                error={
-                                  errors[`passenger_${index}_passportCover`]
-                                }
-                                fieldKey={`passenger_${index}_passportCover`}
-                              />
-                            </div>
-
-                            {/* Pancard - adults only */}
-                            {index < totalAdults && (
-                              <div className='document-upload-group'>
-                                <label>Pancard</label>
-                                <FileUpload
-                                  file={passenger.nationalIdCard}
-                                  onFileChange={file =>
-                                    handleFileUpload(
-                                      index,
-                                      'nationalIdCard',
-                                      file
-                                    )
-                                  }
-                                  error={
-                                    errors[`passenger_${index}_nationalIdCard`]
-                                  }
-                                  fieldKey={`passenger_${index}_nationalIdCard`}
-                                />
-                              </div>
-                            )}
-
-                            {/* Birth Certificate - for children only */}
-                            {index >= totalAdults && (
-                              <div className='document-upload-group'>
-                                <label>
-                                  Birth Certificate{' '}
-                                  <span className='required'>*</span>
-                                </label>
-                                <FileUpload
-                                  file={passenger.birthCertificate}
-                                  onFileChange={file =>
-                                    handleFileUpload(
-                                      index,
-                                      'birthCertificate',
-                                      file
-                                    )
-                                  }
-                                  error={
-                                    errors[
-                                      `passenger_${index}_birthCertificate`
-                                    ]
-                                  }
-                                  fieldKey={`passenger_${index}_birthCertificate`}
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Important Note */}
-                          <div className='passport-note'>
-                            <AlertCircle size={16} />
-                            <span>
-                              Passport must have 2 blank pages and 6 months
-                              validity.
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-              .filter(Boolean)}
-
-            {/* Infant Documents - full docs like lead + birth certificate */}
-            {shouldShowDocuments &&
-              totalInfants > 0 &&
-              infantDocuments.map((infant, infantIdx) => (
-                <div key={infantIdx} className='passenger-section'>
-                  <h2 className='passenger-section-title'>
-                    Infant {infantIdx + 1} Documents
-                  </h2>
-                  <div className='documents-section'>
-                    <div className='documents-grid'>
-                      <div className='document-upload-group'>
-                        <label>
-                          Applicant Photo <span className='required'>*</span>
-                        </label>
-                        <FileUpload
-                          file={infant.applicantPhoto}
-                          onFileChange={file =>
-                            handleInfantDocumentUpload(
-                              infantIdx,
-                              'applicantPhoto',
-                              file
-                            )
-                          }
-                          error={errors[`infant_${infantIdx}_applicantPhoto`]}
-                          fieldKey={`infant_${infantIdx}_applicantPhoto`}
-                        />
-                      </div>
-                      <div className='document-upload-group'>
-                        <label>
-                          Passport Main Copy [ Indian passport ]{' '}
-                          <span className='required'>*</span>
-                        </label>
-                        <FileUpload
-                          file={infant.passportMainCopy}
-                          onFileChange={file =>
-                            handleInfantDocumentUpload(
-                              infantIdx,
-                              'passportMainCopy',
-                              file
-                            )
-                          }
-                          error={errors[`infant_${infantIdx}_passportMainCopy`]}
-                          fieldKey={`infant_${infantIdx}_passportMainCopy`}
-                        />
-                      </div>
-                      <div className='document-upload-group'>
-                        <label>Passport Last Page [ Indian passport ]</label>
-                        <FileUpload
-                          file={infant.passportLastPage}
-                          onFileChange={file =>
-                            handleInfantDocumentUpload(
-                              infantIdx,
-                              'passportLastPage',
-                              file
-                            )
-                          }
-                          fieldKey={`infant_${infantIdx}_passportLastPage`}
-                        />
-                      </div>
-                      <div className='document-upload-group'>
-                        <label>Passport Cover</label>
-                        <FileUpload
-                          file={infant.passportCover}
-                          onFileChange={file =>
-                            handleInfantDocumentUpload(
-                              infantIdx,
-                              'passportCover',
-                              file
-                            )
-                          }
-                          fieldKey={`infant_${infantIdx}_passportCover`}
-                        />
-                      </div>
-                      <div className='document-upload-group'>
-                        <label>
-                          Birth Certificate <span className='required'>*</span>
-                        </label>
-                        <FileUpload
-                          file={infant.birthCertificate}
-                          onFileChange={file =>
-                            handleInfantDocumentUpload(
-                              infantIdx,
-                              'birthCertificate',
-                              file
-                            )
-                          }
-                          error={errors[`infant_${infantIdx}_birthCertificate`]}
-                          fieldKey={`infant_${infantIdx}_birthCertificate`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-
-          {/* Right Sidebar - Order Summary */}
-          <div className='checkout-sidebar'>
-            <div className='order-summary-card'>
-              <h2>Order Summary</h2>
-
-              {/* Package Details */}
-              <div className='summary-packages'>
-                {cartItems.map((item, idx) => (
-                  <div key={idx} className='summary-package-item'>
-                    <div className='package-info'>
-                      <h4>{item.packageName}</h4>
-                      <p className='package-date'>
-                        Date:{' '}
-                        {item.selectedDate
-                          ? (() => {
-                              const date = parseDateStringToLocal(
-                                item.selectedDate
-                              );
-                              if (date) {
-                                return format(date, 'MMM dd, yyyy');
-                              }
-                              return 'Not selected';
-                            })()
-                          : 'Not selected'}
-                      </p>
-                      <p className='package-persons'>
-                        {item.isSoloTraveller
-                          ? `Solo Traveller – ${
-                              item.soloTravellerGender || 'N/A'
-                            }`
-                          : `${item.adults} Adult${
-                              item.adults !== 1 ? 's' : ''
-                            }${
-                              item.children > 0
-                                ? `, ${item.children} Child${
-                                    item.children !== 1 ? 'ren' : ''
-                                  }`
-                                : ''
-                            }`}
-                      </p>
-                      {(() => {
-                        if (item.categorySlug !== 'offer-packages') return null;
-                        const ids: string[] = [
-                          ...(item.addonDeals || []),
-                          ...(item.addonHotelServices || []),
-                          ...(item.addonPrivateTransfers || []),
-                        ];
-                        if (ids.length === 0) return null;
-                        const labels = ids
-                          .map(id => addonNames[id])
-                          .filter((name): name is string => Boolean(name));
-                        if (labels.length === 0) {
-                          return (
-                            <div className='package-addons'>
-                              <span className='package-addons-label'>
-                                Offer add-ons:
-                              </span>
-                              <span className='package-addon-badge package-addon-badge-muted'>
-                                {ids.length} selected
-                              </span>
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className='package-addons'>
-                            <span className='package-addons-label'>
-                              Offer add-ons:
-                            </span>
-                            {labels.map(label => (
-                              <span key={label} className='package-addon-badge'>
-                                {label}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                      {item.categorySlug === 'marina-cruise-dinner' &&
-                      (item.marinaAddonLabels?.length ||
-                        item.marinaAddons?.length) ? (
-                        <div className='package-addons'>
-                          <span className='package-addons-label'>Add-ons:</span>
-                          {(item.marinaAddonLabels?.length
-                            ? item.marinaAddonLabels
-                            : item.marinaAddons || []
-                          ).map(label => (
-                            <span key={label} className='package-addon-badge'>
-                              {label}
-                            </span>
-                          ))}
+                          {errors.tourPickupLocation ? (
+                            <p className='ui-error'>
+                              {errors.tourPickupLocation}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
-                      {item.hasActiveDeal && (
-                        <span
-                          className='checkout-discount-badge'
-                          style={{
-                            background:
-                              'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
-                            color: '#fff',
-                          }}
-                        >
-                          Deal of the Day
-                        </span>
-                      )}
-                      {item.isDiscountActive && !item.hasActiveDeal && (
-                        <span className='checkout-discount-badge'>
-                          Limited Offer Applied
-                        </span>
-                      )}
                     </div>
-                    <div className='package-price'>
-                      {(item.hasActiveDeal || item.isDiscountActive) &&
-                        item.originalPrice &&
-                        item.originalPrice > item.price && (
-                          <span className='checkout-original-price'>
-                            {formatPrice(item.originalPrice)}
-                          </span>
-                        )}
-                      {item.agentDiscountAmount &&
-                        item.agentDiscountAmount > 0 && (
-                          <AgentDiscountBadge
-                            amount={`-${formatPrice(
-                              item.agentDiscountAmount
-                            ).replace('AED ', '')}`}
+
+                    {shouldShowDocuments ? (
+                      <div className='co-docs'>
+                        <p className='co-docs__title'>
+                          <FileText
+                            size={15}
+                            strokeWidth={2}
+                            aria-hidden='true'
                           />
-                        )}
-                      <span
-                        className={
-                          item.hasActiveDeal || item.isDiscountActive
-                            ? 'checkout-discounted-price'
-                            : ''
-                        }
-                      >
-                        {formatPrice(item.price)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                          {isLead
+                            ? 'Lead Passenger Documents'
+                            : isChild
+                              ? `Child ${index - totalAdults + 1} Documents`
+                              : 'Documents'}
+                        </p>
+                        <div className='co-docs__grid'>
+                          <FileUpload
+                            label='Applicant Photo'
+                            required
+                            file={passenger.applicantPhoto}
+                            onFileChange={file =>
+                              handleFileUpload(index, 'applicantPhoto', file)
+                            }
+                            error={err('applicantPhoto')}
+                            fieldKey={fieldKey('applicantPhoto')}
+                          />
+                          <FileUpload
+                            label='Passport Main Copy [ Indian passport ]'
+                            required
+                            file={passenger.passportMainCopy}
+                            onFileChange={file =>
+                              handleFileUpload(index, 'passportMainCopy', file)
+                            }
+                            error={err('passportMainCopy')}
+                            fieldKey={fieldKey('passportMainCopy')}
+                          />
+                          <FileUpload
+                            label='Passport Last Page [ Indian passport ]'
+                            file={passenger.passportLastPage}
+                            onFileChange={file =>
+                              handleFileUpload(index, 'passportLastPage', file)
+                            }
+                            error={err('passportLastPage')}
+                            fieldKey={fieldKey('passportLastPage')}
+                          />
+                          <FileUpload
+                            label='Passport Cover'
+                            file={passenger.passportCover}
+                            onFileChange={file =>
+                              handleFileUpload(index, 'passportCover', file)
+                            }
+                            error={err('passportCover')}
+                            fieldKey={fieldKey('passportCover')}
+                          />
+                          {!isChild ? (
+                            <FileUpload
+                              label='Pancard'
+                              file={passenger.nationalIdCard}
+                              onFileChange={file =>
+                                handleFileUpload(index, 'nationalIdCard', file)
+                              }
+                              error={err('nationalIdCard')}
+                              fieldKey={fieldKey('nationalIdCard')}
+                            />
+                          ) : (
+                            <FileUpload
+                              label='Birth Certificate'
+                              required
+                              file={passenger.birthCertificate}
+                              onFileChange={file =>
+                                handleFileUpload(
+                                  index,
+                                  'birthCertificate',
+                                  file
+                                )
+                              }
+                              error={err('birthCertificate')}
+                              fieldKey={fieldKey('birthCertificate')}
+                            />
+                          )}
+                        </div>
+                        <p className='co-note'>
+                          <AlertCircle
+                            size={14}
+                            strokeWidth={2}
+                            aria-hidden='true'
+                          />
+                          Passport must have 2 blank pages and 6 months
+                          validity.
+                        </p>
+                      </div>
+                    ) : null}
+                  </Section>
+                );
+              })}
 
-              <div className='summary-divider'></div>
-
-              {/* Totals */}
-              <div className='summary-totals'>
-                <div className='summary-row'>
-                  <span>Total Adults:</span>
-                  <span>{totalAdults}</span>
-                </div>
-                {totalChildren > 0 && (
-                  <div className='summary-row'>
-                    <span>Total Children:</span>
-                    <span>{totalChildren}</span>
-                  </div>
-                )}
-                <div className='summary-row'>
-                  <span>Total Amount:</span>
-                  <span>{formatPrice(getTotalPrice())}</span>
-                </div>
-                {userLocation &&
-                  platformFeePercentage > 0 &&
-                  (() => {
-                    const baseAmount =
-                      paymentType === 'half'
-                        ? getTotalPrice() / 2
-                        : getTotalPrice();
-                    const platformFee =
-                      (baseAmount * platformFeePercentage) / 100;
-                    const totalWithFee = baseAmount + platformFee;
-
+              {shouldShowDocuments && totalInfants > 0
+                ? infantDocuments.map((infant, infantIdx) => {
+                    const sectionId = `infant-${infantIdx}`;
                     return (
-                      <>
-                        <div
-                          className='summary-row'
-                          style={{ fontSize: '13px', color: '#666' }}
-                        >
-                          <span>
-                            {paymentType === 'half'
-                              ? 'Half Payment'
-                              : 'Full Payment'}
-                            :
-                          </span>
-                          <span>{formatPrice(baseAmount)}</span>
+                      <Section
+                        key={infantIdx}
+                        id={sectionId}
+                        title={`Infant ${infantIdx + 1} Documents`}
+                        sub='Photo, passport and birth certificate'
+                        open={sectionOpen(sectionId, `infant_${infantIdx}_`)}
+                        onToggle={() => toggleSection(sectionId)}
+                        scope='mobile'
+                      >
+                        <div className='co-docs co-docs--flush'>
+                          <div className='co-docs__grid'>
+                            <FileUpload
+                              label='Applicant Photo'
+                              required
+                              file={infant.applicantPhoto}
+                              onFileChange={file =>
+                                handleInfantDocumentUpload(
+                                  infantIdx,
+                                  'applicantPhoto',
+                                  file
+                                )
+                              }
+                              error={errors[`infant_${infantIdx}_applicantPhoto`]}
+                              fieldKey={`infant_${infantIdx}_applicantPhoto`}
+                            />
+                            <FileUpload
+                              label='Passport Main Copy [ Indian passport ]'
+                              required
+                              file={infant.passportMainCopy}
+                              onFileChange={file =>
+                                handleInfantDocumentUpload(
+                                  infantIdx,
+                                  'passportMainCopy',
+                                  file
+                                )
+                              }
+                              error={
+                                errors[`infant_${infantIdx}_passportMainCopy`]
+                              }
+                              fieldKey={`infant_${infantIdx}_passportMainCopy`}
+                            />
+                            <FileUpload
+                              label='Passport Last Page [ Indian passport ]'
+                              file={infant.passportLastPage}
+                              onFileChange={file =>
+                                handleInfantDocumentUpload(
+                                  infantIdx,
+                                  'passportLastPage',
+                                  file
+                                )
+                              }
+                              fieldKey={`infant_${infantIdx}_passportLastPage`}
+                            />
+                            <FileUpload
+                              label='Passport Cover'
+                              file={infant.passportCover}
+                              onFileChange={file =>
+                                handleInfantDocumentUpload(
+                                  infantIdx,
+                                  'passportCover',
+                                  file
+                                )
+                              }
+                              fieldKey={`infant_${infantIdx}_passportCover`}
+                            />
+                            <FileUpload
+                              label='Birth Certificate'
+                              required
+                              file={infant.birthCertificate}
+                              onFileChange={file =>
+                                handleInfantDocumentUpload(
+                                  infantIdx,
+                                  'birthCertificate',
+                                  file
+                                )
+                              }
+                              error={
+                                errors[`infant_${infantIdx}_birthCertificate`]
+                              }
+                              fieldKey={`infant_${infantIdx}_birthCertificate`}
+                            />
+                          </div>
                         </div>
-                        <div
-                          className='summary-row'
-                          style={{ fontSize: '13px', color: '#666' }}
-                        >
-                          <span>Platform Fee ({platformFeePercentage}%):</span>
-                          <span>{formatPrice(platformFee)}</span>
-                        </div>
-                        <div
-                          className='summary-row'
-                          style={{
-                            fontWeight: '600',
-                            borderTop: '1px solid #eee',
-                            paddingTop: '8px',
-                            marginTop: '8px',
-                          }}
-                        >
-                          <span>Amount to Pay:</span>
-                          <span>{formatPrice(totalWithFee)}</span>
-                        </div>
-                      </>
+                      </Section>
                     );
-                  })()}
-                {isLoadingLocation && (
-                  <div className='summary-row'>
-                    <span>
-                      <Loader2 size={14} className='spinning' /> Detecting
-                      location...
-                    </span>
-                  </div>
-                )}
-                {userLocation && (
-                  <div className='summary-row location-info'>
-                    <span className='global-location'>
-                      <Globe size={14} /> {userLocation.country}
-                    </span>
-                    <span className='gateway-badge'>CCAvenue</span>
-                  </div>
-                )}
-              </div>
+                  })
+                : null}
 
-              {/* Payment Type Selection */}
-              {userLocation && isAgentStatusResolved && (
-                <div className='payment-type-selection'>
-                  <h3>Payment Type</h3>
-                  {requiresFullPayment && (
-                    <p className='payment-type-note'>
-                      {isSubscribedAgent
+              {showPaymentType ? (
+                <Section
+                  id='payment'
+                  title='Payment Method'
+                  sub={
+                    requiresFullPayment
+                      ? isSubscribedAgent
                         ? 'Agent bookings are payable in full.'
-                        : 'This booking is payable in full.'}
-                    </p>
-                  )}
-                  <div className='payment-type-options'>
-                    <label className='payment-type-option'>
+                        : 'This booking is payable in full.'
+                      : 'Pay in full now, or half now and the rest later.'
+                  }
+                  open={sectionOpen('payment')}
+                  onToggle={() => toggleSection('payment')}
+                  scope='mobile'
+                >
+                  <div
+                    className='co-pay'
+                    role='radiogroup'
+                    aria-label='Payment Type'
+                  >
+                    <label
+                      className={
+                        'co-pay__opt' + (paymentType === 'full' ? ' is-on' : '')
+                      }
+                    >
                       <input
                         type='radio'
                         name='paymentType'
@@ -1906,21 +1711,21 @@ function CheckoutPageContent() {
                           setPaymentType(e.target.value as 'half' | 'full')
                         }
                       />
-                      <div className='payment-type-content'>
-                        <span className='payment-type-label'>Full Payment</span>
-                        <span className='payment-type-amount'>
-                          {(() => {
-                            const baseAmount = getTotalPrice();
-                            const fee =
-                              (baseAmount * platformFeePercentage) / 100;
-                            return formatPrice(baseAmount + fee);
-                          })()}
-                        </span>
-                      </div>
+                      <span className='co-pay__amt'>
+                        {formatPrice(withFee(fullBase))}
+                      </span>
+                      <span className='co-pay__text'>
+                        <b>Full Payment</b>
+                        <small>Pay the whole amount now</small>
+                      </span>
                     </label>
-                    {/* Half payment only when nothing in the cart forbids it */}
-                    {!requiresFullPayment && (
-                      <label className='payment-type-option'>
+                    {!requiresFullPayment ? (
+                      <label
+                        className={
+                          'co-pay__opt' +
+                          (paymentType === 'half' ? ' is-on' : '')
+                        }
+                      >
                         <input
                           type='radio'
                           name='paymentType'
@@ -1930,87 +1735,408 @@ function CheckoutPageContent() {
                             setPaymentType(e.target.value as 'half' | 'full')
                           }
                         />
-                        <div className='payment-type-content'>
-                          <span className='payment-type-label'>
-                            Half Payment (50%)
-                          </span>
-                          <span className='payment-type-amount'>
-                            {(() => {
-                              const baseAmount = getTotalPrice() / 2;
-                              const fee =
-                                (baseAmount * platformFeePercentage) / 100;
-                              return formatPrice(baseAmount + fee);
-                            })()}
-                          </span>
-                        </div>
+                        <span className='co-pay__amt'>
+                          {formatPrice(withFee(halfBase))}
+                        </span>
+                        <span className='co-pay__text'>
+                          <b>Half Payment (50%)</b>
+                          <small>Pay the rest before you travel</small>
+                        </span>
                       </label>
+                    ) : null}
+                  </div>
+                  <p className='co-protect'>
+                    <span className='co-protect__icon' aria-hidden='true'>
+                      <Lock size={13} strokeWidth={2.2} />
+                    </span>
+                    Payments are processed by CCAvenue with bank-level
+                    encryption. We never see your card details.
+                  </p>
+                </Section>
+              ) : null}
+            </div>
+
+            <aside className='co-aside'>
+              <Section
+                id='review'
+                title='Order Review'
+                sub={travellersLabel}
+                open={sectionOpen('review')}
+                onToggle={() => toggleSection('review')}
+                scope='all'
+              >
+                <p className='co-sum__name'>
+                  {item.packageName || (
+                    <span
+                      className='co-sum__skeleton'
+                      aria-label='Loading package'
+                    />
+                  )}
+                </p>
+                {duration ? <p className='co-sum__dur'>{duration}</p> : null}
+                <ul className='co-facts'>
+                  <li>
+                    <CalendarDays size={15} strokeWidth={2} aria-hidden='true' />
+                    <span>{dateLabel}</span>
+                  </li>
+                  <li>
+                    <Users size={15} strokeWidth={2} aria-hidden='true' />
+                    <span>{travellersLabel}</span>
+                  </li>
+                  {item.withVisa && visaCount > 0 ? (
+                    <li>
+                      <FileText size={15} strokeWidth={2} aria-hidden='true' />
+                      <span>
+                        Visa for {visaCount} traveller
+                        {visaCount !== 1 ? 's' : ''}
+                      </span>
+                    </li>
+                  ) : null}
+                </ul>
+
+                {offerAddonIds.length > 0 ? (
+                  <div className='co-addons'>
+                    <span className='co-addons__label'>Offer add-ons</span>
+                    {offerAddonLabels.length ? (
+                      offerAddonLabels.map(label => (
+                        <span key={label} className='co-chip'>
+                          {label}
+                        </span>
+                      ))
+                    ) : (
+                      <span className='co-chip is-muted'>
+                        {offerAddonIds.length} selected
+                      </span>
                     )}
                   </div>
-                </div>
-              )}
-
-              {/* Payment Options */}
-              <div className='payment-options'>
-                <h3>Proceed to Payment</h3>
-                <button
-                  className='payment-button'
-                  onClick={handlePayment}
-                  disabled={isSubmitting || isLoadingLocation || !userLocation}
-                >
-                  <CreditCard size={20} />
-                  Pay with CCAvenue
-                </button>
-                {isSubmitting && (
-                  <div className='submitting-overlay'>
-                    <Loader2 size={24} className='spinning' />
-                    <span>Processing...</span>
+                ) : null}
+                {marinaAddonLabels.length > 0 ? (
+                  <div className='co-addons'>
+                    <span className='co-addons__label'>Add-ons</span>
+                    {marinaAddonLabels.map(label => (
+                      <span key={label} className='co-chip'>
+                        {label}
+                      </span>
+                    ))}
                   </div>
+                ) : null}
+
+                {item.hasActiveDeal || item.isDiscountActive ? (
+                  <div className='co-badges'>
+                    {item.hasActiveDeal ? (
+                      <span className='co-badge is-deal'>Deal of the Day</span>
+                    ) : (
+                      <span className='co-badge'>Limited Offer Applied</span>
+                    )}
+                  </div>
+                ) : null}
+              </Section>
+
+              <Section
+                id='summary'
+                title='Billing Summary'
+                open={sectionOpen('summary')}
+                onToggle={() => toggleSection('summary')}
+                scope='all'
+                foot={
+                  <>
+                    {isPriced ? (
+                      <>
+                        <div className='co-total'>
+                          <span>Amount to Pay</span>
+                          <b>{formatPrice(amountToPay)}</b>
+                        </div>
+                        {totalPassengers + totalInfants > 1 ? (
+                          <p className='co-per'>
+                            {formatPrice(
+                              amountToPay / (totalPassengers + totalInfants)
+                            )}{' '}
+                            per person
+                          </p>
+                        ) : null}
+                      </>
+                    ) : null}
+                    <button
+                      type='button'
+                      className='ui-btn ui-btn--primary ui-btn--lg ui-btn--block'
+                      onClick={handlePayment}
+                      disabled={!canPay}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2
+                            size={15}
+                            className='spinning'
+                            aria-hidden='true'
+                          />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={14} strokeWidth={2.2} aria-hidden='true' />
+                          {isPriced
+                            ? `Pay ${formatPrice(amountToPay)}`
+                            : 'Pay with CCAvenue'}
+                        </>
+                      )}
+                    </button>
+                    <p className='co-secure'>
+                      <ShieldCheck size={15} strokeWidth={2} aria-hidden='true' />
+                      Secure payment with CCAvenue
+                      {isLoadingLocation ? (
+                        <span className='co-secure__loc'>
+                          <Loader2
+                            size={12}
+                            className='spinning'
+                            aria-hidden='true'
+                          />
+                          Detecting location...
+                        </span>
+                      ) : userLocation ? (
+                        <span className='co-secure__loc'>
+                          <Globe size={12} strokeWidth={2} aria-hidden='true' />
+                          {userLocation.country}
+                        </span>
+                      ) : null}
+                    </p>
+                  </>
+                }
+              >
+                {bookingError ? (
+                  <p className='ui-alert co-sum__alert' role='alert'>
+                    <AlertCircle size={15} strokeWidth={2} aria-hidden='true' />
+                    <span>
+                      {bookingError}. Please go back to the package and choose
+                      again.
+                    </span>
+                  </p>
+                ) : !isPriced ? (
+                  <p className='co-sum__pricing'>
+                    <Loader2 size={16} className='spinning' aria-hidden='true' />
+                    Confirming your price…
+                  </p>
+                ) : (
+                  <ul className='co-lines'>
+                    <li>
+                      <span>Package total</span>
+                      <span className='co-lines__price'>
+                        {hasDealPrice ? (
+                          <s>{formatPrice(item.originalPrice!)}</s>
+                        ) : null}
+                        {formatPrice(fullBase)}
+                      </span>
+                    </li>
+                    {item.agentDiscountAmount &&
+                    item.agentDiscountAmount > 0 ? (
+                      <li className='co-lines__badge'>
+                        <AgentDiscountBadge
+                          amount={`-${formatPrice(
+                            item.agentDiscountAmount
+                          ).replace('AED ', '')}`}
+                        />
+                      </li>
+                    ) : null}
+                    {userLocation && platformFeePercentage > 0 ? (
+                      <>
+                        <li>
+                          <span>
+                            {paymentType === 'half'
+                              ? 'Half Payment'
+                              : 'Full Payment'}
+                          </span>
+                          <span>{formatPrice(baseAmount)}</span>
+                        </li>
+                        <li>
+                          <span>Platform Fee ({platformFeePercentage}%)</span>
+                          <span>{formatPrice(platformFee)}</span>
+                        </li>
+                      </>
+                    ) : null}
+                  </ul>
                 )}
-              </div>
-            </div>
+              </Section>
+            </aside>
           </div>
         </div>
       </div>
+    </CheckoutShell>
+  );
+}
+
+const SALUTATIONS = ['Mr', 'Mrs', 'Ms', 'Miss'];
+const COUNTRIES = [
+  { value: 'India', label: 'India' },
+  { value: 'Other', label: 'Other' },
+];
+const NATIONALITIES = [
+  'India',
+  'UAE',
+  'USA',
+  'UK',
+  'Canada',
+  'Australia',
+  'Other',
+];
+
+function paymentErrorText(code: string | null): string {
+  return code === 'payment_cancelled'
+    ? 'Payment was cancelled.'
+    : code === 'payment_processing_failed'
+      ? 'Payment processing failed. Please try again.'
+      : 'Payment could not be completed. Please try again.';
+}
+
+function CheckoutShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={'desert-ember ex ' + EX_FONTS}>
+      <ExHeader />
+      <div className='at-site desert-ember'>{children}</div>
     </div>
+  );
+}
+
+function CheckoutLoading() {
+  return (
+    <CheckoutShell>
+      <div className='co'>
+        <div className='container'>
+          <div className='co-empty co-empty--loading'>
+            <Loader2 size={28} className='spinning' aria-hidden='true' />
+            <p>Loading your booking...</p>
+          </div>
+        </div>
+      </div>
+    </CheckoutShell>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense
-      fallback={
-        <div className='checkout-page'>
-          <div className='checkout-container'>
-            <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-              <Loader2
-                size={32}
-                className='spinning'
-                style={{ margin: '0 auto 16px', display: 'block' }}
-              />
-              <p>Loading...</p>
-            </div>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<CheckoutLoading />}>
       <CheckoutPageContent />
     </Suspense>
   );
 }
 
-// File Upload Component
+function Section({
+  id,
+  title,
+  sub,
+  open,
+  onToggle,
+  scope,
+  foot,
+  children,
+}: {
+  id: string;
+  title: string;
+  sub?: string;
+  open: boolean;
+  onToggle: () => void;
+  scope: 'all' | 'mobile';
+  foot?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className={
+        'co-card co-card--' + scope + (open ? ' is-open' : ' is-closed')
+      }
+      aria-labelledby={`co-${id}-title`}
+    >
+      <h2 className='co-card__head' id={`co-${id}-title`}>
+        <button
+          type='button'
+          className='co-card__toggle'
+          aria-expanded={open}
+          aria-controls={`co-${id}-body`}
+          onClick={onToggle}
+        >
+          <span className='co-card__titles'>
+            <span className='co-card__title'>{title}</span>
+            {sub ? <span className='co-card__sub'>{sub}</span> : null}
+          </span>
+          <ChevronDown
+            className='co-card__chev'
+            size={18}
+            strokeWidth={2.4}
+            aria-hidden='true'
+          />
+        </button>
+      </h2>
+      <div id={`co-${id}-body`} className='co-card__body'>
+        {children}
+      </div>
+      {foot ? <div className='co-card__foot'>{foot}</div> : null}
+    </section>
+  );
+}
+
+/** Label above the control, error (or hint) under it. */
+function Field({
+  label,
+  required,
+  error,
+  hint,
+  wide,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  wide?: boolean;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={
+        'ui-field' + (wide ? ' ui-field--wide' : '') + (error ? ' has-error' : '')
+      }
+    >
+      <label className='ui-label' htmlFor={htmlFor}>
+        {label}
+        {required ? <em className='ui-req'>*</em> : null}
+      </label>
+      {children}
+      {error ? (
+        <p className='ui-error'>{error}</p>
+      ) : hint ? (
+        <p className='ui-hint'>{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+// File Upload Component - images only, drag and drop or click
 function FileUpload({
+  label,
+  required,
   file,
   onFileChange,
   error,
   fieldKey,
 }: {
+  label: string;
+  required?: boolean;
   file: File | null;
   onFileChange: (file: File | null) => void;
   error?: string;
   fieldKey: string;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const previewUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file]
+  );
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl]
+  );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -2035,46 +2161,65 @@ function FileUpload({
     if (selectedFile && selectedFile.type.startsWith('image/')) {
       onFileChange(selectedFile);
     }
+    // the same file can be picked again after removing it
+    e.target.value = '';
   };
 
   return (
     <div
-      className={`file-upload-area ${isDragging ? 'dragging' : ''} ${error ? 'error' : ''}`}
+      className={
+        'co-file' +
+        (isDragging ? ' is-dragging' : '') +
+        (error ? ' is-error' : '') +
+        (file ? ' has-file' : '')
+      }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       data-field={fieldKey}
     >
-      <input
-        type='file'
-        accept='image/*'
-        onChange={handleFileInput}
-        className='file-input'
-        id={fieldKey}
-      />
-      {file ? (
-        <div className='file-preview'>
-          <img
-            src={URL.createObjectURL(file)}
-            alt='Preview'
-            className='file-preview-image'
-          />
+      <span className='co-file__thumb'>
+        {file && previewUrl ? (
+          <img src={previewUrl} alt='' />
+        ) : (
+          <ImagePlus size={22} strokeWidth={1.6} aria-hidden='true' />
+        )}
+      </span>
+      <div className='co-file__info'>
+        <span className='co-file__label'>
+          {label}
+          {required ? <em className='ui-req'>*</em> : null}
+        </span>
+        <span className='co-file__hint' title={file?.name}>
+          {file ? file.name : 'Photo or scan · drag and drop it here'}
+        </span>
+        {error ? <p className='ui-error'>{error}</p> : null}
+      </div>
+      <div className='co-file__actions'>
+        <input
+          type='file'
+          accept='image/*'
+          onChange={handleFileInput}
+          className='co-file__input'
+          id={fieldKey}
+        />
+        <label
+          htmlFor={fieldKey}
+          className={'co-file__btn' + (file ? ' is-soft' : '')}
+        >
+          {file ? 'Replace' : 'Upload'}
+        </label>
+        {file ? (
           <button
             type='button'
             onClick={() => onFileChange(null)}
-            className='file-remove-button'
+            className='co-file__remove'
+            aria-label={`Remove ${label}`}
           >
-            <X size={16} />
+            <X size={15} strokeWidth={2.2} />
           </button>
-          <p className='file-name'>{file.name}</p>
-        </div>
-      ) : (
-        <label htmlFor={fieldKey} className='file-upload-label'>
-          <Upload size={24} />
-          <span>Drag and drop a file here or click</span>
-        </label>
-      )}
-      {error && <span className='error-message'>{error}</span>}
+        ) : null}
+      </div>
     </div>
   );
 }

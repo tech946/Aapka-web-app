@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { buildCrmWebsiteLeadPayload } from '@/lib/website-lead-payload';
 
@@ -46,7 +45,7 @@ export async function POST(
 ) {
   try {
     // Dashboard users only — same session check as the other admin APIs.
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createServerSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();

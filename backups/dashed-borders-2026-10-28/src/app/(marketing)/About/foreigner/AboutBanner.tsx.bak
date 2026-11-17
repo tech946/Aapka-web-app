@@ -1,0 +1,54 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { Roll } from '../../Home/foreigner/Art';
+import { BANNER, BANNER_CTA } from './content';
+
+const DELAY = 4000;
+const FADE = 980;
+
+export default function AboutBanner() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const id = window.setInterval(() => setActive((i) => (i + 1) % BANNER.length), DELAY + FADE);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <section className="fr-section ab-banner">
+      {BANNER.map((slide, i) => (
+        <div key={slide.image} className={'ab-banner__slide' + (i === active ? ' is-active' : '')} aria-hidden={i !== active}>
+          <div className="ab-banner__item">
+            <div className="ab-banner__image">
+              <div className="ab-banner__shade" />
+              <img src={slide.image} alt="" className="ab-banner__img" />
+            </div>
+            <div className="fr-container fr-container--relative">
+              <BannerTitle {...slide} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function BannerTitle({ top, bottom, href }: (typeof BANNER)[number]) {
+  const pill = useRef<HTMLSpanElement>(null);
+  const move = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    pill.current?.style.setProperty('transform', `translate(${e.clientX - r.left}px, ${e.clientY - r.top}px) translate(-50%, -50%)`);
+  };
+  return (
+    <Link href={href} className="ab-banner__title" onMouseMove={move}>
+      <span className="ab-banner__line">{top}</span>
+      <span className="ab-banner__line ab-banner__line--bottom">{bottom}</span>
+      <span className="ab-banner__view" ref={pill}>
+        <Roll bottomClass="fr-text-yellow">{BANNER_CTA}</Roll>
+      </span>
+    </Link>
+  );
+}

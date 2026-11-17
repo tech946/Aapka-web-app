@@ -1,0 +1,128 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { CONTINUE, TPL } from './content';
+import { Roll } from './Art';
+
+type Media = { video: string; webm: string; poster: string };
+type Continue = typeof CONTINUE;
+
+const DRIFT = {
+  left: [-107.2, -0.2779],
+  right: [73.3, -0.3032],
+  slow: [22.72, -0.01262],
+  fast: [-9.83, -0.2693],
+} as const;
+const LEFT_KINDS = ['slow', 'fast', 'slow'] as const;
+const RIGHT_KINDS = ['fast', 'slow', 'fast'] as const;
+
+const LOTTIE_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+type LottieApi = { loadAnimation: (o: object) => { destroy: () => void } };
+let lottieReady: Promise<LottieApi> | null = null;
+
+function loadLottie(): Promise<LottieApi> {
+  const w = window as unknown as { lottie?: LottieApi };
+  if (w.lottie) return Promise.resolve(w.lottie);
+  lottieReady ??= new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = LOTTIE_SRC;
+    s.async = true;
+    s.onload = () => (w.lottie ? resolve(w.lottie) : reject(new Error('lottie missing')));
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return lottieReady;
+}
+
+export function Lottie({ src, className }: { src: string; className?: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let anim: { destroy: () => void } | undefined;
+    let dead = false;
+    loadLottie()
+      .then((lottie) => {
+        if (dead || !box.current) return;
+        anim = lottie.loadAnimation({ container: box.current, renderer: 'svg', loop: true, autoplay: true, path: src });
+      })
+      .catch(() => {});
+    return () => {
+      dead = true;
+      anim?.destroy();
+    };
+  }, [src]);
+  return <div ref={box} className={className} aria-hidden="true" />;
+}
+
+export default function FrScrollImages({ content = CONTINUE, lottie = TPL.lottie, dark = false }: { content?: Continue; lottie?: string; dark?: boolean }) {
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const movers = [...el.querySelectorAll<HTMLElement>('[data-drift]')];
+    let raf = 0;
+    const tick = () => {
+      raf = 0;
+      const d = Math.min(1800, Math.max(-900, -el.getBoundingClientRect().top));
+      for (const m of movers) {
+        const [at0, rate] = DRIFT[m.dataset.drift as keyof typeof DRIFT];
+        m.style.transform = `translate3d(0, ${at0 + rate * d}px, 0)`;
+      }
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    tick();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
+  const strip = (list: Media[], side: 'left' | 'right') => (
+    <div className={'fr-strip fr-strip--' + side} data-drift={side}>
+      {list.map((m, i) => (
+        <div key={m.video} className="fr-strip__item" data-drift={(side === 'left' ? LEFT_KINDS : RIGHT_KINDS)[i]}>
+          <div className="fr-strip__holder">
+            <div className="fr-strip__height" />
+            <video className="fr-strip__fill" poster={m.poster} autoPlay muted loop playsInline preload="none">
+              <source src={m.video} type="video/mp4" />
+              <source src={m.webm} type="video/webm" />
+            </video>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const light = dark ? ' fr-text-light' : '';
+
+  return (
+    <div className={'fr-scroll-images' + (dark ? ' fr-scroll-images--dark' : '')} ref={root}>
+      <div className="fr-scroll-images__line" />
+      <div className="fr-scroll-images__track">
+        <div className="fr-scroll-images__sticky">
+          <div className="fr-scroll-images__grid">
+            {strip(content.left, 'left')}
+            {strip(content.right, 'right')}
+          </div>
+          <div className="fr-continue">
+            <Lottie src={lottie} className={'fr-continue__lottie' + (dark ? ' fr-continue__lottie--flat' : '')} />
+            <p className={'fr-subtitle' + light}>{content.kicker}</p>
+            <h2 className={light.trim() || undefined}>{content.title}</h2>
+            <div className="fr-continue__bottom">
+              <h5 className={light.trim() || undefined}>{content.text}</h5>
+              <Link href={content.cta.href} className="fr-btn fr-btn--yellow">
+                <Roll bottomClass="fr-text-light">{content.cta.label}</Roll>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

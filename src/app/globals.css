@@ -65,25 +65,40 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif;
+    font-family: var(--font-site), 'DM Sans', system-ui, -apple-system, sans-serif;
   }
-  
-  /* Headings - Work Sans */
+
+  /* The public site's face. One name to change when the font changes; the
+     file itself is loaded by next/font in app/layout.tsx (--font-sans). */
+  :root {
+    --font-site: var(--font-sans);
+  }
+
+  /* Public website: body text is 500 (medium) so it never reads thin.
+     Keyed on the site header, which the dashboard and CRM login don't render. */
+  body:has(.ta-hdr) {
+    font-weight: 500;
+  }
+
+  /* Website face (--font-site, DM Sans) for headings and text (loaded in app/layout.tsx).
+     --app-font / --app-heading-font are set by the
+     redesign's `.at-site` wrapper and by the dashboard / CRM login (Plus
+     Jakarta Sans); everywhere else the fallbacks apply. */
   h1, h2, h3, h4, h5, h6,
   .heading, [class*="heading"], [class*="title"], [class*="Title"] {
-    font-family: 'Work Sans', var(--font-work-sans), system-ui, sans-serif !important;
+    font-family: var(--app-heading-font, var(--font-site), 'DM Sans', system-ui, sans-serif) !important;
     font-weight: 600;
   }
-  
-  /* Body text, paragraphs, lists, buttons - Inter */
+
+  /* Body text, paragraphs, lists, buttons - the site face */
   body, p, li, button, a, span, div, input, textarea, select, label,
   .body, [class*="body"], [class*="text"], [class*="Text"] {
-    font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif !important;
+    font-family: var(--app-font, var(--font-site), 'DM Sans', system-ui, -apple-system, sans-serif) !important;
   }
-  
+
   /* Buttons specifically */
   button, .btn, [class*="button"], [class*="Button"] {
-    font-family: 'Inter', var(--font-inter), system-ui, -apple-system, sans-serif !important;
+    font-family: var(--app-font, var(--font-site), 'DM Sans', system-ui, -apple-system, sans-serif) !important;
   }
 }
 
@@ -121,4 +136,14 @@
   max-width: 1232px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* antd/dist/reset.css sets html, body { height: 100% }. The redesigned pages'
+   sticky header and section bars stick inside <body>, so with a viewport-tall
+   body they let go after one screen of scrolling. Pages using the redesign
+   (an .at-site wrapper) get a body as tall as its content; the dashboard keeps
+   antd's full-height body. */
+body:has(.at-site) {
+  height: auto;
+  min-height: 100%;
 }

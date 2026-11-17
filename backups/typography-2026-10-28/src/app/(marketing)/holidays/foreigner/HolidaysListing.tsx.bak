@@ -1,0 +1,213 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import type { HolidayType } from '@/config/holiday-types';
+import { titleCase } from '@/components/site/pdp/pdp-data';
+import { formatAed, type ListingItem } from '@/components/site/listing/listing-data';
+import { DEFAULT_SORT, SORTS, sortLabel } from '@/components/site/listing/listing-facets';
+import Select from '@/components/site/ui/Select';
+import { Roll } from '../../Home/foreigner/Art';
+import HolidaysFilters from './HolidaysFilters';
+import { LISTING_TITLE } from './content';
+import { useListing } from './useListing';
+
+type Props = {
+  types: HolidayType[];
+  items: ListingItem[];
+  loading: boolean;
+  active: string;
+  onActiveChange: (key: string) => void;
+};
+
+function TagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2.85h7.6v7.6L9.05 21 1.6 13.4 12 2.85Z" />
+      <circle cx="15.1" cy="7.3" r="1.35" fill="currentColor" stroke="none" />
+      <path d="M22 4.1v7.4l-9.8 9.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function HolidayCard({ p }: { p: ListingItem }) {
+  const img = p.images[0] || p.img || '/images/package-1.png';
+  const title = titleCase(p.name);
+  const tags = [...new Set([p.durationLabel, p.badge, p.offLabel || (p.inDeal ? 'Limited time deal' : null), p.visa ? 'Visa included' : null].filter((t): t is string => !!t))];
+
+  return (
+    <article className="hl-card" data-reveal>
+      <Link href={p.href} className="hl-card__media" tabIndex={-1} aria-hidden="true">
+        <img src={img} alt="" loading="lazy" decoding="async" />
+      </Link>
+      <div className="hl-card__body">
+        <h2 className="hl-card__title" title={title}>
+          <Link href={p.href}>{title}</Link>
+        </h2>
+        <p className="hl-card__meta">{p.typeLabel}</p>
+        {tags.length > 0 && (
+          <p className="hl-card__tags">
+            {tags.map((t) => (
+              <span className="hl-card__tag" key={t}>
+                <TagIcon />
+                {t}
+              </span>
+            ))}
+          </p>
+        )}
+        <div className="hl-card__foot">
+          {p.price != null ? (
+            <p className="hl-card__price">
+              <small>from {p.strike != null && <s>{formatAed(p.strike)}</s>}</small>
+              <b>{formatAed(p.price)}</b>
+            </p>
+          ) : (
+            <p className="hl-card__price">
+              <small>Enquire for the best rate</small>
+              <b className="is-soon">Price revealing soon</b>
+            </p>
+          )}
+          <Link href={p.href} className="hl-btn">
+            <Roll>View details</Roll>
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function useStuck() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = ref.current;
+      if (!el) return;
+      const top = parseFloat(getComputedStyle(el).top) || 0;
+      setStuck(window.scrollY > 0 && el.getBoundingClientRect().top <= top + 0.5);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+  return { ref, stuck };
+}
+
+export default function HolidaysListing({ types, items, loading, active, onActiveChange }: Props) {
+  const view = useListing(types, items, active);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { ref: stickyRef, stuck } = useStuck();
+  const noun = view.list.length === 1 ? 'holiday matches' : 'holidays match';
+  const emptyText = view.base.length
+    ? 'No holidays match these filters. Try clearing a few.'
+    : view.isDeals
+      ? 'No limited time deals are running right now — check back soon.'
+      : 'No holidays available right now.';
+
+  return (
+    <div className="hl">
+      <div className="fr-container">
+        <nav className="hl__crumbs" aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{view.label}</span>
+        </nav>
+        <h1 className="hl__title">{active === 'all' ? LISTING_TITLE : view.label}</h1>
+      </div>
+
+      <div className={'hl__sticky' + (stuck ? ' is-stuck' : '')} ref={stickyRef}>
+        <div className="fr-container">
+          <div className="hl__pills" role="toolbar" aria-label="Filter holidays">
+            <button type="button" className={'hl-pill hl-pill--filters' + (view.livePicks ? ' is-on' : '')} onClick={() => setFiltersOpen(true)} aria-haspopup="dialog">
+              Filters{view.livePicks ? ` • ${view.livePicks}` : ''}
+            </button>
+            <span className="hl__sep" aria-hidden="true" />
+            {view.chips.map((c) => (
+              <button
+                type="button"
+                key={c.key}
+                className={'hl-pill' + (active === c.key ? ' is-active' : '')}
+                aria-pressed={active === c.key}
+                onClick={() => onActiveChange(c.key)}
+              >
+                {c.label}
+              </button>
+            ))}
+            {view.quick.length > 0 && <span className="hl__sep" aria-hidden="true" />}
+            {view.quick.map((q) => {
+              const on = !!view.facets[q.key]?.includes(q.value);
+              return (
+                <button type="button" key={q.key + q.value} className={'hl-pill' + (on ? ' is-on' : '')} aria-pressed={on} onClick={() => view.toggleFacet(q.key, q.value)}>
+                  {q.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="fr-container">
+        <div className="hl__bar">
+          <p className="hl__count">
+            {loading ? (
+              'Loading holidays…'
+            ) : (
+              <>
+                <b>
+                  {view.list.length} of {view.base.length} {noun} your filters.
+                </b>
+                {view.livePicks > 0 && (
+                  <button type="button" className="hl-link" onClick={view.clearFacets}>
+                    Clear all filters
+                  </button>
+                )}
+              </>
+            )}
+          </p>
+          <div className="hl__sort">
+            <span>Sort by</span>
+            <Select
+              size="sm"
+              value={view.sort ?? ''}
+              onChange={(v) => view.changeSort(v || null)}
+              options={[{ value: '', label: DEFAULT_SORT.title }, ...SORTS.map((s) => ({ value: s.value, label: sortLabel(s) }))]}
+              searchable={false}
+              menuWidth={220}
+              aria-label="Sort by"
+            />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="hl__grid" aria-busy="true">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div className="hl-card hl-card--skel" key={i} />
+            ))}
+          </div>
+        ) : view.slice.length ? (
+          <div className="hl__grid">
+            {view.slice.map((p) => (
+              <HolidayCard key={p.id} p={p} />
+            ))}
+          </div>
+        ) : (
+          <p className="hl__empty">{emptyText}</p>
+        )}
+
+        {!loading && view.hasMore && (
+          <div className="fr-btn-wrap">
+            <button type="button" className="fr-btn fr-btn--dark" onClick={view.showMore}>
+              <Roll>Show more holidays</Roll>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <HolidaysFilters open={filtersOpen} onClose={() => setFiltersOpen(false)} facets={view.facetDefs} picks={view.facets} onApply={view.applyFacets} />
+    </div>
+  );
+}

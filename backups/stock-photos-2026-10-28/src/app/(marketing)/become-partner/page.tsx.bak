@@ -1,0 +1,98 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { Award, Check, Shield, TrendingUp, Users, Zap } from 'lucide-react';
+import FrHeader from '../Home/foreigner/FrHeader';
+import { Roll } from '../Home/foreigner/Art';
+import { FrFooter } from '../Home/foreigner/FrSections';
+import { FR_FONTS } from '../Home/foreigner/fonts';
+import '../Home/foreigner/foreigner.css';
+import './become-agent.css';
+
+const CDN = 'https://cdn.prod.website-files.com/69247547c23b7c23d27ef795';
+const BANNER_LEFT = `${CDN}/6926e7acfb0556ef3e65ca32_traveler5.webp`;
+const BANNER_RIGHT = `${CDN}/6926e7acd0f3c3f32775b953_traveler2.webp`;
+
+const FEATURES = [
+  { icon: TrendingUp, text: 'Access to exclusive partner discounts on all packages' },
+  { icon: Zap, text: 'Priority customer support' },
+  { icon: Shield, text: 'Dedicated partner dashboard' },
+  { icon: Users, text: 'Real-time booking management' },
+  { icon: Award, text: 'Commission tracking and invoicing' },
+];
+
+export default function BecomeAgentPage() {
+  const router = useRouter();
+
+  return (
+    <div className={'fr ' + FR_FONTS}>
+      <FrHeader />
+      <main>
+        <section className="fr-section bp-banner">
+          <div className="fr-container">
+            <div className="bp-banner__flex">
+              <img src={BANNER_LEFT} alt="" className="bp-banner__img bp-banner__img--left" />
+              <div className="bp-banner__text">
+                <p className="bp-eyebrow">Premium membership</p>
+                <h1 className="bp-banner__title">Become a Partner</h1>
+                <div className="fr-para-width">
+                  <p>Join our network of Aapka travel partners and unlock exclusive benefits.</p>
+                </div>
+              </div>
+              <img src={BANNER_RIGHT} alt="" className="bp-banner__img bp-banner__img--right" />
+            </div>
+          </div>
+        </section>
+
+        <section className="fr-section bp-plan">
+          <div className="fr-container">
+            <div className="bp-plan__grid">
+              <div className="bp-perks">
+                <h2 className="bp-perks__title">What&apos;s included</h2>
+                <ul className="bp-perks__list">
+                  {FEATURES.map(({ icon: Icon, text }) => (
+                    <li key={text} className="bp-perk">
+                      <span className="bp-perk__icon" aria-hidden="true">
+                        <Icon />
+                      </span>
+                      <p>{text}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bp-card">
+                <span className="bp-card__tag">Most popular</span>
+                <div className="bp-card__head">
+                  <span className="bp-card__icon" aria-hidden="true">
+                    <Shield />
+                  </span>
+                  <h3 className="bp-card__title">Aapka Partner Premium</h3>
+                </div>
+                <div className="bp-card__price">
+                  <b>AED 110</b>
+                  <span>per year</span>
+                </div>
+                <p className="bp-card__note">Best value for Aapka travel partners</p>
+                <button type="button" className="bp-card__btn" onClick={() => router.push('/become-partner/subscribe')}>
+                  <Roll>Subscribe now</Roll>
+                </button>
+                <ul className="bp-card__trust">
+                  <li>
+                    <Check aria-hidden="true" />
+                    Secure payment via CCAvenue
+                  </li>
+                  <li>
+                    <Check aria-hidden="true" />
+                    Instant activation after payment
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <FrFooter />
+    </div>
+  );
+}

@@ -6,6 +6,7 @@ import {
   uploadImageToSupabase,
   deleteImageFromSupabase,
 } from '@/lib/supabase-storage';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type CategoryRow = {
   id: string;
@@ -85,27 +86,28 @@ export default function CategoriesClient() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Package Master</h3>
-        <p>Create and manage package categories</p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search categories...'
-            value={pendingQuery}
-            onChange={e => {
-              setPage(1);
-              setPendingQuery(e.target.value);
-            }}
-          />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Package Master</h3>
+          <p>Create and manage package categories</p>
         </div>
-        <div className='table_actions'>
-          <button className='btn_primary' onClick={() => setModalOpen(true)}>
-            Add Category
-          </button>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search categories...'
+              value={pendingQuery}
+              onChange={e => {
+                setPage(1);
+                setPendingQuery(e.target.value);
+              }}
+            />
+          </div>
+          <div className='table_actions'>
+            <button className='btn_primary' onClick={() => setModalOpen(true)}>
+              Add Category
+            </button>
+          </div>
         </div>
       </div>
 
@@ -171,7 +173,7 @@ export default function CategoriesClient() {
           >
             Previous
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -182,7 +184,7 @@ export default function CategoriesClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
@@ -366,7 +368,7 @@ function AddCategoryModal({
   };
 
   return (
-    <div className='modal_overlay' onClick={onClose}>
+    <div className='modal_overlay'>
       <div className='modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>Add Category</h4>
@@ -385,14 +387,14 @@ function AddCategoryModal({
           </div>
           <div className='form_row'>
             <label>Type</label>
-            <select value={type} onChange={e => setType(e.target.value)}>
+            <CrmSelect value={type} onChange={e => setType(e.target.value)}>
               <option value=''>Select type</option>
               {typeOptions.map(option => (
                 <option key={option.id} value={option.id}>
                   {option.name}
                 </option>
               ))}
-            </select>
+            </CrmSelect>
           </div>
           <div className='form_row full_width'>
             <label>Description</label>
@@ -745,7 +747,7 @@ function EditCategoryModal({
   };
 
   return (
-    <div className='modal_overlay' onClick={onClose}>
+    <div className='modal_overlay'>
       <div className='modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>Edit Category</h4>
@@ -764,14 +766,14 @@ function EditCategoryModal({
           </div>
           <div className='form_row'>
             <label>Type</label>
-            <select value={type} onChange={e => setType(e.target.value)}>
+            <CrmSelect value={type} onChange={e => setType(e.target.value)}>
               <option value=''>Select type</option>
               {typeOptions.map(option => (
                 <option key={option.id} value={option.id}>
                   {option.name}
                 </option>
               ))}
-            </select>
+            </CrmSelect>
           </div>
           <div className='form_row full_width'>
             <label>Description</label>

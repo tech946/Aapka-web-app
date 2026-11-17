@@ -4,6 +4,14 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { Link2, TrendingUp, Wallet } from 'lucide-react';
+import { AuthField, AuthPassword, AuthShell, AuthSubmit, type AuthPerk } from '@/components/site/auth/AuthShell';
+
+const PERKS: AuthPerk[] = [
+  { icon: Link2, title: 'Your own package links', text: 'Share any Aapka holiday with your personal referral link.' },
+  { icon: TrendingUp, title: 'Live earnings', text: 'See every booking and commission as it comes in.' },
+  { icon: Wallet, title: 'Easy withdrawals', text: 'Request payouts from your wallet whenever you like.' },
+];
 
 export default function InfluencerLoginPage() {
   const router = useRouter();
@@ -37,51 +45,39 @@ export default function InfluencerLoginPage() {
   };
 
   return (
-    <div className="rounded-2xl border bg-card p-8 shadow-lg card-accent">
-      <div className="text-center mb-8">
-        <div className="inline-flex w-14 h-14 rounded-2xl bg-[#ff4c00]/15 items-center justify-center mb-4">
-          <span className="text-2xl font-bold text-[#ff4c00]">AT</span>
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Influencer Portal</h1>
-        <p className="text-muted-foreground text-sm mt-1">Log in to your account</p>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium mb-2">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
-            disabled={isLoading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="input-focus w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-colors"
-            disabled={isLoading}
-          />
-        </div>
-        <button
-          type="submit"
+    <AuthShell
+      kicker="Aapka Influencer Portal"
+      title="Welcome back, creator"
+      text="Log in to share Aapka Tourism holidays with your audience and track what you earn from every booking."
+      image="/images/stock/traveller-couple-dunes.jpg"
+      perksTitle="Inside your portal"
+      perks={PERKS}
+      cardTitle="Influencer login"
+      cardText="Use the email from your invite."
+    >
+      <form onSubmit={handleSubmit} className="xa-form" noValidate>
+        <AuthField
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
           disabled={isLoading}
-          className="btn-accent w-full py-3 rounded-xl font-medium disabled:opacity-50"
-        >
-          {isLoading ? 'Logging in...' : 'Log In'}
-        </button>
+        />
+        <AuthPassword
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          disabled={isLoading}
+        />
+        <AuthSubmit busy={isLoading} label="Log in" busyLabel="Logging in…" />
       </form>
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Not an influencer?{' '}
-        <Link href="/" className="font-medium text-[#ff4c00] hover:underline">
-          Go to main site
-        </Link>
+      <p className="xa-foot">
+        Want to work with us? <Link href="/contact">Get in touch</Link>
       </p>
-    </div>
+    </AuthShell>
   );
 }

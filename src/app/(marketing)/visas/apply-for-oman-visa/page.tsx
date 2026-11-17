@@ -4,7 +4,9 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, FileText, Camera, Upload, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import './oman-visa.css';
+import Select from '@/components/site/ui/Select';
+import DateField from '@/components/site/ui/DateField';
+import { HelpCard, PageShell, SideCard } from '@/components/site/page/PageShell';
 
 const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/jpg,image/png,image/webp';
 const ACCEPTED_DOC_TYPES =
@@ -186,23 +188,16 @@ function OmanVisaApplyContent() {
   };
 
   return (
-    <div className='oman-visa-page'>
-      <div className='oman-visa-container'>
-        {/* Header / Introduction */}
-        <div className='oman-visa-header'>
-          <h1 className='oman-visa-title'>Apply for Oman Tourist Visa</h1>
-          <p className='oman-visa-intro'>
-            Apply for your Oman Visa online in just a few simple steps. Fast
-            processing, secure submission, and professional assistance.
-          </p>
-        </div>
-
-        {/* Important Information */}
-        <div className='oman-visa-info-box'>
-          <h3>Important Information</h3>
-          <p className='oman-visa-indian-only'>
-            <strong>For Indian passport holders only</strong>
-          </p>
+    <PageShell
+      kicker='Visas & transport'
+      title='Apply for Oman Tourist Visa'
+      text='Apply for your Oman visa online in a few simple steps: fast processing, secure submission and help from our team.'
+      image='/images/stock/dest-musandam.jpg'
+      aside={
+        <>
+          <SideCard title='Important information' tone='lift'>
+          <div className='xp-info-box'>
+          <p className='xp-indian-only'>For Indian passport holders only</p>
           <ul>
             <li>
               <strong>Visa Processing Time:</strong> 24 Hours(May take more,
@@ -222,18 +217,21 @@ function OmanVisaApplyContent() {
               <strong>Processing Mode:</strong> Online Application Only
             </li>
           </ul>
-          <p className='oman-visa-note'>
+          <p className='xp-note'>
             Visa approval or rejection is solely at the discretion of Oman
             Immigration Authorities.
           </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className='oman-visa-form'>
-          {/* A. Personal Details */}
-          <div className='oman-visa-section'>
-            <h3 className='oman-visa-section-title'>A. Personal Details</h3>
-            <div className='oman-visa-form-grid'>
-              <div className='oman-visa-form-group full-width'>
+          </div>
+          </SideCard>
+          <HelpCard text='Not sure which visa you need? Ask us before you apply.' />
+        </>
+      }
+    >
+        <form onSubmit={handleSubmit} className='xp-form'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Personal details</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group full-width'>
                 <label>
                   Full Name (As per Passport){' '}
                   <span className='required'>*</span>
@@ -251,29 +249,27 @@ function OmanVisaApplyContent() {
                   className={errors.full_name_as_per_passport ? 'error' : ''}
                 />
                 {errors.full_name_as_per_passport && (
-                  <p className='oman-visa-error'>
+                  <p className='xp-error'>
                     {errors.full_name_as_per_passport}
                   </p>
                 )}
               </div>
-              <div className='oman-visa-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Nationality <span className='required'>*</span>
                 </label>
-                <select
+                <Select
                   value={formData.nationality}
-                  onChange={e =>
-                    handleInputChange('nationality', e.target.value)
-                  }
-                  className={errors.nationality ? 'error' : ''}
-                >
-                  <option value='India'>India</option>
-                </select>
+                  onChange={v => handleInputChange('nationality', v)}
+                  options={['India']}
+                  invalid={!!errors.nationality}
+                  aria-label='Nationality'
+                />
                 {errors.nationality && (
-                  <p className='oman-visa-error'>{errors.nationality}</p>
+                  <p className='xp-error'>{errors.nationality}</p>
                 )}
               </div>
-              <div className='oman-visa-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Contact Number (WhatsApp Preferred){' '}
                   <span className='required'>*</span>
@@ -288,10 +284,10 @@ function OmanVisaApplyContent() {
                   className={errors.contact_number ? 'error' : ''}
                 />
                 {errors.contact_number && (
-                  <p className='oman-visa-error'>{errors.contact_number}</p>
+                  <p className='xp-error'>{errors.contact_number}</p>
                 )}
               </div>
-              <div className='oman-visa-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Email Address <span className='required'>*</span>
                 </label>
@@ -303,57 +299,48 @@ function OmanVisaApplyContent() {
                   className={errors.email ? 'error' : ''}
                 />
                 {errors.email && (
-                  <p className='oman-visa-error'>{errors.email}</p>
+                  <p className='xp-error'>{errors.email}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* B. Travel Details */}
-          <div className='oman-visa-section'>
-            <h3 className='oman-visa-section-title'>B. Travel Details</h3>
-            <div className='oman-visa-form-grid'>
-              <div className='oman-visa-form-group'>
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>Travel details</h3>
+            <div className='xp-form-grid'>
+              <div className='xp-form-group'>
                 <label>
                   Expected Date of Travel <span className='required'>*</span>
                 </label>
-                <input
-                  type='date'
+                <DateField
                   value={formData.expected_travel_date}
-                  onChange={e =>
-                    handleInputChange('expected_travel_date', e.target.value)
-                  }
-                  className={errors.expected_travel_date ? 'error' : ''}
+                  onChange={iso => handleInputChange('expected_travel_date', iso)}
+                  placeholder='Select travel date'
+                  invalid={!!errors.expected_travel_date}
                 />
                 {errors.expected_travel_date && (
-                  <p className='oman-visa-error'>
+                  <p className='xp-error'>
                     {errors.expected_travel_date}
                   </p>
                 )}
               </div>
-              <div className='oman-visa-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Purpose of Visit <span className='required'>*</span>
                 </label>
-                <select
+                <Select
                   value={formData.purpose_of_visit}
-                  onChange={e =>
-                    handleInputChange('purpose_of_visit', e.target.value)
-                  }
-                  className={errors.purpose_of_visit ? 'error' : ''}
-                >
-                  <option value=''>Select</option>
-                  {PURPOSE_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={v => handleInputChange('purpose_of_visit', v)}
+                  options={PURPOSE_OPTIONS}
+                  placeholder='Select'
+                  invalid={!!errors.purpose_of_visit}
+                  aria-label='Purpose of visit'
+                />
                 {errors.purpose_of_visit && (
-                  <p className='oman-visa-error'>{errors.purpose_of_visit}</p>
+                  <p className='xp-error'>{errors.purpose_of_visit}</p>
                 )}
               </div>
-              <div className='oman-visa-form-group'>
+              <div className='xp-form-group'>
                 <label>
                   Duration of Stay <span className='required'>*</span>
                 </label>
@@ -367,119 +354,117 @@ function OmanVisaApplyContent() {
                   className={errors.duration_of_stay ? 'error' : ''}
                 />
                 {errors.duration_of_stay && (
-                  <p className='oman-visa-error'>{errors.duration_of_stay}</p>
+                  <p className='xp-error'>{errors.duration_of_stay}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* C. Document Upload */}
-          <div className='oman-visa-section'>
-            <h3 className='oman-visa-section-title'>
-              C. Document Upload (Mandatory)
+          <div className='xp-section'>
+            <h3 className='xp-section-title'>
+              Documents
             </h3>
-            <p className='oman-visa-doc-hint'>
+            <p className='xp-doc-hint'>
               Please upload clear copies. Format: JPG / PNG / PDF • Max 5 MB per
               file
             </p>
-            <div className='oman-visa-docs-grid'>
-              <div className='oman-visa-doc-group'>
+            <div className='xp-docs-grid'>
+              <div className='xp-doc-group'>
                 <label>
                   <FileText size={16} /> Passport Front Page{' '}
                   <span className='required'>*</span>
                 </label>
-                <div className='oman-visa-file-wrap'>
+                <div className='xp-file-wrap'>
                   <input
                     type='file'
                     accept={ACCEPTED_DOC_TYPES}
                     onChange={e =>
                       setPassportFrontFile(e.target.files?.[0] || null)
                     }
-                    className='oman-visa-file-input'
+                    className='xp-file-input'
                   />
-                  <div className='oman-visa-file-display'>
+                  <div className='xp-file-display'>
                     {passportFrontFile ? (
-                      <span className='oman-visa-file-name'>
+                      <span className='xp-file-name'>
                         {passportFrontFile.name}
                       </span>
                     ) : (
-                      <span className='oman-visa-file-placeholder'>
+                      <span className='xp-file-placeholder'>
                         <Upload size={18} /> Click to upload
                       </span>
                     )}
                   </div>
                 </div>
                 {errors.passport_front && (
-                  <p className='oman-visa-error'>{errors.passport_front}</p>
+                  <p className='xp-error'>{errors.passport_front}</p>
                 )}
               </div>
-              <div className='oman-visa-doc-group'>
+              <div className='xp-doc-group'>
                 <label>
                   <FileText size={16} /> Passport Inside Page{' '}
                   <span className='required'>*</span>
                 </label>
-                <div className='oman-visa-file-wrap'>
+                <div className='xp-file-wrap'>
                   <input
                     type='file'
                     accept={ACCEPTED_DOC_TYPES}
                     onChange={e =>
                       setPassportInsideFile(e.target.files?.[0] || null)
                     }
-                    className='oman-visa-file-input'
+                    className='xp-file-input'
                   />
-                  <div className='oman-visa-file-display'>
+                  <div className='xp-file-display'>
                     {passportInsideFile ? (
-                      <span className='oman-visa-file-name'>
+                      <span className='xp-file-name'>
                         {passportInsideFile.name}
                       </span>
                     ) : (
-                      <span className='oman-visa-file-placeholder'>
+                      <span className='xp-file-placeholder'>
                         <Upload size={18} /> Click to upload
                       </span>
                     )}
                   </div>
                 </div>
                 {errors.passport_inside && (
-                  <p className='oman-visa-error'>{errors.passport_inside}</p>
+                  <p className='xp-error'>{errors.passport_inside}</p>
                 )}
               </div>
-              <div className='oman-visa-doc-group'>
+              <div className='xp-doc-group'>
                 <label>
                   <Camera size={16} /> Passport Photo (White BG){' '}
                   <span className='required'>*</span>
                 </label>
-                <div className='oman-visa-file-wrap'>
+                <div className='xp-file-wrap'>
                   <input
                     type='file'
                     accept={ACCEPTED_IMAGE_TYPES}
                     onChange={e =>
                       setPhotographFile(e.target.files?.[0] || null)
                     }
-                    className='oman-visa-file-input'
+                    className='xp-file-input'
                   />
-                  <div className='oman-visa-file-display'>
+                  <div className='xp-file-display'>
                     {photographFile ? (
-                      <span className='oman-visa-file-name'>
+                      <span className='xp-file-name'>
                         {photographFile.name}
                       </span>
                     ) : (
-                      <span className='oman-visa-file-placeholder'>
+                      <span className='xp-file-placeholder'>
                         <Upload size={18} /> Click to upload
                       </span>
                     )}
                   </div>
                 </div>
                 {errors.photograph && (
-                  <p className='oman-visa-error'>{errors.photograph}</p>
+                  <p className='xp-error'>{errors.photograph}</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 4. Payment Section */}
-          <div className='oman-visa-section oman-visa-payment-box'>
-            <h3 className='oman-visa-section-title'>4. Payment</h3>
-            <p className='oman-visa-fee'>
+          <div className='xp-section xp-payment-box'>
+            <h3 className='xp-section-title'>Payment</h3>
+            <p className='xp-fee'>
               Visa Processing Fees: <strong>{VISA_FEE_AED} AED</strong>{' '}
               (Non-Refundable)
             </p>
@@ -491,9 +476,8 @@ function OmanVisaApplyContent() {
             </ul>
           </div>
 
-          {/* 5. Terms & Conditions */}
-          <div className='oman-visa-section oman-visa-tnc'>
-            <h3 className='oman-visa-section-title'>5. Terms & Conditions</h3>
+          <div className='xp-section xp-tnc'>
+            <h3 className='xp-section-title'>Terms & conditions</h3>
             <ol>
               <li>
                 Visa approval is subject to Oman Immigration rules and
@@ -519,10 +503,9 @@ function OmanVisaApplyContent() {
             </ol>
           </div>
 
-          {/* 6. Declaration */}
-          <div className='oman-visa-section oman-visa-declaration'>
-            <h3 className='oman-visa-section-title'>6. Declaration</h3>
-            <label className='oman-visa-checkbox'>
+          <div className='xp-section xp-declaration'>
+            <h3 className='xp-section-title'>Declaration</h3>
+            <label className='xp-checkbox'>
               <input
                 type='checkbox'
                 checked={declaration1}
@@ -540,7 +523,7 @@ function OmanVisaApplyContent() {
                 I confirm that all the information provided is true and correct.
               </span>
             </label>
-            <label className='oman-visa-checkbox'>
+            <label className='xp-checkbox'>
               <input
                 type='checkbox'
                 checked={declaration2}
@@ -556,7 +539,7 @@ function OmanVisaApplyContent() {
               />
               <span>I understand that the visa fee is non-refundable.</span>
             </label>
-            <label className='oman-visa-checkbox'>
+            <label className='xp-checkbox'>
               <input
                 type='checkbox'
                 checked={declaration3}
@@ -576,37 +559,34 @@ function OmanVisaApplyContent() {
               </span>
             </label>
             {errors.declaration && (
-              <p className='oman-visa-error'>{errors.declaration}</p>
+              <p className='xp-error'>{errors.declaration}</p>
             )}
           </div>
 
-          {/* Submit */}
-          <div className='oman-visa-form-actions'>
+          <div className='xp-form-actions'>
             <button
               type='submit'
-              className='oman-visa-submit-btn'
+              className='xp-submit-btn'
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Loader2 size={20} className='oman-visa-spin' />
+                  <Loader2 size={20} className='xp-spin' />
                   Redirecting to payment...
                 </>
               ) : (
-                'SUBMIT'
+                'Continue to payment'
               )}
             </button>
           </div>
 
-          {/* Footer Security Line */}
-          <p className='oman-visa-footer-security'>
+          <p className='xp-footer-security'>
             <Shield size={16} />
             Your information is secure and will be used only for visa processing
             purposes.
           </p>
         </form>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 
@@ -614,15 +594,14 @@ export default function OmanVisaApplyPage() {
   return (
     <Suspense
       fallback={
-        <div className='oman-visa-page'>
-          <div className='oman-visa-container'>
-            <div className='oman-visa-header'>
-              <div className='animate-pulse' style={{ color: '#6b7280' }}>
-                Loading...
-              </div>
-            </div>
-          </div>
-        </div>
+        <PageShell
+          kicker='Visas & transport'
+          title='Apply for Oman Tourist Visa'
+          text='Loading the application form…'
+          image='/images/stock/dest-musandam.jpg'
+        >
+          <div className='xp-form' />
+        </PageShell>
       }
     >
       <OmanVisaApplyContent />

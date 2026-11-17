@@ -1,18 +1,12 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Footer from './Footer';
+import { showSiteFooter } from '@/components/site/chrome-routes';
+import NavyFooter from './NavyFooter';
 
 export default function ConditionalFooter() {
-  const pathname = usePathname();
+  const pathname = usePathname() || '/';
+  if (!showSiteFooter(pathname)) return null;
 
-  // Hide footer on dashboard and auth routes
-  const isDashboardRoute = pathname?.startsWith('/dashboard');
-  const isAuthRoute = pathname?.startsWith('/auth');
-
-  if (isDashboardRoute || isAuthRoute) {
-    return null;
-  }
-
-  return <Footer />;
+  return <NavyFooter />;
 }

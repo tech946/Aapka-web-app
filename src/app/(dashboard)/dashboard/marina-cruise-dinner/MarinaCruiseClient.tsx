@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import EditMarinaCruiseClient from './EditMarinaCruiseClient';
 import { toast } from 'sonner';
 import { AlertCircle, X, Trash2, Link2 } from 'lucide-react';
 import { type CRMPackageOption } from '@/components/crm/CRMPackageSelector';
 import { AttachCrmModal } from './AttachCrmModal';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type Pkg = {
   package_id: string;
@@ -21,7 +22,21 @@ type Pkg = {
   created_at: string | null;
 };
 
-export default function MarinaCruiseClient() {
+/** Some rows store the text "null" for empty category / timing - show a dash. */
+function shown(v: string | null | undefined): string {
+  const t = (v ?? '').trim();
+  return !t || t.toLowerCase() === 'null' ? '-' : t;
+}
+
+export default function MarinaCruiseClient({
+  title,
+  subtitle,
+  actions,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
+}) {
   const [rows, setRows] = useState<Pkg[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -295,6 +310,27 @@ export default function MarinaCruiseClient() {
 
   return (
     <>
+      {/* title row: heading, search and the page's actions on one line */}
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>{title}</h3>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search packages...'
+              value={pendingQuery}
+              onChange={e => {
+                setPage(1);
+                setPendingQuery(e.target.value);
+              }}
+            />
+          </div>
+          <div className='table_actions'>{actions}</div>
+        </div>
+      </div>
       {error && (
         <div
           style={{
@@ -308,26 +344,12 @@ export default function MarinaCruiseClient() {
           Error: {error}
         </div>
       )}
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search packages...'
-            value={pendingQuery}
-            onChange={e => {
-              setPage(1);
-              setPendingQuery(e.target.value);
-            }}
-          />
-        </div>
-        <div className='table_actions'></div>
-      </div>
 
       <div className='table_wrapper'>
         <table className='table'>
           <thead>
             <tr>
-              <th>Name</th>
+              <th className='package_name_cell'>Name</th>
               <th>Category</th>
               <th>Timing</th>
               <th>Adult</th>
@@ -357,9 +379,9 @@ export default function MarinaCruiseClient() {
             {!loading &&
               rows.map(p => (
                 <tr key={p.package_id}>
-                  <td>{p.package_name}</td>
-                  <td>{p.category ?? '-'}</td>
-                  <td>{p.timing ?? '-'}</td>
+                  <td className='package_name_cell'>{p.package_name}</td>
+                  <td>{shown(p.category)}</td>
+                  <td>{shown(p.timing)}</td>
                   <td>{p.adult_price ?? p.package_price ?? '-'}</td>
                   <td>{p.child_price ?? '-'}</td>
                   <td>
@@ -458,7 +480,7 @@ export default function MarinaCruiseClient() {
           >
             Previous
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -469,7 +491,7 @@ export default function MarinaCruiseClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
@@ -481,7 +503,7 @@ export default function MarinaCruiseClient() {
 
       {/* Confirmation Modal */}
       {confirmModal && (
-        <div className='modal_overlay' onClick={handleCancelStatusChange}>
+        <div className='modal_overlay'>
           <div
             className='modal status_confirm_modal'
             onClick={e => e.stopPropagation()}
@@ -566,7 +588,7 @@ export default function MarinaCruiseClient() {
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (
-        <div className='modal_overlay' onClick={handleCancelDelete}>
+        <div className='modal_overlay'>
           <div
             className='modal status_confirm_modal'
             onClick={e => e.stopPropagation()}

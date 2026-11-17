@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import { LayoutDashboard, Package, Wallet, TrendingUp, User, LogOut } from 'lucide-react';
 import './influencer.css';
 
@@ -18,7 +18,7 @@ export default function InfluencerLayout({
   const pathname = usePathname();
   const [checking, setChecking] = useState(true);
   const [isInfluencer, setIsInfluencer] = useState<boolean | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserSupabaseClient();
 
   const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p));
 
@@ -66,6 +66,10 @@ export default function InfluencerLayout({
       active = false;
     };
   }, [pathname, isPublic, supabase, router]);
+
+  if (pathname === '/influencer/login') {
+    return <>{children}</>;
+  }
 
   if (isPublic) {
     return (

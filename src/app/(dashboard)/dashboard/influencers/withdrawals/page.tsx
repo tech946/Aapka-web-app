@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type Withdrawal = {
   id: string;
@@ -86,20 +87,18 @@ export default function InfluencerWithdrawalsPage() {
 
   return (
     <div className="dashboard_page">
-      <div className="heading_block">
-        <h3>Withdrawal Requests</h3>
-        <p>Process influencer payout requests. Mark as paid after completing bank transfer.</p>
-      </div>
-
-      <div className="table_toolbar">
-        <div className="table_search" />
+      <div className="heading_block heading_block--actions">
+        <div className="heading_text">
+          <h3>Withdrawal Requests</h3>
+          <p>Process influencer payout requests. Mark as paid after completing bank transfer.</p>
+        </div>
         <div className="table_actions">
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="select_filter">
+          <CrmSelect value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="select_filter">
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
             <option value="paid">Paid</option>
             <option value="rejected">Rejected</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
@@ -166,7 +165,7 @@ export default function InfluencerWithdrawalsPage() {
       </div>
 
       {notesModal && (
-        <div className="modal_overlay" onClick={() => setNotesModal(null)}>
+        <div className="modal_overlay">
           <div className="modal modal_notes" onClick={e => e.stopPropagation()}>
             <div className="modal_header">
               <h4 className="modal_notes_title">Mark as Paid</h4>

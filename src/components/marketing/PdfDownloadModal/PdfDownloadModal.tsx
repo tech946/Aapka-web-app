@@ -86,7 +86,7 @@ export default function PdfDownloadModal({
   const submitButtonClass = isMobile ? 'mobile-booking-add-to-cart-button' : 'booking-add-to-cart-button';
 
   return (
-    <div className={overlayClass} onClick={onClose}>
+    <div className={overlayClass}>
       <div className={modalClass} onClick={e => e.stopPropagation()}>
         <div className={headerClass}>
           <h3 className={titleClass}>Send PDF Brochure</h3>

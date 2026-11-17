@@ -3,6 +3,32 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/** The attraction master changes rarely: keep the CRM response for an hour. */
+const CACHE_SECONDS = 60 * 60;
+
+interface AttractionRow {
+  name?: string;
+  code?: string | null;
+  area_name?: string | null;
+  top_attraction?: boolean;
+}
+
+/**
+ * Optional narrowing so the website downloads only what it shows:
+ *   ?top=1    top attractions only (the enquiry page's popular picks)
+ *   ?q=term   name / code / area contains the term
+ * Rows come back top attractions first, then A–Z.
+ */
+function narrow(rows: AttractionRow[], params: URLSearchParams): AttractionRow[] {
+  const q = params.get('q')?.trim().toLowerCase();
+  let out = rows;
+  if (params.get('top') === '1') out = out.filter(r => r.top_attraction);
+  if (q) out = out.filter(r => [r.name, r.code, r.area_name].some(v => v && v.toLowerCase().includes(q)));
+  return [...out].sort(
+    (a, b) => Number(!!b.top_attraction) - Number(!!a.top_attraction) || String(a.name ?? '').localeCompare(String(b.name ?? ''))
+  );
+}
+
 // GET - Fetch area category dropdowns from external API
 export async function GET(req: NextRequest) {
   try {
@@ -50,7 +76,7 @@ export async function GET(req: NextRequest) {
         'x-api-key': apiKey,
         'Content-Type': 'application/json',
       },
-      cache: 'no-store',
+      next: { revalidate: CACHE_SECONDS },
     });
 
     if (!response.ok) {
@@ -123,11 +149,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Return only attractions category master
+    // Return only attractions category master (narrowed by ?q= / ?top=)
     return NextResponse.json(
-      { data: attractionsData },
+      { data: narrow(attractionsData, req.nextUrl.searchParams) },
       {
         headers: {
+          'Cache-Control': `public, max-age=300, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=86400`,
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, x-api-key',

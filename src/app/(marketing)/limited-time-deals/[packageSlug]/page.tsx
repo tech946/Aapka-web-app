@@ -1,41 +1,41 @@
 'use client';
 
-import type { CSSProperties } from 'react';
-import {
-  useState,
-  useEffect,
-  useLayoutEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Zap,
-  Minus,
-  Plus,
-  X,
-  Calendar,
-  ChevronDown,
-} from 'lucide-react';
 import { format, parseISO, startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
-import PackageGallery from '@/app/(marketing)/category/[slug]/[packageId]/PackageGallery';
-import PackageDetailsTabs from '@/app/(marketing)/category/[slug]/[packageId]/PackageDetailsTabs';
 import LimitedTimeDealCalendar from '@/components/marketing/LimitedTimeDealCalendar';
-import { useCart, type CartItemStorage } from '@/context/CartContext';
+import { useBooking, type BookingRequest } from '@/context/BookingContext';
 import {
   getOfferPackageTravelDates,
   getOfferPackageTravelDatesStatus,
 } from '@/lib/offer-package-dates';
 import { useAgentStatus } from '@/hooks/use-marketing-queries';
-import { getAgentDiscountPercentage } from '@/lib/agent-discount';
-import { AgentDiscountPrice } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
-import '../../category/packages.css';
-import '../../category/[slug]/[packageId]/package-details.css';
+import { applyAgentDiscount, getAgentDiscountPercentage } from '@/lib/agent-discount';
+import { replaceLtdOccupancyPhrases } from '@/lib/ltd-copy';
+import { getPackageGalleryImages } from '@/lib/package-gallery';
+import { parseDateStringToLocal } from '@/lib/utils';
+import { LIMITED_DEALS, holidaysHref } from '@/config/holiday-types';
+import { inclusionsOf } from '@/components/site/listing/listing-data';
+import PdpShell from '@/components/site/pdp/PdpShell';
+import PdpState from '@/components/site/pdp/PdpState';
+import {
+  BkCard,
+  BkCheck,
+  BkDateField,
+  BkFlexLink,
+  BkFoot,
+  BkPersons,
+  BkPrice,
+  BkStep,
+  BkTrust,
+  buildQuote,
+  offLabel,
+} from '@/components/site/pdp/booking';
+import { durationLabel, money } from '@/components/site/pdp/pdp-data';
+import BookingWizard from '@/components/site/pdp/BookingWizard';
+import { useDateList, useDealSoldOut } from '@/components/site/pdp/wizard-dates';
 
 /** Solo-only packages take a single traveller: no adult/child/infant choice,
     no min_adults floor, and only the solo price is ever shown. */
@@ -43,139 +43,6 @@ function isSoloOnlyPackage(
   pkg: Pick<Package, 'solo_traveller_enabled' | 'solo_traveller_only'> | null | undefined
 ) {
   return Boolean(pkg?.solo_traveller_only && pkg?.solo_traveller_enabled);
-}
-
-function formatAedAmount(n: number) {
-  return `AED ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-/** Package hero pricing: same layout as package details (main total + Adult / Child / Infant grid). */
-function LtdPackagePricingDisplay({
-  pkg,
-  agentDiscount,
-}: {
-  pkg: Package;
-  agentDiscount: number;
-}) {
-  const adultP = Number(pkg.adult_price) || 0;
-  const childP = Number(pkg.child_price) || 0;
-  const infantP = Number(pkg.infant_price) || 0;
-  const packagePrice = Number(pkg.package_price) || 0;
-  const soloP =
-    pkg.solo_traveller_price != null ? Number(pkg.solo_traveller_price) : 0;
-
-  const price = (amount: number) => (
-    <AgentDiscountPrice
-      price={amount}
-      percentage={agentDiscount}
-      format={formatAedAmount}
-    />
-  );
-
-  const hasBreakdown = adultP > 0 || childP > 0 || infantP > 0;
-  const hasSolo = Boolean(pkg.solo_traveller_enabled && soloP > 0);
-
-  if (!hasBreakdown && !packagePrice && !hasSolo) return null;
-
-  /* Solo-only SKU: the package is sold to a single traveller, so the Adult /
-     Child / Infant grid is meaningless - show the solo rate on its own. */
-  if (isSoloOnlyPackage(pkg)) {
-    const soloOnlyAmount = soloP > 0 ? soloP : adultP > 0 ? adultP : packagePrice;
-    if (!soloOnlyAmount) return null;
-    return (
-      <div className='package-hero-pricing'>
-        <span className='package-hero-price-current'>
-          {price(soloOnlyAmount)}
-        </span>
-        {agentDiscount > 0 && (
-          <span className='agent-discount-badge'>
-            Agent Discount {agentDiscount}%
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  /* Package-only SKU: single headline price, no duplicate row in the grid */
-  if (!hasBreakdown && !hasSolo && packagePrice > 0) {
-    return (
-      <div className='package-hero-pricing'>
-        <span className='package-hero-price-current'>
-          {price(packagePrice)}
-        </span>
-      </div>
-    );
-  }
-
-  const minAdults = Math.max(1, pkg.min_adults ?? 2);
-  const mainFromAdults = adultP > 0 ? adultP * minAdults : 0;
-  const mainAmount =
-    packagePrice > 0
-      ? packagePrice
-      : mainFromAdults > 0
-        ? mainFromAdults
-        : hasSolo
-          ? soloP
-          : 0;
-
-  return (
-    <>
-      {mainAmount > 0 && (
-        <div className='package-hero-pricing'>
-          <span className='package-hero-price-current'>
-            {price(mainAmount)}
-          </span>
-          {agentDiscount > 0 && (
-            <span className='agent-discount-badge'>
-              Agent Discount {agentDiscount}%
-            </span>
-          )}
-        </div>
-      )}
-      <div className='package-hero-price-breakdown'>
-        {adultP > 0 && (
-          <div className='package-hero-price-item'>
-            <span className='package-hero-price-item-label'>Adult</span>
-            <span className='package-hero-price-item-age'>12+ Years</span>
-            <span className='package-hero-price-item-amount'>
-              {price(adultP)}
-            </span>
-          </div>
-        )}
-        {childP > 0 && (
-          <div className='package-hero-price-item'>
-            <span className='package-hero-price-item-label'>Child</span>
-            <span className='package-hero-price-item-age'>2-8 Years</span>
-            <span className='package-hero-price-item-amount'>
-              {price(childP)}
-            </span>
-          </div>
-        )}
-        {infantP > 0 && (
-          <div className='package-hero-price-item'>
-            <span className='package-hero-price-item-label'>Infant</span>
-            <span className='package-hero-price-item-age'>&lt; 2 Years</span>
-            <span className='package-hero-price-item-amount'>
-              {price(infantP)}
-            </span>
-          </div>
-        )}
-        {hasSolo && (
-          <div className='package-hero-price-item'>
-            <span className='package-hero-price-item-label'>
-              Solo Traveller
-            </span>
-            <span className='package-hero-price-item-age'>
-              Double/Triple occupancy
-            </span>
-            <span className='package-hero-price-item-amount'>
-              {price(soloP)}
-            </span>
-          </div>
-        )}
-      </div>
-    </>
-  );
 }
 
 interface Package {
@@ -221,22 +88,16 @@ interface LimitedTimeDeal {
 export default function LimitedTimeDealDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { startBooking } = useBooking();
   const packageSlug = params?.packageSlug as string;
 
   const [deal, setDeal] = useState<LimitedTimeDeal | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [month, setMonth] = useState<Date>(new Date());
   const [persons, setPersons] = useState({ adult: 2, child: 0, infant: 0 });
   const [isSoloTraveller, setIsSoloTraveller] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [showDateRequiredError, setShowDateRequiredError] = useState(false);
-  const dateTriggerRef = useRef<HTMLDivElement>(null);
-  const calendarPopoverRef = useRef<HTMLDivElement>(null);
-  const [calendarPopoverStyle, setCalendarPopoverStyle] =
-    useState<CSSProperties>({});
 
   const pkg = deal?.package;
   const soloOnly = isSoloOnlyPackage(pkg);
@@ -285,55 +146,6 @@ export default function LimitedTimeDealDetailPage() {
     return total;
   }, [pkg, persons, isSoloTraveller, soloOnly]);
 
-  const formatPrice = (price: number) => formatAedAmount(price);
-
-  const updateCalendarPopoverPosition = useCallback(() => {
-    const el = dateTriggerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const width = Math.max(r.width, 300);
-    const maxH = Math.min(
-      420,
-      typeof window !== 'undefined' ? window.innerHeight - r.bottom - 24 : 420
-    );
-    let left = r.left;
-    if (left + width > window.innerWidth - 12) {
-      left = Math.max(12, window.innerWidth - width - 12);
-    }
-    setCalendarPopoverStyle({
-      position: 'fixed',
-      top: r.bottom + 6,
-      left,
-      width,
-      maxHeight: maxH,
-      zIndex: 10050,
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!showCalendar) return;
-    updateCalendarPopoverPosition();
-    const onReposition = () => updateCalendarPopoverPosition();
-    window.addEventListener('resize', onReposition);
-    window.addEventListener('scroll', onReposition, true);
-    return () => {
-      window.removeEventListener('resize', onReposition);
-      window.removeEventListener('scroll', onReposition, true);
-    };
-  }, [showCalendar, updateCalendarPopoverPosition]);
-
-  useEffect(() => {
-    if (!showCalendar) return;
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (dateTriggerRef.current?.contains(t)) return;
-      if (calendarPopoverRef.current?.contains(t)) return;
-      setShowCalendar(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showCalendar]);
-
   /* Solo-only packages have no traveller choice: the booking is always one
      solo traveller, so lock the state as soon as the package resolves. */
   useEffect(() => {
@@ -341,16 +153,6 @@ export default function LimitedTimeDealDetailPage() {
     setIsSoloTraveller(true);
     setPersons({ adult: 1, child: 0, infant: 0 });
   }, [soloOnly]);
-
-  useEffect(() => {
-    if (showModal) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prev;
-      };
-    }
-  }, [showModal]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -387,18 +189,17 @@ export default function LimitedTimeDealDetailPage() {
     fetchData();
   }, [packageSlug]);
 
-  const handleAddToCart = () => {
-    if (!deal || !pkg) return;
+  /** Checks the deal and hands it to checkout; false (with a toast) when something is missing. */
+  const prepareBooking = (): boolean => {
+    if (!deal || !pkg) return false;
     if (!selectedDate) {
-      setShowDateRequiredError(true);
       toast.error('Please select a travel date before continuing.');
-      return;
+      return false;
     }
-    setShowDateRequiredError(false);
     const minAdults = pkg.min_adults ?? 2;
     if (!soloOnly && !isSoloTraveller && persons.adult < minAdults) {
       toast.error(`Minimum ${minAdults} adults required`);
-      return;
+      return false;
     }
     const totalPassengers =
       soloOnly || isSoloTraveller
@@ -406,10 +207,10 @@ export default function LimitedTimeDealDetailPage() {
         : persons.adult + persons.child + persons.infant;
     if (totalPassengers === 0) {
       toast.error('Select at least one passenger');
-      return;
+      return false;
     }
 
-    const cartItem: CartItemStorage = {
+    const bookingRequest: BookingRequest = {
       packageId: pkg.package_id,
       packageSlug,
       categorySlug: 'offer-packages',
@@ -421,22 +222,14 @@ export default function LimitedTimeDealDetailPage() {
       withVisa: false,
     };
 
-    addToCart(cartItem);
-    toast.success('Package added to cart!');
-    setShowModal(false);
-    router.push('/checkout');
+    startBooking(bookingRequest);
+    return true;
   };
 
-  const handleOpenModal = () => {
-    setShowDateRequiredError(false);
-    setShowModal(true);
-    setShowCalendar(false);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setShowCalendar(false);
-    setShowDateRequiredError(false);
+  /** Book now: this one booking, straight to checkout (the deal
+      page's original single action). */
+  const handleBookNow = () => {
+    if (prepareBooking()) router.push('/checkout');
   };
 
   const updatePersonCount = (
@@ -452,332 +245,210 @@ export default function LimitedTimeDealDetailPage() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className='package-details-page'>
-        <div className='package-details-loading'>Loading...</div>
-      </div>
-    );
-  }
+  // Book now modal: the deal calendar's days (listed dates minus sold-out ones)
+  const dealDates = useDateList(availableTravelDates);
+  const dealSoldOut = useDealSoldOut(deal?.id);
+
+  if (loading) return <PdpState loading />;
 
   if (!deal || !pkg) {
     return (
-      <div className='package-details-page'>
-        <div className='package-details-error'>
-          <h2>Deal or package not found</h2>
-          <Link href='/limited-time-deals' className='back-button'>
-            <ArrowLeft /> Back to Limited Time Deals
-          </Link>
-        </div>
-      </div>
+      <PdpState
+        title='Deal not found'
+        backHref={holidaysHref(LIMITED_DEALS.key)}
+        backLabel='Back to limited time deals'
+      />
     );
   }
 
-  const images = (
-    pkg.gallery?.length
-      ? pkg.gallery
-      : pkg.thumbnail_image
-        ? [pkg.thumbnail_image]
-        : []
-  ) as string[];
+  const images = getPackageGalleryImages(pkg.gallery, pkg.thumbnail_image);
+  const duration = durationLabel(pkg.package_days, pkg.package_nights);
+  const solo = (isSoloTraveller || soloOnly) && !!pkg.solo_traveller_enabled;
+  const adultP = Number(pkg.adult_price) || 0;
+  const childP = Number(pkg.child_price) || 0;
+  const infantP = Number(pkg.infant_price) || 0;
+  const soloP =
+    Number(pkg.solo_traveller_price) ||
+    adultP ||
+    Number(pkg.package_price) ||
+    0;
+  const quote = buildQuote({
+    solo,
+    persons,
+    prices: { adultPrice: adultP, childPrice: childP, infantPrice: infantP, soloTravellerPrice: soloP },
+    packagePrice: !adultP && !childP && !infantP ? Number(pkg.package_price) || 0 : null,
+    pct: agentDiscount,
+    pctLabel: agentDiscount ? `Agent discount (${agentDiscount}%)` : null,
+    // the deal page showed agent prices discounted, as AgentDiscountPrice does
+    total: agentDiscount
+      ? (applyAgentDiscount(calculatedPrice, agentDiscount) as number)
+      : calculatedPrice,
+  });
+
+  const endsOn = parseDateStringToLocal(deal.end_date);
+  const endsLabel = endsOn ? format(endsOn, 'd MMM') : '';
+  const minAdults = pkg.min_adults ?? 2;
+
+  const whatsappText = `Hi, I have a question about the limited time deal on ${pkg.package_name}${duration ? ` (${duration})` : ''}.`;
+  const issue = !selectedDate ? 'Select your travel date' : null;
+
+  // solo traveller choice, shared by the card and the Book now modal
+  const soloStep =
+    pkg.solo_traveller_enabled ? (
+      <BkStep label='Travelling'>
+        <BkCheck
+          label={soloOnly ? 'Solo traveller · 1 person' : 'Solo traveller'}
+          price={soloP ? money(soloP) : undefined}
+          checked={solo}
+          locked={soloOnly}
+          onChange={v => {
+            setIsSoloTraveller(v);
+            if (v) setPersons({ adult: 1, child: 0, infant: 0 });
+            else setPersons(prev => ({ ...prev, adult: minAdults }));
+          }}
+        />
+      </BkStep>
+    ) : null;
+
+  const booking = (
+    <BkCard
+      head={
+        <BkPrice
+          now={quote.now || null}
+          strike={quote.strike}
+          off={offLabel(quote.now, quote.strike)}
+          basis={quote.basis}
+        />
+      }
+      foot={
+        <BkFoot
+          total={quote.total}
+          travellers={quote.travellers}
+          lines={quote.lines}
+          savings={quote.savings}
+          issue={issue}
+          onBook={handleBookNow}
+        />
+      }
+    >
+      {soloStep}
+
+      <BkStep label={soloOnly ? 'Date' : 'Travellers & date'}>
+        {soloOnly ? null : (
+          <BkPersons
+            disabled={isSoloTraveller}
+            onStep={updatePersonCount}
+            rows={[
+              { id: 'adult', label: 'Adult', hint: adultP ? `12+ years · ${money(adultP)}` : '12+ years', value: persons.adult, min: minAdults },
+              { id: 'child', label: 'Child', hint: childP ? `2–8 years · ${money(childP)}` : '2–8 years', value: persons.child, min: 0 },
+              { id: 'infant', label: 'Infant', hint: infantP ? `Under 2 · ${money(infantP)}` : 'Under 2', value: persons.infant, min: 0 },
+            ]}
+          />
+        )}
+        <BkDateField
+          value={selectedDate ? format(selectedDate, 'EEE, d MMM yyyy') : ''}
+          placeholder='Select travel date'
+          open={showCalendar}
+          onOpenChange={setShowCalendar}
+        >
+          <LimitedTimeDealCalendar
+            dealId={deal.id}
+            availableDates={availableTravelDates}
+            travelDatesStatus={travelDatesStatus}
+            selectedDate={selectedDate}
+            onDateSelect={d => {
+              setSelectedDate(d);
+              if (d) setShowCalendar(false);
+            }}
+            month={month}
+            onMonthChange={setMonth}
+          />
+        </BkDateField>
+        <BkFlexLink />
+      </BkStep>
+
+      <BkTrust
+        items={[
+          ...(endsLabel ? [`Deal price until ${endsLabel}`] : []),
+          'Limited bookings each day',
+          ...(agentDiscount ? [`${agentDiscount}% agent discount applied`] : []),
+        ]}
+      />
+    </BkCard>
+  );
+
+  const wizard = (
+    <BookingWizard
+      pax={
+        soloOnly
+          ? null
+          : {
+              rows: [
+                { id: 'adult', label: 'Adult', hint: adultP ? `12+ years · ${money(adultP)}` : '12+ years', value: persons.adult, min: minAdults },
+                { id: 'child', label: 'Child', hint: childP ? `2–8 years · ${money(childP)}` : '2–8 years', value: persons.child, min: 0 },
+                { id: 'infant', label: 'Infant', hint: infantP ? `Under 2 · ${money(infantP)}` : 'Under 2', value: persons.infant, min: 0 },
+              ],
+              onStep: updatePersonCount,
+              locked: isSoloTraveller ? 'Solo traveller: 1 adult. Untick "Solo traveller" below to add people.' : null,
+            }
+      }
+      options={soloStep}
+      dates={{
+        fromMonth: dealDates.fromMonth,
+        toMonth: dealDates.toMonth,
+        isDisabled: d => !dealDates.has(d) || dealSoldOut.has(format(d, 'yyyy-MM-dd')),
+        selected: selectedDate,
+        onSelect: setSelectedDate,
+      }}
+      total={quote.total}
+      travellers={quote.travellers}
+      issue={null}
+      onBook={handleBookNow}
+    />
+  );
 
   return (
-    <div className='package-details-page'>
-      <div className='package-hero-section'>
-        <PackageGallery images={images} packageName={pkg.package_name} />
-        <div className='package-hero-details'>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Zap size={20} style={{ color: '#fd6b06' }} />
-            <span style={{ fontSize: 12, color: '#fd6b06', fontWeight: 600 }}>
-              Limited Time Deal
-            </span>
-          </div>
-          <h1 className='package-hero-title'>{pkg.package_name}</h1>
-          <LtdPackagePricingDisplay pkg={pkg} agentDiscount={agentDiscount} />
-          {pkg.package_description && (
-            <p className='package-hero-description'>
-              {pkg.package_description}
+    <PdpShell
+      images={images}
+      name={pkg.package_name}
+      duration={duration}
+      kind='Limited Time Deal'
+      badge={endsLabel ? LIMITED_DEALS.badge.replace('{date}', endsLabel) : LIMITED_DEALS.label}
+      inclusions={inclusionsOf(pkg as never, null)}
+      copy={{
+        overview: pkg.overview,
+        description: pkg.package_description,
+        holidayHtml: pkg.holiday_description_html,
+        itinerary: pkg.itinerary,
+        inclusionHtml: pkg.inclusion_html,
+        exclusionHtml: pkg.exclusion_html,
+        termsHtml: pkg.terms_html,
+      }}
+      rewrite={replaceLtdOccupancyPhrases}
+      notes={[
+        {
+          id: 'cancellation',
+          title: 'Cancellation policy',
+          body: (
+            <p>
+              Cancellation charges depend on how close to travel you cancel.{' '}
+              <Link href='/cancellation-policy'>Read the cancellation policy</Link>.
             </p>
-          )}
-          <div className='package-hero-buttons'>
-            <button
-              type='button'
-              className='package-hero-add-to-cart-button'
-              onClick={handleOpenModal}
-            >
-              Book Now
-            </button>
-          </div>
-        </div>
-      </div>
-      <PackageDetailsTabs pkg={pkg} sanitizeOccupancyCopy />
-
-      {showModal &&
-        typeof window !== 'undefined' &&
-        createPortal(
-          <div
-            className='desktop-booking-modal-overlay'
-            onClick={handleCloseModal}
-          >
-            <div
-              className='desktop-booking-modal'
-              onClick={e => e.stopPropagation()}
-              style={{ width: 520, maxWidth: 'calc(100vw - 40px)' }}
-            >
-              <div className='desktop-booking-modal-header'>
-                <h3 className='desktop-booking-modal-title'>
-                  Select Date & Travellers
-                </h3>
-                <button
-                  type='button'
-                  className='desktop-booking-modal-close'
-                  onClick={handleCloseModal}
-                  aria-label='Close'
-                >
-                  <X className='desktop-booking-modal-close-icon' size={20} />
-                </button>
-              </div>
-              <div
-                className='desktop-booking-modal-content'
-                style={{
-                  overflow: 'visible',
-                  maxHeight: 'calc(100vh - 120px)',
-                }}
-              >
-                    {/* Date field — calendar opens in a fixed portal (true dropdown), not inline */}
-                    <div className='ltd-date-dropdown-wrapper'>
-                      <div ref={dateTriggerRef}>
-                        <button
-                          type='button'
-                          className={`ltd-date-dropdown-trigger${showDateRequiredError ? ' ltd-date-dropdown-trigger--error' : ''}`}
-                          onClick={() => setShowCalendar(prev => !prev)}
-                        >
-                          <Calendar size={18} className='ltd-date-icon' />
-                          <span
-                            className={
-                              selectedDate
-                                ? 'ltd-date-value'
-                                : 'ltd-date-placeholder'
-                            }
-                          >
-                            {selectedDate
-                              ? format(selectedDate, 'dd MMM yyyy')
-                              : 'Select travel date'}
-                          </span>
-                          <ChevronDown
-                            size={18}
-                            className={`ltd-date-chevron ${showCalendar ? 'ltd-date-chevron-open' : ''}`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                    <div className='booking-flexible-date-link-wrap'>
-                      <Link
-                        href='/travel-enquiry'
-                        className='booking-flexible-date-link'
-                      >
-                        Looking for flexible date package?
-                      </Link>
-                    </div>
-                    {showCalendar &&
-                      typeof window !== 'undefined' &&
-                      createPortal(
-                        <div
-                          ref={calendarPopoverRef}
-                          className='ltd-date-calendar-popover'
-                          style={calendarPopoverStyle}
-                          role='dialog'
-                          aria-label='Choose travel date'
-                        >
-                          <LimitedTimeDealCalendar
-                            dealId={deal.id}
-                            availableDates={availableTravelDates}
-                            travelDatesStatus={travelDatesStatus}
-                            selectedDate={selectedDate}
-                            onDateSelect={d => {
-                              setSelectedDate(d);
-                              setShowDateRequiredError(false);
-                              setShowCalendar(false);
-                            }}
-                            month={month}
-                            onMonthChange={setMonth}
-                          />
-                        </div>,
-                        document.body
-                      )}
-
-                    {showDateRequiredError && (
-                      <p className='ltd-date-required-msg' role='alert'>
-                        Please select a travel date to continue.
-                      </p>
-                    )}
-
-                    {soloOnly && (
-                      <div className='solo-traveller-block'>
-                        <span className='solo-checkbox'>
-                          Solo Traveller (1 Traveller)
-                          {pkg.solo_traveller_price != null
-                            ? ` - AED ${pkg.solo_traveller_price.toLocaleString()}`
-                            : ''}
-                        </span>
-                      </div>
-                    )}
-
-                    {pkg.solo_traveller_enabled && !soloOnly && (
-                      <div className='solo-traveller-block'>
-                        <label className='solo-checkbox'>
-                          <input
-                            type='checkbox'
-                            checked={isSoloTraveller}
-                            onChange={e => {
-                              const v = e.target.checked;
-                              setIsSoloTraveller(v);
-                              if (v) {
-                                setPersons({ adult: 1, child: 0, infant: 0 });
-                              } else {
-                                setPersons(prev => ({
-                                  ...prev,
-                                  adult: pkg.min_adults ?? 2,
-                                }));
-                              }
-                            }}
-                          />
-                          Solo Traveller{' '}
-                          {pkg.solo_traveller_price != null
-                            ? `(AED ${pkg.solo_traveller_price.toLocaleString()})`
-                            : ''}
-                        </label>
-                      </div>
-                    )}
-
-                    {!soloOnly && (
-                    <div className='ltd-person-counters'>
-                      <div className='person-counter-row'>
-                        <span className='person-label'>
-                          Adult{' '}
-                          <span className='person-age-info'>(12+ years)</span>
-                        </span>
-                        <div className='person-counter'>
-                          <button
-                            type='button'
-                            className='counter-button'
-                            onClick={() => updatePersonCount('adult', -1)}
-                            disabled={
-                              isSoloTraveller ||
-                              persons.adult <= (pkg.min_adults ?? 2)
-                            }
-                          >
-                            <Minus className='counter-icon' size={18} />
-                          </button>
-                          <span className='counter-value'>{persons.adult}</span>
-                          <button
-                            type='button'
-                            className='counter-button'
-                            onClick={() => updatePersonCount('adult', 1)}
-                            disabled={isSoloTraveller}
-                          >
-                            <Plus className='counter-icon' size={18} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className='person-counter-row'>
-                        <span className='person-label'>
-                          Child{' '}
-                          <span className='person-age-info'>(2-8 years)</span>
-                        </span>
-                        <div className='person-counter'>
-                          <button
-                            type='button'
-                            className='counter-button'
-                            onClick={() => updatePersonCount('child', -1)}
-                            disabled={isSoloTraveller || persons.child === 0}
-                          >
-                            <Minus className='counter-icon' size={18} />
-                          </button>
-                          <span className='counter-value'>{persons.child}</span>
-                          <button
-                            type='button'
-                            className='counter-button'
-                            onClick={() => updatePersonCount('child', 1)}
-                            disabled={isSoloTraveller}
-                          >
-                            <Plus className='counter-icon' size={18} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className='person-counter-row'>
-                        <span className='person-label'>
-                          Infant{' '}
-                          <span className='person-age-info'>
-                            (&lt; 2 years)
-                          </span>
-                        </span>
-                        <div className='person-counter'>
-                          <button
-                            type='button'
-                            className='counter-button'
-                            onClick={() => updatePersonCount('infant', -1)}
-                            disabled={persons.infant === 0}
-                          >
-                            <Minus className='counter-icon' size={18} />
-                          </button>
-                          <span className='counter-value'>
-                            {persons.infant}
-                          </span>
-                          <button
-                            type='button'
-                            className='counter-button'
-                            onClick={() => updatePersonCount('infant', 1)}
-                          >
-                            <Plus className='counter-icon' size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    )}
-
-                    <div className='booking-price-section'>
-                      <div className='booking-price-row'>
-                        <span className='booking-price-label'>TOTAL</span>
-                        <span className='booking-price-amount'>
-                          <AgentDiscountPrice
-                            price={calculatedPrice}
-                            percentage={agentDiscount}
-                            format={formatPrice}
-                          />
-                        </span>
-                      </div>
-                    </div>
-              </div>
-              <div className='ltd-modal-footer'>
-                <button
-                  type='button'
-                  onClick={handleCloseModal}
-                  className='pdf-modal-cancel-button'
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type='button'
-                  onClick={handleAddToCart}
-                  className='booking-add-to-cart-button'
-                  style={{ flex: 1 }}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-    </div>
+          ),
+        },
+      ]}
+      from={{ now: quote.now || null, strike: quote.strike, basis: quote.basis }}
+      sticky={{
+        price: money(quote.total),
+        sub: `${quote.travellers} traveller${quote.travellers === 1 ? '' : 's'} · Limited time deal`,
+      }}
+      whatsappText={whatsappText}
+      booking={
+        <>
+          {booking}
+          {wizard}
+        </>
+      }
+    />
   );
 }

@@ -4,18 +4,25 @@ import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
+import { useBooking } from '@/context/BookingContext';
 import './success.css';
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = searchParams.get('bookingId');
+  const { isLoaded, clearBooking } = useBooking();
 
   useEffect(() => {
     if (!bookingId) {
-      router.replace('/cart');
+      router.replace('/holidays');
     }
   }, [bookingId, router]);
+
+  // the booking is confirmed: the next "Book now" starts fresh
+  useEffect(() => {
+    if (bookingId && isLoaded) clearBooking();
+  }, [bookingId, isLoaded, clearBooking]);
 
   // Show loading while redirecting or if no bookingId
   if (!bookingId) {
@@ -46,9 +53,9 @@ function CheckoutSuccessContent() {
             <Home size={20} />
             Go to Home
           </Link>
-          <Link href='/cart' className='success-button secondary'>
+          <Link href='/holidays' className='success-button secondary'>
             <ArrowLeft size={20} />
-            Back to Cart
+            Browse holidays
           </Link>
         </div>
       </div>

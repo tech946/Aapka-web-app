@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type CartItem = {
   packageId?: string;
@@ -191,38 +192,39 @@ export default function BookingPaymentsPage() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Booking payments</h3>
-        <p>
-          Limited time deal <strong>booking fees</strong> only (not full package
-          checkout). Each row shows the details captured when the customer paid.
-        </p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search by transaction ID, notes...'
-            value={pendingQuery}
-            onChange={e => setPendingQuery(e.target.value)}
-          />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Booking payments</h3>
+          <p>
+            Limited time deal <strong>booking fees</strong> only (not full package
+            checkout). Each row shows the details captured when the customer paid.
+          </p>
         </div>
-        <div className='table_actions'>
-          <select
-            value={paymentStatusFilter}
-            onChange={e => {
-              setPaymentStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className='select_filter'
-          >
-            <option value=''>All payment status</option>
-            <option value='pending'>Pending</option>
-            <option value='completed'>Completed</option>
-            <option value='failed'>Failed</option>
-            <option value='refunded'>Refunded</option>
-          </select>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search by transaction ID, notes...'
+              value={pendingQuery}
+              onChange={e => setPendingQuery(e.target.value)}
+            />
+          </div>
+          <div className='table_actions'>
+            <CrmSelect
+              value={paymentStatusFilter}
+              onChange={e => {
+                setPaymentStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className='select_filter'
+            >
+              <option value=''>All payment status</option>
+              <option value='pending'>Pending</option>
+              <option value='completed'>Completed</option>
+              <option value='failed'>Failed</option>
+              <option value='refunded'>Refunded</option>
+            </CrmSelect>
+          </div>
         </div>
       </div>
 
@@ -355,7 +357,7 @@ export default function BookingPaymentsPage() {
           >
             Next
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -366,7 +368,7 @@ export default function BookingPaymentsPage() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
@@ -375,7 +377,7 @@ export default function BookingPaymentsPage() {
       )}
 
       {modalOpen && selected && (
-        <div className='modal_overlay' onClick={() => setModalOpen(false)}>
+        <div className='modal_overlay'>
           <div
             className='modal_content'
             onClick={e => e.stopPropagation()}

@@ -26,6 +26,8 @@ import TourBookingDaysSelector from './TourBookingDaysSelector';
 import FlexibleDatePackageDates from './FlexibleDatePackageDates';
 import { ALL_TOUR_BOOKING_DAYS } from '@/lib/tour-booking-days';
 import '../../dashboard.css';
+import CrmDateInput from '@/components/dashboard/CrmDateInput';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 export default function AddPackageClient({
   categoryId,
@@ -173,7 +175,7 @@ export default function AddPackageClient({
   };
 
   const modalContent = open ? (
-    <div className='modal_overlay' onClick={() => setOpen(false)}>
+    <div className='modal_overlay'>
       <div className='modal category_modal' onClick={e => e.stopPropagation()}>
         <div className='modal_header'>
           <h4>Add Package</h4>
@@ -668,19 +670,19 @@ export default function AddPackageClient({
 
               <div className='form_row'>
                 <label>Days</label>
-                <select value={days} onChange={e => setDays(e.target.value)}>
+                <CrmSelect value={days} onChange={e => setDays(e.target.value)}>
                   <option value=''>Select days</option>
                   {Array.from({ length: 10 }).map((_, i) => (
                     <option key={i + 1} value={i + 1}>
                       {i + 1} {i + 1 === 1 ? 'Day' : 'Days'}
                     </option>
                   ))}
-                </select>
+                </CrmSelect>
               </div>
 
               <div className='form_row'>
                 <label>Nights</label>
-                <select
+                <CrmSelect
                   value={nights}
                   onChange={e => setNights(e.target.value)}
                 >
@@ -690,12 +692,12 @@ export default function AddPackageClient({
                       {i + 1} {i + 1 === 1 ? 'Night' : 'Nights'}
                     </option>
                   ))}
-                </select>
+                </CrmSelect>
               </div>
 
               <div className='form_row'>
                 <label>Minimum Adults *</label>
-                <select
+                <CrmSelect
                   value={minAdults}
                   onChange={e => setMinAdults(e.target.value)}
                   required
@@ -705,7 +707,7 @@ export default function AddPackageClient({
                       {i + 1} {i + 1 === 1 ? 'Adult' : 'Adults'}
                     </option>
                   ))}
-                </select>
+                </CrmSelect>
                 <span style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
                   Minimum number of adults required to book this package
                 </span>
@@ -751,7 +753,7 @@ export default function AddPackageClient({
                 <div className='form_row full_width'>
                   <label>Travel Dates</label>
                   <div className='date_input_group'>
-                    <input
+                    <CrmDateInput
                       type='date'
                       value={travelDate}
                       onChange={e => setTravelDate(e.target.value)}
@@ -1020,7 +1022,7 @@ export default function AddPackageClient({
             <div className='form_grid pricing_grid'>
               <div className='form_row'>
                 <label>Start Date</label>
-                <input
+                <CrmDateInput
                   type='date'
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
@@ -1033,7 +1035,7 @@ export default function AddPackageClient({
               </div>
               <div className='form_row'>
                 <label>End Date *</label>
-                <input
+                <CrmDateInput
                   type='date'
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
@@ -1097,7 +1099,7 @@ export default function AddPackageClient({
               </div>
               <div className='form_row'>
                 <label>Discount Start Date & Time</label>
-                <input
+                <CrmDateInput
                   type='datetime-local'
                   value={discountStartDate}
                   onChange={e => setDiscountStartDate(e.target.value)}
@@ -1105,7 +1107,7 @@ export default function AddPackageClient({
               </div>
               <div className='form_row'>
                 <label>Discount End Date & Time</label>
-                <input
+                <CrmDateInput
                   type='datetime-local'
                   value={discountEndDate}
                   onChange={e => setDiscountEndDate(e.target.value)}
@@ -1154,7 +1156,7 @@ export default function AddPackageClient({
             <div className='form_grid pricing_grid'>
               <div className='form_row'>
                 <label>Accepted Payment</label>
-                <select
+                <CrmSelect
                   value={acceptPayment}
                   onChange={e =>
                     setAcceptPayment(e.target.value === 'full' ? 'full' : 'half')
@@ -1162,7 +1164,7 @@ export default function AddPackageClient({
                 >
                   <option value='half'>Half (50%) or Full — default</option>
                   <option value='full'>Full payment only</option>
-                </select>
+                </CrmSelect>
               </div>
             </div>
           </div>
@@ -1674,7 +1676,11 @@ export default function AddPackageClient({
         Add Package
       </button>
       {typeof window !== 'undefined' && modalContent
-        ? createPortal(modalContent, document.body)
+        ? createPortal(
+          // portaled outside the layout: carry the CRM scope with it
+          <div className='dashboard_root crm-portal'>{modalContent}</div>,
+          document.body
+        )
         : modalContent}
     </>
   );

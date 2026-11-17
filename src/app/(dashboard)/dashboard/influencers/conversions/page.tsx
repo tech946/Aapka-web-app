@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type Conversion = {
   id: string;
@@ -75,15 +76,13 @@ export default function InfluencerConversionsPage() {
 
   return (
     <div className="dashboard_page">
-      <div className="heading_block">
-        <h3>Referral Conversions</h3>
-        <p>Approve or reject conversions to credit influencer wallets</p>
-      </div>
-
-      <div className="table_toolbar">
-        <div className="table_search" />
+      <div className="heading_block heading_block--actions">
+        <div className="heading_text">
+          <h3>Referral Conversions</h3>
+          <p>Approve or reject conversions to credit influencer wallets</p>
+        </div>
         <div className="table_actions">
-          <select
+          <CrmSelect
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             className="select_filter"
@@ -93,7 +92,7 @@ export default function InfluencerConversionsPage() {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="paid">Paid</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 

@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
     // Influencer referral: read from cookie (set when customer clicked /ref/CODE)
     let influencerReferralCode: string | null = null;
     try {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const refCookie = cookieStore.get(REFERRAL_COOKIE_NAME);
       if (refCookie?.value) influencerReferralCode = refCookie.value;
     } catch {

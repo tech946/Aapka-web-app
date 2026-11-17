@@ -1,5 +1,4 @@
 import React from 'react';
-import './founder.css';
 
 export default function FounderMessagePage() {
   return (

@@ -71,13 +71,11 @@ export default function InfluencersPage() {
 
   return (
     <div className="dashboard_page">
-      <div className="heading_block">
-        <h3>Manage Influencers</h3>
-        <p>View and manage your influencer partners</p>
-      </div>
-
-      <div className="table_toolbar">
-        <div className="table_search" />
+      <div className="heading_block heading_block--actions">
+        <div className="heading_text">
+          <h3>Manage Influencers</h3>
+          <p>View and manage your influencer partners</p>
+        </div>
         <div className="table_actions">
           <Link href="/dashboard/influencers/invite" className="btn_primary">
             <Mail size={16} />

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Mail, Phone, MapPin, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import CrmSelect from '@/components/dashboard/CrmSelect';
 
 type Subscription = {
   id: string;
@@ -192,19 +193,20 @@ export default function AgentsClient() {
 
   return (
     <div className='dashboard_page'>
-      <div className='heading_block'>
-        <h3>Agents</h3>
-        <p>Manage registered agents and their subscriptions</p>
-      </div>
-
-      <div className='table_toolbar'>
-        <div className='table_search'>
-          <input
-            type='text'
-            placeholder='Search by email, mobile, or name...'
-            value={pendingQuery}
-            onChange={e => setPendingQuery(e.target.value)}
-          />
+      <div className='heading_block heading_block--actions'>
+        <div className='heading_text'>
+          <h3>Agents</h3>
+          <p>Manage registered agents and their subscriptions</p>
+        </div>
+        <div className='table_toolbar'>
+          <div className='table_search'>
+            <input
+              type='text'
+              placeholder='Search by email, mobile, or name...'
+              value={pendingQuery}
+              onChange={e => setPendingQuery(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -340,7 +342,7 @@ export default function AgentsClient() {
           >
             Next
           </button>
-          <select
+          <CrmSelect
             value={limit}
             onChange={e => {
               setPage(1);
@@ -351,13 +353,13 @@ export default function AgentsClient() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-          </select>
+          </CrmSelect>
         </div>
       </div>
 
       {/* Details Modal */}
       {modalOpen && selectedAgent && (
-        <div className='modal_overlay' onClick={() => setModalOpen(false)}>
+        <div className='modal_overlay'>
           <div className='modal_content' onClick={e => e.stopPropagation()}>
             <div className='modal_header'>
               <h3>Agent Details</h3>

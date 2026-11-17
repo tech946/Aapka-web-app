@@ -98,14 +98,10 @@ export function AddonsModal({
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="addon-modal-overlay" onClick={handleOverlayClick}>
+    <div className="addon-modal-overlay">
       <div className="addon-modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="addon-modal-header">
           <h2 className="addon-modal-title">Add Add-ons to Your Package</h2>

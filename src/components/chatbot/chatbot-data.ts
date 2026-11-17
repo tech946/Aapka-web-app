@@ -17,13 +17,13 @@ export const CONTACT = {
 };
 
 export const CHAT_NODES: Record<string, ChatNode> = {
-  // ── Start: max 3 pills ────────────────────────────────────
   start: {
     id: 'start',
     options: [
       { label: 'Tour packages', nextId: 'tours-menu' },
       { label: 'How do I book?', nextId: 'booking-how' },
       { label: 'Contact us', nextId: 'contact-menu' },
+      { label: 'Other topics', nextId: 'more-topics' },
     ],
   },
 
@@ -123,7 +123,6 @@ export const CHAT_NODES: Record<string, ChatNode> = {
     ],
     links: [
       { label: 'View packages', href: '/category/uae-tours' },
-      { label: 'Go to cart', href: '/cart' },
     ],
   },
   'booking-payments': {
