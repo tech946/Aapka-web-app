@@ -130,7 +130,7 @@ export default function SignupPopup() {
   return (
     <div className="desert-ember su-root">
       <div className="su-overlay">
-        <div className="su-box" role="dialog" aria-modal="true" aria-label="Subscribe to Aapka Tourism holiday deals" onClick={(e) => e.stopPropagation()}>
+        <div className="su-box" role="dialog" aria-modal="true" aria-label="Get Aapka Tourism holiday deals" onClick={(e) => e.stopPropagation()}>
           <div className="su-media" aria-hidden="true">
             <img src="/images/stock/about-woman-views-720.jpg" alt="" />
           </div>
@@ -228,7 +228,7 @@ export default function SignupPopup() {
 
                   <button type="submit" className="su-submit" disabled={busy}>
                     {busy ? <Loader2 className="su-spin" aria-hidden="true" /> : null}
-                    Subscribe
+                    Submit
                   </button>
                 </form>
               </>
