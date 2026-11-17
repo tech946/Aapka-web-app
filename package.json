@@ -11,6 +11,11 @@
     "format:check": "prettier --check .",
     "format:staged": "prettier --write --ignore-unknown"
   },
+  "pnpm": {
+    "overrides": {
+      "csstype": "3.2.3"
+    }
+  },
   "dependencies": {
     "@ant-design/charts": "^2.6.1",
     "@ant-design/icons": "^6.0.2",
