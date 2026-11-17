@@ -614,9 +614,13 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border: 1.5px solid var(--brand-edge);
   border-radius: var(--radius-full);
-  color: var(--brand-edge);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.ex .co-protect__icon svg {
+  display: block;
 }
 
 .ex .co-sum__name {
