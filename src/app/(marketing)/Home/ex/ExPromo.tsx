@@ -12,7 +12,17 @@ function ImageBanner({ href, src, alt, label }: ImageBannerProps) {
   return (
     <section className="ex-bnr-band" aria-label={label}>
       <Link href={href} className="ex-bnr">
-        <img className="ex-bnr__img" src={src} alt={alt} width={2000} height={667} loading="lazy" decoding="async" />
+        <img
+          className="ex-bnr__img"
+          src={src}
+          srcSet={`${src.replace('.webp', '-1000.webp')} 1000w, ${src} 2000w`}
+          sizes="100vw"
+          alt={alt}
+          width={2000}
+          height={667}
+          loading="lazy"
+          decoding="async"
+        />
       </Link>
     </section>
   );

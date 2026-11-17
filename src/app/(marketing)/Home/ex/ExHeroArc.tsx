@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { afterLoad } from '@/lib/after-load';
 
 export type ArcCard = { key: string; label: string; meta?: string; href: string; small: string; large: string; video?: string };
 
@@ -39,6 +40,7 @@ export default function ExHeroArc({ cards }: { cards: ArcCard[] }) {
     let raf = 0;
     let last = 0;
     let suppressClick = false;
+    let loaded = false;
     let drag: { id: number; x: number; lastX: number; lastT: number; moved: boolean } | null = null;
 
     const measure = () => {
@@ -70,7 +72,7 @@ export default function ExHeroArc({ cards }: { cards: ArcCard[] }) {
           el.style.visibility = show ? 'visible' : 'hidden';
           const video = videos[i];
           if (video) {
-            if (show && !reduce.matches) video.play().catch(() => {});
+            if (show && loaded && !reduce.matches) video.play().catch(() => {});
             else video.pause();
           }
         }
@@ -193,12 +195,18 @@ export default function ExHeroArc({ cards }: { cards: ArcCard[] }) {
     });
     seen.observe(stage);
 
+    const stopWaiting = afterLoad(() => {
+      loaded = true;
+      shown.fill(null);
+    });
+
     measure();
     paint();
     stage.dataset.ready = '';
     start();
 
     return () => {
+      stopWaiting();
       stop();
       resize.disconnect();
       seen.disconnect();
@@ -231,7 +239,7 @@ export default function ExHeroArc({ cards }: { cards: ArcCard[] }) {
                 tabIndex={clone ? -1 : undefined}
               >
                 {card.video ? (
-                  <video className="ex-arc__media" src={card.video} poster={card.large} muted loop playsInline preload="metadata" aria-hidden="true" />
+                  <video className="ex-arc__media" src={card.video} poster={card.large} muted loop playsInline preload="none" aria-hidden="true" />
                 ) : (
                   <img
                     className="ex-arc__media"

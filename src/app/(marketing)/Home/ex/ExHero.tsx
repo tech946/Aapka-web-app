@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import DeferredVideo from '@/components/site/DeferredVideo';
 import { Search } from 'lucide-react';
 import { HOLIDAY_TYPES, holidaysHref } from '@/config/holiday-types';
 import {
@@ -175,13 +176,14 @@ export default function ExHero() {
   return (
     <section className='ex-hero ex-hero--arc' aria-label={HERO.title}>
       <div className='ex-arc__bg' aria-hidden='true'>
-        <video
+        <DeferredVideo
           src='/videos/hero-dubai-sunset.mp4'
+          poster='/images/hero/hero-dubai-sunset-poster.webp'
+          priority
           autoPlay
           muted
           loop
           playsInline
-          preload='auto'
         />
       </div>
       <div className='ex-arc__intro'>

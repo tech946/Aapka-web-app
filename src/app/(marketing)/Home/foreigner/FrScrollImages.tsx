@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import DeferredVideo from '@/components/site/DeferredVideo';
 import { CONTINUE } from './content';
 import { Roll } from './Art';
 
@@ -89,10 +90,7 @@ export default function FrScrollImages({ content = CONTINUE, lottie, dark = fals
         <div key={m.video} className="fr-strip__item" data-drift={(side === 'left' ? LEFT_KINDS : RIGHT_KINDS)[i]}>
           <div className="fr-strip__holder">
             <div className="fr-strip__height" />
-            <video className="fr-strip__fill" poster={m.poster} autoPlay muted loop playsInline preload="none">
-              <source src={m.video} type="video/mp4" />
-              {m.webm ? <source src={m.webm} type="video/webm" /> : null}
-            </video>
+            <DeferredVideo className="fr-strip__fill" src={m.video} poster={m.poster} lazy autoPlay muted loop playsInline />
           </div>
         </div>
       ))}

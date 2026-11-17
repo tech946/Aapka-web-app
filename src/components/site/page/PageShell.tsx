@@ -27,7 +27,7 @@ export function PageShell({
     <div className={'desert-ember ex ' + EX_FONTS}>
       <main className="xp">
         <div className="xp-band" aria-hidden="true">
-          <Image className="xp-band__img" src={image} alt="" fill priority sizes="100vw" style={{ objectPosition: position }} />
+          <Image className="xp-band__img" src={image} alt="" fill priority unoptimized sizes="100vw" style={{ objectPosition: position }} />
         </div>
         <div className="xp-wrap">
           <div className={'xp-grid' + (aside ? '' : ' xp-grid--solo')}>

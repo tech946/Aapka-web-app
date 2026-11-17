@@ -161,8 +161,8 @@ export default function ExListing({ types, items, loading, active, onActiveChang
               </div>
             ) : view.slice.length ? (
               <div className="exl-grid">
-                {view.slice.map((p) => (
-                  <ExCard key={p.id} p={p} />
+                {view.slice.map((p, i) => (
+                  <ExCard key={p.id} p={p} priority={i < 2} />
                 ))}
               </div>
             ) : (

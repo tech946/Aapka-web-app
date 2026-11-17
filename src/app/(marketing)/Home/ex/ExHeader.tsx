@@ -134,7 +134,7 @@ export default function ExHeader() {
             <Menu aria-hidden="true" />
           </button>
           <Link href="/" className="ex-logo" aria-label="Aapka Tourism home">
-            <img src="/aapka-tourism-logo-dark.png" width="404" height="322" alt="Aapka Tourism" />
+            <img src="/aapka-tourism-logo-dark-sm.png" width="404" height="322" alt="Aapka Tourism" />
           </Link>
           <div className="ex-hd ex-hd--start">
             <Drop label="Holidays" align="left" button={<b className="ex-hd__text">Holidays</b>}>
@@ -203,7 +203,7 @@ export default function ExHeader() {
       {drawer && (
         <div className="ex-drawer" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="ex-drawer__head">
-            <img src="/aapka-tourism-logo-light.png" width="404" height="322" alt="Aapka Tourism" />
+            <img src="/aapka-tourism-logo-light-sm.png" width="404" height="322" alt="Aapka Tourism" />
             <button type="button" className="ex-header__burger" aria-label="Close menu" onClick={() => setDrawer(false)}>
               <X aria-hidden="true" />
             </button>

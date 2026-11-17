@@ -44,7 +44,7 @@ export default function FaqPage() {
       <main className="xf">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
         <div className="xf-band" aria-hidden="true">
-          <Image className="xf-band__img" src="/images/stock/faq-dubai-frame.jpg" alt="" fill priority sizes="100vw" />
+          <Image className="xf-band__img" src="/images/stock/faq-dubai-frame.jpg" alt="" fill priority unoptimized sizes="100vw" />
         </div>
         <div className="xf-wrap">
           <div className="xf-grid">

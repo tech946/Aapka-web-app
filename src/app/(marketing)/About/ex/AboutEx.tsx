@@ -53,7 +53,7 @@ type SplitProps = {
   title: string;
   paragraphs: string[];
   pillars: { label: string; text: string }[];
-  images: { main: { src: string; alt: string }; side: { src: string; alt: string } };
+  images: { main: { src: string; small?: string; alt: string }; side: { src: string; alt: string } };
   badge: { stat: string; label: string };
   footer: ReactNode;
 };
@@ -63,7 +63,14 @@ function Split({ id, anchor, className, kicker, title, paragraphs, pillars, imag
     <section id={anchor} className={className} aria-labelledby={id}>
       <div className="ex-wrap ab-story__grid">
         <div className="ab-story__media">
-          <img className="ab-story__main" src={images.main.src} alt={images.main.alt} loading="lazy" />
+          <img
+            className="ab-story__main"
+            src={images.main.src}
+            srcSet={images.main.small ? `${images.main.small} 720w, ${images.main.src} 1400w` : undefined}
+            sizes={images.main.small ? '(max-width: 767px) 90vw, 720px' : undefined}
+            alt={images.main.alt}
+            loading="lazy"
+          />
           <img className="ab-story__side" src={images.side.src} alt={images.side.alt} loading="lazy" />
           <p className="ab-story__badge">
             <b>{badge.stat}</b>

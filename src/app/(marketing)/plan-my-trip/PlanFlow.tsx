@@ -22,6 +22,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
+import DeferredVideo from '@/components/site/DeferredVideo';
 import { CONTACT } from '@/components/site/site-config';
 import {
   AREAS,
@@ -43,6 +44,7 @@ import {
   STEPS,
   TRIP_TYPES,
   VIDEO,
+  VIDEO_POSTER,
   nextMonths,
   nightsBetween,
   plural,
@@ -555,7 +557,7 @@ export default function PlanFlow() {
     <div className="pt" ref={rootRef}>
       <aside className="pt-media" aria-label="Trip overview">
         <div className="pt-media__stack" aria-hidden="true">
-          <video className={'pt-media__item' + (step.media ? '' : ' is-on')} src={VIDEO} autoPlay muted loop playsInline preload="auto" />
+          <DeferredVideo className={'pt-media__item' + (step.media ? '' : ' is-on')} src={VIDEO} poster={VIDEO_POSTER} priority autoPlay muted loop playsInline />
           {MEDIA.map((src) => (
             <img key={src} className={'pt-media__item' + (step.media === src ? ' is-on' : '')} src={src} alt="" decoding="async" />
           ))}

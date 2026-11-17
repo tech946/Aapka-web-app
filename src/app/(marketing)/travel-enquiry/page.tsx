@@ -1,5 +1,7 @@
 import { applyPageSeo } from '@/features/seo/server';
 import type { Metadata } from 'next';
+import { HydrationBoundary } from '@tanstack/react-query';
+import { prefetchEnquiry } from './prefetch';
 import ExHeader from '../Home/ex/ExHeader';
 import { ExFooter } from '../Home/ex/ExSections';
 import { EX_FONTS } from '../Home/ex/fonts';
@@ -18,11 +20,14 @@ export function generateMetadata(): Promise<Metadata> {
   return applyPageSeo(PAGE_METADATA);
 }
 
-export default function TravelEnquiryPage() {
+export default async function TravelEnquiryPage() {
+  const state = await prefetchEnquiry();
   return (
     <div className={'desert-ember ex ' + EX_FONTS}>
       <ExHeader />
-      <EnquiryForm />
+      <HydrationBoundary state={state}>
+        <EnquiryForm />
+      </HydrationBoundary>
       <ExFooter />
     </div>
   );

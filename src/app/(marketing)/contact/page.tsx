@@ -150,7 +150,7 @@ export default function ContactPage() {
       <ExHeader />
       <main className="cx">
         <div className="cx-band" aria-hidden="true">
-          <Image className="cx-band__img" src="/images/stock/dest-dubai.jpg" alt="" fill priority sizes="100vw" />
+          <Image className="cx-band__img" src="/images/stock/dest-dubai.jpg" alt="" fill priority unoptimized sizes="100vw" />
         </div>
         <div className="cx-wrap">
           <div className="cx-grid">

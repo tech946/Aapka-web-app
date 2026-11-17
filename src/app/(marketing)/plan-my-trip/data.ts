@@ -61,6 +61,7 @@ export const INITIAL_PLAN: Plan = {
 const photo = (name: string) => `/images/hero/${name}-720.webp`;
 
 export const VIDEO = '/videos/hero-desert-sunset.mp4';
+export const VIDEO_POSTER = '/images/hero/hero-desert-sunset-poster.webp';
 
 export interface StepMeta {
   id: StepId;

@@ -9,7 +9,15 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'swmowsmjzznmueewmxqa.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+    localPatterns: [{ pathname: '/__none__' }],
+    minimumCacheTTL: 2678400,
   },
   // Moved from experimental in Next.js 15
   serverExternalPackages: [],

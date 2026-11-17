@@ -1,6 +1,8 @@
 import { applyPageSeo } from '@/features/seo/server';
 import type { Metadata } from 'next';
+import { HydrationBoundary } from '@tanstack/react-query';
 import HolidaysView from './HolidaysView';
+import { prefetchHolidays } from './prefetch';
 import '../Home/ex/ex.css';
 import './ex/listing.css';
 
@@ -16,6 +18,11 @@ export function generateMetadata(): Promise<Metadata> {
   return applyPageSeo(PAGE_METADATA);
 }
 
-export default function HolidaysPage() {
-  return <HolidaysView />;
+export default async function HolidaysPage() {
+  const state = await prefetchHolidays();
+  return (
+    <HydrationBoundary state={state}>
+      <HolidaysView />
+    </HydrationBoundary>
+  );
 }

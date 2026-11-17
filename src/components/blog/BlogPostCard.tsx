@@ -1,15 +1,16 @@
 import Link from 'next/link';
 import type { BlogCard } from '@/lib/blog-source';
 import { POST_IMAGE_FALLBACK, readTime } from './format';
+import { responsiveImage } from '@/lib/image-url';
 
-export function BlogPostCard({ post, variant = 'grid' }: { post: BlogCard; variant?: 'grid' | 'featured' }) {
+export function BlogPostCard({ post, variant = 'grid', priority = false }: { post: BlogCard; variant?: 'grid' | 'featured'; priority?: boolean }) {
   const href = `/blogs/${post.slug}`;
   const category = post.blog_categories;
 
   return (
     <article className={`bl-card bl-card--${variant}`}>
       <Link href={href} className='bl-card__media' tabIndex={-1} aria-hidden>
-        <img src={post.featured_image || POST_IMAGE_FALLBACK} alt='' loading={variant === 'featured' ? 'eager' : 'lazy'} />
+        <img {...responsiveImage(post.featured_image || POST_IMAGE_FALLBACK, variant === 'featured' ? '(max-width: 767px) 100vw, 800px' : '(max-width: 767px) 100vw, 400px', 1200)} alt='' loading={priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : undefined} />
       </Link>
       <div className='bl-card__body'>
         {category && (

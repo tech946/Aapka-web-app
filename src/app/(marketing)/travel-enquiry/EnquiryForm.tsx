@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CalendarDays, Check, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import DeferredVideo from '@/components/site/DeferredVideo';
 import Select from '@/components/site/ui/Select';
 import { addDaysIso, isoToday } from '@/components/site/ui/Calendar';
 import { CONTACT } from '@/components/site/site-config';
@@ -392,7 +393,7 @@ export default function EnquiryForm() {
     <div className="at-site desert-ember">
       <div className="te-page">
         <div className="te-band" aria-hidden="true">
-          <video className="te-band__video" src="/videos/hero-desert-sunset.mp4" autoPlay muted loop playsInline preload="auto" />
+          <DeferredVideo className="te-band__video" src="/videos/hero-desert-sunset.mp4" poster="/images/hero/hero-desert-sunset-poster.webp" priority autoPlay muted loop playsInline />
         </div>
         <div className="container">
           <header className="te-hero">

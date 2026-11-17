@@ -162,7 +162,7 @@ export function ExFooter() {
           <div className="ex-ft__legalbox">
             <div className="ex-ft__brand">
               <Link href="/" className="ex-ft__logo" aria-label="Aapka Tourism home">
-                <img src="/aapka-tourism-logo-dark.png" width="404" height="322" alt="" />
+                <img src="/aapka-tourism-logo-dark-sm.png" width="404" height="322" alt="" />
               </Link>
               <div>
                 <p className="ex-ft__copy">© {new Date().getFullYear()} Aapka Tourism. All rights reserved.</p>

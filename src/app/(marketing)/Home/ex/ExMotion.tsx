@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 
 type Kind = 'fade' | 'rise' | 'slide';
+type Gsap = typeof import('gsap').default;
 
 const TARGETS: [string, Kind][] = [
   ['.ex-pop__head, .ex-band__head, .ex-band__cta, .ex-bnr, .ex-faq__head, .ex-faq__list, .ex-faq__all, .ex-st__head, .ex-st__cta, .ex-pop__dots', 'fade'],
@@ -17,7 +15,7 @@ const TARGETS: [string, Kind][] = [
 const EASE = 'power2.out';
 const CLEAR = 'opacity,visibility,transform,transition,willChange';
 
-function play(el: HTMLElement, kind: Kind) {
+function play(gsap: Gsap, el: HTMLElement, kind: Kind) {
   el.dataset.rvIn = '';
 
   if (kind === 'fade') {
@@ -47,66 +45,80 @@ export default function ExMotion() {
     if (!root) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    gsap.registerPlugin(ScrollTrigger);
+    let cancelled = false;
+    let cleanup = () => {};
 
-    const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 });
-    lenis.on('scroll', ScrollTrigger.update);
-    const tick = (time: number) => lenis.raf(time * 1000);
-    gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
+    Promise.all([import('gsap'), import('gsap/ScrollTrigger'), import('lenis')]).then(
+      ([{ default: gsap }, { ScrollTrigger }, { default: Lenis }]) => {
+        if (cancelled) return;
 
-    const seen = new WeakSet<Element>();
-    const ctx = gsap.context(() => {}, root);
+        gsap.registerPlugin(ScrollTrigger);
 
-    const scan = () => {
-      ctx.add(() => {
-        for (const [selector, kind] of TARGETS) {
-          root.querySelectorAll<HTMLElement>(selector).forEach((el) => {
-            if (seen.has(el)) return;
-            seen.add(el);
-            if (el.getBoundingClientRect().top < window.innerHeight) return;
-            if (kind === 'fade') gsap.set(el, { autoAlpha: 0, y: 36, transition: 'none', willChange: 'transform, opacity' });
-            else gsap.set(el, { autoAlpha: 0 });
-            ScrollTrigger.create({
-              trigger: el,
-              start: kind === 'fade' ? 'top 92%' : 'top 85%',
-              once: true,
-              onEnter: () => play(el, kind),
-            });
+        const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 });
+        lenis.on('scroll', ScrollTrigger.update);
+        const tick = (time: number) => lenis.raf(time * 1000);
+        gsap.ticker.add(tick);
+        gsap.ticker.lagSmoothing(0);
+
+        const seen = new WeakSet<Element>();
+        const ctx = gsap.context(() => {}, root);
+
+        const scan = () => {
+          ctx.add(() => {
+            for (const [selector, kind] of TARGETS) {
+              root.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+                if (seen.has(el)) return;
+                seen.add(el);
+                if (el.getBoundingClientRect().top < window.innerHeight) return;
+                if (kind === 'fade') gsap.set(el, { autoAlpha: 0, y: 36, transition: 'none', willChange: 'transform, opacity' });
+                else gsap.set(el, { autoAlpha: 0 });
+                ScrollTrigger.create({
+                  trigger: el,
+                  start: kind === 'fade' ? 'top 92%' : 'top 85%',
+                  once: true,
+                  onEnter: () => play(gsap, el, kind),
+                });
+              });
+            }
           });
-        }
-      });
-    };
+        };
 
-    let scanTimer = 0;
-    const scheduleScan = () => {
-      window.clearTimeout(scanTimer);
-      scanTimer = window.setTimeout(scan, 200);
-    };
+        let scanTimer = 0;
+        const scheduleScan = () => {
+          window.clearTimeout(scanTimer);
+          scanTimer = window.setTimeout(scan, 200);
+        };
 
-    let refreshTimer = 0;
-    let lastHeight = root.offsetHeight;
-    const ro = new ResizeObserver(() => {
-      const height = root.offsetHeight;
-      if (Math.abs(height - lastHeight) < 4) return;
-      lastHeight = height;
-      window.clearTimeout(refreshTimer);
-      refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 300);
-    });
+        let refreshTimer = 0;
+        let lastHeight = root.offsetHeight;
+        const ro = new ResizeObserver(() => {
+          const height = root.offsetHeight;
+          if (Math.abs(height - lastHeight) < 4) return;
+          lastHeight = height;
+          window.clearTimeout(refreshTimer);
+          refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 300);
+        });
 
-    scan();
-    const mo = new MutationObserver(scheduleScan);
-    mo.observe(root, { childList: true, subtree: true });
-    ro.observe(root);
+        scan();
+        const mo = new MutationObserver(scheduleScan);
+        mo.observe(root, { childList: true, subtree: true });
+        ro.observe(root);
+
+        cleanup = () => {
+          window.clearTimeout(scanTimer);
+          window.clearTimeout(refreshTimer);
+          mo.disconnect();
+          ro.disconnect();
+          ctx.revert();
+          gsap.ticker.remove(tick);
+          lenis.destroy();
+        };
+      },
+    );
 
     return () => {
-      window.clearTimeout(scanTimer);
-      window.clearTimeout(refreshTimer);
-      mo.disconnect();
-      ro.disconnect();
-      ctx.revert();
-      gsap.ticker.remove(tick);
-      lenis.destroy();
+      cancelled = true;
+      cleanup();
     };
   }, []);
 

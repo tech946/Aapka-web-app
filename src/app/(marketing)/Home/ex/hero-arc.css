@@ -334,7 +334,10 @@
   pointer-events: none;
 }
 
-.ex-arc__bg video {
+.ex-arc__bg video,
+.ex-arc__bg img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -871,6 +874,7 @@
     );
 }
 
-.ex-arc__bg video {
+.ex-arc__bg video,
+.ex-arc__bg img {
   filter: brightness(1.12) saturate(1.08);
 }

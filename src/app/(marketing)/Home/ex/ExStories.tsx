@@ -36,6 +36,17 @@ function Reel({
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = video.current;
+    if (!el || near) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setNear(true);
+    }, { rootMargin: '600px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
 
   useEffect(() => {
     const el = video.current;
@@ -63,7 +74,7 @@ function Reel({
       <video
         ref={video}
         className="ex-st__video"
-        poster={`/images/insta-stories/${id}.jpg`}
+        poster={near || active ? `/images/insta-stories/${id}.jpg` : undefined}
         playsInline
         loop
         preload="none"
@@ -99,7 +110,14 @@ export default function ExStories() {
   return (
     <section className="ex-st" id="stories" aria-label={STORIES.title}>
       <div className="ex-st__banner">
-        <img className="ex-st__bg" src="/images/stock/stories-banner.webp" alt="" loading="lazy" />
+        <img
+          className="ex-st__bg"
+          src="/images/stock/stories-banner.webp"
+          srcSet="/images/stock/stories-banner-800.webp 800w, /images/stock/stories-banner.webp 1600w"
+          sizes="100vw"
+          alt=""
+          loading="lazy"
+        />
         <div className="ex-st__head">
           <h2 className="ex-pop__title ex-st__heading">
             <span className="ex-pop__dash" aria-hidden="true" />

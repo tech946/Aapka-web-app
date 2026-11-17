@@ -61,7 +61,7 @@ export const WHY = {
   title: 'Why Thousands of Travellers choose Aapka Tourism',
   cards: [
     {
-      image: '/images/stock/dest-dubai.jpg',
+      image: '/images/stock/dest-dubai-600.jpg',
       stat: '2',
       label: 'Offices in Dubai & Delhi',
       text: 'Visit us in Bur Dubai or at Nehru Place, New Delhi.',
@@ -69,7 +69,7 @@ export const WHY = {
       href: '/contact',
     },
     {
-      image: '/images/stock/traveller-couple-dunes.jpg',
+      image: '/images/stock/traveller-couple-dunes-600.jpg',
       stat: '10,000+',
       label: 'Happy Travellers',
       text: 'Holidays planned city by city, day by day, for travellers from India & the world.',
@@ -77,7 +77,7 @@ export const WHY = {
       href: '/#stories',
     },
     {
-      image: '/images/stock/about-couple-desert.jpg',
+      image: '/images/stock/about-couple-desert-600.jpg',
       stat: '12+',
       label: 'Years in Dubai',
       text: 'A local team that looks after you before you fly and while you travel.',

@@ -131,7 +131,7 @@ export default function SignupPopup() {
       <div className="su-overlay">
         <div className="su-box" role="dialog" aria-modal="true" aria-labelledby="su-title" onClick={(e) => e.stopPropagation()}>
           <div className="su-media" aria-hidden="true">
-            <img src="/images/stock/about-woman-views.jpg" alt="" />
+            <img src="/images/stock/about-woman-views-720.jpg" alt="" />
           </div>
 
           <div className="su-panel">

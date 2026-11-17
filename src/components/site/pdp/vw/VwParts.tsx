@@ -27,6 +27,8 @@ import { REVIEWS } from '../../reviews';
 import type { ItineraryDay } from '../pdp-data';
 import { titleCase } from '../pdp-data';
 import ExCard, { ExCardSkeleton } from '@/app/(marketing)/holidays/ex/ExCard';
+import { responsiveImage } from '@/lib/image-url';
+import { GALLERY_MAIN_MAX, GALLERY_MAIN_SIZES } from '../gallery-sizes';
 
 export type From = { now: number | null; strike?: number | null; basis: string } | null | undefined;
 
@@ -103,7 +105,7 @@ export function VwLightbox({
           <div className="exp-lightbox__grid">
             {images.map((src, n) => (
               <button key={src + n} type="button" className="exp-lightbox__tile" onClick={() => setView(n)} aria-label={`Open photo ${n + 1}`}>
-                <img src={src} alt={`${name}, photo ${n + 1}`} loading={n < 6 ? 'eager' : 'lazy'} />
+                <img {...responsiveImage(src, '(max-width: 767px) 50vw, 33vw', 828)} alt={`${name}, photo ${n + 1}`} loading={n < 6 ? 'eager' : 'lazy'} />
               </button>
             ))}
           </div>
@@ -118,7 +120,7 @@ export function VwLightbox({
               if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
             }}
           >
-            <img key={view} className="exp-lightbox__img" src={images[view]} alt={`${name}, photo ${view + 1}`} />
+            <img key={view} className="exp-lightbox__img" {...responsiveImage(images[view], '100vw', 1920)} alt={`${name}, photo ${view + 1}`} />
             {count > 1 && (
               <>
                 <button type="button" className="exp-lightbox__nav exp-lightbox__nav--prev" onClick={() => step(-1)} aria-label="Previous photo">
@@ -142,7 +144,7 @@ export function VwGallery({ images, name, onOpen }: { images: string[]; name: st
   return (
     <div className={'vw-gallery' + (side.length ? ' has-side' : '') + (side.length === 1 ? ' is-two' : '')}>
       <button type="button" className="vw-gallery__main" onClick={() => images.length && onOpen(0)} aria-label={`View photos of ${name}`}>
-        <img src={list[0]} alt={name} loading="eager" />
+        <img {...responsiveImage(list[0], GALLERY_MAIN_SIZES, GALLERY_MAIN_MAX)} alt={name} loading="eager" fetchPriority="high" />
         {images.length > 1 ? (
           <span className="vw-gallery__count">
             <ImageIcon aria-hidden="true" />
@@ -154,7 +156,7 @@ export function VwGallery({ images, name, onOpen }: { images: string[]; name: st
         <div className="vw-gallery__side">
           {side.map((src, n) => (
             <button key={src + n} type="button" className="vw-gallery__item" onClick={() => onOpen(n + 1)} aria-label={`View photo ${n + 2}`}>
-              <img src={src} alt="" loading="lazy" />
+              <img {...responsiveImage(src, '(max-width: 767px) 50vw, 400px', 828)} alt="" loading="lazy" />
             </button>
           ))}
         </div>

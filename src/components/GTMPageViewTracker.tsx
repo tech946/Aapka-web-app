@@ -14,7 +14,8 @@ export default function GTMPageViewTracker() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.dataLayer) {
+    if (typeof window !== 'undefined') {
+      window.dataLayer = window.dataLayer || [];
       try {
         const searchString = searchParams?.toString() || '';
         const fullPath = pathname + (searchString ? `?${searchString}` : '');

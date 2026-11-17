@@ -8,6 +8,7 @@ import { BlogBody } from '@/components/blog/BlogBody';
 import { ShareButtons } from '@/components/blog/ShareButtons';
 import { postDate, readTime } from '@/components/blog/format';
 import { BlogJsonLd } from '@/components/blog/BlogJsonLd';
+import { responsiveImage } from '@/lib/image-url';
 
 export const revalidate = 60;
 
@@ -73,7 +74,7 @@ export default async function BlogDetailPage({ params }: Props) {
 
         {blog.featured_image && (
           <figure className='bl-article__cover'>
-            <img src={blog.featured_image} alt={blog.coverAlt || blog.title} />
+            <img {...responsiveImage(blog.featured_image, '(max-width: 767px) 100vw, 900px', 1920)} alt={blog.coverAlt || blog.title} fetchPriority='high' />
           </figure>
         )}
 

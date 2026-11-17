@@ -6,6 +6,7 @@ import { useHolidayItems } from '@/components/site/listing/use-holiday-items';
 import type { ListingItem } from '@/components/site/listing/listing-data';
 import { cmsSection, cmsText } from '@/features/cms/preview/markers';
 import { BlogCarousel } from '../BlogCarousel';
+import { responsiveImage } from '@/lib/image-url';
 
 const MAX_TOURS = 6;
 
@@ -43,7 +44,7 @@ function fromListing(item: ListingItem): TourCard {
 function Tour({ tour }: { tour: TourCard }) {
   return (
     <Link href={tour.href} className='bl-overlay'>
-      <img src={tour.img} alt='' loading='lazy' />
+      <img {...responsiveImage(tour.img, '(max-width: 767px) 100vw, 360px', 828)} alt='' loading='lazy' />
       {tour.duration && <span className='bl-overlay__time'>{tour.duration}</span>}
       <span className='bl-overlay__text'>
         <span className='bl-overlay__title'>{tour.name}</span>

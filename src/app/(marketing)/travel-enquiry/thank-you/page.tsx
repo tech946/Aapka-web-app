@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Check, ClipboardCheck, Mail, MessageCircle, Phone, PlaneTakeoff, UserRound } from 'lucide-react';
+import DeferredVideo from '@/components/site/DeferredVideo';
 import { CONTACT } from '@/components/site/site-config';
 import ExHeader from '../../Home/ex/ExHeader';
 import { ExFooter } from '../../Home/ex/ExSections';
@@ -31,7 +32,7 @@ export default function TravelEnquiryThankYouPage() {
       <ExHeader />
       <main className="ty">
         <div className="ty-band" aria-hidden="true">
-          <video className="ty-band__video" src="/videos/hero-desert-sunset.mp4" autoPlay muted loop playsInline preload="auto" />
+          <DeferredVideo className="ty-band__video" src="/videos/hero-desert-sunset.mp4" poster="/images/hero/hero-desert-sunset-poster.webp" priority autoPlay muted loop playsInline />
         </div>
         <div className="ty-wrap">
           <section className="ty-card" aria-labelledby="ty-title">

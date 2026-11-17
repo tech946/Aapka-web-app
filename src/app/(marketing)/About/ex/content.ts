@@ -21,8 +21,8 @@ export const STORY = {
     { label: 'Mission', text: 'To plan every trip like it is our own family travelling.' },
   ],
   images: {
-    main: { src: '/images/stock/about-couple-desert.jpg', alt: 'Travellers in the Dubai desert' },
-    side: { src: '/images/stock/about-woman-views.jpg', alt: 'Traveller enjoying the views in Dubai' },
+    main: { src: '/images/stock/about-couple-desert.jpg', small: '/images/stock/about-couple-desert-720.jpg', alt: 'Travellers in the Dubai desert' },
+    side: { src: '/images/stock/about-woman-views-720.jpg', alt: 'Traveller enjoying the views in Dubai' },
   },
   badge: { stat: '12+', label: 'years planning UAE holidays' },
   guests: {
@@ -52,8 +52,8 @@ export const FOUNDER = {
     { label: 'Travellers', text: 'feel guided, before they fly and while they travel.' },
   ],
   images: {
-    main: { src: '/images/about-section-1.jpg', alt: 'Kamal Pandey, Founder & CEO of Aapka Tourism' },
-    side: { src: '/images/about-section-4.jpg', alt: 'Kamal Pandey in the Dubai desert' },
+    main: { src: '/images/about-section-1.jpg', small: '/images/about-section-1-720.jpg', alt: 'Kamal Pandey, Founder & CEO of Aapka Tourism' },
+    side: { src: '/images/about-section-4-720.jpg', alt: 'Kamal Pandey in the Dubai desert' },
   },
   badge: { stat: 'CEO', label: 'Founder of Aapka Tourism' },
   sign: {

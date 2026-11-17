@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { responsiveImage } from '@/lib/image-url';
 import {
   BadgeCheck,
   CalendarDays,
@@ -27,6 +28,8 @@ import {
 const SAVED_KEY = 'aapka-saved-holidays';
 
 const SAMPLE_RATING = { score: 4.8, count: 1240 };
+
+const CARD_SIZES = '(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 360px';
 
 function Star() {
   return (
@@ -244,7 +247,15 @@ export function ExCardSkeleton() {
   );
 }
 
-export default function ExCard({ p, headingAs: Heading = 'h3' }: { p: ListingItem; headingAs?: 'h3' | 'h4' }) {
+export default function ExCard({
+  p,
+  headingAs: Heading = 'h3',
+  priority = false,
+}: {
+  p: ListingItem;
+  headingAs?: 'h3' | 'h4';
+  priority?: boolean;
+}) {
   const title = titleCase(p.name);
   const image = p.img || p.images[0] || '/images/package-1.png';
   const features = featuresOf(p);
@@ -266,7 +277,13 @@ export default function ExCard({ p, headingAs: Heading = 'h3' }: { p: ListingIte
           tabIndex={-1}
           aria-hidden='true'
         >
-          <img src={image} alt='' loading='lazy' decoding='async' />
+          <img
+            {...responsiveImage(image, CARD_SIZES, 828)}
+            alt=''
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : undefined}
+            decoding='async'
+          />
         </Link>
         {flag && FlagIcon ? (
           <span className='exl-card__flag'>

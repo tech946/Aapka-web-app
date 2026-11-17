@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, BadgeCheck, Flame, Sailboat, Sparkles, Zap } fro
 import { categorySlug } from '@/components/site/site-config';
 import { LIMITED_DEALS, holidaysHref, typeForCategory } from '@/config/holiday-types';
 import { generateShortSlug, parseDateStringToLocal } from '@/lib/utils';
+import { responsiveImage } from '@/lib/image-url';
 import {
   categoryHref,
   dealHref,
@@ -117,7 +118,7 @@ function Card({ card }: { card: CardData }) {
   return (
     <li className="ex-card">
       <Link href={card.href} className="ex-card__link">
-        <img className="ex-card__img" src={card.img || '/images/package-1.png'} alt="" loading="lazy" />
+        <img className="ex-card__img" {...responsiveImage(card.img || '/images/package-1.png', '(max-width: 767px) 280px, 320px', 828)} alt="" loading="lazy" />
         <span className="ex-card__shade" aria-hidden="true" />
         <span className="ex-card__body">
           <span className={'ex-badge ex-badge--' + card.badge.tone}>
@@ -423,7 +424,7 @@ export function PopularBand() {
                     <li className="ex-pop__card" key={p.package_id}>
                       <Link href={packageHref(p)} className="ex-pop__link">
                         <span className="ex-pop__media">
-                          <img src={p.thumbnail_image || '/images/package-1.png'} alt="" loading="lazy" />
+                          <img {...responsiveImage(p.thumbnail_image || '/images/package-1.png', '(max-width: 767px) 45vw, 280px', 828)} alt="" loading="lazy" />
                         </span>
                         <span className="ex-pop__name">{p.package_name}</span>
                         {meta.length ? (

@@ -12,6 +12,7 @@ import { usePdpPlace } from "./PdpRelated";
 import { EX_FONTS } from "@/app/(marketing)/Home/ex/fonts";
 import "@/app/(marketing)/Home/ex/ex.css";
 import "./booking-wizard.css";
+import { responsiveImage } from "@/lib/image-url";
 
 const OPEN_EVENT = "at:open-booking";
 
@@ -392,7 +393,7 @@ export default function BookingWizard({ pax, options, stepIssue, note, closed, d
           <aside className="bw-aside">
             {trip ? (
               <div className="bw-trip">
-                {trip.image ? <img className="bw-trip__img" src={trip.image} alt="" /> : null}
+                {trip.image ? <img className="bw-trip__img" {...responsiveImage(trip.image, "(max-width: 767px) 100vw, 420px", 828)} alt="" /> : null}
                 <span className="bw-trip__shade" aria-hidden="true" />
                 <div className="bw-trip__body">
                   <span className="ex-badge ex-badge--peach">

@@ -38,7 +38,7 @@ export function AuthShell({
     <div className={'desert-ember ex ' + EX_FONTS}>
       <main className="xa">
         <div className="xa-band" aria-hidden="true">
-          <Image className="xa-band__img" src={image} alt="" fill priority sizes="100vw" />
+          <Image className="xa-band__img" src={image} alt="" fill priority unoptimized sizes="100vw" />
         </div>
         <div className="xa-wrap">
           <div className="xa-grid">
