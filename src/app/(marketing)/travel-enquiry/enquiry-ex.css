@@ -494,6 +494,24 @@
   gap: 8px;
 }
 
+.ex .te-chip,
+.ex .te-tag {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ex .te-chip svg,
+.ex .te-tag button {
+  flex: none;
+}
+
+.ex .te-chip__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ex .te-chip.te-chip--sm {
   gap: 5px;
   height: 36px;

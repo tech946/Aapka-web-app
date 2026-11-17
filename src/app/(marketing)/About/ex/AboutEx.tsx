@@ -170,7 +170,7 @@ function Why() {
             <li key={c.label} className="ex-why__card">
               <img className="ex-why__img" src={c.image} alt="" loading="lazy" />
               <p className="ex-why__stat">
-                <b>{c.stat}</b> {c.label}
+                {c.stat ? <b>{c.stat}</b> : null} {c.label}
               </p>
               <p className="ex-why__text">{c.text}</p>
               <Link href={c.href} className="ex-why__link">

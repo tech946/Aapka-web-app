@@ -92,30 +92,16 @@
   height: 16px;
 }
 
-.su-title {
-  display: flex;
-  flex-direction: column;
-  padding-right: 32px;
-  color: var(--indigo);
-}
-
-.su-title span {
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 400;
-}
-
-.su-title b {
-  font-size: 20px;
-  line-height: 26px;
-  font-weight: 700;
-}
-
 .su-sub {
   margin-top: 10px;
   font-size: 14px;
   line-height: 18px;
   color: var(--su-soft);
+}
+
+.su-close + .su-sub {
+  margin-top: 0;
+  padding-right: 32px;
 }
 
 .su-form {

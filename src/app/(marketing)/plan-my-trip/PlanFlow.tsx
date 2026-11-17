@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import DeferredVideo from '@/components/site/DeferredVideo';
+import { afterLoad } from '@/lib/after-load';
 import { CONTACT } from '@/components/site/site-config';
 import {
   AREAS,
@@ -79,6 +80,8 @@ interface Row {
 export default function PlanFlow() {
   const [plan, setPlan] = useState<Plan>(INITIAL_PLAN);
   const [index, setIndex] = useState(0);
+  const [mediaReady, setMediaReady] = useState(false);
+  useEffect(() => afterLoad(() => setMediaReady(true)), []);
   const [tried, setTried] = useState(false);
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState('All');
@@ -558,7 +561,7 @@ export default function PlanFlow() {
       <aside className="pt-media" aria-label="Trip overview">
         <div className="pt-media__stack" aria-hidden="true">
           <DeferredVideo className={'pt-media__item' + (step.media ? '' : ' is-on')} src={VIDEO} poster={VIDEO_POSTER} priority autoPlay muted loop playsInline />
-          {MEDIA.map((src) => (
+          {MEDIA.filter((src) => mediaReady || step.media === src).map((src) => (
             <img key={src} className={'pt-media__item' + (step.media === src ? ' is-on' : '')} src={src} alt="" decoding="async" />
           ))}
         </div>

@@ -16,6 +16,8 @@ import ScrollReset from '@/components/site/ScrollReset';
 import GTMPageViewTracker from '@/components/GTMPageViewTracker';
 import { BookingProvider } from '@/context/BookingContext';
 import SignupPopup from '@/components/site/signup/SignupPopup';
+import SmoothScroll from '@/components/site/SmoothScroll';
+import RouteProgress from '@/components/site/RouteProgress';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -71,8 +73,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           <BookingProvider>
           <Suspense fallback={null}>
             <GTMPageViewTracker />
+            <RouteProgress />
           </Suspense>
           <ScrollReset />
+          <SmoothScroll />
           <ConditionalHeader />
           <SiteToaster />
           {children}

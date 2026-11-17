@@ -35,7 +35,6 @@ export const HERO: HeroSlide = {
   ],
   trust: [
     { stat: '12+', label: 'years in Dubai' },
-    { stat: '10,000+', label: 'happy travellers' },
     { stat: 'Offices', label: 'in Dubai & Delhi' },
     { stat: '280K+', label: 'on Instagram' },
   ],
@@ -70,7 +69,7 @@ export const WHY = {
     },
     {
       image: '/images/stock/traveller-couple-dunes-600.jpg',
-      stat: '10,000+',
+      stat: '',
       label: 'Happy Travellers',
       text: 'Holidays planned city by city, day by day, for travellers from India & the world.',
       cta: 'Read traveller stories',

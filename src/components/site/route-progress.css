@@ -1,0 +1,35 @@
+.desert-ember.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483000;
+  width: 0;
+  height: 3px;
+  background: var(--brand);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.desert-ember.route-progress[data-state='loading'] {
+  width: 85%;
+  opacity: 1;
+  transition: width 8s cubic-bezier(0.1, 0.7, 0.2, 1);
+}
+
+.desert-ember.route-progress[data-state='done'] {
+  width: 100%;
+  opacity: 1;
+  transition: width 0.2s ease-out;
+}
+
+.desert-ember.route-progress[data-state='hide'] {
+  width: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desert-ember.route-progress[data-state] {
+    transition: none;
+  }
+}

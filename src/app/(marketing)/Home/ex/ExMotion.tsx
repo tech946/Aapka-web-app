@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import 'lenis/dist/lenis.css';
 
 type Kind = 'fade' | 'rise' | 'slide';
 type Gsap = typeof import('gsap').default;
@@ -48,17 +47,11 @@ export default function ExMotion() {
     let cancelled = false;
     let cleanup = () => {};
 
-    Promise.all([import('gsap'), import('gsap/ScrollTrigger'), import('lenis')]).then(
-      ([{ default: gsap }, { ScrollTrigger }, { default: Lenis }]) => {
+    Promise.all([import('gsap'), import('gsap/ScrollTrigger')]).then(
+      ([{ default: gsap }, { ScrollTrigger }]) => {
         if (cancelled) return;
 
         gsap.registerPlugin(ScrollTrigger);
-
-        const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 });
-        lenis.on('scroll', ScrollTrigger.update);
-        const tick = (time: number) => lenis.raf(time * 1000);
-        gsap.ticker.add(tick);
-        gsap.ticker.lagSmoothing(0);
 
         const seen = new WeakSet<Element>();
         const ctx = gsap.context(() => {}, root);
@@ -110,8 +103,6 @@ export default function ExMotion() {
           mo.disconnect();
           ro.disconnect();
           ctx.revert();
-          gsap.ticker.remove(tick);
-          lenis.destroy();
         };
       },
     );

@@ -278,7 +278,7 @@ export default function ExCard({
           aria-hidden='true'
         >
           <img
-            {...responsiveImage(image, CARD_SIZES, 828)}
+            {...responsiveImage(image, CARD_SIZES, 1080)}
             alt=''
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : undefined}

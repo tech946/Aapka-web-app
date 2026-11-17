@@ -22,7 +22,7 @@ export function OverlayPostSlider({ posts, label }: { posts: BlogCard[]; label: 
     <BlogCarousel label={label} className='bl-overlay-slider' autoPlayMs={5000}>
       {posts.map((post) => (
         <Link key={post.id} href={`/blogs/${post.slug}`} className='bl-overlay'>
-          <img {...responsiveImage(post.featured_image || POST_IMAGE_FALLBACK, '(max-width: 767px) 100vw, 400px', 828)} alt='' loading='lazy' />
+          <img {...responsiveImage(post.featured_image || POST_IMAGE_FALLBACK, '(max-width: 767px) 100vw, 400px', 1200)} alt='' loading='lazy' />
           <span className='bl-overlay__time'>{readTime(post.reading_minutes)}</span>
           <span className='bl-overlay__text'>
             {post.blog_categories && <span className='bl-overlay__category'>{post.blog_categories.name}</span>}

@@ -54,9 +54,9 @@ export default function AttractionPicker({ value, onChange, invalid }: Attractio
             {popularList.map((a) => {
               const on = isOn(a.id);
               return (
-                <button key={a.id} type="button" aria-pressed={on} className={'te-chip te-chip--sm' + (on ? ' is-on' : '')} onClick={() => toggle(a)}>
+                <button key={a.id} type="button" aria-pressed={on} className={'te-chip te-chip--sm' + (on ? ' is-on' : '')} title={a.name} onClick={() => toggle(a)}>
                   {on ? <Check aria-hidden="true" /> : null}
-                  {a.name}
+                  <span className="te-chip__label">{a.name}</span>
                 </button>
               );
             })}
@@ -67,8 +67,8 @@ export default function AttractionPicker({ value, onChange, invalid }: Attractio
       {value.length > 0 && (
         <ul className="te-tours__picked" aria-label="Selected tours">
           {value.map((a) => (
-            <li key={a.id} className="te-tag">
-              {a.name}
+            <li key={a.id} className="te-tag" title={a.name}>
+              <span className="te-chip__label">{a.name}</span>
               <button type="button" aria-label={`Remove ${a.name}`} onClick={() => toggle(a)}>
                 <X aria-hidden="true" />
               </button>

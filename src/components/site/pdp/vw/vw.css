@@ -835,16 +835,6 @@
   font-weight: 600;
 }
 
-.vw-reviews__loved {
-  font-size: 16px;
-  color: var(--graphite);
-}
-
-.vw-reviews__loved b {
-  font-weight: 800;
-  color: var(--ink);
-}
-
 .vw-reviews .vw-rail__track {
   grid-auto-columns: calc((100% - 20px) / 2);
 }
@@ -1423,8 +1413,7 @@
     font-size: 14px;
   }
 
-  .vw-sec__head p,
-  .vw-reviews__loved {
+  .vw-sec__head p {
     font-size: 15px;
     line-height: 20px;
   }

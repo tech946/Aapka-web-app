@@ -115,6 +115,7 @@ export default function SignupPopup() {
           email: email.trim(),
           phone: `${picked.code} ${phone.replace(/\D/g, '')}`,
           message: 'Newsletter sign-up from the website pop-up',
+          source: 'signup-popup',
         }),
       });
       if (!res.ok) throw new Error('failed');
@@ -129,7 +130,7 @@ export default function SignupPopup() {
   return (
     <div className="desert-ember su-root">
       <div className="su-overlay">
-        <div className="su-box" role="dialog" aria-modal="true" aria-labelledby="su-title" onClick={(e) => e.stopPropagation()}>
+        <div className="su-box" role="dialog" aria-modal="true" aria-label="Subscribe to Aapka Tourism holiday deals" onClick={(e) => e.stopPropagation()}>
           <div className="su-media" aria-hidden="true">
             <img src="/images/stock/about-woman-views-720.jpg" alt="" />
           </div>
@@ -138,11 +139,6 @@ export default function SignupPopup() {
             <button type="button" className="su-close" onClick={() => setOpen(false)} aria-label="Close">
               <X aria-hidden="true" />
             </button>
-
-            <h2 className="su-title" id="su-title">
-              <span>Join a community of</span>
-              <b>10,000+ happy travellers</b>
-            </h2>
 
             {done ? (
               <div className="su-done">

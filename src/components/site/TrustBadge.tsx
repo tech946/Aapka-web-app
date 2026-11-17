@@ -14,7 +14,7 @@ const AVATARS = REVIEWS.slice(0, 4).map((r) =>
     .toUpperCase(),
 );
 
-export default function TrustBadge({ text = 'Trusted by 10,000+ travellers' }: { text?: string }) {
+export default function TrustBadge({ text = 'Trusted by our travellers' }: { text?: string }) {
   return (
     <div className="trust-badge">
       <span className="trust-badge__faces" aria-hidden="true">

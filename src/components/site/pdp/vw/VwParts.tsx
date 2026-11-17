@@ -105,7 +105,7 @@ export function VwLightbox({
           <div className="exp-lightbox__grid">
             {images.map((src, n) => (
               <button key={src + n} type="button" className="exp-lightbox__tile" onClick={() => setView(n)} aria-label={`Open photo ${n + 1}`}>
-                <img {...responsiveImage(src, '(max-width: 767px) 50vw, 33vw', 828)} alt={`${name}, photo ${n + 1}`} loading={n < 6 ? 'eager' : 'lazy'} />
+                <img {...responsiveImage(src, '(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw', 1200)} alt={`${name}, photo ${n + 1}`} loading={n < 6 ? 'eager' : 'lazy'} />
               </button>
             ))}
           </div>
@@ -156,7 +156,7 @@ export function VwGallery({ images, name, onOpen }: { images: string[]; name: st
         <div className="vw-gallery__side">
           {side.map((src, n) => (
             <button key={src + n} type="button" className="vw-gallery__item" onClick={() => onOpen(n + 1)} aria-label={`View photo ${n + 2}`}>
-              <img {...responsiveImage(src, '(max-width: 767px) 50vw, 400px', 828)} alt="" loading="lazy" />
+              <img {...responsiveImage(src, '(max-width: 767px) 50vw, 400px', 1080)} alt="" loading="lazy" />
             </button>
           ))}
         </div>
@@ -229,9 +229,6 @@ export function VwReviews() {
     <section id="reviews" className="vw-reviews" aria-labelledby="vw-reviews-title">
       <div className="vw-reviews__head">
         <h2 id="vw-reviews-title">Why travellers love this</h2>
-        <p className="vw-reviews__loved">
-          Loved by <b>10,000+</b> travellers
-        </p>
       </div>
       <VwRail label="Traveller reviews">
         {REVIEWS.map((r) => (

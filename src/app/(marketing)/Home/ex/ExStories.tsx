@@ -97,7 +97,7 @@ function Reel({
   );
 }
 
-const STATS = ['12+ years in Dubai', '10,000+ travellers', '280K+ Instagram followers'];
+const STATS = ['12+ years in Dubai', '280K+ Instagram followers'];
 
 const INSTAGRAM = 'https://www.instagram.com/aapkatourism/';
 
@@ -122,7 +122,7 @@ export default function ExStories() {
           <h2 className="ex-pop__title ex-st__heading">
             <span className="ex-pop__dash" aria-hidden="true" />
             <span>
-              Travel Memories Shared by <b>10,000+ Travellers</b>
+              Travel Memories Shared by <b>Our Travellers</b>
             </span>
             <span className="ex-pop__dash" aria-hidden="true" />
           </h2>
