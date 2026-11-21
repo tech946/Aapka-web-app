@@ -10,12 +10,22 @@ export const dynamic = 'force-dynamic';
 
 const BUCKET_NAME = 'images';
 
-// Upload base64 image to Supabase Storage (images bucket)
 async function uploadBase64ToSupabase(
   base64String: string,
   folder: string = 'bookings/documents'
 ): Promise<string> {
-  // Remove data URL prefix if present (e.g. "data:image/jpeg;base64,")
+  const uploadedPrefix = supabaseAdmin.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(`${folder}/`).data.publicUrl;
+  if (base64String.startsWith(uploadedPrefix)) {
+    const rest = base64String.slice(uploadedPrefix.length);
+    if (/^[\w.-]+$/.test(rest)) return base64String;
+    throw new Error('Invalid document reference');
+  }
+  if (!base64String.startsWith('data:image/')) {
+    throw new Error('Invalid document reference');
+  }
+
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
   const buffer = Buffer.from(base64Data, 'base64');
 

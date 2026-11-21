@@ -29,6 +29,10 @@ import {
   type UserLocation,
 } from '@/lib/location-utils';
 import { parseDateStringToLocal } from '@/lib/utils';
+import {
+  readJsonResponse,
+  uploadBookingDocument,
+} from '@/lib/booking-document-upload';
 import { useAddonNames, useAgentStatus } from '@/hooks/use-marketing-queries';
 import { AgentDiscountBadge } from '@/components/marketing/AgentDiscountPrice/AgentDiscountPrice';
 import ExHeader from '../Home/ex/ExHeader';
@@ -664,15 +668,8 @@ function CheckoutPageContent() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Convert File to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
+  const uploadDocument = (file: File): Promise<string> =>
+    uploadBookingDocument(file);
 
   const handlePayment = async () => {
     if (!validateForm()) {
@@ -760,48 +757,46 @@ function CheckoutPageContent() {
       const isOtherCountry = firstPassenger?.country === 'Other';
       const passengersToProcess = isOtherCountry ? [passengers[0]] : passengers;
 
-      // Convert all files to base64
-      const passengersWithBase64 = await Promise.all(
+      const passengersWithDocs = await Promise.all(
         passengersToProcess.map(async passenger => ({
           ...passenger,
           applicantPhoto: passenger.applicantPhoto
-            ? await fileToBase64(passenger.applicantPhoto)
+            ? await uploadDocument(passenger.applicantPhoto)
             : null,
           passportMainCopy: passenger.passportMainCopy
-            ? await fileToBase64(passenger.passportMainCopy)
+            ? await uploadDocument(passenger.passportMainCopy)
             : null,
           passportLastPage: passenger.passportLastPage
-            ? await fileToBase64(passenger.passportLastPage)
+            ? await uploadDocument(passenger.passportLastPage)
             : null,
           passportCover: passenger.passportCover
-            ? await fileToBase64(passenger.passportCover)
+            ? await uploadDocument(passenger.passportCover)
             : null,
           nationalIdCard: passenger.nationalIdCard
-            ? await fileToBase64(passenger.nationalIdCard)
+            ? await uploadDocument(passenger.nationalIdCard)
             : null,
           birthCertificate: passenger.birthCertificate
-            ? await fileToBase64(passenger.birthCertificate)
+            ? await uploadDocument(passenger.birthCertificate)
             : null,
         }))
       );
 
-      // Convert infant documents to base64
-      const infantDocumentsBase64 = await Promise.all(
+      const infantDocumentsUploaded = await Promise.all(
         infantDocuments.map(async infant => ({
           applicantPhoto: infant.applicantPhoto
-            ? await fileToBase64(infant.applicantPhoto)
+            ? await uploadDocument(infant.applicantPhoto)
             : null,
           passportMainCopy: infant.passportMainCopy
-            ? await fileToBase64(infant.passportMainCopy)
+            ? await uploadDocument(infant.passportMainCopy)
             : null,
           passportLastPage: infant.passportLastPage
-            ? await fileToBase64(infant.passportLastPage)
+            ? await uploadDocument(infant.passportLastPage)
             : null,
           passportCover: infant.passportCover
-            ? await fileToBase64(infant.passportCover)
+            ? await uploadDocument(infant.passportCover)
             : null,
           birthCertificate: infant.birthCertificate
-            ? await fileToBase64(infant.birthCertificate)
+            ? await uploadDocument(infant.birthCertificate)
             : null,
         }))
       );
@@ -862,8 +857,8 @@ function CheckoutPageContent() {
                 ? item.marinaAddons
                 : null,
           })),
-          passengers: passengersWithBase64,
-          infantDocuments: infantDocumentsBase64,
+          passengers: passengersWithDocs,
+          infantDocuments: infantDocumentsUploaded,
           paymentMethod: 'ccavenue', // TEMPORARY: Always use CCAvenue
           totalAmount: totalAmountAED,
           paymentType,
@@ -872,7 +867,10 @@ function CheckoutPageContent() {
         }),
       });
 
-      const bookingResult = await bookingResponse.json();
+      const bookingResult = await readJsonResponse(
+        bookingResponse,
+        'Failed to create booking. Please try again.'
+      );
 
       if (!bookingResponse.ok || !bookingResult.success) {
         throw new Error(bookingResult.error || 'Failed to create booking');
@@ -959,7 +957,7 @@ function CheckoutPageContent() {
         }),
       });
 
-      const orderData = await orderResponse.json();
+      const orderData = await readJsonResponse(orderResponse, 'Failed to create payment order. Please try again.');
 
       if (!orderResponse.ok || !orderData.success) {
         throw new Error(orderData.error || 'Failed to create payment order');
@@ -1015,7 +1013,7 @@ function CheckoutPageContent() {
         }),
       });
 
-      const orderData = await orderResponse.json();
+      const orderData = await readJsonResponse(orderResponse, 'Failed to create payment order. Please try again.');
 
       if (!orderResponse.ok || !orderData.success) {
         throw new Error(orderData.error || 'Failed to create payment order');
