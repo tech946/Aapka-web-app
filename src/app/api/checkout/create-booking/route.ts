@@ -35,7 +35,7 @@ async function uploadBase64ToSupabase(
   const { data, error } = await supabaseAdmin.storage
     .from(BUCKET_NAME)
     .upload(path, buffer, {
-      contentType: `image/${ext}`,
+      contentType: ext === 'png' ? 'image/png' : 'image/jpeg',
       upsert: false,
     });
 

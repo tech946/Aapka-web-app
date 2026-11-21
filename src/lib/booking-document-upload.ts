@@ -2,6 +2,8 @@ import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
 const MAX_DIMENSION = 2000;
 const COMPRESS_ABOVE_BYTES = 1.5 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function readJsonResponse<T = any>(
   res: Response,
@@ -20,8 +22,7 @@ export async function readJsonResponse<T = any>(
   }
 }
 
-async function compressImage(file: File): Promise<Blob> {
-  if (file.size <= COMPRESS_ABOVE_BYTES) return file;
+async function toJpeg(file: File): Promise<Blob | null> {
   try {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
@@ -31,28 +32,49 @@ async function compressImage(file: File): Promise<Blob> {
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return file;
+    if (!ctx) return null;
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, width, height);
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close?.();
-    const blob = await new Promise<Blob | null>(resolve =>
+    return await new Promise<Blob | null>(resolve =>
       canvas.toBlob(resolve, 'image/jpeg', 0.85)
     );
-    return blob && blob.size < file.size ? blob : file;
   } catch {
-    return file;
+    return null;
   }
 }
 
+async function prepareImage(file: File): Promise<Blob> {
+  const type = file.type === 'image/jpg' ? 'image/jpeg' : file.type;
+  const accepted = ACCEPTED_TYPES.includes(type);
+
+  if (accepted && file.size <= COMPRESS_ABOVE_BYTES) {
+    return type === file.type ? file : new Blob([file], { type });
+  }
+
+  const jpeg = await toJpeg(file);
+  if (jpeg && (!accepted || jpeg.size < file.size)) return jpeg;
+  if (accepted) return type === file.type ? file : new Blob([file], { type });
+
+  throw new Error(
+    `"${file.name}" can't be uploaded. Please use a JPG or PNG photo.`
+  );
+}
+
 export async function uploadBookingDocument(file: File): Promise<string> {
-  const blob = await compressImage(file);
-  const contentType = blob.type || file.type || 'image/jpeg';
+  const blob = await prepareImage(file);
+
+  if (blob.size > MAX_UPLOAD_BYTES) {
+    throw new Error(
+      `"${file.name}" is larger than 5 MB. Please upload a smaller photo.`
+    );
+  }
 
   const res = await fetch('/api/checkout/document-upload-url', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contentType }),
+    body: JSON.stringify({ contentType: blob.type }),
   });
   const data = await readJsonResponse<{
     bucket?: string;
@@ -68,7 +90,7 @@ export async function uploadBookingDocument(file: File): Promise<string> {
 
   const { error } = await createBrowserSupabaseClient()
     .storage.from(data.bucket)
-    .uploadToSignedUrl(data.path, data.token, blob, { contentType });
+    .uploadToSignedUrl(data.path, data.token, blob, { contentType: blob.type });
 
   if (error) {
     throw new Error(`Could not upload "${file.name}". Please try again.`);

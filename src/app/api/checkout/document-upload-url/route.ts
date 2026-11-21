@@ -9,11 +9,8 @@ const FOLDER = 'bookings/documents';
 
 const EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
-  'image/heic': 'heic',
-  'image/heif': 'heif',
   'image/gif': 'gif',
 };
 
@@ -25,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (!ext) {
       return NextResponse.json(
-        { error: 'Please upload documents as images (JPG, PNG, WEBP or HEIC).' },
+        { error: 'Please upload documents as images (JPG, PNG or WEBP).' },
         { status: 400 }
       );
     }
