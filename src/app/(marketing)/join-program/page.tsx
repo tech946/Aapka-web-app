@@ -14,6 +14,7 @@ const PAGE_METADATA: Metadata = {
   title: 'Join the Aapka Tourism Program for ₹100 | Aapka Tourism',
   description:
     'Meet the Aapka Tourism team and learn how our website, holiday packages and bookings work, in a live program for a one-time fee of ₹100.',
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
 
 export function generateMetadata(): Promise<Metadata> {
