@@ -21,6 +21,16 @@ const nextConfig = {
   },
   // Moved from experimental in Next.js 15
   serverExternalPackages: [],
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    const posthogHost = (process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com').replace(/\/$/, '');
+    const posthogAssets = posthogHost.replace('.i.posthog.com', '-assets.i.posthog.com');
+    return [
+      { source: '/ingest/static/:path*', destination: `${posthogAssets}/static/:path*` },
+      { source: '/ingest/array/:path*', destination: `${posthogAssets}/array/:path*` },
+      { source: '/ingest/:path*', destination: `${posthogHost}/:path*` },
+    ];
+  },
   // All listings live on /holidays now (src/config/holiday-types.ts). The old
   // listing URLs are still linked from emails, referral links and bookmarks,
   // so they land on the matching filter. Detail pages are untouched: each

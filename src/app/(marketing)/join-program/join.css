@@ -1,0 +1,715 @@
+.jp {
+  --jp-max: 1200px;
+  --jp-line: var(--border);
+  --jp-soft: color-mix(in srgb, var(--ink) 62%, var(--card));
+  --jp-wash: color-mix(in srgb, var(--brand-tint) 60%, var(--card));
+  --jp-edge: color-mix(in srgb, var(--brand) 16%, var(--card));
+  --jp-r: calc(var(--radius-sm) * 2);
+  --jp-shadow-sm: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent), 0 6px 18px color-mix(in srgb, var(--ink) 6%, transparent);
+  --jp-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 5%, transparent), 0 24px 56px color-mix(in srgb, var(--ink) 10%, transparent);
+  --app-font: var(--ex-sans);
+  --app-heading-font: var(--ex-display);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.jp-wrap {
+  max-width: calc(var(--jp-max) + 2 * var(--ex-gutter));
+  margin-inline: auto;
+  padding-inline: var(--ex-gutter);
+}
+
+.jp-hero {
+  padding: 56px 0 72px;
+  background: var(--card);
+}
+
+.jp-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 680px) 450px;
+  justify-content: space-between;
+  gap: 38px;
+  align-items: stretch;
+  max-width: calc(1168px + 2 * var(--ex-gutter));
+}
+
+.jp-hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 6px;
+}
+
+.jp-h1 {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 40px;
+  line-height: 50px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.jp-lede {
+  max-width: 580px;
+  margin: 30px 0 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 400;
+  color: var(--jp-soft);
+}
+
+.jp-points {
+  display: grid;
+  gap: 0;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jp-points li {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--jp-soft);
+}
+
+.jp-points strong {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.jp-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin: 30px 0 32px;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  color: var(--brand-deep);
+  text-decoration: none;
+}
+
+.jp-play > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--brand-deep);
+  color: var(--on-brand);
+}
+
+.jp-play svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+}
+
+.jp-play s {
+  margin-left: -8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jp-soft);
+}
+
+.jp-play:hover {
+  color: var(--brand);
+}
+
+.jp-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+  margin: auto 0 0;
+  border-radius: var(--jp-r);
+  background: var(--jp-wash);
+}
+
+.jp-stats > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 99px;
+  padding: 14px 6px;
+  text-align: center;
+}
+
+.jp-stats > div + div {
+  border-left: 1px solid var(--jp-edge);
+}
+
+.jp-stats dt {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.jp-stats dd {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 15px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.jp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 40px 24px 34px;
+  border-radius: var(--radius-lg);
+  background: var(--jp-wash);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.jp-fld {
+  display: grid;
+  gap: 4px;
+}
+
+.jp-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 62px;
+  padding: 8px 60px 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--card);
+  cursor: text;
+  transition: border-color 0.15s ease;
+}
+
+.jp-field:focus-within {
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--card));
+}
+
+.jp-field.has-err {
+  border-color: var(--deal);
+}
+
+.jp-field input,
+.jp-field__select {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.jp-field input::placeholder {
+  color: var(--jp-soft);
+}
+
+.jp-field__select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.jp-field__select.is-empty {
+  color: var(--jp-soft);
+}
+
+.jp-field__lbl {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 400;
+  color: var(--jp-soft);
+}
+
+.jp-field__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.jp-field__flag {
+  flex: none;
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+}
+
+.jp-field__cc {
+  flex: none;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.jp-field__ico {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--brand) 32%, var(--card));
+  color: var(--card);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.jp-field__ico svg {
+  width: 16px;
+  height: 16px;
+}
+
+.jp-field__ico b {
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.jp-err {
+  margin: 0 0 0 4px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--deal);
+}
+
+.jp-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 15px;
+  font-style: italic;
+  color: var(--jp-soft);
+  cursor: pointer;
+}
+
+.jp-consent input {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 1px 0 0;
+  accent-color: var(--brand);
+}
+
+.jp-pay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 56px;
+  margin-top: 4px;
+  border: 1px solid var(--brand-edge);
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--brand) 30%, transparent);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--on-brand);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.jp-pay:hover {
+  background: var(--brand-hover);
+}
+
+.jp-pay svg {
+  width: 18px;
+  height: 18px;
+}
+
+#join {
+  scroll-margin-top: 88px;
+}
+
+
+.jp-prog {
+  padding: 80px 0 96px;
+  background: var(--card);
+}
+
+.jp-prog__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.jp-h2 {
+  margin: 0;
+  color: var(--ink);
+}
+
+.jp-h2__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.jp-prog__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 780px;
+  margin: 28px 0 0;
+  font-size: 15px;
+  line-height: 32px;
+  font-weight: 400;
+  color: var(--jp-soft);
+}
+
+.jp-prog__intro strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.jp-card {
+  --jp-ink-deep: color-mix(in srgb, var(--navy) 65%, var(--black));
+  --jp-ink-mid: color-mix(in srgb, var(--navy) 90%, var(--card));
+  --jp-on: var(--card);
+  --jp-on-soft: var(--ash);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 412px;
+  gap: 24px;
+  max-width: 1116px;
+  margin: 48px auto 0;
+  padding: 32px 24px;
+  border-radius: 28px;
+  background: var(--navy);
+  color: var(--jp-on);
+}
+
+.jp-card__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.jp-card__badge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+}
+
+.jp-card__badge svg {
+  width: 64px;
+  height: 64px;
+}
+
+.jp-cal__sheet {
+  fill: var(--card);
+}
+
+.jp-cal__mark {
+  fill: var(--brand);
+}
+
+.jp-cal__tick {
+  fill: var(--card);
+}
+
+.jp-card__name {
+  margin: 22px 0 0;
+  font-size: 21px;
+  line-height: 28px;
+  font-weight: 700;
+  color: var(--brand-glow);
+}
+
+.jp-card__body {
+  margin: 14px 0 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--jp-on);
+}
+
+.jp-card__checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  width: 100%;
+  margin: 16px 0 0;
+  padding: 20px 24px;
+  border-radius: var(--radius-sm);
+  background: var(--jp-ink-deep);
+  list-style: none;
+  text-align: left;
+}
+
+.jp-card__checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--jp-on);
+}
+
+.jp-card__checks li > span {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 0;
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.jp-card__checks svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 3.5;
+}
+
+.jp-card__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--jp-ink-deep);
+}
+
+.jp-card__tiles p {
+  display: grid;
+  place-items: center;
+  min-height: 128px;
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--jp-ink-mid);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--jp-on);
+}
+
+.jp-card__side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 5px;
+}
+
+.jp-card__facts {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+
+.jp-card__facts > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 80px;
+  padding: 0 18px;
+  border-radius: 4px;
+  background: var(--jp-ink-deep);
+}
+
+.jp-card__facts svg {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.5;
+  color: var(--jp-on-soft);
+}
+
+.jp-card__facts dt {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--jp-on-soft);
+}
+
+.jp-card__facts dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  color: var(--jp-on);
+}
+
+.jp-card__more,
+.jp-card__join {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.jp-card__more {
+  margin-top: 8px;
+  border: 2px solid var(--jp-on);
+  color: var(--jp-on);
+}
+
+.jp-card__more:hover {
+  background: var(--jp-on);
+  color: var(--navy);
+}
+
+.jp-card__join {
+  border: 1px solid var(--brand-edge);
+  background: var(--brand);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 35%, transparent);
+  color: var(--on-brand);
+}
+
+.jp-card__join:hover {
+  background: var(--brand-hover);
+}
+
+.jp-card__more svg,
+.jp-card__join svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 1100px) {
+  .jp-hero__grid {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 32px;
+  }
+
+  .jp-h1 {
+    font-size: 36px;
+    line-height: 45px;
+  }
+
+  .jp-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .jp-stats > div:nth-child(4) {
+    border-left: 0;
+  }
+
+  .jp-stats > div:nth-child(n + 4) {
+    border-top: 1px solid var(--jp-edge);
+  }
+
+  .jp-card {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+@media (max-width: 900px) {
+  .jp-hero {
+    padding: 36px 0 56px;
+  }
+
+  .jp-hero__grid,
+  .jp-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jp-h1,
+  .jp-h2__text,
+  .jp-prog__intro {
+    display: block;
+  }
+
+  .jp-h1 span + span::before,
+  .jp-h2__text span + span::before,
+  .jp-prog__intro span + span::before {
+    content: ' ';
+  }
+
+  .jp-card__side {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .jp-h1 {
+    font-size: 32px;
+    line-height: 40px;
+  }
+
+
+  .jp-lede {
+    margin-top: 18px;
+    font-size: 17px;
+    line-height: 25px;
+  }
+
+  .jp-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jp-stats > div:nth-child(n) {
+    min-height: 84px;
+    border-top: 0;
+    border-left: 0;
+  }
+
+  .jp-stats > div:nth-child(even) {
+    border-left: 1px solid var(--jp-edge);
+  }
+
+  .jp-stats > div:nth-child(n + 3) {
+    border-top: 1px solid var(--jp-edge);
+  }
+
+  .jp-stats > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .jp-form {
+    padding: 24px 16px;
+  }
+
+  .jp-prog {
+    padding: 56px 0 64px;
+  }
+
+  .jp-prog__intro {
+    margin-top: 16px;
+    line-height: 24px;
+  }
+
+  .jp-card {
+    margin-top: 32px;
+    padding: 24px 14px;
+    border-radius: var(--radius-lg);
+  }
+
+  .jp-card__checks,
+  .jp-card__tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jp-card__checks {
+    gap: 14px;
+    padding: 18px 16px;
+  }
+
+  .jp-card__tiles p {
+    min-height: 0;
+  }
+}

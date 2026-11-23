@@ -10,7 +10,7 @@ const NO_FOOTER_PREFIXES = ['/checkout'];
 
 const startsWithAny = (pathname: string, prefixes: string[]) => prefixes.some((p) => pathname.startsWith(p));
 
-const OWN_CHROME_PATHS = new Set(['/', '/About', '/faq', '/journeys', '/holidays', '/checkout', '/contact', '/travel-enquiry', '/travel-enquiry/thank-you', '/plan-my-trip', '/become-partner', '/become-partner/subscribe', '/founder-message', '/terms-and-conditions', '/privacy-policy', '/cancellation-policy', '/disclaimer']);
+const OWN_CHROME_PATHS = new Set(['/', '/About', '/faq', '/journeys', '/holidays', '/checkout', '/contact', '/travel-enquiry', '/travel-enquiry/thank-you', '/plan-my-trip', '/become-partner', '/become-partner/subscribe', '/founder-message', '/terms-and-conditions', '/privacy-policy', '/cancellation-policy', '/disclaimer', '/join-program']);
 
 const OWN_CHROME_PREFIXES = ['/blogs'];
 
